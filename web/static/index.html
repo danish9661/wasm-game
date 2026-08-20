@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Starfall — 2.5D Survival RPG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="fallback" style="display:none">
+    <h1>Starfall</h1>
+    <p>WebGPU is required for maximum speed.</p>
+    <p id="fallback-reason"></p>
+    <p>Please use Chrome, Edge, or Firefox with WebGPU enabled.</p>
+  </div>
+  <div id="hud">
+    <div class="hud-row">
+      <div class="bar"><span class="bar-label">HP</span><div class="bar-track"><div class="bar-fill" id="bar-hp"></div></div><span class="bar-num" id="num-hp">100</span></div>
+      <div class="bar"><span class="bar-label">HUNGER</span><div class="bar-track"><div class="bar-fill" id="bar-hunger"></div></div><span class="bar-num" id="num-hunger">100</span></div>
+      <div class="bar"><span class="bar-label">STAMINA</span><div class="bar-track"><div class="bar-fill" id="bar-stamina"></div></div><span class="bar-num" id="num-stamina">100</span></div>
+    </div>
+    <div class="hud-row inv-row">
+      <span class="inv-chip inv-wood" id="inv-wood">W 0</span>
+      <span class="inv-chip inv-stone" id="inv-stone">S 0</span>
+      <span class="inv-chip inv-food" id="inv-food">F 0</span>
+      <span class="inv-clock" id="hud-clock">06:00</span>
+    </div>
+    <div class="hud-row hud-hint">WASD move · E harvest/open · F campfire · V wall · J attack · K shoot · C eat</div>
+  </div>
+  <div id="quest">Gathering supplies…</div>
+  <div id="toasts"></div>
+  <div id="overlay" class="hidden">
+    <div id="overlay-box">
+      <h2 id="overlay-title"></h2>
+      <p id="overlay-sub"></p>
+    </div>
+  </div>
+  <div id="log"></div>
+  <script type="module">
+    window.onerror = (m, s, l, c, e) => {
+      document.getElementById('log').textContent = 'JS ERROR: ' + m + ' @ ' + s + ':' + l + ' :: ' + (e && e.stack ? e.stack.split('\n')[0] : '');
+    };
+    window.addEventListener('unhandledrejection', (ev) => {
+      document.getElementById('log').textContent = 'UNHANDLED: ' + ev.reason;
+    });
+    import init, { step, get_stats } from './wasm_game.js';
+    init().then(() => {
+      document.getElementById('log').textContent = 'wasm loaded';
+      window.__frames = 0;
+      let last = performance.now();
+      let lastLog = performance.now();
+      let lastStep = 0;
+
+      // ---- HUD ------------------------------------------------------------
+      const QUEST_TEXT = [
+        'Gather 5 wood and 1 stone',
+        'Build a wall and a campfire',
+        'A slime blocks the ruins - defeat it',
+        'Find the ancient ruins',
+        'Open the ruins chest',
+        'The crown shard glows - Chapter 2 awaits',
+      ];
+      const el = (id) => document.getElementById(id);
+      const setBar = (id, numId, pct) => {
+        el(id).style.width = Math.max(0, Math.min(100, pct)) + '%';
+        if (numId) el(numId).textContent = Math.round(pct);
+      };
+      let lastInv = { w: -1, s: -1, f: -1 };
+      let lastAlive = 1;
+      let lastQuest = -1;
+      let diedAt = 0;
+      const toast = (msg) => {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = msg;
+        el('toasts').appendChild(t);
+        setTimeout(() => t.remove(), 3200);
+      };
+      const updateHud = (stats) => {
+        setBar('bar-hp', 'num-hp', stats.hp);
+        setBar('bar-hunger', 'num-hunger', stats.hunger);
+        setBar('bar-stamina', 'num-stamina', stats.stamina);
+        el('inv-wood').textContent = `W ${stats.w}`;
+        el('inv-stone').textContent = `S ${stats.s}`;
+        el('inv-food').textContent = `F ${stats.f}`;
+        el('hud-clock').textContent = stats.time;
+
+        // loot toasts from inventory deltas
+        const inv = { w: stats.w, s: stats.s, f: stats.f };
+        if (lastInv.w >= 0) {
+          if (inv.w > lastInv.w) toast(`+${inv.w - lastInv.w} wood`);
+          if (inv.s > lastInv.s) toast(`+${inv.s - lastInv.s} stone`);
+          if (inv.f > lastInv.f) toast(`+${inv.f - lastInv.f} food`);
+        }
+        lastInv = inv;
+
+        // quest banner
+        const q = stats.quest;
+        if (q >= 0 && q < QUEST_TEXT.length && q !== lastQuest) {
+          el('quest').textContent = `📜 ${QUEST_TEXT[q]}`;
+          lastQuest = q;
+        }
+
+        // overlays
+        const ov = el('overlay');
+        if (stats.alive === 0 && lastAlive === 1) {
+          diedAt = performance.now();
+          ov.className = 'dead';
+          el('overlay-title').textContent = 'YOU DIED';
+          el('overlay-sub').textContent = 'The cold takes another traveler… respawning';
+        } else if (stats.alive === 1 && lastAlive === 0) {
+          ov.className = 'hidden';
+        }
+        if (stats.alive === 0 && ov.className !== 'hidden') {
+          const left = Math.max(0, Math.ceil(3 - (performance.now() - diedAt) / 1000));
+          el('overlay-sub').textContent = `The cold takes another traveler… respawning in ${left}s`;
+        }
+        lastAlive = stats.alive;
+
+        if (stats.quest === 5 && lastQuest === 5 && !window.__won) {
+          window.__won = true;
+          ov.className = 'win';
+          el('overlay-title').textContent = 'CHAPTER 1 COMPLETE';
+          el('overlay-sub').textContent = 'The crown shard glows in your pack. Chapter 2 awaits.';
+        }
+      };
+      const parseStats = (raw) => {
+        const get = (re) => (String(raw).match(re) || [])[1];
+        return {
+          hp: Number(get(/hp=([\d.]+)/) || 0),
+          hunger: Number(get(/hunger=([\d.]+)/) || 0),
+          stamina: Number(get(/stamina=([\d.]+)/) || 0),
+          alive: Number(get(/alive=(\d)/) || 1),
+          w: Number(get(/inv=\(w(\d+)/) || 0),
+          s: Number(get(/s(\d+),f/) || 0),
+          f: Number(get(/f(\d+)\)/) || 0),
+          quest: Number(get(/quest=S(\d)/) || -1),
+          time: get(/time=(\d{2}:\d{2})/),
+        };
+      };
+
+      function frame(t) {
+        if (t - lastStep >= 8) {
+          lastStep = t;
+          step(Math.min((t - last) / 1000, 0.1));
+          last = t;
+          window.__frames++;
+          if (t - lastLog >= 2000) {
+            const fps = window.__frames / ((t - lastLog) / 1000);
+            window.__frames = 0;
+            lastLog = t;
+            document.getElementById('log').textContent = `[wasm] fps=${fps.toFixed(0)} ${get_stats()}`;
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+      setInterval(() => {
+        const raw = get_stats();
+        if (raw && !raw.startsWith('no app') && !raw.startsWith('pending')) {
+          updateHud(parseStats(raw));
+        }
+      }, 200);
+      requestAnimationFrame(frame);
+    }).catch((e) => {
+      const el = document.getElementById('fallback-reason');
+      if (el) el.textContent = String(e);
+      document.getElementById('fallback').style.display = 'block';
+      document.getElementById('log').textContent = 'INIT ERROR: ' + e;
+    });
+  </script>
+</body>
+</html>

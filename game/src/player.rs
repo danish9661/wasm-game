@@ -1,0 +1,295 @@
+use crate::items::{Inventory, ItemKind};
+use crate::world::{ChunkCache, WorldGen, tile_at};
+
+/// Tiles per second when walking (screen-up is (-1,-1) in world coords).
+pub const PLAYER_SPEED: f32 = 8.0;
+/// Camera follow responsiveness (1/toward-player per second).
+pub const CAMERA_FOLLOW: f32 = 10.0;
+/// Max hit points; damage taken is subtracted from this.
+pub const MAX_HP: f32 = 100.0;
+/// Hunger in [0,1]: 1 = full. Drains over time; 0 = starving (lose hp).
+pub const MAX_HUNGER: f32 = 100.0;
+/// Stamina in [0,1]: attacks cost stamina, it regenerates while idle.
+pub const MAX_STAMINA: f32 = 100.0;
+/// Respawn position for the player (the spawner finds the same tile).
+pub const SPAWN: (f32, f32) = (0.5, 0.5);
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Player {
+    pub x: f32,
+    pub y: f32,
+    pub hp: f32,
+    pub hunger: f32,
+    pub stamina: f32,
+    /// Last movement direction (also the attack facing).
+    pub facing: (f32, f32),
+    /// Seconds before the player can take damage again (hit immunity).
+    pub hurt_timer: f32,
+    pub alive: bool,
+}
+
+impl Player {
+    pub fn new(x: f32, y: f32) -> Self {
+        Self {
+            x,
+            y,
+            hp: MAX_HP,
+            hunger: MAX_HUNGER,
+            stamina: MAX_STAMINA,
+            facing: (1.0, 0.0),
+            hurt_timer: 0.0,
+            alive: true,
+        }
+    }
+
+    pub fn dead(&self) -> bool {
+        !self.alive
+    }
+
+    /// Applies damage; respects the hurt-timer (brief invulnerability after
+    /// each hit so enemies can't melt you in one frame).
+    pub fn take_damage(&mut self, dmg: f32) -> bool {
+        if !self.alive || self.hurt_timer > 0.0 {
+            return false;
+        }
+        self.hurt_timer = 0.6;
+        self.hp = (self.hp - dmg).max(0.0);
+        if self.hp <= 0.0 {
+            self.alive = false;
+        }
+        true
+    }
+
+    /// Death: respawn at the spawn point with full hp but half hunger.
+    pub fn respawn(&mut self) {
+        self.x = SPAWN.0;
+        self.y = SPAWN.1;
+        self.hp = MAX_HP;
+        self.hunger = MAX_HUNGER / 2.0;
+        self.stamina = MAX_STAMINA;
+        self.hurt_timer = 0.0;
+        self.alive = true;
+    }
+
+    /// Try to spend stamina; false if exhausted (attack whiffs).
+    pub fn spend_stamina(&mut self, cost: f32) -> bool {
+        if self.stamina < cost {
+            return false;
+        }
+        self.stamina -= cost;
+        true
+    }
+
+    /// Eat one food item: restores 30 hunger.
+    pub fn eat(&mut self, inv: &mut Inventory) -> bool {
+        if inv.remove(ItemKind::Food, 1) {
+            self.hunger = (self.hunger + 30.0).min(MAX_HUNGER);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Per-tick survival: hunger drains slowly (3× faster in the cold at
+    /// night), stamina regenerates, starving costs hp, hurt timer ticks down.
+    /// Base drain ≈ 9 hunger/minute, so a full bar lasts ~11 minutes.
+    pub fn tick(&mut self, dt: f32, temperature: f32) {
+        self.hurt_timer = (self.hurt_timer - dt).max(0.0);
+        let cold = ((temperature).min(0.0) / -10.0).max(0.0);
+        self.hunger = (self.hunger - dt * (0.15 + 0.30 * cold)).max(0.0);
+        if self.hunger <= 0.0 {
+            self.hp = (self.hp - dt * 2.0).max(0.0);
+            if self.hp <= 0.0 {
+                self.alive = false;
+            }
+        }
+        self.stamina = (self.stamina + dt * 12.0).min(MAX_STAMINA);
+    }
+}
+
+/// 8-directional input vector. Screen-up is (-1,-1) in world coords.
+pub fn input_dir(up: bool, down: bool, left: bool, right: bool) -> (f32, f32) {
+    let mut dx = 0.0;
+    let mut dy = 0.0;
+    if up {
+        dx -= 1.0;
+        dy -= 1.0;
+    }
+    if down {
+        dx += 1.0;
+        dy += 1.0;
+    }
+    if left {
+        dx += 1.0;
+        dy -= 1.0;
+    }
+    if right {
+        dx -= 1.0;
+        dy += 1.0;
+    }
+    (dx, dy)
+}
+
+/// Moves the player with axis-separated collision: each axis is rolled back
+/// independently if the destination tile is blocked, so the player slides
+/// along walls instead of stopping dead. Diagonal movement is normalized.
+/// Only a *crossing* into a new tile is blocked — a player standing on a
+/// blocked tile (e.g. a wall built underfoot) can always walk out of it.
+pub fn move_player(
+    player: &mut Player,
+    dir: (f32, f32),
+    dt: f32,
+    mut is_blocked: impl FnMut(i32, i32) -> bool,
+) {
+    let len = (dir.0 * dir.0 + dir.1 * dir.1).sqrt();
+    if len == 0.0 || dt <= 0.0 {
+        return;
+    }
+    let (dx, dy) = (dir.0 / len, dir.1 / len);
+    let step = PLAYER_SPEED * dt;
+    player.facing = (dx, dy);
+
+    let (px, py) = (player.x.floor() as i32, player.y.floor() as i32);
+
+    let nx = player.x + dx * step;
+    let nxt = nx.floor() as i32;
+    if nxt == px || !is_blocked(nxt, py) {
+        player.x = nx;
+    }
+
+    let ny = player.y + dy * step;
+    let nyt = ny.floor() as i32;
+    if nyt == py || !is_blocked(player.x.floor() as i32, nyt) {
+        player.y = ny;
+    }
+}
+
+/// Camera eases toward `target`; stops exactly on it.
+pub fn follow_camera(cam: &mut crate::render::Camera, target: (f32, f32), dt: f32) {
+    let k = (dt * CAMERA_FOLLOW).min(1.0);
+    cam.x += (target.0 - cam.x) * k;
+    cam.y += (target.1 - cam.y) * k;
+}
+
+/// First walkable tile scanning outward from the origin (spiral).
+pub fn find_spawn(world: &WorldGen, cache: &mut ChunkCache) -> (f32, f32) {
+    let mut r: i32 = 0;
+    loop {
+        for tx in -r..=r {
+            for ty in -r..=r {
+                if tx.abs().max(ty.abs()) != r {
+                    continue;
+                }
+                if tile_at(world, cache, tx, ty).walkable() {
+                    return (tx as f32 + 0.5, ty as f32 + 0.5);
+                }
+            }
+        }
+        r += 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::world::TileKind;
+
+    #[test]
+    fn input_directions() {
+        assert_eq!(input_dir(true, false, false, false), (-1.0, -1.0));
+        assert_eq!(input_dir(false, true, false, false), (1.0, 1.0));
+        assert_eq!(input_dir(false, false, true, false), (1.0, -1.0));
+        assert_eq!(input_dir(false, false, false, true), (-1.0, 1.0));
+        assert_eq!(input_dir(false, false, false, false), (0.0, 0.0));
+    }
+
+    #[test]
+    fn moves_along_input_dir() {
+        let mut p = Player::new(0.0, 0.0);
+        move_player(&mut p, (0.0, 1.0), 0.5, |_, _| false);
+        assert!((p.x - 0.0).abs() < 0.001);
+        assert!((p.y - PLAYER_SPEED * 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn diagonal_is_not_faster() {
+        let mut p = Player::new(0.0, 0.0);
+        move_player(&mut p, (1.0, 1.0), 0.5, |_, _| false);
+        let per_axis = PLAYER_SPEED * 0.5 / 2.0_f32.sqrt();
+        assert!((p.x - per_axis).abs() < 0.001);
+        assert!((p.y - per_axis).abs() < 0.001);
+    }
+
+    #[test]
+    fn blocked_axis_rolls_back_and_other_slides() {
+        let mut p = Player::new(0.0, 0.0);
+        // block the column x=1 only: moving down-right slides along the wall
+        move_player(&mut p, (1.0, 1.0), 0.5, |tx, _| tx >= 1);
+        assert!((p.x - 0.0).abs() < 0.001, "x must be blocked");
+        assert!(
+            (p.y - PLAYER_SPEED * 0.5 / 2.0_f32.sqrt()).abs() < 0.001,
+            "y must still slide"
+        );
+    }
+
+    #[test]
+    fn blocked_axis_rolls_back() {
+        let mut p = Player::new(0.0, 0.0);
+        move_player(&mut p, (1.0, 0.0), 0.5, |tx, _| tx >= 1);
+        assert!((p.x - 0.0).abs() < 0.001);
+        assert!((p.y - 0.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn can_walk_out_of_a_blocked_tile() {
+        // player standing inside tile (1,0) whose own tile is blocked
+        let mut p = Player::new(1.5, 0.5);
+        move_player(&mut p, (1.0, 0.0), 0.5, |tx, _| tx == 1);
+        assert!((p.x - 1.5 - PLAYER_SPEED * 0.5).abs() < 0.001, "must leave the blocked tile");
+        assert!((p.y - 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn cannot_cross_into_a_blocked_tile() {
+        let mut p = Player::new(0.6, 0.5);
+        move_player(&mut p, (1.0, 0.0), 0.05, |tx, _| tx == 1);
+        assert!((p.x - 0.6).abs() < 0.001, "must not enter the blocked tile");
+    }
+
+    #[test]
+    fn camera_follows_and_settles() {
+        use crate::render::Camera;
+        let mut cam = Camera::new(0.0, 0.0);
+        let target = (10.0, -5.0);
+        follow_camera(&mut cam, target, 0.05);
+        assert!(cam.x > 0.0 && cam.x < 10.0);
+        assert!(cam.y < 0.0 && cam.y > -5.0);
+        // repeated stepping with large dt converges exactly
+        for _ in 0..100 {
+            follow_camera(&mut cam, target, 2.0);
+        }
+        assert!((cam.x - 10.0).abs() < 0.001);
+        assert!((cam.y + 5.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn tile_kinds_walkability() {
+        assert!(!TileKind::Water.walkable());
+        assert!(!TileKind::DeepWater.walkable());
+        assert!(TileKind::Grass.walkable());
+        assert!(TileKind::Stone.walkable());
+        assert!(TileKind::Snow.walkable());
+        assert!(TileKind::Sand.walkable());
+        assert!(TileKind::Forest.walkable());
+        assert!(TileKind::Swamp.walkable());
+    }
+
+    #[test]
+    fn spawn_is_walkable() {
+        let world = WorldGen::new(1337);
+        let mut cache = ChunkCache::new(64);
+        let (x, y) = find_spawn(&world, &mut cache);
+        let kind = tile_at(&world, &mut cache, x.floor() as i32, y.floor() as i32);
+        assert!(kind.walkable(), "spawn tile must be walkable, got {kind:?}");
+    }
+}
