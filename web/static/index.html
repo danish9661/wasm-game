@@ -38,14 +38,30 @@
   </div>
   <div id="log"></div>
   <script type="module">
+    import init, { step, get_stats } from './wasm_game.js';
     window.onerror = (m, s, l, c, e) => {
       document.getElementById('log').textContent = 'JS ERROR: ' + m + ' @ ' + s + ':' + l + ' :: ' + (e && e.stack ? e.stack.split('\n')[0] : '');
     };
     window.addEventListener('unhandledrejection', (ev) => {
       document.getElementById('log').textContent = 'UNHANDLED: ' + ev.reason;
     });
-    import init, { step, get_stats } from './wasm_game.js';
-    init().then(() => {
+    const showNoGpu = (reason) => {
+      const el = document.getElementById('fallback-reason');
+      if (el) el.textContent = reason;
+      document.getElementById('fallback').style.display = 'block';
+      document.getElementById('log').textContent = 'INIT ERROR: ' + reason;
+    };
+    const boot = () => {
+      if (!('gpu' in navigator)) {
+        showNoGpu('This browser has no WebGPU. Use Chrome 113+ (or launch via ./scripts/play.sh).');
+        return;
+      }
+      navigator.gpu.requestAdapter().then((adapter) => {
+        if (!adapter) {
+          showNoGpu('WebGPU found no adapter. Launch with ./scripts/play.sh (SwiftShader WebGPU flags), or open in Chrome with GPU access.');
+          return;
+        }
+        init().then(() => {
       document.getElementById('log').textContent = 'wasm loaded';
       window.__frames = 0;
       let last = performance.now();
@@ -162,12 +178,15 @@
         }
       }, 200);
       requestAnimationFrame(frame);
-    }).catch((e) => {
-      const el = document.getElementById('fallback-reason');
-      if (el) el.textContent = String(e);
-      document.getElementById('fallback').style.display = 'block';
-      document.getElementById('log').textContent = 'INIT ERROR: ' + e;
-    });
+        }).catch((e) => {
+          const el = document.getElementById('fallback-reason');
+          if (el) el.textContent = String(e);
+          document.getElementById('fallback').style.display = 'block';
+          document.getElementById('log').textContent = 'INIT ERROR: ' + e;
+        });
+        });
+    };
+    boot();
   </script>
 </body>
 </html>

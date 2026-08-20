@@ -14,18 +14,22 @@ PASS=0
 FAIL=0
 
 cleanup() {
-  # always kill chrome first (the RAM hog), then the server
+  # always kill chrome first (the RAM hog), then the server.
+  # match by unique user-data-dir + debug port so we never touch a
+  # user's real Chrome, and never leave orphans behind
+  pkill -f "user-data-dir=/tmp/e2e-chrome-$DEBUG_PORT" 2>/dev/null
+  pkill -f "remote-debugging-port=$DEBUG_PORT" 2>/dev/null
   if [[ -n "$CHROME_PID" ]] && kill -0 "$CHROME_PID" 2>/dev/null; then
     kill "$CHROME_PID" 2>/dev/null
     wait "$CHROME_PID" 2>/dev/null
   fi
-  pkill -f "remote-debugging-port=$DEBUG_PORT" 2>/dev/null
   if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
     kill "$SERVER_PID" 2>/dev/null
     wait "$SERVER_PID" 2>/dev/null
   fi
   # hard-kill anything that somehow survived
   pkill -f "http.server $PORT" 2>/dev/null
+  rm -rf "/tmp/e2e-chrome-$DEBUG_PORT" 2>/dev/null
 }
 trap cleanup EXIT INT TERM
 
@@ -61,6 +65,7 @@ sleep 1
   --enable-unsafe-webgpu --use-angle=swiftshader \
   --enable-features=Vulkan --use-vulkan=swiftshader \
   --remote-debugging-port="$DEBUG_PORT" \
+  --user-data-dir="/tmp/e2e-chrome-$DEBUG_PORT" \
   --window-size=1280,720 \
   "http://localhost:$PORT/index.html" >/dev/null 2>&1 &
 CHROME_PID=$!
@@ -70,6 +75,7 @@ step "4/4 CDP assertions (RAM watchdog: ${MAX_RSS_MB}MB cap, ${TIMEOUT_S}s)"
 E2E_CHROME_PID="$CHROME_PID" E2E_MAX_RSS_MB="$MAX_RSS_MB" \
   node "$ROOT/tests/assert.js" "$DEBUG_PORT" "$TIMEOUT_S"
 RESULT=$?
+cleanup
 
 echo
 echo -e "======================================"
