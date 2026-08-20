@@ -56,9 +56,10 @@
         showNoGpu('This browser has no WebGPU. Use Chrome 113+ (or launch via ./scripts/play.sh).');
         return;
       }
-      navigator.gpu.requestAdapter().then((adapter) => {
+      navigator.gpu.requestAdapter().then(async (adapter) => {
+        if (!adapter) adapter = await navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
         if (!adapter) {
-          showNoGpu('WebGPU found no adapter. Launch with ./scripts/play.sh (SwiftShader WebGPU flags), or open in Chrome with GPU access.');
+          showNoGpu('WebGPU found no adapter. Launch with ./scripts/play.sh (SwiftShader WebGPU flags), or install mesa-vulkan-drivers (sudo apt install mesa-vulkan-drivers) and relaunch Chrome.');
           return;
         }
         init().then(() => {

@@ -284,7 +284,7 @@ impl App {
         let surface = instance
             .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
             .map_err(|e| format!("create_surface: {e}"))?;
-        let adapter = instance
+        let adapter = match instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 force_fallback_adapter: false,
@@ -292,7 +292,22 @@ impl App {
                 apply_limit_buckets: false,
             })
             .await
-            .map_err(|e| format!("request_adapter: {e}"))?;
+        {
+            Ok(a) => a,
+            Err(e) => {
+                instance
+                    .request_adapter(&wgpu::RequestAdapterOptions {
+                        power_preference: wgpu::PowerPreference::LowPower,
+                        force_fallback_adapter: true,
+                        compatible_surface: Some(&surface),
+                        apply_limit_buckets: false,
+                    })
+                    .await
+                    .map_err(|e2| {
+                        format!("request_adapter (software fallback): {e2}; primary: {e}")
+                    })?
+            }
+        };
 
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
