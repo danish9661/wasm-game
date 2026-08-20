@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Starfall — 2.5D Survival RPG</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🏰</text></svg>" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -57,7 +58,11 @@
         return;
       }
       navigator.gpu.requestAdapter().then(async (adapter) => {
-        if (!adapter) adapter = await navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
+        if (adapter) window.__adapter = 'hw';
+        else {
+          adapter = await navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
+          if (adapter) window.__adapter = 'sw';
+        }
         if (!adapter) {
           showNoGpu('WebGPU found no adapter. Launch with ./scripts/play.sh (SwiftShader WebGPU flags), or install mesa-vulkan-drivers (sudo apt install mesa-vulkan-drivers) and relaunch Chrome.');
           return;

@@ -284,30 +284,28 @@ impl App {
         let surface = instance
             .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
             .map_err(|e| format!("create_surface: {e}"))?;
-        let adapter = match instance
+        let fallback_only = web_sys::window()
+            .and_then(|w| w.get("__adapter"))
+            .and_then(|v| v.as_string())
+            .map(|s| s == "sw")
+            .unwrap_or(false);
+        let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                force_fallback_adapter: false,
-                compatible_surface: Some(&surface),
+                power_preference: if fallback_only {
+                    wgpu::PowerPreference::LowPower
+                } else {
+                    wgpu::PowerPreference::HighPerformance
+                },
+                force_fallback_adapter: fallback_only,
+                compatible_surface: if fallback_only {
+                    None
+                } else {
+                    Some(&surface)
+                },
                 apply_limit_buckets: false,
             })
             .await
-        {
-            Ok(a) => a,
-            Err(e) => {
-                instance
-                    .request_adapter(&wgpu::RequestAdapterOptions {
-                        power_preference: wgpu::PowerPreference::LowPower,
-                        force_fallback_adapter: true,
-                        compatible_surface: Some(&surface),
-                        apply_limit_buckets: false,
-                    })
-                    .await
-                    .map_err(|e2| {
-                        format!("request_adapter (software fallback): {e2}; primary: {e}")
-                    })?
-            }
-        };
+            .map_err(|e| format!("request_adapter: {e}"))?;
 
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
