@@ -208,3 +208,59 @@ html, body {
   margin: 4px 0;
   max-width: 480px;
 }
+
+.boss-row {
+  gap: 8px;
+}
+
+.boss-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #c79be0;
+  width: 52px;
+}
+
+.boss-track {
+  height: 12px;
+  flex: 1;
+}
+
+.boss-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #7a2db0, #c06ad8);
+  transition: width 0.2s ease;
+}
+
+.inv-frag {
+  color: #f2d77a;
+  border-color: rgba(242, 215, 122, 0.5);
+}
+
+#altar-prompt {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f2e3b3;
+  font-size: 15px;
+  background: rgba(10, 16, 28, 0.88);
+  border: 1px solid rgba(242, 215, 122, 0.55);
+  border-radius: 5px;
+  padding: 8px 16px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  user-select: none;
+  pointer-events: none;
+  z-index: 18;
+}
+
+#altar-prompt b { color: #f2d77a; }
+
+#altar-prompt.hidden { display: none; }
+
+#overlay.ending #overlay-box {
+  border-color: rgba(242, 215, 122, 0.6);
+  box-shadow: 0 0 40px rgba(242, 215, 122, 0.25);
+}
+
+#overlay.ending #overlay-box h2 { color: #f2d77a; }

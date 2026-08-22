@@ -31,12 +31,14 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::Campfire => "F",
         StructureKind::Wall => "W",
         StructureKind::Chest => "C",
+        StructureKind::Altar => "A",
     }
 }
 
 fn enemy_name(kind: EnemyKind) -> &'static str {
     match kind {
         EnemyKind::Slime => "Slime",
+        EnemyKind::Boss => "Warden",
     }
 }
 
@@ -180,6 +182,16 @@ pub struct App {
     ruins: (i32, i32),
     opened_chests: std::collections::HashSet<(i32, i32)>,
     slimes_killed: u32,
+    boss_killed: u32,
+    boss_spawned: bool,
+    altar_placed: bool,
+    altar_tile: Option<(i32, i32)>,
+    near_altar: bool,
+    ending_pending: bool,
+    /// 0 = Reign, 1 = Shatter, None = campaign not finished.
+    ending: Option<u8>,
+    ng_plus: u32,
+    spawn_point: (f32, f32),
     time_of_day: f32,
     respawn_timer: f32,
     debug_swing_hits: u32,
@@ -230,8 +242,20 @@ impl App {
             .map(|s| format!("{}{}@({},{})", struct_name(s.kind), s.kind.blocks_movement() as u8, s.tx, s.ty))
             .collect::<Vec<_>>()
             .join(";");
+        let boss_hp = self
+            .enemies
+            .enemies()
+            .find(|e| e.kind == EnemyKind::Boss)
+            .map(|e| (e.hp / e.kind.max_hp() * 100.0) as u32)
+            .unwrap_or(0);
+        let ending_str = match self.ending {
+            None => "none",
+            Some(0) => "reign",
+            Some(1) => "shatter",
+            Some(_) => "unknown",
+        };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{}) structures={} structs={} mobs={} mob={} pack={} swings={} quest=S{} ruins=({},{}) chest={} time={} near={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{}) structures={} structs={} mobs={} mob={} pack={} swings={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -255,6 +279,16 @@ impl App {
             self.opened_chests.contains(&self.ruins) as u8,
             clock(self.time_of_day),
             near,
+            self.boss_spawned as u8,
+            self.inventory.count(ItemKind::Fragment),
+            self.altar_placed as u8,
+            self.near_altar as u8,
+            ending_str,
+            self.ng_plus,
+            boss_hp,
+            self.altar_tile
+                .map(|(ax, ay)| format!("({ax},{ay})"))
+                .unwrap_or_else(|| "none".to_string()),
         )
     }
 
@@ -373,6 +407,15 @@ impl App {
             ruins,
             opened_chests: std::collections::HashSet::new(),
             slimes_killed: 0,
+            boss_killed: 0,
+            boss_spawned: false,
+            altar_placed: false,
+            altar_tile: None,
+            near_altar: false,
+            ending_pending: false,
+            ending: None,
+            ng_plus: 0,
+            spawn_point: (px, py),
             time_of_day: START_TIME,
             respawn_timer: 0.0,
             debug_swing_hits: 0,
@@ -431,18 +474,23 @@ impl App {
 
     /// Resolve kills: drop loot and start respawn timers.
     fn sweep_dead(&mut self) {
-        let drops: Vec<((i32, i32), Vec<ItemKind>)> = self
+        let drops: Vec<((i32, i32), EnemyKind, Vec<ItemKind>)> = self
             .enemies
             .iter_mut_with_key()
             .filter(|(_, e)| !e.alive())
-            .map(|((tx, ty), e)| ((tx, ty), e.drops()))
+            .map(|((tx, ty), e)| ((tx, ty), e.kind, e.drops()))
             .collect();
-        self.slimes_killed += drops.len() as u32;
-        for ((tx, ty), items) in drops {
+        for ((tx, ty), kind, items) in drops {
             for it in items {
                 self.inventory.add(it, 1);
             }
-            self.enemies.kill(tx, ty, 15.0);
+            match kind {
+                EnemyKind::Slime => self.slimes_killed += 1,
+                EnemyKind::Boss => self.boss_killed += 1,
+            }
+            // bosses never respawn; slimes return after 15s
+            let respawn = if matches!(kind, EnemyKind::Boss) { f32::MAX } else { 15.0 };
+            self.enemies.kill(tx, ty, respawn);
         }
     }
 
@@ -460,6 +508,19 @@ impl App {
     }
 
     fn harvest(&mut self) {
+        // Reforge at the altar when carrying the fragment: this arms the
+        // choice; the HUD shows Reign/Shatter and forwards the pick to reforge().
+        if self.ending.is_none() {
+            if let Some((ax, ay)) = self.altar_tile {
+                let d = (self.player.x - (ax as f32 + 0.5))
+                    .abs()
+                    .max((self.player.y - (ay as f32 + 0.5)).abs());
+                if d <= CHEST_RANGE && self.inventory.count(ItemKind::Fragment) > 0 {
+                    self.ending_pending = true;
+                    return;
+                }
+            }
+        }
         if self.open_nearest_chest() {
             return;
         }
@@ -540,6 +601,43 @@ impl App {
         best.map(|(_, tx, ty, k)| (tx, ty, k))
     }
 
+    /// Reforge the Crown (campaign finale). `choice`: 0 = Reign (victory),
+    /// 1 = Shatter (New Game+ with a harder, reseeded world). Both start a
+    /// fresh run with `ng_plus` incremented so the HUD can show the streak.
+    pub fn reforge(&mut self, choice: u8) {
+        if self.ending.is_some() || self.inventory.count(ItemKind::Fragment) == 0 {
+            return;
+        }
+        self.ending = Some(choice % 2);
+        self.ng_plus += 1;
+        let seed = 1338 + (self.ng_plus - 1);
+        self.world = WorldGen::new(seed);
+        self.chunks = ChunkCache::new(256);
+        let (px, py) = player::find_spawn(&self.world, &mut self.chunks);
+        self.spawn_point = (px, py);
+        self.player = Player::new(px, py);
+        self.inventory = Inventory::new();
+        self.nodes = NodeRegistry::new();
+        self.arrows = Vec::new();
+        self.enemies = EnemyRegistry::new();
+        self.opened_chests = std::collections::HashSet::new();
+        self.ruins = ruins_at(seed, |tx, ty| tile_at(&self.world, &mut self.chunks, tx, ty).walkable());
+        let mut structures = Vec::new();
+        structures.push(Structure { tx: self.ruins.0, ty: self.ruins.1, kind: StructureKind::Chest });
+        for (wx, wy) in ruins_walls(self.ruins.0, self.ruins.1) {
+            structures.push(Structure { tx: wx, ty: wy, kind: StructureKind::Wall });
+        }
+        self.structures = structures;
+        self.quest = QuestLog::new();
+        self.boss_killed = 0;
+        self.boss_spawned = false;
+        self.altar_placed = false;
+        self.altar_tile = None;
+        self.near_altar = false;
+        self.ending_pending = false;
+        self.time_of_day = START_TIME;
+    }
+
     pub fn resize(&mut self) {
         let (width, height) = resize_canvas(&self.canvas);
         self.config.width = width;
@@ -572,6 +670,9 @@ impl App {
             self.respawn_timer -= dt;
             if self.respawn_timer <= 0.0 {
                 self.player.respawn();
+                // respawn at the actual waking tile (where the altar sits)
+                self.player.x = self.spawn_point.0;
+                self.player.y = self.spawn_point.1;
             }
         }
 
@@ -607,6 +708,31 @@ impl App {
             .abs()
             .max((self.player.y - (self.ruins.1 as f32 + 0.5)).abs())
             <= 4.0;
+
+        // The Forest Warden spawns at the ruins once Chapter 1 is complete.
+        if self.quest.stage >= 5 && !self.boss_spawned {
+            self.enemies.get(self.ruins.0, self.ruins.1, EnemyKind::Boss, dt);
+            self.boss_spawned = true;
+        }
+        // The Reforging Altar rises at the waking place once the fragment is taken.
+        if self.quest.stage >= 6 && !self.altar_placed {
+            let (ax, ay) = (
+                self.spawn_point.0.floor() as i32,
+                self.spawn_point.1.floor() as i32,
+            );
+            self.structures.push(Structure { tx: ax, ty: ay, kind: StructureKind::Altar });
+            self.altar_placed = true;
+            self.altar_tile = Some((ax, ay));
+        }
+        self.near_altar = self
+            .altar_tile
+            .map_or(false, |(ax, ay)| {
+                (self.player.x - (ax as f32 + 0.5))
+                    .abs()
+                    .max((self.player.y - (ay as f32 + 0.5)).abs())
+                    <= CHEST_RANGE
+            });
+
         self.quest.update(
             self.inventory.count(ItemKind::Wood),
             self.inventory.count(ItemKind::Stone),
@@ -619,6 +745,9 @@ impl App {
             self.slimes_killed,
             near_ruins,
             self.opened_chests.contains(&self.ruins),
+            self.boss_killed >= 1,
+            self.inventory.count(ItemKind::Fragment) > 0,
+            self.ending.is_some(),
         );
 
         // arrows fly, hit, and expire (a hit removes the arrow)

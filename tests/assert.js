@@ -592,6 +592,71 @@ try {
     (chestAfter === 1 && (await questS()) === 5)
       ? ok(`chest opened (chest=1, quest=S5, loot ${gained})`)
       : bad(`chest did not open: chest=${chestAfter} quest=S${await questS()} loot ${gained} :: ${stOpen.raw}`);
+
+    // --- Chapter 2 finale: Forest Warden -> Crown Fragment -> Reforging Altar ---
+    const getStat = async (re) => {
+      const s = await evaluate(`window.__m.get_stats()`);
+      const m = String(s).match(re);
+      return m ? Number(m[1]) : -1;
+    };
+    const getAltarTile = async () => {
+      const s = await evaluate(`window.__m.get_stats()`);
+      const m = String(s).match(/altartile=\((-?\d+),(-?\d+)\)/);
+      return m ? { tx: Number(m[1]), ty: Number(m[2]) } : null;
+    };
+    const tap = async (code, vk) => {
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: code[3].toLowerCase(), code, windowsVirtualKeyCode: vk });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: code[3].toLowerCase(), code, windowsVirtualKeyCode: vk });
+      await sleep(70);
+    };
+
+    // 26. Forest Warden spawns once the chest is looted
+    const bossUp = await waitFor(async () => (await getStat(/boss=(\d)/)) === 1, 'Warden spawned', 20000);
+    bossUp ? ok('Forest Warden spawned at the ruins') : bad('Warden never spawned');
+
+    // 27. defeat the Warden (melee + arrows) -> drops the Crown Fragment
+    let frag = 0, swings = 0;
+    while (swings++ < 80) {
+      frag = await getStat(/frag=(\d)/);
+      if (frag >= 1) break;
+      await tap('KeyJ', 74);
+      await sleep(90);
+      await tap('KeyK', 75);
+      await sleep(110);
+    }
+    const stKill = await statsOf();
+    (frag >= 1)
+      ? ok(`defeated the Warden, recovered Crown Fragment (frag=${frag}, hp ${stKill.hp.toFixed(0)})`)
+      : bad(`Warden not defeated: frag=${frag} hp=${stKill.hp.toFixed(0)} :: ${stKill.raw}`);
+    (await questS()) >= 6
+      ? ok(`quest advanced to S${await questS()} (fragment recovered — ready to reforge)`)
+      : bad(`quest not progressed after boss (S${await questS()})`);
+
+    // 28. Reforging Altar rises at the waking place
+    const altarUp = await waitFor(async () => (await getStat(/altar=(\d)/)) === 1, 'altar placed', 20000);
+    altarUp ? ok('Reforging Altar rose at the waking place') : bad('altar never appeared');
+    const altarTile = await getAltarTile();
+    if (altarTile) {
+      const reachedAltar = await goto(altarTile.tx, altarTile.ty, 120);
+      const atAltar = reachedAltar && (await waitFor(async () => (await getStat(/nearaltar=(\d)/)) === 1, 'at altar', 25000));
+      atAltar
+        ? ok(`reached the Reforging Altar at (${altarTile.tx},${altarTile.ty})`)
+        : bad(`could not reach altar (${altarTile.tx},${altarTile.ty}) :: ${(await statsOf()).raw}`);
+    } else {
+      bad('altartile missing from stats');
+    }
+
+    // 29. reforge the Crown -> campaign complete + New Game+
+    await pressE(); // arm the reforge prompt
+    await sleep(450);
+    await pressKey('KeyY', 89); // choose Reign (reforge 0)
+    await sleep(600);
+    const stEnd = await statsOf();
+    const endWord = String((String(stEnd.raw).match(/ending=(\w+)/) || [])[1] || 'none');
+    const ng = await getStat(/ng=(\d)/);
+    (endWord === 'reign' && ng >= 1)
+      ? ok(`reforged the Crown — Reign ending, New Game+ ${ng} (quest reset to S${await questS()})`)
+      : bad(`reforge failed: ending=${endWord} ng=${ng} quest=S${await questS()} :: ${stEnd.raw}`);
   }
 
   // 26. no JS exceptions / wasm panics

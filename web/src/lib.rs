@@ -94,6 +94,16 @@ pub fn resize() {
     });
 }
 
+/// Reforge the Crown. choice: 0 = Reign (victory), 1 = Shatter (New Game+).
+#[wasm_bindgen]
+pub fn reforge(choice: u8) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.reforge(choice);
+        }
+    });
+}
+
 /// Queue a GPU→CPU readback of the next rendered frame.
 #[wasm_bindgen]
 pub fn trigger_readback() {

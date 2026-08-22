@@ -8,21 +8,24 @@ use crate::render::Sprite;
 pub const CHEST_RANGE: f32 = 2.0;
 
 /// Placeable structures. Walls block movement; campfires emit light;
-/// chests (only ever placed by the world's ruins POI) hold loot.
+/// chests (only ever placed by the world's ruins POI) hold loot; the
+/// Reforging Altar is where the Crown is reforged to end the campaign.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StructureKind {
     Campfire,
     Wall,
     Chest,
+    Altar,
 }
 
 impl StructureKind {
-    /// Build cost as (item, amount) pairs. Chests are not buildable.
+    /// Build cost as (item, amount) pairs. Chests and altars are not buildable.
     pub fn cost(self) -> &'static [(ItemKind, u32)] {
         match self {
             StructureKind::Campfire => &[(ItemKind::Wood, 3), (ItemKind::Stone, 1)],
             StructureKind::Wall => &[(ItemKind::Wood, 2)],
             StructureKind::Chest => &[],
+            StructureKind::Altar => &[],
         }
     }
 
@@ -31,6 +34,7 @@ impl StructureKind {
             StructureKind::Campfire => [1.0, 0.22, 0.05],
             StructureKind::Wall => [0.66, 0.60, 0.50],
             StructureKind::Chest => [0.85, 0.65, 0.25],
+            StructureKind::Altar => [0.98, 0.80, 0.30],
         }
     }
 
@@ -39,11 +43,15 @@ impl StructureKind {
     }
 
     pub fn emits_light(self) -> bool {
-        matches!(self, StructureKind::Campfire)
+        matches!(self, StructureKind::Campfire | StructureKind::Altar)
     }
 
     pub fn is_chest(self) -> bool {
         matches!(self, StructureKind::Chest)
+    }
+
+    pub fn is_altar(self) -> bool {
+        matches!(self, StructureKind::Altar)
     }
 
     pub fn sprite(self, tx: i32, ty: i32) -> Sprite {
@@ -51,6 +59,7 @@ impl StructureKind {
             StructureKind::Campfire => (10.0, 8.0, 1.0),
             StructureKind::Wall => (20.0, 12.0, 2.0),
             StructureKind::Chest => (16.0, 12.0, 6.0),
+            StructureKind::Altar => (18.0, 22.0, 4.0),
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift)
     }
@@ -131,5 +140,13 @@ mod tests {
         assert!(StructureKind::Chest.is_chest());
         assert!(!StructureKind::Chest.blocks_movement());
         assert!(StructureKind::Chest.cost().is_empty(), "chests are not buildable");
+    }
+
+    #[test]
+    fn altar_is_a_non_blocking_light_source() {
+        assert!(StructureKind::Altar.is_altar());
+        assert!(!StructureKind::Altar.blocks_movement());
+        assert!(StructureKind::Altar.emits_light());
+        assert!(StructureKind::Altar.cost().is_empty(), "altars are not buildable");
     }
 }

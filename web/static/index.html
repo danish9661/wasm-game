@@ -21,16 +21,22 @@
       <div class="bar"><span class="bar-label">HUNGER</span><div class="bar-track"><div class="bar-fill" id="bar-hunger"></div></div><span class="bar-num" id="num-hunger">100</span></div>
       <div class="bar"><span class="bar-label">STAMINA</span><div class="bar-track"><div class="bar-fill" id="bar-stamina"></div></div><span class="bar-num" id="num-stamina">100</span></div>
     </div>
+    <div class="hud-row boss-row" id="boss-row" style="display:none">
+      <span class="bar-label boss-label">WARDEN</span>
+      <div class="bar-track boss-track"><div class="bar-fill boss-fill" id="bar-boss"></div></div>
+    </div>
     <div class="hud-row inv-row">
       <span class="inv-chip inv-wood" id="inv-wood">W 0</span>
       <span class="inv-chip inv-stone" id="inv-stone">S 0</span>
       <span class="inv-chip inv-food" id="inv-food">F 0</span>
+      <span class="inv-chip inv-frag" id="inv-frag" style="display:none">🩱 0</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
     <div class="hud-row hud-hint">WASD move · E harvest/open · F campfire · V wall · J attack · K shoot · C eat</div>
   </div>
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
+  <div id="altar-prompt" class="hidden">The Crown hums in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
   <div id="overlay" class="hidden">
     <div id="overlay-box">
       <h2 id="overlay-title"></h2>
@@ -39,7 +45,8 @@
   </div>
   <div id="log"></div>
   <script type="module">
-    import init, { step, get_stats } from './wasm_game.js';
+    import init, { step, get_stats, reforge } from './wasm_game.js';
+    window.reforge = reforge;
     window.onerror = (m, s, l, c, e) => {
       document.getElementById('log').textContent = 'JS ERROR: ' + m + ' @ ' + s + ':' + l + ' :: ' + (e && e.stack ? e.stack.split('\n')[0] : '');
     };
@@ -81,7 +88,10 @@
         'A slime blocks the ruins - defeat it',
         'Find the ancient ruins',
         'Open the ruins chest',
-        'The crown shard glows - Chapter 2 awaits',
+        'The Forest Warden guards a Crown Fragment - defeat it',
+        'Carry the fragment to the altar where you woke',
+        'Press E at the altar to reforge the Crown',
+        'The Star Crown blazes - the world is healed',
       ];
       const el = (id) => document.getElementById(id);
       const setBar = (id, numId, pct) => {
@@ -108,6 +118,22 @@
         el('inv-food').textContent = `F ${stats.f}`;
         el('hud-clock').textContent = stats.time;
 
+        // boss bar
+        if (stats.boss === 1) {
+          el('boss-row').style.display = 'flex';
+          setBar('bar-boss', null, stats.bosshp);
+        } else {
+          el('boss-row').style.display = 'none';
+        }
+
+        // crown fragment chip
+        if (stats.frag > 0) {
+          el('inv-frag').style.display = '';
+          el('inv-frag').textContent = `🩱 ${stats.frag}`;
+        } else {
+          el('inv-frag').style.display = 'none';
+        }
+
         // loot toasts from inventory deltas
         const inv = { w: stats.w, s: stats.s, f: stats.f };
         if (lastInv.w >= 0) {
@@ -116,6 +142,26 @@
           if (inv.f > lastInv.f) toast(`+${inv.f - lastInv.f} food`);
         }
         lastInv = inv;
+
+        // altar reforge prompt
+        const atAltar = stats.altar === 1 && stats.frag > 0 && stats.ending < 0 && stats.nearaltar === 1;
+        el('altar-prompt').style.display = atAltar ? 'block' : 'none';
+
+        // ending overlay (campaign complete -> New Game+)
+        const ovEnd = el('overlay');
+        if (stats.ending >= 0) {
+          if (!ovEnd.classList.contains('ending') || el('overlay-sub').dataset.ng !== String(stats.ng)) {
+            ovEnd.className = 'ending';
+            el('overlay-title').textContent = stats.ending === 0 ? 'THE STAR CROWN IS REFORGED' : 'THE CROWN SHATTERS';
+            el('overlay-sub').textContent = (stats.ending === 0
+              ? 'You reign over a healed world.'
+              : 'You free the trapped souls — and begin anew.')
+              + ` New Game+ ${stats.ng} begins.`;
+            el('overlay-sub').dataset.ng = String(stats.ng);
+          }
+        } else if (ovEnd.classList.contains('ending')) {
+          ovEnd.className = 'hidden';
+        }
 
         // quest banner
         const q = stats.quest;
@@ -139,16 +185,10 @@
           el('overlay-sub').textContent = `The cold takes another traveler… respawning in ${left}s`;
         }
         lastAlive = stats.alive;
-
-        if (stats.quest === 5 && lastQuest === 5 && !window.__won) {
-          window.__won = true;
-          ov.className = 'win';
-          el('overlay-title').textContent = 'CHAPTER 1 COMPLETE';
-          el('overlay-sub').textContent = 'The crown shard glows in your pack. Chapter 2 awaits.';
-        }
       };
       const parseStats = (raw) => {
         const get = (re) => (String(raw).match(re) || [])[1];
+        const endingStr = get(/ending=(\w+)/) || 'none';
         return {
           hp: Number(get(/hp=([\d.]+)/) || 0),
           hunger: Number(get(/hunger=([\d.]+)/) || 0),
@@ -159,6 +199,13 @@
           f: Number(get(/f(\d+)\)/) || 0),
           quest: Number(get(/quest=S(\d)/) || -1),
           time: get(/time=(\d{2}:\d{2})/),
+          boss: Number(get(/boss=(\d)/) || 0),
+          bosshp: Number(get(/bosshp=(\d+)/) || 0),
+          frag: Number(get(/frag=(\d+)/) || 0),
+          altar: Number(get(/altar=(\d)/) || 0),
+          nearaltar: Number(get(/nearaltar=(\d)/) || 0),
+          ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : -1,
+          ng: Number(get(/ng=(\d+)/) || 0),
         };
       };
 
@@ -183,6 +230,12 @@
           updateHud(parseStats(raw));
         }
       }, 200);
+      window.addEventListener('keydown', (e) => {
+        if (el('altar-prompt').style.display === 'block') {
+          if (e.code === 'KeyY') { e.preventDefault(); reforge(0); }
+          else if (e.code === 'KeyN') { e.preventDefault(); reforge(1); }
+        }
+      });
       requestAnimationFrame(frame);
         }).catch((e) => {
           const el = document.getElementById('fallback-reason');

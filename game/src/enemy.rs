@@ -11,16 +11,27 @@ pub const ATTACK_RANGE: f32 = 1.1;
 pub const REPLAN_INTERVAL: f32 = 0.5;
 /// Enemy speed in tiles/second (slower than the player, so you can escape).
 pub const ENEMY_SPEED: f32 = 2.0;
+/// Boss speed — slower than a slime, but it is a wall of hp you must kite.
+pub const BOSS_SPEED: f32 = 1.4;
+/// Boss aggro — it notices you from much further away.
+pub const BOSS_AGGRO_RANGE: f32 = 10.0;
+/// Boss melee reach — a wide reach so it cannot be trivially juked.
+pub const BOSS_ATTACK_RANGE: f32 = 1.9;
+/// Boss attack cooldown (seconds).
+pub const BOSS_ATTACK_COOLDOWN: f32 = 1.5;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EnemyKind {
     Slime,
+    /// Forest Warden: the first Crown Fragment guardian (Chapter 3 boss).
+    Boss,
 }
 
 impl EnemyKind {
     pub fn max_hp(self) -> f32 {
         match self {
             EnemyKind::Slime => 12.0,
+            EnemyKind::Boss => 60.0,
         }
     }
 
@@ -28,19 +39,25 @@ impl EnemyKind {
     pub fn damage(self) -> f32 {
         match self {
             EnemyKind::Slime => 4.0,
+            EnemyKind::Boss => 14.0,
         }
     }
 
     pub fn color(self) -> [f32; 3] {
         match self {
             EnemyKind::Slime => [0.30, 0.78, 0.36],
+            EnemyKind::Boss => [0.55, 0.18, 0.62],
         }
     }
 
     /// Sprite geometry: slightly larger than the player so it reads clearly.
     /// Alpha fades as hp drops (a visible health telegraph).
     pub fn sprite(self, x: f32, y: f32, hp_frac: f32) -> Sprite {
-        let mut s = Sprite::new_center(x, y, self.color(), 14.0, 14.0, 2.0);
+        let (hw, hh) = match self {
+            EnemyKind::Slime => (14.0, 14.0),
+            EnemyKind::Boss => (22.0, 20.0),
+        };
+        let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0);
         s.alpha = 0.8 + 0.2 * hp_frac;
         s
     }
@@ -99,10 +116,11 @@ impl Enemy {
         true
     }
 
-    /// Drops from a dead slime.
+    /// Drops from a dead enemy.
     pub fn drops(&self) -> Vec<ItemKind> {
         match self.kind {
             EnemyKind::Slime => vec![ItemKind::Food],
+            EnemyKind::Boss => vec![ItemKind::Fragment],
         }
     }
 
@@ -116,21 +134,25 @@ impl Enemy {
         mut is_blocked: impl FnMut(i32, i32) -> bool,
     ) -> Option<f32> {
         self.attack_timer = (self.attack_timer - dt).max(0.0);
+        let (aggro, atk_range, speed, cooldown) = match self.kind {
+            EnemyKind::Slime => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED, 0.8),
+            EnemyKind::Boss => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
+        };
         let d = (player.0 - self.x)
             .abs()
             .max((player.1 - self.y).abs());
 
-        if d <= ATTACK_RANGE {
+        if d <= atk_range {
             self.state = AiState::Attack;
             if self.attack_timer <= 0.0 {
-                self.attack_timer = 0.8;
+                self.attack_timer = cooldown;
                 self.facing = normalize(player.0 - self.x, player.1 - self.y);
                 return Some(self.kind.damage());
             }
             return None;
         }
 
-        if d <= AGGRO_RANGE {
+        if d <= aggro {
             self.state = AiState::Chase;
             self.path_timer -= dt;
             if self.path_timer <= 0.0 || self.path.is_empty() {
@@ -145,8 +167,8 @@ impl Enemy {
                 let to = (tx as f32 + 0.5, ty as f32 + 0.5);
                 let (dx, dy) = normalize(to.0 - self.x, to.1 - self.y);
                 self.facing = (dx, dy);
-                self.x += dx * ENEMY_SPEED * dt;
-                self.y += dy * ENEMY_SPEED * dt;
+                self.x += dx * speed * dt;
+                self.y += dy * speed * dt;
                 if (self.x.floor() as i32, self.y.floor() as i32) == (tx, ty) {
                     self.path.remove(0);
                 }
@@ -429,6 +451,48 @@ mod tests {
         assert!(spawner_on(0, 0, TileKind::Forest).is_none());
     }
 
+    #[test]
+    fn boss_stats_are_scaled_up() {
+        assert!(EnemyKind::Boss.max_hp() > EnemyKind::Slime.max_hp() * 4.0);
+        assert!(EnemyKind::Boss.damage() > EnemyKind::Slime.damage() * 2.0);
+        assert_eq!(Enemy::new(0.5, 0.5, EnemyKind::Boss).drops(), vec![ItemKind::Fragment]);
+    }
+
+    #[test]
+    fn boss_attacks_in_wide_reach() {
+        let (w, mut c) = world();
+        let mut e = Enemy::new(5.5, 5.5, EnemyKind::Boss);
+        let mut blocked = blocked(&w, &mut c);
+        // within the boss melee reach (1.9) but outside the slime reach (1.1)
+        let hit = e.update((6.8, 5.5), 0.05, &mut blocked);
+        assert!(hit.is_some(), "boss must hit from its wider reach");
+        assert_eq!(e.state, AiState::Attack);
+    }
+
+    #[test]
+    fn boss_chases_from_far_away() {
+        let (w, mut c) = world();
+        let mut e = Enemy::new(5.5, 5.5, EnemyKind::Boss);
+        let mut blocked = blocked(&w, &mut c);
+        let start = (e.x, e.y);
+        for _ in 0..30 {
+            e.update((14.5, 5.5), 0.05, &mut blocked);
+        }
+        assert_eq!(e.state, AiState::Chase);
+        assert!((e.x - start.0).abs() > 0.01, "boss must close distance");
+    }
+
+    #[test]
+    fn boss_dies_after_many_hits_and_drops_fragment() {
+        let mut e = Enemy::new(0.5, 0.5, EnemyKind::Boss);
+        let mut taken = 0.0;
+        while e.alive() {
+            e.take_damage(5.0);
+            taken += 1.0;
+        }
+        assert!(taken >= 12.0, "60 hp / 5 dmg = 12 hits");
+        assert_eq!(e.drops(), vec![ItemKind::Fragment]);
+    }
     #[test]
     fn swamp_has_some_spawners_in_a_window() {
         let n = (-32..32)

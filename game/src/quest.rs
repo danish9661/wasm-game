@@ -1,8 +1,9 @@
-/// Chapter 1 story beats. A small FSM advanced by world events; the web
+/// Chapter 1-4 story beats. A small FSM advanced by world events; the web
 /// layer feeds it facts each frame and the HUD shows `quest_text()`.
 ///
 /// Stages: 0 gather, 1 shelter, 2 first kill, 3 find ruins, 4 open chest,
-/// 5 done (Chapter 2 tease).
+/// 5 defeat the Warden boss, 6 recover the Crown Fragment, 7 reforge the
+/// Crown at the altar (campaign complete, triggers New Game+).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QuestLog {
     pub stage: u8,
@@ -24,6 +25,9 @@ impl QuestLog {
         slimes_killed: u32,
         near_ruins: bool,
         chest_opened: bool,
+        boss_defeated: bool,
+        has_fragment: bool,
+        altar_used: bool,
     ) {
         let s = self.stage;
         if s == 0 && wood >= 5 && stone >= 1 {
@@ -36,6 +40,12 @@ impl QuestLog {
             self.stage = 4;
         } else if s == 4 && chest_opened {
             self.stage = 5;
+        } else if s == 5 && boss_defeated {
+            self.stage = 6;
+        } else if s == 6 && has_fragment {
+            self.stage = 7;
+        } else if s == 7 && altar_used {
+            self.stage = 8;
         }
     }
 
@@ -46,7 +56,10 @@ impl QuestLog {
             2 => "A slime blocks the ruins - defeat it",
             3 => "Find the ancient ruins",
             4 => "Open the ruins chest",
-            _ => "The crown shard glows - Chapter 2 awaits",
+            5 => "The Forest Warden guards a Crown Fragment - defeat it",
+            6 => "Carry the fragment to the altar where you woke",
+            7 => "Press E at the altar to reforge the Crown",
+            _ => "The Star Crown blazes - the world is healed",
         }
     }
 }
@@ -60,33 +73,47 @@ mod tests {
         let mut q = QuestLog::new();
         assert_eq!(q.stage, 0);
 
-        q.update(5, 1, false, false, 0, false, false);
+        q.update(5, 1, false, false, 0, false, false, false, false, false);
         assert_eq!(q.stage, 1, "harvest milestone");
 
-        q.update(5, 1, true, true, 0, false, false);
+        q.update(5, 1, true, true, 0, false, false, false, false, false);
         assert_eq!(q.stage, 2, "shelter milestone");
 
-        q.update(5, 1, true, true, 1, false, false);
+        q.update(5, 1, true, true, 1, false, false, false, false, false);
         assert_eq!(q.stage, 3, "first kill milestone");
 
-        q.update(5, 1, true, true, 1, true, false);
+        q.update(5, 1, true, true, 1, true, false, false, false, false);
         assert_eq!(q.stage, 4, "found the ruins");
 
-        q.update(5, 1, true, true, 1, true, true);
+        q.update(5, 1, true, true, 1, true, true, false, false, false);
         assert_eq!(q.stage, 5, "chest opened");
+    }
+
+    #[test]
+    fn advances_through_boss_and_finale() {
+        let mut q = QuestLog::new();
+        q.stage = 5;
+        q.update(5, 1, true, true, 1, true, true, true, false, false);
+        assert_eq!(q.stage, 6, "boss defeated -> fragment beat");
+
+        q.update(5, 1, true, true, 1, true, true, true, true, false);
+        assert_eq!(q.stage, 7, "fragment recovered -> altar beat");
+
+        q.update(5, 1, true, true, 1, true, true, true, true, true);
+        assert_eq!(q.stage, 8, "altar used -> campaign complete");
     }
 
     #[test]
     fn does_not_skip_milestones() {
         let mut q = QuestLog::new();
-        q.update(5, 1, true, true, 3, true, true);
+        q.update(5, 1, true, true, 3, true, true, true, true, true);
         assert_eq!(q.stage, 1, "shelter facts must not skip the harvest beat");
     }
 
     #[test]
     fn text_exists_for_every_stage() {
         let q = QuestLog::new();
-        for s in 0..=5 {
+        for s in 0..=8 {
             let mut q = q.clone();
             q.stage = s;
             assert!(!q.quest_text().is_empty());

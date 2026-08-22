@@ -4,6 +4,9 @@ pub enum ItemKind {
     Wood,
     Stone,
     Food,
+    /// Crown Fragment — the story macguffin dropped by biome bosses. Counts
+    /// toward the 5 fragments needed to reforge the Star Crown.
+    Fragment,
 }
 
 impl ItemKind {
@@ -12,11 +15,12 @@ impl ItemKind {
             ItemKind::Wood => "wood",
             ItemKind::Stone => "stone",
             ItemKind::Food => "food",
+            ItemKind::Fragment => "crown fragment",
         }
     }
 }
 
-const SLOTS: usize = 3;
+const SLOTS: usize = 4;
 
 /// Simple stack inventory: one count per item kind.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -34,6 +38,7 @@ impl Inventory {
             ItemKind::Wood => 0,
             ItemKind::Stone => 1,
             ItemKind::Food => 2,
+            ItemKind::Fragment => 3,
         }
     }
 
@@ -98,5 +103,15 @@ mod tests {
         inv.add(ItemKind::Wood, 5);
         inv.remove(ItemKind::Wood, 5);
         assert_eq!(inv.count(ItemKind::Stone), 0);
+    }
+
+    #[test]
+    fn fragment_is_a_distinct_slot() {
+        let mut inv = Inventory::new();
+        inv.add(ItemKind::Fragment, 3);
+        assert_eq!(inv.count(ItemKind::Fragment), 3);
+        assert_eq!(inv.count(ItemKind::Wood), 0);
+        inv.add(ItemKind::Wood, 2);
+        assert_eq!(inv.count(ItemKind::Fragment), 3, "wood must not touch the fragment slot");
     }
 }
