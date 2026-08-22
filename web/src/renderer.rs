@@ -12,7 +12,14 @@ use game::quest::QuestLog;
 use game::render::{self, Camera, Sprite, VERTEX_STRIDE_BYTES};
 use game::resources::{NodeRegistry, ResourceKind, resource_on, HARVEST_RANGE};
 use game::world::{ChunkCache, WorldGen, tile_at};
-use web_sys::HtmlCanvasElement;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
+use wasm_bindgen::Clamped;
+use wasm_bindgen::JsCast;
+
+/// Console-only log for the GPU pipeline (does not touch the #log HUD element).
+fn glog(msg: &str) {
+    web_sys::console::log_1(&wasm_bindgen::JsValue::from_str(msg));
+}
 
 /// Campfire point light slots (each = position/intensity vec4 + color vec4).
 const MAX_LIGHTS: usize = 8;
@@ -91,12 +98,33 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
 const VERTEX_STRIDE: u64 = VERTEX_STRIDE_BYTES as u64;
 
 static READBACK: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+static READBACK_INFLIGHT: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+// Bumped whenever the readback buffer is (re)allocated (resize). A pending map
+// callback captures the generation it was started with; on completion it only
+// clears INFLIGHT if the generation still matches, so a stale callback from a
+// discarded buffer can't clear the flag for the new buffer (which would let us
+// copy into a still-mapped buffer -> "used in submit while pending map").
+static READBACK_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
-fn readback_from_data(data: &[u8], width: u32, height: u32) -> String {
+// Internal render/readback resolution cap. (0, 0) means "native" (no cap).
+// Changed at runtime from the settings menu via set_render_cap(); read by
+// resize(). Smaller = faster readback/blit in software (SwiftShader).
+static RENDER_CAP: std::sync::Mutex<(u32, u32)> = std::sync::Mutex::new((960, 540));
+
+pub fn set_render_cap(w: u32, h: u32) {
+    *RENDER_CAP.lock().unwrap() = (w, h);
+}
+
+pub fn get_render_cap() -> (u32, u32) {
+    *RENDER_CAP.lock().unwrap()
+}
+
+fn readback_from_data(data: &[u8], width: u32, height: u32, bytes_per_row: u32) -> String {
     if data.is_empty() {
         return String::from("empty readback");
     }
-    let bytes_per_row = width as usize * 4;
+    let bytes_per_row = bytes_per_row as usize;
     let (mut r_acc, mut g_acc, mut b_acc) = (0u64, 0u64, 0u64);
     let mut distinct = std::collections::HashSet::new();
     let mut nonbg = 0u64;
@@ -128,6 +156,68 @@ fn readback_from_data(data: &[u8], width: u32, height: u32) -> String {
         distinct.len(),
         nonbg as f32 / samples.max(1) as f32 * 100.0,
     )
+}
+
+/// Copy an Rgba8Unorm (row-padded) readback into a visible 2D `<canvas id="blit">`.
+/// Used as the display path when the WebGPU canvas can't be composited to the
+/// screen (e.g. SwiftShader-Vulkan in headed Chrome: the surface renders fine
+/// but the headed compositor never shows it). A 2D canvas always composites.
+fn blit_to_2d_canvas(data: &[u8], width: u32, height: u32, bytes_per_row: u32) {
+    let window = match web_sys::window() {
+        Some(w) => w,
+        None => return,
+    };
+    let doc = match window.document() {
+        Some(d) => d,
+        None => return,
+    };
+    let canvas = match doc
+        .get_element_by_id("blit")
+        .and_then(|e| e.dyn_into::<HtmlCanvasElement>().ok())
+    {
+        Some(c) => c,
+        None => {
+            glog("[gfx] blit: #blit canvas not found");
+            return;
+        }
+    };
+    if canvas.width() != width || canvas.height() != height {
+        canvas.set_width(width);
+        canvas.set_height(height);
+    }
+    let ctx = match canvas
+        .get_context("2d")
+        .ok()
+        .flatten()
+        .and_then(|c| c.dyn_into::<CanvasRenderingContext2d>().ok())
+    {
+        Some(c) => c,
+        None => {
+            glog("[gfx] blit: 2d context unavailable");
+            return;
+        }
+    };
+    let w = width as usize;
+    let h = height as usize;
+    let bpr = bytes_per_row as usize;
+    let mut rgba: Vec<u8> = Vec::with_capacity(w * h * 4);
+    for y in 0..h {
+        let src = y * bpr;
+        let take = (w * 4).min(data.len().saturating_sub(src));
+        rgba.extend_from_slice(&data[src..src + take]);
+        if take < w * 4 {
+            rgba.resize(rgba.len() + (w * 4 - take), 0);
+        }
+    }
+    let clamped = Clamped(rgba.as_slice());
+    match ImageData::new_with_u8_clamped_array_and_sh(clamped, width, height) {
+        Ok(img) => {
+            let _ = ctx.put_image_data(&img, 0.0, 0.0);
+        }
+        Err(e) => {
+            glog(&format!("[gfx] blit: ImageData error {e:?}"));
+        }
+    }
 }
 
 struct VertexBuffer {
@@ -202,7 +292,7 @@ pub struct App {
     quad_count: u32,
     frames: u64,
     player_in_mesh: bool,
-    readback_pending: bool,
+    readback_buffer: Option<wgpu::Buffer>,
 }
 
 impl App {
@@ -319,10 +409,20 @@ impl App {
     }
 
     pub async fn new(canvas: HtmlCanvasElement) -> Result<Self, String> {
+        glog("[gfx] Instance::new");
+        // IMPORTANT: size the canvas BEFORE obtaining the WebGPU context.
+        // Resizing a canvas (setting width/height) AFTER getContext('webgpu')
+        // unconfigures it on real GPUs, which leaves the surface blank/black
+        // even though draws are issued. SwiftShader tolerates the bad order;
+        // hardware adapters do not.
+        let (width, height) = resize_canvas(&canvas);
+        glog(&format!("[gfx] canvas backing size = {width}x{height} (pre-context)"));
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let surface = instance
             .create_surface(wgpu::SurfaceTarget::Canvas(canvas.clone()))
             .map_err(|e| format!("create_surface: {e}"))?;
+        glog("[gfx] surface created (Canvas target)");
+
         let fallback_only = web_sys::window()
             .and_then(|w| w.get("__adapter"))
             .and_then(|v| v.as_string())
@@ -345,6 +445,7 @@ impl App {
             })
             .await
             .map_err(|e| format!("request_adapter: {e}"))?;
+        glog(&format!("[gfx] adapter obtained (fallback_only={fallback_only})"));
 
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
@@ -355,26 +456,33 @@ impl App {
             })
             .await
             .map_err(|e| format!("request_device: {e}"))?;
+        glog("[gfx] device + queue obtained");
+        device.on_uncaptured_error(std::sync::Arc::new(|e| {
+            web_sys::console::error_1(&format!("[gfx] UNCAPTURED GPU ERROR: {e}").into());
+        }));
 
-        let (width, height) = resize_canvas(&canvas);
         let format = surface.get_capabilities(&adapter).formats[0];
         let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_DST,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
             color_space: wgpu::SurfaceColorSpace::Auto,
             width,
             height,
-            present_mode: wgpu::PresentMode::AutoNoVsync,
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+            present_mode: wgpu::PresentMode::Fifo,
+            alpha_mode: wgpu::CompositeAlphaMode::Opaque,
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &config);
+        glog(&format!(
+            "[gfx] surface configured: {width}x{height} format={format:?} alpha=Opaque present=Fifo"
+        ));
         let offscreen = create_offscreen(&device, format, width, height);
 
         let (uniform_buffer, bind_group) = create_uniforms(&device);
         let pipeline = create_pipeline(&device, format);
         let vertex_buffer = VertexBuffer::new(&device, 128 * 1024);
+        glog("[gfx] App::new complete — entering render loop");
 
         let world = WorldGen::new(1337);
         let mut chunks = ChunkCache::new(256);
@@ -431,7 +539,7 @@ impl App {
             quad_count: 0,
             frames: 0,
             player_in_mesh: false,
-            readback_pending: false,
+            readback_buffer: None,
         })
     }
 
@@ -751,13 +859,48 @@ impl App {
     }
 
     pub fn resize(&mut self) {
-        let (width, height) = resize_canvas(&self.canvas);
+        let (mut width, mut height) = resize_canvas(&self.canvas);
+        // Cap the internal render/readback resolution. The scene is rasterized
+        // and read back in software (SwiftShader), so a large backing makes each
+        // readback+blit very expensive and the #blit display lags behind the
+        // simulation -> movement looks "very slow". Render at a smaller backing
+        // and let CSS upscale it (pixelated). (0, 0) = native (no cap).
+        let (cap_w, cap_h) = get_render_cap();
+        if cap_w > 0 && cap_h > 0 {
+            let scale = (cap_w as f64 / width as f64)
+                .min(cap_h as f64 / height as f64)
+                .min(1.0);
+            if scale < 1.0 {
+                width = (width as f64 * scale).max(1.0) as u32;
+                height = (height as f64 * scale).max(1.0) as u32;
+                self.canvas.set_width(width);
+                self.canvas.set_height(height);
+            }
+        }
+        glog(&format!("[gfx] resize -> {width}x{height} (cap {cap_w}x{cap_h})"));
         self.config.width = width;
         self.config.height = height;
         self.surface.configure(&self.device, &self.config);
         self.offscreen = create_offscreen(&self.device, self.config.format, width, height);
+        self.alloc_readback();
         self.viewport = [width as f32, height as f32];
         self.write_uniforms();
+    }
+
+    /// (Re)allocate the reusable GPU→CPU readback buffer for the current size.
+    /// A single buffer is reused across frames; the old one is dropped.
+    fn alloc_readback(&mut self) {
+        let width = self.config.width;
+        let height = self.config.height;
+        let bytes_per_row = ((width * 4 + 255) / 256) * 256;
+        self.readback_buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("readback"),
+            size: bytes_per_row as u64 * height as u64,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        }));
+        READBACK_GEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        READBACK_INFLIGHT.store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     fn write_uniforms(&self) {
@@ -995,10 +1138,9 @@ impl App {
         }
     }
 
-    /// Queue a GPU→CPU readback of the next rendered frame. The stats are
-    /// written asynchronously by the map callback; poll `readback_stats()`.
+    /// Force a readback on the next frame if one isn't already in flight.
     pub fn trigger_readback(&mut self) {
-        self.readback_pending = true;
+        READBACK_INFLIGHT.store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Last completed readback result (or "pending"/"no app").
@@ -1007,56 +1149,43 @@ impl App {
     }
 
     pub fn render(&mut self) {
+        // Display fallback: SwiftShader-Vulkan can't composite the WebGPU canvas
+        // to screen in headed Chrome, so read the frame back and blit to #blit.
         self.write_uniforms();
         if self.quad_count > 0 {
             self.vertex_buffer.upload(&self.queue, &self.vertices);
         }
+        if self.frames <= 2 {
+            glog(&format!(
+                "[gfx] first render: quads={} viewport=({:.0},{:.0})",
+                self.quad_count, self.viewport[0], self.viewport[1]
+            ));
+        }
 
-        let frame = match self.surface.get_current_texture() {
-            wgpu::CurrentSurfaceTexture::Success(f) | wgpu::CurrentSurfaceTexture::Suboptimal(f) => f,
-            _ => return,
-        };
-        let view = self
-            .offscreen
-            .create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("frame_encoder"),
             });
-        self.record_pass(&view, &mut encoder);
-        encoder.copy_texture_to_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &self.offscreen,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyTextureInfo {
-                texture: &frame.texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::Extent3d {
-                width: self.config.width,
-                height: self.config.height,
-                depth_or_array_layers: 1,
-            },
-        );
 
-        let mut readback_buffer: Option<wgpu::Buffer> = None;
-        if self.readback_pending {
-            self.readback_pending = false;
+        // Always render the scene to the offscreen target (the WebGPU canvas
+        // can't be composited in headed SwiftShader; #blit shows the read-back
+        // frame).
+        let off_view = self
+            .offscreen
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        self.record_pass(&off_view, &mut encoder);
+
+        // Read back + blit, but never start a new readback while one is still
+        // pending — otherwise we'd allocate a buffer every frame and SwiftShader
+        // would never catch up, leaking GPU memory until the tab crashes.
+        let can_readback = !READBACK_INFLIGHT.load(std::sync::atomic::Ordering::Relaxed)
+            && self.readback_buffer.is_some();
+        if can_readback {
+            let buffer = self.readback_buffer.clone().unwrap();
             let width = self.config.width;
             let height = self.config.height;
-            let bytes_per_row = width * 4;
-            let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("readback"),
-                size: bytes_per_row as u64 * height as u64,
-                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                mapped_at_creation: false,
-            });
+            let bytes_per_row = ((width * 4 + 255) / 256) * 256;
             encoder.copy_texture_to_buffer(
                 wgpu::TexelCopyTextureInfo {
                     texture: &self.offscreen,
@@ -1078,41 +1207,46 @@ impl App {
                     depth_or_array_layers: 1,
                 },
             );
-            readback_buffer = Some(buffer);
-        }
-
-        if let Some(buffer) = readback_buffer {
-            let width = self.config.width;
-            let height = self.config.height;
+            let gen = READBACK_GEN.load(std::sync::atomic::Ordering::Relaxed);
+            READBACK_INFLIGHT.store(true, std::sync::atomic::Ordering::Relaxed);
             *READBACK.lock().unwrap() = String::from("queued");
+            let buf = buffer.clone();
             let cmd = encoder.finish();
             cmd.map_buffer_on_submit(
-                &buffer.clone(),
+                &buffer,
                 wgpu::MapMode::Read,
                 ..,
                 move |res| {
                     match res {
                         Ok(()) => {
-                            if let Ok(data) = buffer.slice(..).get_mapped_range() {
-                                let stats = readback_from_data(&data, width, height);
+                            if let Ok(data) = buf.slice(..).get_mapped_range() {
+                                blit_to_2d_canvas(&data, width, height, bytes_per_row);
                                 drop(data);
-                                *READBACK.lock().unwrap() = stats;
+                                *READBACK.lock().unwrap() = String::from("blitted");
                             } else {
                                 *READBACK.lock().unwrap() = String::from("mapped but no range");
                             }
+                            buf.unmap();
                         }
                         Err(e) => {
                             *READBACK.lock().unwrap() = format!("map error: {e}");
+                            buf.unmap();
                         }
                     }
-                    buffer.destroy();
+                    // Only clear INFLIGHT if this callback belongs to the current
+                    // buffer generation (a resize may have swapped the buffer).
+                    if READBACK_GEN.load(std::sync::atomic::Ordering::Relaxed) == gen {
+                        READBACK_INFLIGHT.store(false, std::sync::atomic::Ordering::Relaxed);
+                    }
                 },
             );
             self.queue.submit([cmd]);
         } else {
             self.queue.submit([encoder.finish()]);
         }
-        self.queue.present(frame);
+        if self.frames % 600 == 0 {
+            glog(&format!("[gfx] heartbeat #{} quads={}", self.frames, self.quad_count));
+        }
     }
 }
 

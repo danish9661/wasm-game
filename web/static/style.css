@@ -9,8 +9,27 @@ html, body {
 }
 
 #game {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   display: block;
   image-rendering: pixelated;
+  z-index: 0;
+}
+
+/* Visible display surface: WebGPU canvas content is blitted here via 2D
+   putImageData because the WebGPU canvas itself can't be composited in some
+   headed/software-GPU setups (e.g. SwiftShader-Vulkan). */
+#blit {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  image-rendering: pixelated;
+  z-index: 1;
+  pointer-events: none;
 }
 
 #hud {
@@ -27,6 +46,7 @@ html, body {
   flex-direction: column;
   gap: 6px;
   min-width: 240px;
+  z-index: 10;
 }
 
 .hud-row {
@@ -108,7 +128,7 @@ html, body {
 
 #quest {
   position: fixed;
-  top: 14px;
+  top: 85px;
   left: 50%;
   transform: translateX(-50%);
   color: #f2e3b3;

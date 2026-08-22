@@ -44,6 +44,20 @@ const send = (method, params = {}) => new Promise((res) => {
   ws.send(JSON.stringify({ id, method, params }));
 });
 
+// Headless Chrome's Page.captureScreenshot does NOT composite WebGPU canvas
+// content -- it returns the grey page background instead. So sprite-visibility
+// checks read the actual presented canvas pixels via toDataURL (the real frame
+// the user sees). Returns base64 PNG data string.
+async function captureCanvas() {
+  const r = await send('Runtime.evaluate', {
+    expression: "document.querySelector('#game').toDataURL('image/png').split(',')[1]",
+    returnByValue: true,
+  });
+  const data = r?.result?.result?.value;
+  if (!data) throw new Error('canvas capture failed');
+  return data;
+}
+
 async function connect() {
   let list = null;
   for (let i = 0; i < 10 && !list; i++) {
@@ -141,10 +155,10 @@ try {
     : bad(`screen looks blank: ${JSON.stringify(px)}`);
 
   // 6. player sprite rendered (warm orange quad visible on screen).
-  //    The GPU readback is asynchronous and can lag a frame, so we verify the
-  //    player from the actual presented frame (CDP screenshot PNG bytes).
+  //    We verify from the actual presented canvas frame (toDataURL PNG bytes),
+  //    since headless Page.captureScreenshot does not composite WebGPU canvases.
   const { decodePng, countOrange } = await import('./png_analyze.mjs');
-  const shot1 = await send('Page.captureScreenshot', { format: 'png' });
+  const shot1 = { result: { data: await captureCanvas() } };
   if (shot1.result?.data) {
     const { width, height, pixels } = decodePng(Buffer.from(shot1.result.data, 'base64'));
     const center = pixels[((Math.floor(height / 2) * width + Math.floor(width / 2)) * 4)];
@@ -184,7 +198,7 @@ try {
 
   // 8. player still rendered after moving (camera followed and re-centered)
   await sleep(800);
-  const shot2 = await send('Page.captureScreenshot', { format: 'png' });
+  const shot2 = { result: { data: await captureCanvas() } };
   if (shot2.result?.data) {
     const { width, height, pixels } = decodePng(Buffer.from(shot2.result.data, 'base64'));
     const orangeCount = countOrange(width, height, pixels);
@@ -241,7 +255,7 @@ try {
     : bad('no resource node found nearby');
 
   if (foundNode) {
-    const shot3 = await send('Page.captureScreenshot', { format: 'png' });
+    const shot3 = { result: { data: await captureCanvas() } };
     if (shot3.result?.data) {
       const { width, height, pixels } = decodePng(Buffer.from(shot3.result.data, 'base64'));
       let nodePx = 0;
@@ -315,7 +329,7 @@ try {
   // 13. the wall renders (tan) in the screenshot; sand variation (188,168,109)
   //     is the closest lookalike, so also require b>115 and r-b<45
   if (structAfter > structBefore) {
-    const shot4 = await send('Page.captureScreenshot', { format: 'png' });
+    const shot4 = { result: { data: await captureCanvas() } };
     if (shot4.result?.data) {
       const { width, height, pixels } = decodePng(Buffer.from(shot4.result.data, 'base64'));
       let wallPx = 0;
@@ -356,7 +370,7 @@ try {
 
   // 15. the campfire renders (hot orange) in the screenshot
   if (structCamp > structAfter) {
-    const shot5 = await send('Page.captureScreenshot', { format: 'png' });
+    const shot5 = { result: { data: await captureCanvas() } };
     if (shot5.result?.data) {
       const { width, height, pixels } = decodePng(Buffer.from(shot5.result.data, 'base64'));
       let firePx = 0;
@@ -415,7 +429,7 @@ try {
     : bad(`no slime found nearby (last pos ${JSON.stringify(pos)})`);
 
   if (foundMob) {
-    const shot6 = await send('Page.captureScreenshot', { format: 'png' });
+    const shot6 = { result: { data: await captureCanvas() } };
     if (shot6.result?.data) {
       const { width, height, pixels } = decodePng(Buffer.from(shot6.result.data, 'base64'));
       let slimePx = 0;
@@ -560,7 +574,7 @@ try {
       : bad(`could not reach ruins at (${ruins.tx},${ruins.ty}): ${stNear.raw}`);
 
     // 23. the chest renders (gold) once in view
-    const shotR = await send('Page.captureScreenshot', { format: 'png' });
+    const shotR = { result: { data: await captureCanvas() } };
     if (shotR.result?.data) {
       const { width, height, pixels } = decodePng(Buffer.from(shotR.result.data, 'base64'));
       let chestPx = 0;

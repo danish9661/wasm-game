@@ -22,6 +22,12 @@ pub fn clog(msg: &str) {
     }
 }
 
+/// Console-only log (does NOT touch the #log HUD element, so it never
+/// clobbers the live fps/stats readout).
+pub fn cinfo(msg: &str) {
+    web_sys::console::log_1(&JsValue::from_str(msg));
+}
+
 fn show_fallback(message: &str) {
     if let Some(window) = window() {
         if let Some(doc) = window.document() {
@@ -36,7 +42,9 @@ fn show_fallback(message: &str) {
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
+    cinfo("[wasm] start() entered");
     let Some(window) = window() else {
+        cinfo("[wasm] start() abort: no window");
         return;
     };
     let Some(document) = window.document() else {
@@ -51,14 +59,17 @@ pub fn start() {
     };
 
     wasm_bindgen_futures::spawn_local(async move {
+        cinfo("[wasm] start() requesting WebGPU adapter/device…");
         match App::new(canvas).await {
             Ok(app) => {
                 clog("[wasm] webgpu initialized");
+                cinfo("[wasm] webgpu initialized (App::new ok)");
                 APP.with(|cell| *cell.borrow_mut() = Some(app));
                 install_input_handlers(window, document);
             }
             Err(msg) => {
                 clog(&format!("[wasm] init failed: {msg}"));
+                cinfo(&format!("[wasm] init failed: {msg}"));
                 show_fallback(&format!("WebGPU unavailable: {}", msg));
             }
         }
@@ -68,11 +79,16 @@ pub fn start() {
 /// Called by JS every frame. JS owns the loop; wasm just steps.
 #[wasm_bindgen]
 pub fn step(dt_seconds: f64) {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static N: AtomicU64 = AtomicU64::new(0);
+    let n = N.fetch_add(1, Ordering::Relaxed) + 1;
     APP.with(|cell| {
         if let Some(app) = cell.borrow_mut().as_mut() {
             let dt = (dt_seconds as f32).clamp(0.0, 0.1);
             app.update(dt);
             app.render();
+        } else if n == 1 {
+            cinfo("[wasm] step() called but App not ready yet (WebGPU init still pending)");
         }
     });
 }
@@ -89,9 +105,12 @@ pub fn get_stats() -> String {
 /// Recompute canvas size on window resize.
 #[wasm_bindgen]
 pub fn resize() {
+    cinfo("[wasm] resize() called");
     APP.with(|cell| {
         if let Some(app) = cell.borrow_mut().as_mut() {
             app.resize();
+        } else {
+            cinfo("[wasm] resize() ignored: App not ready");
         }
     });
 }
@@ -149,6 +168,13 @@ pub fn trigger_readback() {
             app.trigger_readback();
         }
     });
+}
+
+/// Set the internal render/readback resolution cap. (w, h) = (0, 0) means native
+/// (no cap). Used by the settings menu. Call `resize()` afterwards to apply.
+#[wasm_bindgen]
+pub fn set_render_cap(w: u32, h: u32) {
+    crate::renderer::set_render_cap(w, h);
 }
 
 /// Result of the last completed readback ("pending" until the map callback runs).

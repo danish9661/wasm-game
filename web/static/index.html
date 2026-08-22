@@ -9,6 +9,7 @@
 </head>
 <body>
   <canvas id="game"></canvas>
+  <canvas id="blit"></canvas>
   <div id="fallback" style="display:none">
     <h1>Starfall</h1>
     <p>WebGPU is required for maximum speed.</p>
@@ -34,6 +35,7 @@
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
     <div class="hud-row hud-hint">WASD move · E harvest/open · F campfire · V wall · J attack · K shoot · C eat</div>
+    <div class="hud-row"><span class="inv-chip" id="fps">FPS --</span></div>
   </div>
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
@@ -74,6 +76,14 @@
       <label class="set-row">SFX <input id="set-sfx" type="range" min="0" max="1" step="0.05" /></label>
       <label class="set-row">Music <input id="set-music" type="range" min="0" max="1" step="0.05" /></label>
       <label class="set-row">Mute <input id="set-mute" type="checkbox" /></label>
+      <label class="set-row">Resolution
+        <select id="set-res">
+          <option value="640x360">Low (640×360)</option>
+          <option value="960x540">Medium (960×540)</option>
+          <option value="1280x720">High (1280×720)</option>
+          <option value="native">Native (full res)</option>
+        </select>
+      </label>
       <div class="menu-btns">
         <button id="btn-save" class="menu-btn">Save Game</button>
         <button id="btn-resume" class="menu-btn">Resume</button>
@@ -90,16 +100,22 @@
 
   <div id="log"></div>
 
-  <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game } from './wasm_game.js';
+    <script type="module">
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
     window.new_game = new_game;
+
     window.onerror = (m, s, l, c, e) => {
+      console.error('[page] JS ERROR:', m, 'at', s + ':' + l, e && e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : '');
       document.getElementById('log').textContent = 'JS ERROR: ' + m + ' @ ' + s + ':' + l + ' :: ' + (e && e.stack ? e.stack.split('\n')[0] : '');
     };
+    window.addEventListener('error', (e) => {
+      console.error('[page] window error event:', e.message, e.filename + ':' + e.lineno);
+    });
     window.addEventListener('unhandledrejection', (ev) => {
+      console.error('[page] UNHANDLED PROMISE REJECTION:', ev.reason && ev.reason.stack ? ev.reason.stack : ev.reason);
       document.getElementById('log').textContent = 'UNHANDLED: ' + ev.reason;
     });
 
@@ -107,7 +123,7 @@
     const SETTINGS_KEY = 'starfall_settings';
     const SAVE_KEY = 'starfall_save';
     const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-    let settings = Object.assign({ master: 1, sfx: 1, music: 0.5, muted: false }, loadJSON(SETTINGS_KEY, {}));
+    let settings = Object.assign({ master: 1, sfx: 1, music: 0.5, muted: false, res: '960x540' }, loadJSON(SETTINGS_KEY, {}));
     const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
     // ---- Audio (procedural, gesture-gated) -------------------------------
@@ -178,6 +194,7 @@
     }
 
     const showNoGpu = (reason) => {
+      console.error('[page] showNoGpu:', reason);
       const el = document.getElementById('fallback-reason');
       if (el) el.textContent = reason;
       document.getElementById('fallback').style.display = 'block';
@@ -189,7 +206,9 @@
     let gameStarted = false;
 
     const boot = () => {
+      console.log('[page] boot() start; WebGPU present:', 'gpu' in navigator, '; userAgent:', navigator.userAgent);
       if (!('gpu' in navigator)) {
+        console.error('[page] navigator.gpu MISSING — WebGPU unsupported in this browser');
         showNoGpu('This browser has no WebGPU. Use Chrome 113+ (or launch via ./scripts/play.sh).');
         return;
       }
@@ -200,15 +219,29 @@
           if (adapter) window.__adapter = 'sw';
         }
         if (!adapter) {
+          console.error('[page] requestAdapter returned null (no hw, no fallback adapter)');
           showNoGpu('WebGPU found no adapter. Launch with ./scripts/play.sh (SwiftShader WebGPU flags), or install mesa-vulkan-drivers (sudo apt install mesa-vulkan-drivers) and relaunch Chrome.');
           return;
         }
+        console.log('[page] adapter type =', window.__adapter);
+        try {
+          const info = adapter.info || (adapter.requestAdapterInfo && (await adapter.requestAdapterInfo()));
+          if (info) console.log('[page] adapter info =', JSON.stringify(info));
+        } catch (e) { console.log('[page] adapter.info unavailable:', e.message); }
         init().then(() => {
+          console.log('[page] wasm module instantiated; starting render loop');
           document.getElementById('log').textContent = 'wasm loaded';
           window.__frames = 0;
+          window.__firstFrame = false;
+          // Apply the saved resolution cap now that the wasm module is ready.
+          if (settings.res === 'native') set_render_cap(0, 0);
+          else { const _r = settings.res.split('x').map(Number); set_render_cap(_r[0], _r[1]); }
+          try { resize(); } catch (_) {}
           let last = performance.now();
           let lastLog = performance.now();
           let lastStep = 0;
+          const dpr = window.devicePixelRatio || 1;
+          console.log(`[page] canvas backing = ${document.getElementById('game').width}x${document.getElementById('game').height} ; dpr=${dpr} ; inner=${window.innerWidth}x${window.innerHeight}`);
           step(0.016); // render one frame so the menu has a world behind it
 
           // ---- HUD --------------------------------------------------------
@@ -352,15 +385,22 @@
           }
 
           function frame(t) {
+            if (!window.__firstFrame) { window.__firstFrame = true; console.log('[page] first animation frame (rAF firing)'); }
             if (!paused && t - lastStep >= 8) {
               lastStep = t;
-              step(Math.min((t - last) / 1000, 0.1));
+              try {
+                step(Math.min((t - last) / 1000, 0.1));
+              } catch (e) {
+                console.error('[page] step() threw:', e && e.stack ? e.stack : e);
+              }
               last = t;
               window.__frames++;
-              if (t - lastLog >= 2000) {
+              if (t - lastLog >= 500) {
                 const fps = window.__frames / ((t - lastLog) / 1000);
                 window.__frames = 0;
                 lastLog = t;
+                const el = document.getElementById('fps');
+                if (el) el.textContent = `FPS ${fps.toFixed(0)}`;
                 document.getElementById('log').textContent = `[wasm] fps=${fps.toFixed(0)} ${get_stats()}`;
               }
             }
@@ -401,6 +441,7 @@
             el('set-sfx').value = settings.sfx;
             el('set-music').value = settings.music;
             el('set-mute').checked = settings.muted;
+            el('set-res').value = settings.res;
             settingsEl.className = 'overlay';
             paused = true;
           };
@@ -412,6 +453,13 @@
           el('set-sfx').oninput = (e) => { settings.sfx = Number(e.target.value); applyAudio(); saveSettings(); };
           el('set-music').oninput = (e) => { settings.music = Number(e.target.value); applyAudio(); saveSettings(); };
           el('set-mute').onchange = (e) => { settings.muted = e.target.checked; applyAudio(); saveSettings(); };
+          el('set-res').onchange = (e) => {
+            settings.res = e.target.value;
+            saveSettings();
+            if (settings.res === 'native') set_render_cap(0, 0);
+            else { const [w, h] = settings.res.split('x').map(Number); set_render_cap(w, h); }
+            try { resize(); } catch (_) {}
+          };
 
           function doSave() {
             try { localStorage.setItem(SAVE_KEY, serialize_save()); } catch (e) {}
@@ -455,6 +503,41 @@
               updateHud(parseStats(raw));
             }
           }, 200);
+
+          // ---- Canvas self-check: read the ACTUAL presented surface and count
+          //      warm-orange (player) pixels. If orange>0 the game is rendering
+          //      correctly and a white window means a browser DISPLAY/compositing
+          //      problem (e.g. SwiftShader in a windowed Chrome); if orange=0 the
+          //      render pipeline itself is the problem.
+          setInterval(() => {
+            const cv = document.getElementById('blit') || document.getElementById('game');
+            try {
+              const url = cv.toDataURL('image/png');
+              const img = new Image();
+              img.onload = () => {
+                try {
+                  const c2 = document.createElement('canvas');
+                  c2.width = img.width; c2.height = img.height;
+                  const cx = c2.getContext('2d');
+                  cx.drawImage(img, 0, 0);
+                  const d = cx.getImageData(0, 0, img.width, img.height).data;
+                  let orange = 0;
+                  const cy = Math.floor(img.height / 2), cx2 = Math.floor(img.width / 2);
+                  const ci = (cy * img.width + cx2) * 4;
+                  const center = [d[ci], d[ci + 1], d[ci + 2]];
+                  for (let i = 0; i < d.length; i += 28) {
+                    if (d[i] > 180 && d[i + 1] > 60 && d[i + 1] < 200 && d[i + 2] < 100) orange++;
+                  }
+                  const verdict = orange > 0
+                    ? 'GAME RENDERS (orange>0)'
+                    : 'NO ORANGE -> render pipeline output is empty';
+                  console.log(`[page] CANVAS SELF-CHECK ${img.width}x${img.height} center=[${center}] orange=${orange} :: ${verdict}`);
+                } catch (e) { console.error('[page] canvas self-check decode failed:', e); }
+              };
+              img.onerror = () => console.error('[page] canvas self-check: toDataURL image failed to load');
+              img.src = url;
+            } catch (e) { console.error('[page] canvas self-check failed:', e); }
+          }, 3000);
 
           requestAnimationFrame(frame);
         }).catch((e) => {
