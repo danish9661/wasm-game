@@ -15,6 +15,7 @@
     <p id="fallback-reason"></p>
     <p>Please use Chrome, Edge, or Firefox with WebGPU enabled.</p>
   </div>
+
   <div id="hud">
     <div class="hud-row">
       <div class="bar"><span class="bar-label">HP</span><div class="bar-track"><div class="bar-fill" id="bar-hp"></div></div><span class="bar-num" id="num-hp">100</span></div>
@@ -37,28 +38,156 @@
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
   <div id="altar-prompt" class="hidden">The Crown hums in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
+
+  <button id="gear" title="Settings (Esc)">⚙</button>
+
+  <div id="touch" class="hidden">
+    <div class="touch-dpad">
+      <button class="tbtn" data-key="KeyW" style="grid-area:up">▲</button>
+      <button class="tbtn" data-key="KeyA" style="grid-area:left">◀</button>
+      <button class="tbtn" data-key="KeyS" style="grid-area:down">▼</button>
+      <button class="tbtn" data-key="KeyD" style="grid-area:right">▶</button>
+    </div>
+    <div class="touch-actions">
+      <button class="tbtn act" data-key="KeyE">E</button>
+      <button class="tbtn act" data-key="KeyJ">⚔</button>
+      <button class="tbtn act" data-key="KeyK">🏹</button>
+      <button class="tbtn act" data-key="KeyC">🍖</button>
+    </div>
+  </div>
+
+  <div id="bootmenu" class="overlay hidden">
+    <div id="overlay-box">
+      <h2>STARFALL</h2>
+      <p id="boot-sub">A fallen crown. A shattered world. Reforge it.</p>
+      <div class="menu-btns">
+        <button id="btn-continue" class="menu-btn">Continue</button>
+        <button id="btn-new" class="menu-btn">New Game</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings" class="overlay hidden">
+    <div id="overlay-box">
+      <h2>SETTINGS</h2>
+      <label class="set-row">Master <input id="set-master" type="range" min="0" max="1" step="0.05" /></label>
+      <label class="set-row">SFX <input id="set-sfx" type="range" min="0" max="1" step="0.05" /></label>
+      <label class="set-row">Music <input id="set-music" type="range" min="0" max="1" step="0.05" /></label>
+      <label class="set-row">Mute <input id="set-mute" type="checkbox" /></label>
+      <div class="menu-btns">
+        <button id="btn-save" class="menu-btn">Save Game</button>
+        <button id="btn-resume" class="menu-btn">Resume</button>
+      </div>
+    </div>
+  </div>
+
   <div id="overlay" class="hidden">
     <div id="overlay-box">
       <h2 id="overlay-title"></h2>
       <p id="overlay-sub"></p>
     </div>
   </div>
+
   <div id="log"></div>
+
   <script type="module">
-    import init, { step, get_stats, reforge } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game } from './wasm_game.js';
     window.reforge = reforge;
+    window.serialize_save = serialize_save;
+    window.deserialize_save = deserialize_save;
+    window.new_game = new_game;
     window.onerror = (m, s, l, c, e) => {
       document.getElementById('log').textContent = 'JS ERROR: ' + m + ' @ ' + s + ':' + l + ' :: ' + (e && e.stack ? e.stack.split('\n')[0] : '');
     };
     window.addEventListener('unhandledrejection', (ev) => {
       document.getElementById('log').textContent = 'UNHANDLED: ' + ev.reason;
     });
+
+    // ---- Settings (persisted) --------------------------------------------
+    const SETTINGS_KEY = 'starfall_settings';
+    const SAVE_KEY = 'starfall_save';
+    const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+    let settings = Object.assign({ master: 1, sfx: 1, music: 0.5, muted: false }, loadJSON(SETTINGS_KEY, {}));
+    const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+
+    // ---- Audio (procedural, gesture-gated) -------------------------------
+    let actx = null, masterGain = null, sfxGain = null, musicGain = null;
+    function ensureAudio() {
+      if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
+      try {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = actx.createGain(); masterGain.connect(actx.destination);
+        sfxGain = actx.createGain(); sfxGain.connect(masterGain);
+        musicGain = actx.createGain(); musicGain.connect(masterGain);
+        applyAudio();
+        startMusic();
+      } catch (e) { actx = null; }
+    }
+    function applyAudio() {
+      if (!actx) return;
+      masterGain.gain.value = settings.muted ? 0 : settings.master;
+      sfxGain.gain.value = settings.sfx;
+      musicGain.gain.value = settings.music;
+    }
+    function tone(freq, dur, type, vol, dest) {
+      if (!actx) return;
+      const o = actx.createOscillator();
+      const g = actx.createGain();
+      o.type = type || 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(vol, actx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+      o.connect(g); g.connect(dest || sfxGain);
+      o.start(); o.stop(actx.currentTime + dur + 0.02);
+    }
+    function noise(dur, vol) {
+      if (!actx) return;
+      const n = Math.floor(actx.sampleRate * dur);
+      const buf = actx.createBuffer(1, n, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const g = actx.createGain(); g.gain.value = vol;
+      src.connect(g); g.connect(sfxGain); src.start();
+    }
+    function playSfx(name) {
+      if (!actx || settings.muted) return;
+      switch (name) {
+        case 'swing': tone(240, 0.09, 'triangle', 0.14); break;
+        case 'shoot': tone(680, 0.06, 'square', 0.07); break;
+        case 'hit': noise(0.12, 0.22); break;
+        case 'hurt': tone(120, 0.2, 'sawtooth', 0.22); break;
+        case 'pickup': tone(880, 0.07, 'sine', 0.13); tone(1320, 0.07, 'sine', 0.1); break;
+        case 'eat': tone(330, 0.12, 'sine', 0.13); break;
+        case 'roar': tone(80, 0.5, 'sawtooth', 0.28); break;
+        case 'chime': tone(523, 0.12, 'sine', 0.12); tone(784, 0.14, 'sine', 0.12); break;
+        case 'death': tone(70, 0.6, 'sawtooth', 0.28); break;
+        case 'victory': [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'triangle', 0.16), i * 110)); break;
+        case 'shatter': [784, 587, 392, 262].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'sawtooth', 0.14), i * 110)); break;
+      }
+    }
+    function startMusic() {
+      if (!actx) return;
+      const o1 = actx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 110;
+      const o2 = actx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 165;
+      const lfo = actx.createOscillator(); lfo.frequency.value = 0.05;
+      const lfoG = actx.createGain(); lfoG.gain.value = 4;
+      lfo.connect(lfoG); lfoG.connect(o1.frequency);
+      o1.connect(musicGain); o2.connect(musicGain);
+      o1.start(); o2.start(); lfo.start();
+    }
+
     const showNoGpu = (reason) => {
       const el = document.getElementById('fallback-reason');
       if (el) el.textContent = reason;
       document.getElementById('fallback').style.display = 'block';
       document.getElementById('log').textContent = 'INIT ERROR: ' + reason;
     };
+
+    let paused = false;
+    let bootOpen = false;
+    let gameStarted = false;
+
     const boot = () => {
       if (!('gpu' in navigator)) {
         showNoGpu('This browser has no WebGPU. Use Chrome 113+ (or launch via ./scripts/play.sh).');
@@ -75,175 +204,266 @@
           return;
         }
         init().then(() => {
-      document.getElementById('log').textContent = 'wasm loaded';
-      window.__frames = 0;
-      let last = performance.now();
-      let lastLog = performance.now();
-      let lastStep = 0;
+          document.getElementById('log').textContent = 'wasm loaded';
+          window.__frames = 0;
+          let last = performance.now();
+          let lastLog = performance.now();
+          let lastStep = 0;
+          step(0.016); // render one frame so the menu has a world behind it
 
-      // ---- HUD ------------------------------------------------------------
-      const QUEST_TEXT = [
-        'Gather 5 wood and 1 stone',
-        'Build a wall and a campfire',
-        'A slime blocks the ruins - defeat it',
-        'Find the ancient ruins',
-        'Open the ruins chest',
-        'The Forest Warden guards a Crown Fragment - defeat it',
-        'Carry the fragment to the altar where you woke',
-        'Press E at the altar to reforge the Crown',
-        'The Star Crown blazes - the world is healed',
-      ];
-      const el = (id) => document.getElementById(id);
-      const setBar = (id, numId, pct) => {
-        el(id).style.width = Math.max(0, Math.min(100, pct)) + '%';
-        if (numId) el(numId).textContent = Math.round(pct);
-      };
-      let lastInv = { w: -1, s: -1, f: -1 };
-      let lastAlive = 1;
-      let lastQuest = -1;
-      let diedAt = 0;
-      const toast = (msg) => {
-        const t = document.createElement('div');
-        t.className = 'toast';
-        t.textContent = msg;
-        el('toasts').appendChild(t);
-        setTimeout(() => t.remove(), 3200);
-      };
-      const updateHud = (stats) => {
-        setBar('bar-hp', 'num-hp', stats.hp);
-        setBar('bar-hunger', 'num-hunger', stats.hunger);
-        setBar('bar-stamina', 'num-stamina', stats.stamina);
-        el('inv-wood').textContent = `W ${stats.w}`;
-        el('inv-stone').textContent = `S ${stats.s}`;
-        el('inv-food').textContent = `F ${stats.f}`;
-        el('hud-clock').textContent = stats.time;
+          // ---- HUD --------------------------------------------------------
+          const QUEST_TEXT = [
+            'Gather 5 wood and 1 stone',
+            'Build a wall and a campfire',
+            'A slime blocks the ruins - defeat it',
+            'Find the ancient ruins',
+            'Open the ruins chest',
+            'The Forest Warden guards a Crown Fragment - defeat it',
+            'Carry the fragment to the altar where you woke',
+            'Press E at the altar to reforge the Crown',
+            'The Star Crown blazes - the world is healed',
+          ];
+          const el = (id) => document.getElementById(id);
+          const setBar = (id, numId, pct) => {
+            el(id).style.width = Math.max(0, Math.min(100, pct)) + '%';
+            if (numId) el(numId).textContent = Math.round(pct);
+          };
+          let lastInv = { w: -1, s: -1, f: -1 };
+          let lastAlive = 1;
+          let lastQuest = -1;
+          let diedAt = 0;
+          const toast = (msg) => {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            el('toasts').appendChild(t);
+            setTimeout(() => t.remove(), 3200);
+          };
+          const updateHud = (stats) => {
+            setBar('bar-hp', 'num-hp', stats.hp);
+            setBar('bar-hunger', 'num-hunger', stats.hunger);
+            setBar('bar-stamina', 'num-stamina', stats.stamina);
+            el('inv-wood').textContent = `W ${stats.w}`;
+            el('inv-stone').textContent = `S ${stats.s}`;
+            el('inv-food').textContent = `F ${stats.f}`;
+            el('hud-clock').textContent = stats.time;
 
-        // boss bar
-        if (stats.boss === 1) {
-          el('boss-row').style.display = 'flex';
-          setBar('bar-boss', null, stats.bosshp);
-        } else {
-          el('boss-row').style.display = 'none';
-        }
+            if (stats.boss === 1) {
+              el('boss-row').style.display = 'flex';
+              setBar('bar-boss', null, stats.bosshp);
+            } else {
+              el('boss-row').style.display = 'none';
+            }
 
-        // crown fragment chip
-        if (stats.frag > 0) {
-          el('inv-frag').style.display = '';
-          el('inv-frag').textContent = `🩱 ${stats.frag}`;
-        } else {
-          el('inv-frag').style.display = 'none';
-        }
+            if (stats.frag > 0) {
+              el('inv-frag').style.display = '';
+              el('inv-frag').textContent = `🩱 ${stats.frag}`;
+            } else {
+              el('inv-frag').style.display = 'none';
+            }
 
-        // loot toasts from inventory deltas
-        const inv = { w: stats.w, s: stats.s, f: stats.f };
-        if (lastInv.w >= 0) {
-          if (inv.w > lastInv.w) toast(`+${inv.w - lastInv.w} wood`);
-          if (inv.s > lastInv.s) toast(`+${inv.s - lastInv.s} stone`);
-          if (inv.f > lastInv.f) toast(`+${inv.f - lastInv.f} food`);
-        }
-        lastInv = inv;
+            const inv = { w: stats.w, s: stats.s, f: stats.f };
+            if (lastInv.w >= 0) {
+              if (inv.w > lastInv.w) toast(`+${inv.w - lastInv.w} wood`);
+              if (inv.s > lastInv.s) toast(`+${inv.s - lastInv.s} stone`);
+              if (inv.f > lastInv.f) toast(`+${inv.f - lastInv.f} food`);
+            }
+            lastInv = inv;
 
-        // altar reforge prompt
-        const atAltar = stats.altar === 1 && stats.frag > 0 && stats.ending < 0 && stats.nearaltar === 1;
-        el('altar-prompt').style.display = atAltar ? 'block' : 'none';
+            const atAltar = stats.altar === 1 && stats.frag > 0 && stats.ending < 0 && stats.nearaltar === 1;
+            el('altar-prompt').style.display = atAltar ? 'block' : 'none';
 
-        // ending overlay (campaign complete -> New Game+)
-        const ovEnd = el('overlay');
-        if (stats.ending >= 0) {
-          if (!ovEnd.classList.contains('ending') || el('overlay-sub').dataset.ng !== String(stats.ng)) {
-            ovEnd.className = 'ending';
-            el('overlay-title').textContent = stats.ending === 0 ? 'THE STAR CROWN IS REFORGED' : 'THE CROWN SHATTERS';
-            el('overlay-sub').textContent = (stats.ending === 0
-              ? 'You reign over a healed world.'
-              : 'You free the trapped souls — and begin anew.')
-              + ` New Game+ ${stats.ng} begins.`;
-            el('overlay-sub').dataset.ng = String(stats.ng);
+            const ovEnd = el('overlay');
+            if (stats.ending >= 0) {
+              if (!ovEnd.classList.contains('ending') || el('overlay-sub').dataset.ng !== String(stats.ng)) {
+                ovEnd.className = 'ending';
+                el('overlay-title').textContent = stats.ending === 0 ? 'THE STAR CROWN IS REFORGED' : 'THE CROWN SHATTERS';
+                el('overlay-sub').textContent = (stats.ending === 0
+                  ? 'You reign over a healed world.'
+                  : 'You free the trapped souls — and begin anew.')
+                  + ` New Game+ ${stats.ng} begins.`;
+                el('overlay-sub').dataset.ng = String(stats.ng);
+              }
+            } else if (ovEnd.classList.contains('ending')) {
+              ovEnd.className = 'hidden';
+            }
+
+            const q = stats.quest;
+            if (q >= 0 && q < QUEST_TEXT.length && q !== lastQuest) {
+              el('quest').textContent = `📜 ${QUEST_TEXT[q]}`;
+              lastQuest = q;
+            }
+
+            const ov = el('overlay');
+            if (stats.alive === 0 && lastAlive === 1) {
+              diedAt = performance.now();
+              ov.className = 'dead';
+              el('overlay-title').textContent = 'YOU DIED';
+              el('overlay-sub').textContent = 'The cold takes another traveler… respawning';
+            } else if (stats.alive === 1 && lastAlive === 0) {
+              ov.className = 'hidden';
+            }
+            if (stats.alive === 0 && ov.className !== 'hidden') {
+              const left = Math.max(0, Math.ceil(3 - (performance.now() - diedAt) / 1000));
+              el('overlay-sub').textContent = `The cold takes another traveler… respawning in ${left}s`;
+            }
+            lastAlive = stats.alive;
+
+            audioFromStats(stats);
+          };
+          const parseStats = (raw) => {
+            const get = (re) => (String(raw).match(re) || [])[1];
+            const endingStr = get(/ending=(\w+)/) || 'none';
+            return {
+              hp: Number(get(/hp=([\d.]+)/) || 0),
+              hunger: Number(get(/hunger=([\d.]+)/) || 0),
+              stamina: Number(get(/stamina=([\d.]+)/) || 0),
+              alive: Number(get(/alive=(\d)/) || 1),
+              w: Number(get(/inv=\(w(\d+)/) || 0),
+              s: Number(get(/s(\d+),f/) || 0),
+              f: Number(get(/f(\d+)\)/) || 0),
+              quest: Number(get(/quest=S(\d)/) || -1),
+              time: get(/time=(\d{2}:\d{2})/),
+              boss: Number(get(/boss=(\d)/) || 0),
+              bosshp: Number(get(/bosshp=(\d+)/) || 0),
+              frag: Number(get(/frag=(\d+)/) || 0),
+              altar: Number(get(/altar=(\d)/) || 0),
+              nearaltar: Number(get(/nearaltar=(\d)/) || 0),
+              ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : -1,
+              ng: Number(get(/ng=(\d+)/) || 0),
+              atk: Number(get(/atk=(\d+)/) || 0),
+              shots: Number(get(/shots=(\d+)/) || 0),
+            };
+          };
+
+          // ---- Audio event detection ------------------------------------
+          let prev = { hp: 100, atk: 0, shots: 0, boss: 0, quest: -1, alive: 1, ending: -1 };
+          function audioFromStats(stats) {
+            if (actx) {
+              if (stats.hp < prev.hp - 0.5) playSfx('hurt');
+              if (stats.atk > prev.atk) playSfx('swing');
+              if (stats.shots > prev.shots) playSfx('shoot');
+              if (stats.boss === 1 && prev.boss === 0) playSfx('roar');
+              if (stats.quest > prev.quest && prev.quest >= 0) playSfx('chime');
+              if (stats.alive === 0 && prev.alive === 1) playSfx('death');
+              if (stats.ending >= 0 && prev.ending < 0) playSfx(stats.ending === 0 ? 'victory' : 'shatter');
+            }
+            prev = { hp: stats.hp, atk: stats.atk, shots: stats.shots, boss: stats.boss, quest: stats.quest, alive: stats.alive, ending: stats.ending };
           }
-        } else if (ovEnd.classList.contains('ending')) {
-          ovEnd.className = 'hidden';
-        }
 
-        // quest banner
-        const q = stats.quest;
-        if (q >= 0 && q < QUEST_TEXT.length && q !== lastQuest) {
-          el('quest').textContent = `📜 ${QUEST_TEXT[q]}`;
-          lastQuest = q;
-        }
-
-        // overlays
-        const ov = el('overlay');
-        if (stats.alive === 0 && lastAlive === 1) {
-          diedAt = performance.now();
-          ov.className = 'dead';
-          el('overlay-title').textContent = 'YOU DIED';
-          el('overlay-sub').textContent = 'The cold takes another traveler… respawning';
-        } else if (stats.alive === 1 && lastAlive === 0) {
-          ov.className = 'hidden';
-        }
-        if (stats.alive === 0 && ov.className !== 'hidden') {
-          const left = Math.max(0, Math.ceil(3 - (performance.now() - diedAt) / 1000));
-          el('overlay-sub').textContent = `The cold takes another traveler… respawning in ${left}s`;
-        }
-        lastAlive = stats.alive;
-      };
-      const parseStats = (raw) => {
-        const get = (re) => (String(raw).match(re) || [])[1];
-        const endingStr = get(/ending=(\w+)/) || 'none';
-        return {
-          hp: Number(get(/hp=([\d.]+)/) || 0),
-          hunger: Number(get(/hunger=([\d.]+)/) || 0),
-          stamina: Number(get(/stamina=([\d.]+)/) || 0),
-          alive: Number(get(/alive=(\d)/) || 1),
-          w: Number(get(/inv=\(w(\d+)/) || 0),
-          s: Number(get(/s(\d+),f/) || 0),
-          f: Number(get(/f(\d+)\)/) || 0),
-          quest: Number(get(/quest=S(\d)/) || -1),
-          time: get(/time=(\d{2}:\d{2})/),
-          boss: Number(get(/boss=(\d)/) || 0),
-          bosshp: Number(get(/bosshp=(\d+)/) || 0),
-          frag: Number(get(/frag=(\d+)/) || 0),
-          altar: Number(get(/altar=(\d)/) || 0),
-          nearaltar: Number(get(/nearaltar=(\d)/) || 0),
-          ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : -1,
-          ng: Number(get(/ng=(\d+)/) || 0),
-        };
-      };
-
-      function frame(t) {
-        if (t - lastStep >= 8) {
-          lastStep = t;
-          step(Math.min((t - last) / 1000, 0.1));
-          last = t;
-          window.__frames++;
-          if (t - lastLog >= 2000) {
-            const fps = window.__frames / ((t - lastLog) / 1000);
-            window.__frames = 0;
-            lastLog = t;
-            document.getElementById('log').textContent = `[wasm] fps=${fps.toFixed(0)} ${get_stats()}`;
+          function frame(t) {
+            if (!paused && t - lastStep >= 8) {
+              lastStep = t;
+              step(Math.min((t - last) / 1000, 0.1));
+              last = t;
+              window.__frames++;
+              if (t - lastLog >= 2000) {
+                const fps = window.__frames / ((t - lastLog) / 1000);
+                window.__frames = 0;
+                lastLog = t;
+                document.getElementById('log').textContent = `[wasm] fps=${fps.toFixed(0)} ${get_stats()}`;
+              }
+            }
+            requestAnimationFrame(frame);
           }
-        }
-        requestAnimationFrame(frame);
-      }
-      setInterval(() => {
-        const raw = get_stats();
-        if (raw && !raw.startsWith('no app') && !raw.startsWith('pending')) {
-          updateHud(parseStats(raw));
-        }
-      }, 200);
-      window.addEventListener('keydown', (e) => {
-        if (el('altar-prompt').style.display === 'block') {
-          if (e.code === 'KeyY') { e.preventDefault(); reforge(0); }
-          else if (e.code === 'KeyN') { e.preventDefault(); reforge(1); }
-        }
-      });
-      requestAnimationFrame(frame);
+
+          // ---- Boot menu (Continue / New Game) ---------------------------
+          const bootmenu = el('bootmenu');
+          const saved = localStorage.getItem(SAVE_KEY);
+          if (saved && saved.length > 2) {
+            bootOpen = true;
+            bootmenu.className = 'overlay';
+          } else {
+            bootmenu.className = 'hidden';
+            gameStarted = true;
+          }
+          el('btn-continue').onclick = () => {
+            ensureAudio();
+            const ok = deserialize_save(saved);
+            bootmenu.className = 'hidden';
+            bootOpen = false;
+            gameStarted = true;
+            if (!ok) { new_game(); }
+          };
+          el('btn-new').onclick = () => {
+            ensureAudio();
+            localStorage.removeItem(SAVE_KEY);
+            new_game();
+            bootmenu.className = 'hidden';
+            bootOpen = false;
+            gameStarted = true;
+          };
+
+          // ---- Settings menu --------------------------------------------
+          const settingsEl = el('settings');
+          const openSettings = () => {
+            el('set-master').value = settings.master;
+            el('set-sfx').value = settings.sfx;
+            el('set-music').value = settings.music;
+            el('set-mute').checked = settings.muted;
+            settingsEl.className = 'overlay';
+            paused = true;
+          };
+          const closeSettings = () => { settingsEl.className = 'hidden'; paused = false; };
+          el('gear').onclick = openSettings;
+          el('btn-resume').onclick = closeSettings;
+          el('btn-save').onclick = () => { doSave(); toast('Game saved'); };
+          el('set-master').oninput = (e) => { settings.master = Number(e.target.value); applyAudio(); saveSettings(); };
+          el('set-sfx').oninput = (e) => { settings.sfx = Number(e.target.value); applyAudio(); saveSettings(); };
+          el('set-music').oninput = (e) => { settings.music = Number(e.target.value); applyAudio(); saveSettings(); };
+          el('set-mute').onchange = (e) => { settings.muted = e.target.checked; applyAudio(); saveSettings(); };
+
+          function doSave() {
+            try { localStorage.setItem(SAVE_KEY, serialize_save()); } catch (e) {}
+          }
+
+          // ---- Keyboard: reforge choice + pause -------------------------
+          window.addEventListener('keydown', (e) => {
+            ensureAudio();
+            if (el('altar-prompt').style.display === 'block') {
+              if (e.code === 'KeyY') { e.preventDefault(); reforge(0); }
+              else if (e.code === 'KeyN') { e.preventDefault(); reforge(1); }
+            }
+            if (e.code === 'Escape') {
+              if (settingsEl.className === 'hidden') openSettings(); else closeSettings();
+            }
+          });
+          window.addEventListener('pointerdown', ensureAudio, { once: false });
+          window.addEventListener('touchstart', ensureAudio, { once: false });
+
+          // ---- Touch controls -------------------------------------------
+          const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+          if (isTouch) el('touch').classList.remove('hidden');
+          document.querySelectorAll('#touch .tbtn').forEach((b) => {
+            const code = b.dataset.key;
+            const down = (ev) => { ev.preventDefault(); ensureAudio(); b.classList.add('pressed'); window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true })); };
+            const up = (ev) => { ev.preventDefault(); b.classList.remove('pressed'); window.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true })); };
+            b.addEventListener('pointerdown', down);
+            b.addEventListener('pointerup', up);
+            b.addEventListener('pointerleave', up);
+            b.addEventListener('pointercancel', up);
+          });
+
+          // ---- Autosave --------------------------------------------------
+          setInterval(() => { if (gameStarted && !paused && !bootOpen) doSave(); }, 8000);
+          window.addEventListener('beforeunload', () => { if (!bootOpen) doSave(); });
+          document.addEventListener('visibilitychange', () => { if (document.hidden && !bootOpen) doSave(); });
+
+          setInterval(() => {
+            const raw = get_stats();
+            if (raw && !raw.startsWith('no app') && !raw.startsWith('pending')) {
+              updateHud(parseStats(raw));
+            }
+          }, 200);
+
+          requestAnimationFrame(frame);
         }).catch((e) => {
           const el = document.getElementById('fallback-reason');
           if (el) el.textContent = String(e);
           document.getElementById('fallback').style.display = 'block';
           document.getElementById('log').textContent = 'INIT ERROR: ' + e;
         });
-        });
+      });
     };
     boot();
   </script>

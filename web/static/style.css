@@ -171,6 +171,115 @@ html, body {
   padding: 28px 44px;
 }
 
+/* shared full-screen overlay used by boot menu + settings (and death/win) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  background: rgba(5, 8, 15, 0.72);
+  pointer-events: auto;
+}
+
+.overlay.hidden { display: none; }
+
+.menu-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.menu-btn {
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: #e8edf3;
+  background: rgba(20, 30, 48, 0.95);
+  border: 1px solid rgba(160, 180, 205, 0.5);
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.menu-btn:hover { background: rgba(40, 56, 84, 0.95); border-color: #f2d77a; }
+
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 14px;
+  color: #cfd8e3;
+  margin: 10px 0;
+  min-width: 280px;
+}
+
+#gear {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 19;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  line-height: 1;
+  color: #e8edf3;
+  background: rgba(10, 16, 28, 0.8);
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#gear:hover { border-color: #f2d77a; }
+
+#touch {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 18px;
+  pointer-events: none;
+}
+
+#touch.hidden { display: none; }
+
+.touch-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  grid-template-areas: ". up ." "left . right" ". down .";
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.touch-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 56px);
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.tbtn {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+  color: #e8edf3;
+  background: rgba(10, 16, 28, 0.7);
+  border: 1px solid rgba(160, 180, 205, 0.45);
+  border-radius: 10px;
+  user-select: none;
+  touch-action: none;
+}
+
+.tbtn.act { background: rgba(40, 56, 84, 0.8); }
+.tbtn.pressed { background: rgba(242, 215, 122, 0.5); border-color: #f2d77a; }
+
 #overlay-box h2 {
   margin: 0 0 8px;
   letter-spacing: 2px;

@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 /// Item kinds the player can carry. Each maps to a fixed inventory slot.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ItemKind {
     Wood,
     Stone,
@@ -23,7 +25,7 @@ impl ItemKind {
 const SLOTS: usize = 4;
 
 /// Simple stack inventory: one count per item kind.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Inventory {
     counts: [u32; SLOTS],
 }

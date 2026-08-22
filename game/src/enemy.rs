@@ -1,6 +1,7 @@
 use crate::items::ItemKind;
 use crate::render::Sprite;
 use crate::world::TileKind;
+use serde::{Deserialize, Serialize};
 use std::collections::{BinaryHeap, HashMap};
 
 /// Aggro range: enemies start chasing within this many tiles (chebyshev).
@@ -20,7 +21,7 @@ pub const BOSS_ATTACK_RANGE: f32 = 1.9;
 /// Boss attack cooldown (seconds).
 pub const BOSS_ATTACK_COOLDOWN: f32 = 1.5;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EnemyKind {
     Slime,
     /// Forest Warden: the first Crown Fragment guardian (Chapter 3 boss).

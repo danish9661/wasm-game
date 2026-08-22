@@ -4,7 +4,7 @@ use game::combat::{
     arrow_hits, swing_hits,
 };
 use game::daynight::{DAY_LENGTH, START_TIME, clock, daylight as daylight_at, temperature};
-use game::enemy::{AGGRO_RANGE, EnemyRegistry, EnemyKind, spawner_on};
+use game::enemy::{AGGRO_RANGE, AiState, EnemyRegistry, EnemyKind, spawner_on};
 use game::items::{Inventory, ItemKind};
 use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls};
@@ -171,6 +171,7 @@ pub struct App {
     camera: Camera,
     keys: [bool; 4],
     world: WorldGen,
+    world_seed: u32,
     chunks: ChunkCache,
     player: Player,
     inventory: Inventory,
@@ -195,6 +196,8 @@ pub struct App {
     time_of_day: f32,
     respawn_timer: f32,
     debug_swing_hits: u32,
+    debug_attacks: u32,
+    debug_shots: u32,
     vertices: Vec<f32>,
     quad_count: u32,
     frames: u64,
@@ -255,7 +258,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{}) structures={} structs={} mobs={} mob={} pack={} swings={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -273,6 +276,8 @@ impl App {
             mob,
             pack,
             self.debug_swing_hits,
+            self.debug_attacks,
+            self.debug_shots,
             self.quest.stage,
             self.ruins.0,
             self.ruins.1,
@@ -396,6 +401,7 @@ impl App {
             camera: Camera::new(0.0, 0.0),
             keys: [false; 4],
             world,
+            world_seed: 1337,
             chunks,
             player: Player::new(px, py),
             inventory: Inventory::new(),
@@ -419,6 +425,8 @@ impl App {
             time_of_day: START_TIME,
             respawn_timer: 0.0,
             debug_swing_hits: 0,
+            debug_attacks: 0,
+            debug_shots: 0,
             vertices: Vec::with_capacity(64 * 1024 * 6),
             quad_count: 0,
             frames: 0,
@@ -459,6 +467,7 @@ impl App {
         if !self.player.spend_stamina(6.0) {
             return;
         }
+        self.debug_attacks += 1;
         let mut hits = swing_hits(
             &self.player,
             self.enemies.enemies_mut(),
@@ -499,6 +508,7 @@ impl App {
         if !self.player.spend_stamina(4.0) {
             return;
         }
+        self.debug_shots += 1;
         self.arrows.push(Arrow::new(
             self.player.x,
             self.player.y,
@@ -601,18 +611,13 @@ impl App {
         best.map(|(_, tx, ty, k)| (tx, ty, k))
     }
 
-    /// Reforge the Crown (campaign finale). `choice`: 0 = Reign (victory),
-    /// 1 = Shatter (New Game+ with a harder, reseeded world). Both start a
-    /// fresh run with `ng_plus` incremented so the HUD can show the streak.
-    pub fn reforge(&mut self, choice: u8) {
-        if self.ending.is_some() || self.inventory.count(ItemKind::Fragment) == 0 {
-            return;
-        }
-        self.ending = Some(choice % 2);
-        self.ng_plus += 1;
-        let seed = 1338 + (self.ng_plus - 1);
+    /// Regenerate the world from `seed` and reset all run state for a clean
+    /// run (used by both New Game+ and the Save/Load "New Game" path).
+    fn reset_world(&mut self, seed: u32) {
+        self.world_seed = seed;
         self.world = WorldGen::new(seed);
         self.chunks = ChunkCache::new(256);
+        self.ruins = ruins_at(seed, |tx, ty| tile_at(&self.world, &mut self.chunks, tx, ty).walkable());
         let (px, py) = player::find_spawn(&self.world, &mut self.chunks);
         self.spawn_point = (px, py);
         self.player = Player::new(px, py);
@@ -621,7 +626,6 @@ impl App {
         self.arrows = Vec::new();
         self.enemies = EnemyRegistry::new();
         self.opened_chests = std::collections::HashSet::new();
-        self.ruins = ruins_at(seed, |tx, ty| tile_at(&self.world, &mut self.chunks, tx, ty).walkable());
         let mut structures = Vec::new();
         structures.push(Structure { tx: self.ruins.0, ty: self.ruins.1, kind: StructureKind::Chest });
         for (wx, wy) in ruins_walls(self.ruins.0, self.ruins.1) {
@@ -636,6 +640,114 @@ impl App {
         self.near_altar = false;
         self.ending_pending = false;
         self.time_of_day = START_TIME;
+        self.respawn_timer = 0.0;
+    }
+
+    /// Reforge the Crown (campaign finale). `choice`: 0 = Reign (victory),
+    /// 1 = Shatter (New Game+ with a harder, reseeded world). Both start a
+    /// fresh run with `ng_plus` incremented so the HUD can show the streak.
+    pub fn reforge(&mut self, choice: u8) {
+        if self.ending.is_some() || self.inventory.count(ItemKind::Fragment) == 0 {
+            return;
+        }
+        self.ending = Some(choice % 2);
+        self.ng_plus += 1;
+        let seed = 1338 + (self.ng_plus - 1);
+        self.reset_world(seed);
+    }
+
+    /// Start a brand-new run at the base seed (Save/Load "New Game").
+    pub fn new_game(&mut self) {
+        self.ng_plus = 0;
+        self.ending = None;
+        self.reset_world(1337);
+    }
+
+    // ---- Save / Load ------------------------------------------------------
+
+    pub fn to_save(&self) -> crate::save::SaveState {
+        use game::items::ItemKind;
+        let inv = [ItemKind::Wood, ItemKind::Stone, ItemKind::Food, ItemKind::Fragment]
+            .iter()
+            .map(|k| (*k, self.inventory.count(*k)))
+            .collect();
+        crate::save::SaveState {
+            version: 1,
+            world_seed: self.world_seed,
+            player: crate::save::PlayerSave {
+                x: self.player.x,
+                y: self.player.y,
+                hp: self.player.hp,
+                hunger: self.player.hunger,
+                stamina: self.player.stamina,
+                facing: self.player.facing,
+            },
+            inv,
+            structures: self.structures.clone(),
+            opened_chests: self.opened_chests.iter().cloned().collect(),
+            enemies: self.enemies.enemies().map(|e| (e.kind, e.x, e.y, e.hp)).collect(),
+            quest_stage: self.quest.stage,
+            slimes_killed: self.slimes_killed,
+            boss_killed: self.boss_killed,
+            boss_spawned: self.boss_spawned,
+            altar_placed: self.altar_placed,
+            altar_tile: self.altar_tile,
+            ending_pending: self.ending_pending,
+            ending: self.ending,
+            ng_plus: self.ng_plus,
+            time_of_day: self.time_of_day,
+            spawn_point: self.spawn_point,
+        }
+    }
+
+    pub fn apply_save(&mut self, s: &crate::save::SaveState) {
+        use game::items::Inventory;
+        use game::resources::NodeRegistry;
+        self.reset_world(s.world_seed);
+        // overlay the saved dynamic state
+        self.player.x = s.player.x;
+        self.player.y = s.player.y;
+        self.player.hp = s.player.hp;
+        self.player.hunger = s.player.hunger;
+        self.player.stamina = s.player.stamina;
+        self.player.facing = s.player.facing;
+
+        self.inventory = Inventory::new();
+        for (k, n) in &s.inv {
+            self.inventory.add(*k, *n);
+        }
+        self.structures = s.structures.clone();
+        self.opened_chests = s.opened_chests.iter().cloned().collect();
+
+        self.enemies = EnemyRegistry::new();
+        for (kind, x, y, hp) in &s.enemies {
+            let tx = x.floor() as i32;
+            let ty = y.floor() as i32;
+            if let Some(e) = self.enemies.get(tx, ty, *kind, 0.0) {
+                e.x = *x;
+                e.y = *y;
+                e.hp = *hp;
+                e.state = AiState::Idle;
+                e.attack_timer = 0.0;
+            }
+        }
+
+        self.quest = QuestLog::new();
+        self.quest.stage = s.quest_stage;
+        self.slimes_killed = s.slimes_killed;
+        self.boss_killed = s.boss_killed;
+        self.boss_spawned = s.boss_spawned;
+        self.altar_placed = s.altar_placed;
+        self.altar_tile = s.altar_tile;
+        self.near_altar = false;
+        self.ending_pending = s.ending_pending;
+        self.ending = s.ending;
+        self.ng_plus = s.ng_plus;
+        self.time_of_day = s.time_of_day;
+        self.spawn_point = s.spawn_point;
+        self.respawn_timer = 0.0;
+        self.arrows = Vec::new();
+        self.nodes = NodeRegistry::new();
     }
 
     pub fn resize(&mut self) {

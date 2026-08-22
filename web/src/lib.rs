@@ -1,6 +1,8 @@
 mod renderer;
+mod save;
 
 use renderer::App;
+use save::SaveState;
 use std::cell::RefCell;
 use wasm_bindgen::prelude::{Closure, JsCast, JsValue, wasm_bindgen};
 use web_sys::{window, KeyboardEvent};
@@ -100,6 +102,41 @@ pub fn reforge(choice: u8) {
     APP.with(|cell| {
         if let Some(app) = cell.borrow_mut().as_mut() {
             app.reforge(choice);
+        }
+    });
+}
+
+/// Serialize the current run to a JSON string (caller persists it).
+#[wasm_bindgen]
+pub fn serialize_save() -> String {
+    APP.with(|cell| match cell.borrow().as_ref() {
+        Some(app) => serde_json::to_string(&app.to_save()).unwrap_or_else(|_| String::from("{}")),
+        None => String::from("{}"),
+    })
+}
+
+/// Restore a run from a JSON string produced by `serialize_save`.
+#[wasm_bindgen]
+pub fn deserialize_save(json: &str) -> bool {
+    match serde_json::from_str::<SaveState>(json) {
+        Ok(s) => {
+            APP.with(|cell| {
+                if let Some(app) = cell.borrow_mut().as_mut() {
+                    app.apply_save(&s);
+                }
+            });
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+/// Start a fresh run at the base seed (Save/Load "New Game").
+#[wasm_bindgen]
+pub fn new_game() {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.new_game();
         }
     });
 }

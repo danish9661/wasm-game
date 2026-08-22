@@ -1,5 +1,6 @@
 use crate::items::{Inventory, ItemKind};
 use crate::render::Sprite;
+use serde::{Deserialize, Serialize};
 
 /// Reach required (chebyshev distance, tile units) to open a chest. Slightly
 /// larger than the harvest range: ruins sit between flanking walls, and the
@@ -10,7 +11,7 @@ pub const CHEST_RANGE: f32 = 2.0;
 /// Placeable structures. Walls block movement; campfires emit light;
 /// chests (only ever placed by the world's ruins POI) hold loot; the
 /// Reforging Altar is where the Crown is reforged to end the campaign.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StructureKind {
     Campfire,
     Wall,
@@ -66,7 +67,7 @@ impl StructureKind {
 }
 
 /// A placed structure at a tile.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Structure {
     pub tx: i32,
     pub ty: i32,
