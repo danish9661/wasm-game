@@ -13,6 +13,12 @@ pub const MAX_HUNGER: f32 = 100.0;
 pub const MAX_STAMINA: f32 = 100.0;
 /// Respawn position for the player (the spawner finds the same tile).
 pub const SPAWN: (f32, f32) = (0.5, 0.5);
+/// Dodge roll: duration of the burst, cooldown, stamina cost, and the speed
+/// multiplier applied during the burst.
+pub const DODGE_TIME: f32 = 0.25;
+pub const DODGE_CD: f32 = 0.6;
+pub const DODGE_STAMINA: f32 = 20.0;
+pub const DODGE_BOOST: f32 = 2.4;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Player {
@@ -25,6 +31,11 @@ pub struct Player {
     pub facing: (f32, f32),
     /// Seconds before the player can take damage again (hit immunity).
     pub hurt_timer: f32,
+    /// Remaining dodge-roll burst time and its cooldown.
+    pub dodge_timer: f32,
+    pub dodge_cd: f32,
+    /// Unit direction of the active dodge burst.
+    pub dodge_dir: (f32, f32),
     pub alive: bool,
 }
 
@@ -38,6 +49,9 @@ impl Player {
             stamina: MAX_STAMINA,
             facing: (1.0, 0.0),
             hurt_timer: 0.0,
+            dodge_timer: 0.0,
+            dodge_cd: 0.0,
+            dodge_dir: (1.0, 0.0),
             alive: true,
         }
     }
@@ -68,6 +82,8 @@ impl Player {
         self.hunger = MAX_HUNGER / 2.0;
         self.stamina = MAX_STAMINA;
         self.hurt_timer = 0.0;
+        self.dodge_timer = 0.0;
+        self.dodge_cd = 0.0;
         self.alive = true;
     }
 
@@ -90,6 +106,26 @@ impl Player {
         }
     }
 
+    /// Begin a dodge roll in `dir` (falls back to facing if stationary).
+    /// Returns false (and changes nothing) if on cooldown or low on stamina.
+    /// Grants brief i-frames via `hurt_timer`.
+    pub fn try_dodge(&mut self, dir: (f32, f32)) -> bool {
+        if self.dodge_cd > 0.0 || self.stamina < DODGE_STAMINA || !self.alive {
+            return false;
+        }
+        let d = if dir.0 == 0.0 && dir.1 == 0.0 {
+            self.facing
+        } else {
+            dir
+        };
+        self.dodge_dir = d;
+        self.dodge_timer = DODGE_TIME;
+        self.dodge_cd = DODGE_CD;
+        self.stamina -= DODGE_STAMINA;
+        self.hurt_timer = self.hurt_timer.max(DODGE_TIME);
+        true
+    }
+
     /// Per-tick survival: hunger drains slowly (3× faster in the cold at
     /// night), stamina regenerates, starving costs hp, hurt timer ticks down.
     /// `warm` (sheltered by a campfire/lantern/brazier) slows the drain and
@@ -97,6 +133,8 @@ impl Player {
     /// Base drain ≈ 9 hunger/minute, so a full bar lasts ~11 minutes.
     pub fn tick(&mut self, dt: f32, temperature: f32, warm: bool) {
         self.hurt_timer = (self.hurt_timer - dt).max(0.0);
+        self.dodge_timer = (self.dodge_timer - dt).max(0.0);
+        self.dodge_cd = (self.dodge_cd - dt).max(0.0);
         let cold = ((temperature).min(0.0) / -10.0).max(0.0);
         let drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
         self.hunger = (self.hunger - dt * drain).max(0.0);

@@ -90,6 +90,7 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Ogre => "Ogre",
         EnemyKind::Wraith => "Wraith",
         EnemyKind::Stoneslinger => "Stoneslinger",
+        EnemyKind::Colossus => "Colossus",
     }
 }
 
@@ -947,6 +948,9 @@ impl App {
                 "KeyR" => {
                     self.use_salve();
                 }
+                "Space" => {
+                    self.dodge();
+                }
                 // Build mode: Q toggles it, Esc exits, 1-7 pick a structure.
                 "KeyQ" => {
                     self.build_mode =
@@ -1029,6 +1033,15 @@ impl App {
         true
     }
 
+    /// Trigger a dodge roll (Space): a brief speed burst with i-frames.
+    pub fn dodge(&mut self) {
+        if !self.player.alive {
+            return;
+        }
+        let dir = player::input_dir(self.keys[0], self.keys[1], self.keys[2], self.keys[3]);
+        self.player.try_dodge(dir);
+    }
+
     /// Spawn `count` particles bursting from `(x, y)` in a ring, tinted `color`.
     fn spawn_particles(
         &mut self,
@@ -1104,7 +1117,7 @@ impl App {
                 _ => {}
             }
             // bosses never respawn; slimes return after 15s
-            let respawn = if matches!(kind, EnemyKind::Boss) { f32::MAX } else { 15.0 };
+            let respawn = if matches!(kind, EnemyKind::Boss | EnemyKind::Colossus) { f32::MAX } else { 15.0 };
             self.enemies.kill(tx, ty, respawn);
         }
     }
@@ -1651,7 +1664,13 @@ impl App {
         )
         .wadable();
         let move_dt = if wade { dt * 0.55 } else { dt };
-        player::move_player(&mut self.player, dir, move_dt, |tx, ty| {
+        // During a dodge roll, move in the dodge direction at boosted speed.
+        let (move_dir, move_dt2) = if self.player.dodge_timer > 0.0 {
+            (self.player.dodge_dir, move_dt * player::DODGE_BOOST)
+        } else {
+            (dir, move_dt)
+        };
+        player::move_player(&mut self.player, move_dir, move_dt2, |tx, ty| {
             !tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
                 || self
                     .structures
@@ -1746,6 +1765,7 @@ impl App {
                 EnemyKind::Ogre => 28.0,
                 EnemyKind::Wraith => 24.0,
                 EnemyKind::Stoneslinger => 24.0,
+                EnemyKind::Colossus => 64.0,
             };
             sprites.push(
                 Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)

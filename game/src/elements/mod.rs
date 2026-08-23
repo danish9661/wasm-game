@@ -62,3 +62,4 @@ pub(crate) mod imp;
 pub(crate) mod ogre;
 pub(crate) mod wraith;
 pub(crate) mod stoneslinger;
+pub(crate) mod colossus;

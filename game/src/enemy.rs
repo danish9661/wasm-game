@@ -38,6 +38,9 @@ pub enum EnemyKind {
     Wraith,
     /// Stoneslinger: a stone-biome caster that hurls rocks from range.
     Stoneslinger,
+    /// Colossus: a second Crown Fragment guardian — a towering stone golem
+    /// that awakens in the Stone peaks.
+    Colossus,
 }
 
 impl EnemyKind {
@@ -74,6 +77,7 @@ impl EnemyKind {
             EnemyKind::Ogre => 40.0,
             EnemyKind::Wraith => 10.0,
             EnemyKind::Stoneslinger => 16.0,
+            EnemyKind::Colossus => 120.0,
         }
     }
 
@@ -90,6 +94,7 @@ impl EnemyKind {
             EnemyKind::Ogre => 12.0,
             EnemyKind::Wraith => 5.0,
             EnemyKind::Stoneslinger => 6.0,
+            EnemyKind::Colossus => 16.0,
         }
     }
 
@@ -105,6 +110,7 @@ impl EnemyKind {
             EnemyKind::Ogre => [0.55, 0.45, 0.35],
             EnemyKind::Wraith => [0.62, 0.45, 0.86],
             EnemyKind::Stoneslinger => [0.45, 0.40, 0.52],
+            EnemyKind::Colossus => [0.55, 0.52, 0.50],
         }
     }
 
@@ -123,6 +129,7 @@ impl EnemyKind {
             EnemyKind::Ogre => (20.0, 22.0),
             EnemyKind::Wraith => (12.0, 17.0),
             EnemyKind::Stoneslinger => (12.0, 18.0),
+            EnemyKind::Colossus => (26.0, 32.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
@@ -135,6 +142,7 @@ impl EnemyKind {
             EnemyKind::Ogre => SpriteStyle::Ogre,
             EnemyKind::Wraith => SpriteStyle::Wraith,
             EnemyKind::Stoneslinger => SpriteStyle::Stoneslinger,
+            EnemyKind::Colossus => SpriteStyle::Colossus,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
@@ -221,6 +229,7 @@ impl Enemy {
             EnemyKind::Ogre => vec![ItemKind::Gem],
             EnemyKind::Wraith => vec![ItemKind::Herb],
             EnemyKind::Stoneslinger => vec![ItemKind::Gem],
+            EnemyKind::Colossus => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Herb],
         }
     }
 
@@ -248,6 +257,7 @@ impl Enemy {
             EnemyKind::Ogre => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.7, 1.2),
             EnemyKind::Wraith => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.3, 0.7),
             EnemyKind::Stoneslinger => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.9, 1.0),
+            EnemyKind::Colossus => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
         };
         let d = (player.0 - self.x)
             .abs()
@@ -400,6 +410,7 @@ pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
         TileKind::Stone if h.rem_euclid(59) == 0 => Some(EnemyKind::Ogre),
         TileKind::Stone if h.rem_euclid(73) == 0 => Some(EnemyKind::Wraith),
         TileKind::Stone if h.rem_euclid(83) == 0 => Some(EnemyKind::Stoneslinger),
+        TileKind::Stone if h.rem_euclid(211) == 0 => Some(EnemyKind::Colossus),
         TileKind::Swamp if h.rem_euclid(67) == 0 => Some(EnemyKind::Wraith),
         _ => None,
     }
@@ -479,6 +490,7 @@ pub fn enemies_in_range<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::player::Player;
     use crate::world::{ChunkCache, WorldGen, tile_at};
 
     fn world() -> (WorldGen, ChunkCache) {
@@ -652,5 +664,37 @@ mod tests {
             .filter(|&(tx, ty)| spawner_on(tx, ty, TileKind::Swamp).is_some())
             .count();
         assert!(n > 20, "expected ~1/14 of 4096, got {n}");
+    }
+
+    #[test]
+    fn colossus_is_a_second_boss_that_drops_a_fragment() {
+        let e = Enemy::new(0.5, 0.5, EnemyKind::Colossus);
+        assert!(
+            e.drops().contains(&ItemKind::Fragment),
+            "colossus must drop a crown fragment"
+        );
+        assert!(EnemyKind::Colossus.max_hp() > 100.0, "colossus is a heavy boss");
+    }
+
+    #[test]
+    fn stoneslinger_fires_when_player_in_range() {
+        let (w, mut c) = world();
+        let mut e = Enemy::new(5.5, 5.5, EnemyKind::Stoneslinger);
+        let mut blocked = blocked(&w, &mut c);
+        // player within aggro (6) and shoot range (9) but outside melee reach
+        e.update((10.5, 5.5), 0.05, &mut blocked);
+        assert!(e.pending_shot.is_some(), "stoneslinger should fire at range");
+    }
+
+    #[test]
+    fn player_dodge_grants_iframes_and_costs_stamina() {
+        let mut p = Player::new(0.5, 0.5);
+        p.stamina = 100.0;
+        assert!(p.try_dodge((1.0, 0.0)));
+        assert!(p.dodge_timer > 0.0, "dodge burst active");
+        assert!(p.hurt_timer > 0.0, "dodge grants i-frames");
+        assert!(p.stamina < 100.0, "dodge costs stamina");
+        // immediately dodging again is blocked by cooldown
+        assert!(!p.try_dodge((0.0, 1.0)), "cooldown blocks back-to-back dodges");
     }
 }
