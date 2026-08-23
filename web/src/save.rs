@@ -32,6 +32,7 @@ pub struct SaveState {
     pub quest_stage: u8,
     pub slimes_killed: u32,
     pub boss_killed: u32,
+    pub colossus_killed: u32,
     pub boss_spawned: bool,
     pub altar_placed: bool,
     pub altar_tile: Option<(i32, i32)>,

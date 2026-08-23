@@ -485,6 +485,7 @@ pub struct App {
     opened_chests: std::collections::HashSet<(i32, i32)>,
     slimes_killed: u32,
     boss_killed: u32,
+    colossus_killed: u32,
     boss_spawned: bool,
     altar_placed: bool,
     altar_tile: Option<(i32, i32)>,
@@ -691,7 +692,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -720,6 +721,7 @@ impl App {
             clock(self.time_of_day),
             near,
             self.boss_spawned as u8,
+            self.colossus_killed,
             self.inventory.count(ItemKind::Fragment),
             self.altar_placed as u8,
             self.near_altar as u8,
@@ -874,6 +876,7 @@ impl App {
             opened_chests: std::collections::HashSet::new(),
             slimes_killed: 0,
             boss_killed: 0,
+            colossus_killed: 0,
             boss_spawned: false,
             altar_placed: false,
             altar_tile: None,
@@ -1114,6 +1117,9 @@ impl App {
                 EnemyKind::Boss => {
                     self.boss_killed += 1;
                 }
+                EnemyKind::Colossus => {
+                    self.colossus_killed += 1;
+                }
                 _ => {}
             }
             // bosses never respawn; slimes return after 15s
@@ -1301,6 +1307,7 @@ impl App {
         self.structures = structures;
         self.quest = QuestLog::new();
         self.boss_killed = 0;
+        self.colossus_killed = 0;
         self.boss_spawned = false;
         self.altar_placed = false;
         self.altar_tile = None;
@@ -1367,6 +1374,7 @@ impl App {
             quest_stage: self.quest.stage,
             slimes_killed: self.slimes_killed,
             boss_killed: self.boss_killed,
+            colossus_killed: self.colossus_killed,
             boss_spawned: self.boss_spawned,
             altar_placed: self.altar_placed,
             altar_tile: self.altar_tile,
@@ -1417,6 +1425,7 @@ impl App {
         self.quest.stage = s.quest_stage;
         self.slimes_killed = s.slimes_killed;
         self.boss_killed = s.boss_killed;
+        self.colossus_killed = s.colossus_killed;
         self.boss_spawned = s.boss_spawned;
         self.altar_placed = s.altar_placed;
         self.altar_tile = s.altar_tile;
@@ -1608,6 +1617,7 @@ impl App {
             self.boss_killed >= 1,
             self.inventory.count(ItemKind::Fragment) > 0,
             self.ending.is_some(),
+            self.colossus_killed >= 1,
         );
 
         // arrows fly, hit, and expire (a hit removes the arrow)

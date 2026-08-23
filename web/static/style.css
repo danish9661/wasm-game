@@ -550,6 +550,25 @@ html, body {
 }
 #buildhint.hidden { display: none; }
 
+#touch-build {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f2e3b3;
+  font-size: 15px;
+  font-weight: 600;
+  background: rgba(40, 56, 84, 0.92);
+  border: 1px solid rgba(242, 215, 122, 0.6);
+  border-radius: 8px;
+  padding: 8px 18px;
+  pointer-events: none;
+  z-index: 16;
+  text-align: center;
+  box-shadow: 0 0 14px rgba(242, 215, 122, 0.25);
+}
+#touch-build.hidden { display: none; }
+
 /* minimap */
 #minimap {
   position: fixed;

@@ -98,6 +98,7 @@
       <button class="tbtn act" data-key="KeyI">🎒</button>
       <button class="tbtn act" data-key="KeyP">📷</button>
     </div>
+    <div id="touch-build" class="hidden">BUILD MODE — tap ground to place · 🔨 to exit</div>
   </div>
 
   <div id="bootmenu" class="overlay hidden">
@@ -378,8 +379,8 @@
             'A slime blocks the ruins - defeat it',
             'Find the ancient ruins',
             'Open the ruins chest',
-            'The Forest Warden guards a Crown Fragment - defeat it',
-            'Carry the fragment to the altar where you woke',
+             'The Forest Warden guards a Crown Fragment - also hunt the Colossus',
+             'Carry the fragment to the altar where you woke',
             'Press E at the altar to reforge the Crown',
             'The Star Crown blazes - the world is healed',
           ];
@@ -445,9 +446,11 @@
             if (stats.ending >= 0) {
               if (!ovEnd.classList.contains('ending') || el('overlay-sub').dataset.ng !== String(stats.ng)) {
                 ovEnd.className = 'ending';
-                el('overlay-title').textContent = stats.ending === 0 ? 'THE STAR CROWN IS REFORGED' : 'THE CROWN SHATTERS';
+                el('overlay-title').textContent = stats.ending === 0
+                  ? (stats.colossus >= 1 ? 'THE TWIN STAR CROWNS BLAZE' : 'THE STAR CROWN IS REFORGED')
+                  : 'THE CROWN SHATTERS';
                 el('overlay-sub').textContent = (stats.ending === 0
-                  ? 'You reign over a healed world.'
+                  ? (stats.colossus >= 1 ? 'You healed the world completely — both Crowns reign.' : 'You reign over a healed world.')
                   : 'You free the trapped souls — and begin anew.')
                   + ` New Game+ ${stats.ng} begins.`;
                 el('overlay-sub').dataset.ng = String(stats.ng);
@@ -458,7 +461,9 @@
 
             const q = stats.quest;
             if (q >= 0 && q < QUEST_TEXT.length && q !== lastQuest) {
-              el('quest').textContent = `📜 ${QUEST_TEXT[q]}`;
+              let txt = QUEST_TEXT[q];
+              if (q === 8 && stats.colossus >= 1) txt = 'The Twin Star Crowns blaze - the world is whole (true ending)';
+              el('quest').textContent = `📜 ${txt}`;
               lastQuest = q;
             }
 
@@ -493,6 +498,7 @@
               quest: Number(get(/quest=S(\d)/) || -1),
               time: get(/time=(\d{2}:\d{2})/),
               boss: Number(get(/boss=(\d)/) || 0),
+              colossus: Number(get(/colossus=(\d+)/) || 0),
               bosshp: Number(get(/bosshp=(\d+)/) || 0),
               frag: Number(get(/frag=(\d+)/) || 0),
               altar: Number(get(/altar=(\d)/) || 0),
@@ -567,6 +573,10 @@
               buildHint.innerHTML = `Placing <b>${d.selected || 'structure'}</b> — move cursor &amp; <b>click</b> (or press its key) to place · <b>Q</b> toggles · <b>Esc</b> exits`;
             } else {
               buildHint.classList.add('hidden');
+            }
+            // touch-only build-mode banner (the ghost follows the last tap)
+            if (isTouch) {
+              el('touch-build').classList.toggle('hidden', !buildMode);
             }
             el('invbtn').classList.toggle('active', invOpen);
           };

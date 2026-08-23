@@ -15,7 +15,7 @@ pub(crate) fn build(
     let stone = color;
     let dark = shade(stone, 0.6);
     let cap = shade(stone, 1.1);
-    let mut parts = vec![
+    let parts = vec![
         // main shaft
         Part::vquad(cx - 11.0, cy - 34.0, 11.0, 34.0, stone, alpha, true),
         // base plinth

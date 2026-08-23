@@ -6,3 +6,11 @@ edition = "2021"
 [dependencies]
 noise = "0.9"
 serde = { version = "1", features = ["derive"] }
+
+# Only needed by the offline `gen_pngs` binary (host builds, not wasm).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+png = "0.17"
+
+[[bin]]
+name = "gen_pngs"
+path = "src/bin/gen_pngs.rs"
