@@ -73,6 +73,7 @@ pub enum SpriteStyle {
     Imp,
     Ogre,
     Wraith,
+    Stoneslinger,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -466,6 +467,7 @@ fn push_styled_sprite(
         crate_box, crystal, fence, fern, flower, goblin, grass_tuft, humanoid, hpbar, imp, lantern,
         lilypad, mushroom, ogre, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
         skeleton, slime, spider, statue, torch, totem, tree, vines, wall, well, wraith,
+        stoneslinger,
     };
     match style {
         SpriteStyle::Generic => {
@@ -523,6 +525,7 @@ fn push_styled_sprite(
         SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Ogre => rasterize(&ogre::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Wraith => rasterize(&wraith::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Stoneslinger => rasterize(&stoneslinger::build(cx, cy, color, alpha, facing, anim_time), out),
         // New decorative props
         SpriteStyle::Lantern => rasterize(&lantern::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Brazier => rasterize(&brazier::build(cx, cy, color, alpha, facing, anim_time), out),

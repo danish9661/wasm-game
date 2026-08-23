@@ -89,6 +89,7 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Imp => "Imp",
         EnemyKind::Ogre => "Ogre",
         EnemyKind::Wraith => "Wraith",
+        EnemyKind::Stoneslinger => "Stoneslinger",
     }
 }
 
@@ -1537,6 +1538,10 @@ impl App {
             }) {
                 contact = Some(dmg);
             }
+            // Ranged enemies fire: turn the pending shot into an enemy arrow.
+            if let Some((dx, dy)) = e.pending_shot.take() {
+                self.arrows.push(Arrow::enemy(e.x, e.y, dx, dy));
+            }
         }
         if let Some(dmg) = contact {
             // Iron Plate (crafted at an Anvil) reduces incoming damage.
@@ -1598,10 +1603,21 @@ impl App {
             if !a.step(dt) {
                 return false;
             }
-            for (_key, e) in self.enemies.iter_mut_with_key() {
-                if arrow_hits(a, std::iter::once(&*e)).is_some() {
-                    e.take_damage(ARROW_DAMAGE);
-                    hit_pos.push((e.x, e.y));
+            if a.from_player {
+                for (_key, e) in self.enemies.iter_mut_with_key() {
+                    if arrow_hits(a, std::iter::once(&*e)).is_some() {
+                        e.take_damage(ARROW_DAMAGE);
+                        hit_pos.push((e.x, e.y));
+                        return false;
+                    }
+                }
+            } else {
+                // enemy arrow: hits the player
+                let dx = self.player.x - a.x;
+                let dy = self.player.y - a.y;
+                if dx * dx + dy * dy <= 0.8 * 0.8 {
+                    self.player.take_damage(ARROW_DAMAGE * (1.0 - self.craft_armor));
+                    hit_pos.push((a.x, a.y));
                     return false;
                 }
             }
@@ -1729,6 +1745,7 @@ impl App {
                 EnemyKind::Imp => 14.0,
                 EnemyKind::Ogre => 28.0,
                 EnemyKind::Wraith => 24.0,
+                EnemyKind::Stoneslinger => 24.0,
             };
             sprites.push(
                 Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)

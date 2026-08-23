@@ -17,6 +17,9 @@ pub struct Arrow {
     pub dx: f32,
     pub dy: f32,
     pub life: f32,
+    /// true = fired by the player (hits enemies); false = fired by an enemy
+    /// (hits the player).
+    pub from_player: bool,
 }
 
 impl Arrow {
@@ -29,7 +32,15 @@ impl Arrow {
             dx,
             dy,
             life: 3.0,
+            from_player: true,
         }
+    }
+
+    /// Enemy-fired arrow (damages the player).
+    pub fn enemy(x: f32, y: f32, dx: f32, dy: f32) -> Self {
+        let mut a = Self::new(x, y, dx, dy);
+        a.from_player = false;
+        a
     }
 
     /// Advance one tick; returns true while the arrow is still alive.

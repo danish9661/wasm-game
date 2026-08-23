@@ -36,6 +36,8 @@ pub enum EnemyKind {
     Ogre,
     /// Wraith: a flying, phase-shifting spirit that drifts over walls and water.
     Wraith,
+    /// Stoneslinger: a stone-biome caster that hurls rocks from range.
+    Stoneslinger,
 }
 
 impl EnemyKind {
@@ -43,6 +45,19 @@ impl EnemyKind {
     /// at the player). Used to skip A* pathing.
     pub fn flying(self) -> bool {
         matches!(self, EnemyKind::Wraith)
+    }
+
+    /// True for enemies that fire projectiles at the player from range.
+    pub fn ranged(self) -> bool {
+        matches!(self, EnemyKind::Stoneslinger)
+    }
+
+    /// Range (tiles) at which a ranged enemy will fire.
+    pub fn shoot_range(self) -> f32 {
+        match self {
+            EnemyKind::Stoneslinger => 9.0,
+            _ => 0.0,
+        }
     }
 }
 
@@ -58,6 +73,7 @@ impl EnemyKind {
             EnemyKind::Imp => 6.0,
             EnemyKind::Ogre => 40.0,
             EnemyKind::Wraith => 10.0,
+            EnemyKind::Stoneslinger => 16.0,
         }
     }
 
@@ -73,6 +89,7 @@ impl EnemyKind {
             EnemyKind::Imp => 3.0,
             EnemyKind::Ogre => 12.0,
             EnemyKind::Wraith => 5.0,
+            EnemyKind::Stoneslinger => 6.0,
         }
     }
 
@@ -87,6 +104,7 @@ impl EnemyKind {
             EnemyKind::Imp => [0.88, 0.35, 0.55],
             EnemyKind::Ogre => [0.55, 0.45, 0.35],
             EnemyKind::Wraith => [0.62, 0.45, 0.86],
+            EnemyKind::Stoneslinger => [0.45, 0.40, 0.52],
         }
     }
 
@@ -104,6 +122,7 @@ impl EnemyKind {
             EnemyKind::Imp => (10.0, 12.0),
             EnemyKind::Ogre => (20.0, 22.0),
             EnemyKind::Wraith => (12.0, 17.0),
+            EnemyKind::Stoneslinger => (12.0, 18.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
@@ -115,6 +134,7 @@ impl EnemyKind {
             EnemyKind::Imp => SpriteStyle::Imp,
             EnemyKind::Ogre => SpriteStyle::Ogre,
             EnemyKind::Wraith => SpriteStyle::Wraith,
+            EnemyKind::Stoneslinger => SpriteStyle::Stoneslinger,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
@@ -146,6 +166,11 @@ pub struct Enemy {
     path_timer: f32,
     path: Vec<(i32, i32)>,
     wander: f32,
+    /// Seconds until this enemy may fire again (ranged kinds only).
+    shoot_timer: f32,
+    /// Set during `update` when the enemy fires: a unit direction toward the
+    /// player. The caller (renderer) turns this into an enemy arrow.
+    pub pending_shot: Option<(f32, f32)>,
 }
 
 impl Enemy {
@@ -162,6 +187,8 @@ impl Enemy {
             path_timer: 0.0,
             path: Vec::new(),
             wander: 0.0,
+            shoot_timer: 0.0,
+            pending_shot: None,
         }
     }
 
@@ -193,6 +220,7 @@ impl Enemy {
             EnemyKind::Imp => vec![ItemKind::Food],
             EnemyKind::Ogre => vec![ItemKind::Gem],
             EnemyKind::Wraith => vec![ItemKind::Herb],
+            EnemyKind::Stoneslinger => vec![ItemKind::Gem],
         }
     }
 
@@ -207,6 +235,8 @@ impl Enemy {
     ) -> Option<f32> {
         self.attack_timer = (self.attack_timer - dt).max(0.0);
         self.flash = (self.flash - dt * 5.0).max(0.0);
+        self.shoot_timer = (self.shoot_timer - dt).max(0.0);
+        self.pending_shot = None;
         let (aggro, atk_range, speed, cooldown) = match self.kind {
             EnemyKind::Slime => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED, 0.8),
             EnemyKind::Boss => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
@@ -217,6 +247,7 @@ impl Enemy {
             EnemyKind::Imp => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 1.8, 0.5),
             EnemyKind::Ogre => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.7, 1.2),
             EnemyKind::Wraith => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.3, 0.7),
+            EnemyKind::Stoneslinger => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.9, 1.0),
         };
         let d = (player.0 - self.x)
             .abs()
@@ -234,6 +265,13 @@ impl Enemy {
 
         if d <= aggro {
             self.state = AiState::Chase;
+            // Ranged enemies fire a projectile when the player is in range.
+            if self.kind.ranged() && d <= self.kind.shoot_range() && self.shoot_timer <= 0.0 {
+                let (dx, dy) = normalize(player.0 - self.x, player.1 - self.y);
+                self.facing = (dx, dy);
+                self.pending_shot = Some((dx, dy));
+                self.shoot_timer = 1.8;
+            }
             // Flying enemies ignore terrain/structures and drift straight at
             // the player (can't be juked behind walls).
             if self.kind.flying() {
@@ -361,6 +399,7 @@ pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
         TileKind::Forest if h.rem_euclid(47) == 0 => Some(EnemyKind::Imp),
         TileKind::Stone if h.rem_euclid(59) == 0 => Some(EnemyKind::Ogre),
         TileKind::Stone if h.rem_euclid(73) == 0 => Some(EnemyKind::Wraith),
+        TileKind::Stone if h.rem_euclid(83) == 0 => Some(EnemyKind::Stoneslinger),
         TileKind::Swamp if h.rem_euclid(67) == 0 => Some(EnemyKind::Wraith),
         _ => None,
     }
