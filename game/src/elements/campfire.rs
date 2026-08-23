@@ -15,6 +15,9 @@ pub(crate) fn build(
     let flick = 0.82 + 0.18 * (anim_time * 11.0 + seed).sin();
     let flame = shade(color, flick); // orange from StructureKind::Campfire
     vec![
+        // soft warm glow halo so the fire reads as a light source
+        Part::diamond(cx, cy - 12.0, 24.0, 22.0, 0.0, [1.0, 0.55, 0.18], 0.10, false),
+        Part::diamond(cx, cy - 12.0, 15.0, 14.0, 0.0, [1.0, 0.7, 0.3], 0.14, false),
         Part::vquad(cx - 8.0, cy - 4.0, 4.0, 6.0, log, alpha, true),
         Part::vquad(cx + 8.0, cy - 4.0, 4.0, 6.0, log, alpha, true),
         Part::diamond(cx, cy - 14.0, 8.0, 12.0, 0.0, flame, alpha, true),

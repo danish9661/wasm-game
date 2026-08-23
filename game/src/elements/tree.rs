@@ -14,8 +14,14 @@ pub(crate) fn build(
     let canopy = color; // green from ResourceKind::Tree
     let s = sway(cx, cy, anim_time, 2.5);
     vec![
-        Part::vquad(cx, cy - 16.0, 4.0, 16.0, trunk, alpha, true),
-        Part::diamond(cx + s, cy - 20.0, 18.0, 20.0, 0.0, shade(canopy, 0.8), alpha, true),
-        Part::diamond(cx + s, cy - 34.0, 14.0, 16.0, 0.0, canopy, alpha, true),
+        // trunk (dark base, lit upper)
+        Part::vquad(cx, cy - 4.0, 4.0, 4.0, shade(trunk, 0.7), alpha, true),
+        Part::vquad(cx, cy - 18.0, 3.5, 14.0, trunk, alpha, true),
+        // three canopy tiers for a rounded, full crown
+        Part::diamond(cx + s, cy - 16.0, 19.0, 18.0, 0.0, shade(canopy, 0.7), alpha, true),
+        Part::diamond(cx + s, cy - 30.0, 15.0, 16.0, 0.0, shade(canopy, 0.95), alpha, true),
+        Part::diamond(cx + s, cy - 42.0, 10.0, 12.0, 0.0, canopy, alpha, true),
+        // sunlit highlight on the upper-left of the crown
+        Part::diamond(cx - 5.0 + s, cy - 44.0, 5.0, 7.0, 0.0, shade(canopy, 1.25), alpha, true),
     ]
 }

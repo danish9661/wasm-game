@@ -297,16 +297,42 @@ pub fn build_tile_mesh(
             DrawKind::Tile => {
                 let kind = tile_kind_at(world, cache, d.tx, d.ty);
                 let mut base = kind.color();
-                let v = 0.06 * (((d.tx * 7 + d.ty * 13) % 9) as f32 - 4. as f32);
+                // Per-tile value variation so grass/forest/spawned-detail don't
+                // read as a flat uniform sheet. Extra jitter on grass/forest.
+                let mut v = 0.05 * (((d.tx * 7 + d.ty * 13) % 9) as f32 - 4. as f32);
+                if matches!(kind, TileKind::Grass | TileKind::Forest | TileKind::Swamp) {
+                    v += 0.04 * (((d.tx * 31 + d.ty * 17) % 7) as f32 - 3. as f32);
+                }
                 for c in base.iter_mut() {
                     *c = (*c + v).clamp(0.0, 1.0);
                 }
-                if matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
-                    let sh = (anim_time * 1.5 + d.tx as f32 * 0.5 + d.ty as f32 * 0.35).sin() * 0.06;
-                    base[0] = (base[0] + sh).clamp(0.0, 1.0);
-                    base[2] = (base[2] + sh * 0.8).clamp(0.0, 1.0);
+                // Sample the 4 cardinal neighbours and blend each tile corner
+                // toward them so biome boundaries become smooth gradients.
+                let nk = tile_kind_at(world, cache, d.tx, d.ty - 1);
+                let ek = tile_kind_at(world, cache, d.tx + 1, d.ty);
+                let sk = tile_kind_at(world, cache, d.tx, d.ty + 1);
+                let wk = tile_kind_at(world, cache, d.tx - 1, d.ty);
+                let mut c_n = corner_blend(base, kind, nk);
+                let mut c_e = corner_blend(base, kind, ek);
+                let mut c_s = corner_blend(base, kind, sk);
+                let mut c_w = corner_blend(base, kind, wk);
+                // subtle top-lit bevel: north (top) corner catches light, south
+                // (bottom) corner falls into shadow — gives each tile gentle 2.5D
+                // definition without re-introducing hard seams.
+                for i in 0..3 {
+                    c_n[i] = (c_n[i] * 1.06).clamp(0.0, 1.0);
+                    c_s[i] = (c_s[i] * 0.92).clamp(0.0, 1.0);
                 }
-                push_quad(out, d.sx, d.sy, base);
+                // Water shimmer: a travelling wave of brightness, now strong
+                // enough to clearly read on screen (corner-agnostic).
+                if matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
+                    let sh = (anim_time * 2.2 + d.tx as f32 * 0.7 + d.ty as f32 * 0.5).sin() * 0.12;
+                    for c in [&mut c_n, &mut c_e, &mut c_s, &mut c_w] {
+                        c[0] = (c[0] + sh).clamp(0.0, 1.0);
+                        c[2] = (c[2] + sh * 0.85).clamp(0.0, 1.0);
+                    }
+                }
+                push_quad_blended(out, d.sx, d.sy, c_n, c_e, c_s, c_w);
             }
             DrawKind::Sprite => {
                 // Fake 2.5D: ground shadow first, then a kind-aware silhouette.
@@ -351,20 +377,49 @@ fn tile_kind_at(world: &WorldGen, cache: &mut ChunkCache, tx: i32, ty: i32) -> c
         .kind
 }
 
-fn push_quad(out: &mut Vec<f32>, ox: f32, oy: f32, color: [f32; 3]) {
+/// Draw a tile diamond with per-corner colors. Each corner blends toward the
+/// neighbouring tile in that direction, so biome edges become smooth gradients
+/// instead of a hard checkerboard. Vertex order matches `push_quad` so the
+/// geometry tests (positions) stay valid.
+fn push_quad_blended(
+    out: &mut Vec<f32>,
+    ox: f32,
+    oy: f32,
+    north: [f32; 3],
+    east: [f32; 3],
+    south: [f32; 3],
+    west: [f32; 3],
+) {
     let top = (ox, oy);
     let right = (ox + HALF_W, oy + HALF_H);
     let bottom = (ox, oy + TILE_HEIGHT);
     let left = (ox - HALF_W, oy + HALF_H);
-    let verts = [
-        top, right, bottom, top, bottom, left, // two triangles
-    ];
-    for (vx, vy) in verts {
+    // Matching vertex order: top, right, bottom, top, bottom, left.
+    let verts: [(f32, f32); 6] = [top, right, bottom, top, bottom, left];
+    // North/Top, East/Right, South/Bottom, West/Left — one color per corner.
+    let colors = [north, east, south, north, south, west];
+    for i in 0..6 {
+        let (vx, vy) = verts[i];
         out.push(vx);
         out.push(vy);
-        out.extend_from_slice(&color);
+        out.extend_from_slice(&colors[i]);
         out.push(1.0);
     }
+}
+
+/// Blend a tile corner toward a neighbouring tile's color (50% when the biome
+/// differs, full self color when they match). Keeps uniform regions solid but
+/// softens boundaries into gradients.
+fn corner_blend(self_color: [f32; 3], self_kind: TileKind, neighbor_kind: TileKind) -> [f32; 3] {
+    if self_kind == neighbor_kind {
+        return self_color;
+    }
+    let n_color = neighbor_kind.color();
+    let mut c = [0.0f32; 3];
+    for i in 0..3 {
+        c[i] = (self_color[i] + n_color[i]) * 0.5;
+    }
+    c
 }
 
 /// Flat ground shadow: a darkened diamond on the tile (no lift), alpha-blended

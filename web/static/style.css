@@ -446,3 +446,104 @@ html, body {
 }
 
 #overlay.ending #overlay-box h2 { color: #f2d77a; }
+
+/* ---- Inventory & Crafting / Build panel ------------------------------ */
+#invbtn {
+  position: fixed;
+  top: 12px;
+  right: 96px;
+  z-index: 19;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  color: #e8edf3;
+  background: rgba(10, 16, 28, 0.8);
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+#invbtn:hover, #invbtn.active { border-color: #f2d77a; background: rgba(40, 56, 84, 0.9); }
+
+#inventory {
+  position: fixed;
+  top: 56px;
+  right: 12px;
+  width: 264px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: rgba(10, 16, 28, 0.92);
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #e8edf3;
+  font-size: 13px;
+  z-index: 18;
+  user-select: none;
+}
+#inventory.hidden { display: none; }
+#inventory h3 {
+  margin: 2px 0 8px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #9fb3c8;
+  border-bottom: 1px solid rgba(160, 180, 205, 0.25);
+  padding-bottom: 4px;
+}
+#inventory h3:not(:first-child) { margin-top: 14px; }
+
+.inv-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.inv-item .nm { color: #cdd6e2; }
+.inv-item .ct { font-weight: 700; }
+.inv-item .ct.zero { color: #5d6b7d; font-weight: 400; }
+
+.recipe {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  margin: 4px 0;
+  border-radius: 5px;
+  border: 1px solid rgba(160, 180, 205, 0.22);
+  cursor: pointer;
+  background: rgba(20, 30, 48, 0.5);
+}
+.recipe:hover { border-color: #f2d77a; }
+.recipe.selected { border-color: #54c26e; background: rgba(40, 70, 50, 0.6); }
+.recipe.locked { opacity: 0.5; }
+.recipe .rk {
+  font-weight: 700;
+  color: #0d1220;
+  background: #cdd6e2;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 11px;
+}
+.recipe .rl { color: #e8edf3; }
+.recipe .rc { font-size: 11px; color: #9fb3c8; text-align: right; }
+.recipe .rc .ok { color: #54c26e; }
+.recipe .rc .no { color: #d46a6a; }
+
+/* bottom build-mode banner */
+#buildhint {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f2e3b3;
+  font-size: 14px;
+  background: rgba(10, 16, 28, 0.9);
+  border: 1px solid rgba(242, 215, 122, 0.55);
+  border-radius: 6px;
+  padding: 8px 16px;
+  pointer-events: none;
+  z-index: 18;
+  text-align: center;
+}
+#buildhint.hidden { display: none; }
+#buildhint b { color: #54c26e; }

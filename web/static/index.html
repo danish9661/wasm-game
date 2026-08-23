@@ -36,7 +36,7 @@
       <span class="inv-chip" id="hud-mobs">MOBS 0</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
-    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · E harvest/open · J attack · K shoot · C eat · Z sleep (by bed) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute audio · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems</div>
+    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · E harvest/open · J attack · K shoot · C eat · Z sleep (by bed) · I inventory · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems</div>
     <div class="hud-row">
       <span class="inv-chip" id="fps">FPS --</span>
       <span class="inv-chip" id="spd">SPD 0.0 t/s</span>
@@ -48,6 +48,7 @@
   <div id="toasts"></div>
   <div id="altar-prompt" class="hidden">The Crown hums in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
 
+  <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
   <button id="help" title="Controls &amp; help">?</button>
   <button id="gear" title="Settings (Esc)">⚙</button>
 
@@ -57,6 +58,8 @@
       <div class="help-grid">
         <span class="k">W A S D / ↑ ↓ ← →</span><span class="d">Move (the world scrolls; your character travels in the pressed direction)</span>
         <span class="k">E</span><span class="d">Harvest wood/stone · open chest · interact at altar</span>
+        <span class="k">I</span><span class="d">Open inventory &amp; crafting (shows recipes + costs)</span>
+        <span class="k">Q</span><span class="d">Toggle build mode — then move the cursor and click the ground (or press the structure's key) to place it</span>
         <span class="k">F</span><span class="d">Build a campfire</span>
         <span class="k">V</span><span class="d">Build a wall (blocks movement)</span>
         <span class="k">T</span><span class="d">Build a torch (light source)</span>
@@ -133,8 +136,17 @@
 
   <div id="log"></div>
 
+  <div id="inventory" class="hidden">
+    <h3>RESOURCES</h3>
+    <div id="inv-resources"></div>
+    <h3>BUILD</h3>
+    <div id="inv-recipes"></div>
+  </div>
+
+  <div id="buildhint" class="hidden"></div>
+
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -489,6 +501,70 @@
             };
           };
 
+          // ---- Inventory & Crafting / Build UI ---------------------------
+          let invOpen = false;
+          let buildMode = false;
+          const invEl = el('inventory');
+          const resEl = el('inv-resources');
+          const recEl = el('inv-recipes');
+          const buildHint = el('buildhint');
+          const RES_META = {
+            wood: ['🪵', 'Wood'], stone: ['🪨', 'Stone'], food: ['🍖', 'Food'],
+            herb: ['🌿', 'Herb'], gem: ['💎', 'Gem'], fragment: ['🩱', 'Crown Fragment'],
+          };
+          const updateInventory = (json) => {
+            if (!json) return;
+            let d;
+            try { d = JSON.parse(json); } catch { return; }
+            let rh = '';
+            for (const k of Object.keys(RES_META)) {
+              const [icon, label] = RES_META[k];
+              const n = (d.inv && d.inv[k]) || 0;
+              rh += `<div class="inv-item"><span class="nm">${icon} ${label}</span><span class="ct ${n === 0 ? 'zero' : ''}">${n}</span></div>`;
+            }
+            resEl.innerHTML = rh;
+            let ch = '';
+            (d.recipes || []).forEach((r, i) => {
+              const cost = r.cost.map((it) => `${it[1]} ${it[0]}`).join(', ');
+              const cls = 'recipe' + (r.afford ? '' : ' locked') + (d.selected === r.label ? ' selected' : '');
+              ch += `<div class="${cls}" data-idx="${i}"><span class="rk">${r.key}</span><span class="rl">${r.label}</span><span class="rc">${cost}</span></div>`;
+            });
+            recEl.innerHTML = ch;
+            recEl.querySelectorAll('.recipe').forEach((node) => {
+              node.onclick = () => { select_build(Number(node.dataset.idx)); };
+            });
+            buildMode = !!d.buildMode;
+            if (buildMode) {
+              buildHint.classList.remove('hidden');
+              buildHint.innerHTML = `Placing <b>${d.selected || 'structure'}</b> — move cursor &amp; <b>click</b> (or press its key) to place · <b>Q</b> toggles · <b>Esc</b> exits`;
+            } else {
+              buildHint.classList.add('hidden');
+            }
+            el('invbtn').classList.toggle('active', invOpen);
+          };
+          const toggleInventory = () => {
+            invOpen = !invOpen;
+            invEl.classList.toggle('hidden', !invOpen);
+          };
+          el('invbtn').onclick = toggleInventory;
+
+          // ---- Build ghost: mouse position → world tile -------------------
+          const blitCanvas = document.getElementById('blit');
+          window.addEventListener('pointermove', (e) => {
+            const cv = blitCanvas || document.getElementById('game');
+            if (!cv || !cv.getBoundingClientRect) return;
+            const rect = cv.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+            const ix = (e.clientX - rect.left) * (cv.width / rect.width);
+            const iy = (e.clientY - rect.top) * (cv.height / rect.height);
+            set_mouse(ix, iy);
+          });
+          window.addEventListener('pointerdown', (e) => {
+            if (buildMode && e.target && e.target.tagName === 'CANVAS') {
+              place_selected();
+            }
+          });
+
           // ---- Audio event detection ------------------------------------
           let prev = { hp: 100, atk: 0, shots: 0, boss: 0, quest: -1, alive: 1, ending: -1 };
           function audioFromStats(stats) {
@@ -596,6 +672,10 @@
             if (e.code === 'Escape') {
               if (settingsEl.className === 'hidden') openSettings(); else closeSettings();
             }
+            if (e.code === 'KeyI') {
+              e.preventDefault();
+              toggleInventory();
+            }
             // Screenshot: dump the visible #blit canvas (the live display) to a
             // downloadable PNG (and POST it to /cap if a capture server listens).
             if (e.code === 'KeyP') {
@@ -639,6 +719,9 @@
             const raw = get_stats();
             if (raw && !raw.startsWith('no app') && !raw.startsWith('pending')) {
               updateHud(parseStats(raw));
+            }
+            if (gameStarted && !bootOpen) {
+              updateInventory(get_ui_data());
             }
           }, 200);
 

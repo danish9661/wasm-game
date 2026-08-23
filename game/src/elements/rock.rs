@@ -12,7 +12,13 @@ pub(crate) fn build(
 ) -> Vec<Part> {
     let rock = color; // gray from ResourceKind::Rock
     vec![
-        Part::diamond(cx, cy - 2.0, 14.0, 11.0, 0.0, shade(rock, 0.7), alpha, true),
-        Part::diamond(cx, cy - 7.0, 9.0, 7.0, 0.0, shade(rock, 1.15), alpha, true),
+        // dark base boulder
+        Part::diamond(cx, cy - 1.0, 15.0, 11.0, 0.0, shade(rock, 0.6), alpha, true),
+        // mid facet
+        Part::diamond(cx, cy - 5.0, 11.0, 9.0, 0.0, shade(rock, 0.85), alpha, true),
+        // lit top cap
+        Part::diamond(cx, cy - 9.0, 7.0, 6.0, 0.0, shade(rock, 1.2), alpha, true),
+        // small highlight glint
+        Part::diamond(cx + 3.0, cy - 11.0, 3.0, 3.0, 0.0, shade(rock, 1.45), alpha, true),
     ]
 }

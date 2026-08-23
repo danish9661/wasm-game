@@ -1,4 +1,5 @@
-use game::building::{decor_on, CHEST_RANGE, Structure, StructureKind, try_build};
+use game::building::{decor_on, BUILDABLE, CHEST_RANGE, Structure, StructureKind, try_build};
+use game::iso::iso_to_world;
 use game::combat::{
     ARROW_DAMAGE, SWING_DAMAGE, SWING_REACH, Arrow,
     arrow_hits, swing_hits,
@@ -311,31 +312,47 @@ fn blit_to_2d_canvas(data: &[u8], width: u32, height: u32, bytes_per_row: u32, t
         // mood (computed on the unpadded CPU copy since the 2D gradient API
         // isn't available in this build).
         {
-            let wf = w as f64;
-            let hf = h as f64;
-            let cx = wf * 0.5;
-            let cy = hf * 0.5;
-            for y in 0..h {
-                let ny = (y as f64 - cy) / cy;
-                for x in 0..w {
-                    let nx = (x as f64 - cx) / cx;
-                    let d = (nx * nx + ny * ny).sqrt();
-                    let v = if d <= 0.6 {
-                        1.0
-                    } else {
-                        let t = ((d - 0.6) / 0.55).clamp(0.0, 1.0);
-                        let s = t * t * (3.0 - 2.0 * t);
-                        1.0 - s * 0.45
-                    };
-                    let i = (y * w + x) * 4;
-                    let r = cache.buf[i] as f64 * v;
-                    let g = cache.buf[i + 1] as f64 * v;
-                    let b = cache.buf[i + 2] as f64 * v;
-                    cache.buf[i] = r as u8;
-                    cache.buf[i + 1] = g as u8;
-                    cache.buf[i + 2] = b as u8;
-                }
+        let wf = w as f64;
+        let hf = h as f64;
+        let cx = wf * 0.5;
+        let cy = hf * 0.5;
+        // Atmospheric distance fog: the far (upper) screen fades toward the
+        // horizon tint so the flat isometric ground gains depth. Pre-compute
+        // the fog target colour (0..255) from the time-of-day sky tint.
+        let fog = sky_tint(tod);
+        let fog_r = (fog[0] * 0.8 + 0.2).clamp(0.0, 1.0) as f64 * 255.0;
+        let fog_g = (fog[1] * 0.8 + 0.2).clamp(0.0, 1.0) as f64 * 255.0;
+        let fog_b = (fog[2] * 0.8 + 0.2).clamp(0.0, 1.0) as f64 * 255.0;
+        const FOG_MAX: f64 = 0.26;
+        for y in 0..h {
+            let ny = (y as f64 - cy) / cy;
+            // fog strength: 0 at ~55% screen height (player band) rising to
+            // FOG_MAX at the top (horizon).
+            let y_norm = y as f64 / hf;
+            let fog_t = (((0.55 - y_norm) / 0.55).clamp(0.0, 1.0) * FOG_MAX).clamp(0.0, 1.0);
+            for x in 0..w {
+                let nx = (x as f64 - cx) / cx;
+                let d = (nx * nx + ny * ny).sqrt();
+                let v = if d <= 0.6 {
+                    1.0
+                } else {
+                    let t = ((d - 0.6) / 0.55).clamp(0.0, 1.0);
+                    let s = t * t * (3.0 - 2.0 * t);
+                    1.0 - s * 0.45
+                };
+                let i = (y * w + x) * 4;
+                let mut r = cache.buf[i] as f64 * v;
+                let mut g = cache.buf[i + 1] as f64 * v;
+                let mut b = cache.buf[i + 2] as f64 * v;
+                // blend toward fog colour
+                r = r + (fog_r - r) * fog_t;
+                g = g + (fog_g - g) * fog_t;
+                b = b + (fog_b - b) * fog_t;
+                cache.buf[i] = r as u8;
+                cache.buf[i + 1] = g as u8;
+                cache.buf[i + 2] = b as u8;
             }
+        }
         }
         let clamped = Clamped(cache.buf.as_slice());
         match ImageData::new_with_u8_clamped_array_and_sh(clamped, width, height) {
@@ -495,6 +512,12 @@ pub struct App {
     key_dbg: String,
     /// Transient visual particles (death puffs, hit sparks).
     particles: Vec<Particle>,
+    /// Cursor position in internal canvas pixels (for build ghost placement).
+    mouse_screen: Option<(f32, f32)>,
+    /// Active build mode: the structure the player is placing (ghost preview).
+    build_mode: Option<StructureKind>,
+    /// Cached ghost preview: (kind, tx, ty, valid) for the hovered tile.
+    build_ghost: Option<(StructureKind, i32, i32, bool)>,
 }
 
 impl App {
@@ -516,6 +539,52 @@ impl App {
 
     pub fn player_in_mesh(&self) -> bool {
         self.player_in_mesh
+    }
+
+    /// JSON payload for the Inventory & Crafting / Build panel:
+    /// resource counts, every buildable recipe (with cost + affordability),
+    /// and the current build-mode selection.
+    pub fn ui_data(&self) -> String {
+        let recipes: Vec<_> = BUILDABLE
+            .iter()
+            .map(|(kind, key, label)| {
+                let cost: Vec<_> = kind
+                    .cost()
+                    .iter()
+                    .map(|(item, n)| serde_json::json!([item.name(), n]))
+                    .collect();
+                let afford = kind
+                    .cost()
+                    .iter()
+                    .all(|(item, n)| self.inventory.count(*item) >= *n);
+                serde_json::json!({
+                    "key": key,
+                    "label": label,
+                    "cost": cost,
+                    "afford": afford,
+                    "blocks": kind.blocks_movement(),
+                    "light": kind.emits_light(),
+                })
+            })
+            .collect();
+        let selected = self
+            .build_mode
+            .and_then(|k| BUILDABLE.iter().find(|(bk, _, _)| *bk == k).map(|(_, _, l)| *l))
+            .unwrap_or("");
+        serde_json::json!({
+            "inv": {
+                "wood": self.inventory.count(ItemKind::Wood),
+                "stone": self.inventory.count(ItemKind::Stone),
+                "food": self.inventory.count(ItemKind::Food),
+                "herb": self.inventory.count(ItemKind::Herb),
+                "gem": self.inventory.count(ItemKind::Gem),
+                "fragment": self.inventory.count(ItemKind::Fragment),
+            },
+            "recipes": recipes,
+            "buildMode": self.build_mode.is_some(),
+            "selected": selected,
+        })
+        .to_string()
     }
 
     /// Machine-readable game state for the JS HUD / test harness.
@@ -550,7 +619,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -562,6 +631,8 @@ impl App {
             self.inventory.count(ItemKind::Wood),
             self.inventory.count(ItemKind::Stone),
             self.inventory.count(ItemKind::Food),
+            self.inventory.count(ItemKind::Herb),
+            self.inventory.count(ItemKind::Gem),
             self.structures.len(),
             structs,
             self.enemies.count(),
@@ -763,6 +834,9 @@ impl App {
             key_evt: 0,
             key_dbg: String::new(),
             particles: Vec::new(),
+            mouse_screen: None,
+            build_mode: None,
+            build_ghost: None,
         })
     }
 
@@ -796,8 +870,45 @@ impl App {
                 "KeyC" => {
                     self.player.eat(&mut self.inventory);
                 }
+                // Build mode: Q toggles it, Esc exits, 1-7 pick a structure.
+                "KeyQ" => {
+                    self.build_mode =
+                        if self.build_mode.is_some() { None } else { Some(StructureKind::Campfire) };
+                }
+                "Escape" => self.build_mode = None,
+                "Digit1" => self.select_build(0),
+                "Digit2" => self.select_build(1),
+                "Digit3" => self.select_build(2),
+                "Digit4" => self.select_build(3),
+                "Digit5" => self.select_build(4),
+                "Digit6" => self.select_build(5),
+                "Digit7" => self.select_build(6),
                 _ => {}
             }
+        }
+    }
+
+    /// Set the cursor position in internal canvas pixels (for build ghost).
+    pub fn set_mouse(&mut self, x: f32, y: f32) {
+        self.mouse_screen = Some((x, y));
+    }
+
+    /// Toggle build mode on/off (true = on).
+    pub fn set_build_mode(&mut self, on: bool) {
+        self.build_mode = if on { Some(StructureKind::Campfire) } else { None };
+    }
+
+    /// Select a buildable structure by its index in `BUILDABLE`.
+    pub fn select_build(&mut self, idx: usize) {
+        if idx < BUILDABLE.len() {
+            self.build_mode = Some(BUILDABLE[idx].0);
+        }
+    }
+
+    /// Place the currently-selected build structure at the cursor ghost tile.
+    pub fn place_selected(&mut self) {
+        if let Some(kind) = self.build_mode {
+            self.build(kind);
         }
     }
 
@@ -945,23 +1056,49 @@ impl App {
         }
     }
 
-    fn build(&mut self, kind: StructureKind) {
-        let tx = self.player.x.floor() as i32;
-        let ty = self.player.y.floor() as i32;
+    /// Can a structure of `kind` be placed on tile `(tx, ty)` right now?
+    fn can_place(&mut self, kind: StructureKind, tx: i32, ty: i32) -> bool {
         if self.structures.iter().any(|s| s.tx == tx && s.ty == ty) {
-            return;
+            return false;
         }
-        if !tile_at(&self.world, &mut self.chunks, tx, ty).walkable() {
-            return;
+        let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
+        if !tile.walkable() {
+            return false;
         }
-        if resource_on(tx, ty, tile_at(&self.world, &mut self.chunks, tx, ty)).is_some()
-            && !self.nodes.is_depleted(tx, ty)
-        {
+        if resource_on(tx, ty, tile).is_some() && !self.nodes.is_depleted(tx, ty) {
+            return false;
+        }
+        if kind.cost().iter().any(|(item, n)| self.inventory.count(*item) < *n) {
+            return false;
+        }
+        true
+    }
+
+    /// Place `kind` at `(tx, ty)` if it is a legal spot (pays the cost).
+    fn place(&mut self, kind: StructureKind, tx: i32, ty: i32) {
+        if !self.can_place(kind, tx, ty) {
             return;
         }
         if let Ok(s) = try_build(kind, tx, ty, &mut self.inventory) {
             self.structures.push(s);
         }
+    }
+
+    /// Build a structure. In build mode the placement target is the hovered
+    /// ghost tile (mouse); otherwise the structure is dropped on the player's
+    /// own tile (the original hotkey behaviour).
+    fn build(&mut self, kind: StructureKind) {
+        if let Some((gk, gx, gy, valid)) = self.build_ghost {
+            if gk == kind {
+                if valid {
+                    self.place(kind, gx, gy);
+                }
+                return;
+            }
+        }
+        let tx = self.player.x.floor() as i32;
+        let ty = self.player.y.floor() as i32;
+        self.place(kind, tx, ty);
     }
 
     /// Sleep in a bed: skip the night and wake at dawn, restoring a little
@@ -1037,6 +1174,9 @@ impl App {
         self.ending_pending = false;
         self.time_of_day = START_TIME;
         self.respawn_timer = 0.0;
+        self.build_mode = None;
+        self.build_ghost = None;
+        self.mouse_screen = None;
     }
 
     /// Reforge the Crown (campaign finale). `choice`: 0 = Reign (victory),
@@ -1487,6 +1627,23 @@ impl App {
                 .with_style(SpriteStyle::Generic);
             ps.alpha = a;
             sprites.push(ps);
+        }
+        // build-mode ghost preview: a translucent tinted copy of the selected
+        // structure on the tile under the cursor — green if it can be placed,
+        // red if blocked/occupied/too expensive.
+        self.build_ghost = None;
+        if let Some(kind) = self.build_mode {
+            if let Some((mx, my)) = self.mouse_screen {
+                let (wx, wy) = iso_to_world(mx, my);
+                let tx = (wx + self.camera.x).floor() as i32;
+                let ty = (wy + self.camera.y).floor() as i32;
+                let valid = self.can_place(kind, tx, ty);
+                self.build_ghost = Some((kind, tx, ty, valid));
+                let mut g = kind.sprite(tx, ty);
+                g.color = if valid { [0.35, 1.0, 0.45] } else { [1.0, 0.35, 0.35] };
+                g.alpha = 0.55;
+                sprites.push(g);
+            }
         }
         sprites
     }

@@ -197,6 +197,18 @@ impl StructureKind {
     }
 }
 
+/// Buildable structures shown in the build menu, in display order, with their
+/// hotkey and human label. Single source of truth for the UI.
+pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
+    (StructureKind::Campfire, "F", "Campfire"),
+    (StructureKind::Wall, "V", "Wall"),
+    (StructureKind::Fence, "G", "Fence"),
+    (StructureKind::Torch, "T", "Torch"),
+    (StructureKind::Anvil, "N", "Anvil"),
+    (StructureKind::Bed, "B", "Bed"),
+    (StructureKind::Well, "H", "Well"),
+];
+
 /// Stateless decorative-prop placement: a few flavor props sprinkled on biomes
 /// so the world isn't just trees/rocks. Decorative props never block movement,
 /// emit light, or appear in the build menu. Same seed → same layout forever.

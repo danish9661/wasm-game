@@ -102,6 +102,55 @@ pub fn get_stats() -> String {
     })
 }
 
+/// JSON UI data for the Inventory & Crafting / Build panel.
+#[wasm_bindgen]
+pub fn get_ui_data() -> String {
+    APP.with(|cell| match cell.borrow().as_ref() {
+        Some(app) => app.ui_data(),
+        None => String::from("{}"),
+    })
+}
+
+/// Set the cursor position in internal canvas pixels (drives the build ghost).
+#[wasm_bindgen]
+pub fn set_mouse(x: f64, y: f64) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.set_mouse(x as f32, y as f32);
+        }
+    });
+}
+
+/// Toggle build mode (true = enter with the first buildable selected).
+#[wasm_bindgen]
+pub fn set_build_mode(on: bool) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.set_build_mode(on);
+        }
+    });
+}
+
+/// Select a buildable structure by its index in the build menu (0..7).
+#[wasm_bindgen]
+pub fn select_build(idx: usize) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.select_build(idx);
+        }
+    });
+}
+
+/// Place the currently-selected build structure at the cursor ghost tile.
+#[wasm_bindgen]
+pub fn place_selected() {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.place_selected();
+        }
+    });
+}
+
 /// Ask the renderer to grab a screenshot on its next frame (readback + #blit).
 #[wasm_bindgen]
 pub fn capture() {
