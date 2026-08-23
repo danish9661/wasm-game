@@ -34,6 +34,16 @@ pub enum EnemyKind {
     Imp,
     /// Ogre: a slow, heavily-armored stone brute.
     Ogre,
+    /// Wraith: a flying, phase-shifting spirit that drifts over walls and water.
+    Wraith,
+}
+
+impl EnemyKind {
+    /// True for enemies that ignore terrain/structure collision (fly straight
+    /// at the player). Used to skip A* pathing.
+    pub fn flying(self) -> bool {
+        matches!(self, EnemyKind::Wraith)
+    }
 }
 
 impl EnemyKind {
@@ -47,6 +57,7 @@ impl EnemyKind {
             EnemyKind::Spider => 14.0,
             EnemyKind::Imp => 6.0,
             EnemyKind::Ogre => 40.0,
+            EnemyKind::Wraith => 10.0,
         }
     }
 
@@ -61,6 +72,7 @@ impl EnemyKind {
             EnemyKind::Spider => 5.0,
             EnemyKind::Imp => 3.0,
             EnemyKind::Ogre => 12.0,
+            EnemyKind::Wraith => 5.0,
         }
     }
 
@@ -74,6 +86,7 @@ impl EnemyKind {
             EnemyKind::Spider => [0.40, 0.20, 0.20],
             EnemyKind::Imp => [0.88, 0.35, 0.55],
             EnemyKind::Ogre => [0.55, 0.45, 0.35],
+            EnemyKind::Wraith => [0.62, 0.45, 0.86],
         }
     }
 
@@ -90,6 +103,7 @@ impl EnemyKind {
             EnemyKind::Spider => (12.0, 10.0),
             EnemyKind::Imp => (10.0, 12.0),
             EnemyKind::Ogre => (20.0, 22.0),
+            EnemyKind::Wraith => (12.0, 17.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
@@ -100,6 +114,7 @@ impl EnemyKind {
             EnemyKind::Spider => SpriteStyle::Spider,
             EnemyKind::Imp => SpriteStyle::Imp,
             EnemyKind::Ogre => SpriteStyle::Ogre,
+            EnemyKind::Wraith => SpriteStyle::Wraith,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
@@ -177,6 +192,7 @@ impl Enemy {
             EnemyKind::Spider => vec![ItemKind::Herb],
             EnemyKind::Imp => vec![ItemKind::Food],
             EnemyKind::Ogre => vec![ItemKind::Gem],
+            EnemyKind::Wraith => vec![ItemKind::Herb],
         }
     }
 
@@ -200,6 +216,7 @@ impl Enemy {
             EnemyKind::Spider => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED, 0.9),
             EnemyKind::Imp => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 1.8, 0.5),
             EnemyKind::Ogre => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.7, 1.2),
+            EnemyKind::Wraith => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.3, 0.7),
         };
         let d = (player.0 - self.x)
             .abs()
@@ -217,6 +234,15 @@ impl Enemy {
 
         if d <= aggro {
             self.state = AiState::Chase;
+            // Flying enemies ignore terrain/structures and drift straight at
+            // the player (can't be juked behind walls).
+            if self.kind.flying() {
+                let (dx, dy) = normalize(player.0 - self.x, player.1 - self.y);
+                self.facing = (dx, dy);
+                self.x += dx * speed * dt;
+                self.y += dy * speed * dt;
+                return None;
+            }
             self.path_timer -= dt;
             if self.path_timer <= 0.0 || self.path.is_empty() {
                 self.path = astar(
@@ -334,6 +360,8 @@ pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
         TileKind::Swamp if h.rem_euclid(41) == 0 => Some(EnemyKind::Imp),
         TileKind::Forest if h.rem_euclid(47) == 0 => Some(EnemyKind::Imp),
         TileKind::Stone if h.rem_euclid(59) == 0 => Some(EnemyKind::Ogre),
+        TileKind::Stone if h.rem_euclid(73) == 0 => Some(EnemyKind::Wraith),
+        TileKind::Swamp if h.rem_euclid(67) == 0 => Some(EnemyKind::Wraith),
         _ => None,
     }
 }

@@ -151,6 +151,15 @@ pub fn place_selected() {
     });
 }
 
+/// Craft recipe `idx` at an Anvil. Returns false if no anvil / unaffordable.
+#[wasm_bindgen]
+pub fn craft(idx: usize) -> bool {
+    APP.with(|cell| match cell.borrow_mut().as_mut() {
+        Some(app) => app.craft(idx),
+        None => false,
+    })
+}
+
 /// Ask the renderer to grab a screenshot on its next frame (readback + #blit).
 #[wasm_bindgen]
 pub fn capture() {

@@ -51,6 +51,7 @@ pub(crate) mod vines;
 pub(crate) mod lilypad;
 pub(crate) mod reed;
 pub(crate) mod rubble;
+pub(crate) mod ruin_tower;
 
 // Enemies
 pub(crate) mod skeleton;
@@ -59,3 +60,4 @@ pub(crate) mod bat;
 pub(crate) mod spider;
 pub(crate) mod imp;
 pub(crate) mod ogre;
+pub(crate) mod wraith;

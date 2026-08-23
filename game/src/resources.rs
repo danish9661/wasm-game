@@ -1,12 +1,13 @@
 use crate::items::ItemKind;
 use crate::render::{Sprite, SpriteStyle};
 use crate::world::TileKind;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Reach required (chebyshev distance, tile units) to harvest a node.
 pub const HARVEST_RANGE: f32 = 1.5;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ResourceKind {
     Tree,
     Bush,
@@ -170,6 +171,20 @@ impl NodeRegistry {
 
     pub fn has_live(&self, tx: i32, ty: i32) -> bool {
         self.nodes.get(&(tx, ty)).is_some_and(|n| !n.depleted())
+    }
+
+    /// All depleted (harvested) nodes, for persistence across save/load.
+    pub fn depleted_list(&self) -> Vec<(i32, i32, ResourceKind)> {
+        self.nodes
+            .iter()
+            .filter(|(_, n)| n.depleted())
+            .map(|(&(tx, ty), n)| (tx, ty, n.kind))
+            .collect()
+    }
+
+    /// Restore a harvested node after loading a save so it does not respawn.
+    pub fn restore_depleted(&mut self, tx: i32, ty: i32, kind: ResourceKind) {
+        self.nodes.insert((tx, ty), ResourceNode { tx, ty, kind, hp: 0 });
     }
 }
 

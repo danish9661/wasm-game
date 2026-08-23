@@ -1,6 +1,7 @@
 use game::building::Structure;
 use game::enemy::EnemyKind;
 use game::items::ItemKind;
+use game::resources::ResourceKind;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -24,6 +25,9 @@ pub struct SaveState {
     pub inv: Vec<(ItemKind, u32)>,
     pub structures: Vec<Structure>,
     pub opened_chests: Vec<(i32, i32)>,
+    /// Harvested resource nodes so they stay depleted after a reload.
+    #[serde(default)]
+    pub depleted_nodes: Vec<(i32, i32, ResourceKind)>,
     pub enemies: Vec<(EnemyKind, f32, f32, f32)>,
     pub quest_stage: u8,
     pub slimes_killed: u32,
@@ -36,4 +40,11 @@ pub struct SaveState {
     pub ng_plus: u32,
     pub time_of_day: f32,
     pub spawn_point: (f32, f32),
+    /// Crafting bonuses unlocked at an Anvil.
+    #[serde(default)]
+    pub craft_harvest: u32,
+    #[serde(default)]
+    pub craft_armor: f32,
+    #[serde(default)]
+    pub salves: u32,
 }

@@ -529,6 +529,9 @@ html, body {
 .recipe .rc .ok { color: #54c26e; }
 .recipe .rc .no { color: #d46a6a; }
 
+#inv-salves { float: right; color: #f2a0c0; font-weight: 400; letter-spacing: 0; }
+.craft-note { font-size: 12px; color: #9fb3c8; padding: 4px 0; }
+
 /* bottom build-mode banner */
 #buildhint {
   position: fixed;

@@ -36,7 +36,7 @@
       <span class="inv-chip" id="hud-mobs">MOBS 0</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
-    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · E harvest/open · J attack · K shoot · C eat · Z sleep (by bed) · I inventory · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems</div>
+    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
     <div class="hud-row">
       <span class="inv-chip" id="fps">FPS --</span>
       <span class="inv-chip" id="spd">SPD 0.0 t/s</span>
@@ -141,12 +141,14 @@
     <div id="inv-resources"></div>
     <h3>BUILD</h3>
     <div id="inv-recipes"></div>
+    <h3>CRAFTING <span id="inv-salves" class="salves"></span></h3>
+    <div id="inv-crafts"></div>
   </div>
 
   <div id="buildhint" class="hidden"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -507,6 +509,8 @@
           const invEl = el('inventory');
           const resEl = el('inv-resources');
           const recEl = el('inv-recipes');
+          const craftEl = el('inv-crafts');
+          const salveEl = el('inv-salves');
           const buildHint = el('buildhint');
           const RES_META = {
             wood: ['🪵', 'Wood'], stone: ['🪨', 'Stone'], food: ['🍖', 'Food'],
@@ -533,6 +537,22 @@
             recEl.querySelectorAll('.recipe').forEach((node) => {
               node.onclick = () => { select_build(Number(node.dataset.idx)); };
             });
+            // Crafting (requires an Anvil to have been built).
+            salveEl.textContent = d.salves ? `· ${d.salves} 🧪 (R to use)` : '';
+            if (!d.hasAnvil) {
+              craftEl.innerHTML = '<div class="craft-note">Build an Anvil (N) to unlock crafting.</div>';
+            } else {
+              let ch2 = '';
+              (d.crafts || []).forEach((r) => {
+                const cost = r.cost.map((it) => `${it[1]} ${it[0]}`).join(', ');
+                const cls = 'recipe' + (r.afford ? '' : ' locked');
+                ch2 += `<div class="${cls}" data-idx="${r.idx}"><span class="rk">⚒</span><span class="rl">${r.label}</span><span class="rc">${cost}</span></div>`;
+              });
+              craftEl.innerHTML = ch2;
+              craftEl.querySelectorAll('.recipe').forEach((node) => {
+                node.onclick = () => { craft(Number(node.dataset.idx)); };
+              });
+            }
             buildMode = !!d.buildMode;
             if (buildMode) {
               buildHint.classList.remove('hidden');

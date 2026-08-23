@@ -64,6 +64,7 @@ pub enum SpriteStyle {
     Lilypad,
     Reed,
     Rubble,
+    RuinTower,
     // ---- Enemies ----------------------------------------------------------
     Skeleton,
     Goblin,
@@ -71,6 +72,7 @@ pub enum SpriteStyle {
     Spider,
     Imp,
     Ogre,
+    Wraith,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -462,8 +464,8 @@ fn push_styled_sprite(
     use crate::elements::{
         altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
         crate_box, crystal, fence, fern, flower, goblin, grass_tuft, humanoid, hpbar, imp, lantern,
-        lilypad, mushroom, ogre, ore, pillar, reed, rock, rock_pile, rubble, sign, skeleton, slime,
-        spider, statue, torch, totem, tree, vines, wall, well,
+        lilypad, mushroom, ogre, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
+        skeleton, slime, spider, statue, torch, totem, tree, vines, wall, well, wraith,
     };
     match style {
         SpriteStyle::Generic => {
@@ -520,6 +522,7 @@ fn push_styled_sprite(
         SpriteStyle::Spider => rasterize(&spider::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Ogre => rasterize(&ogre::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Wraith => rasterize(&wraith::build(cx, cy, color, alpha, facing, anim_time), out),
         // New decorative props
         SpriteStyle::Lantern => rasterize(&lantern::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Brazier => rasterize(&brazier::build(cx, cy, color, alpha, facing, anim_time), out),
@@ -531,6 +534,7 @@ fn push_styled_sprite(
         SpriteStyle::Lilypad => rasterize(&lilypad::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Reed => rasterize(&reed::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Rubble => rasterize(&rubble::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::RuinTower => rasterize(&ruin_tower::build(cx, cy, color, alpha, facing, anim_time), out),
     }
 }
 

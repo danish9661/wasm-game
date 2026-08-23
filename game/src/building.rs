@@ -44,6 +44,7 @@ pub enum StructureKind {
     Lilypad,
     Reed,
     Rubble,
+    RuinTower,
 }
 
 impl StructureKind {
@@ -88,6 +89,7 @@ impl StructureKind {
             StructureKind::Lilypad => [0.30, 0.55, 0.28],
             StructureKind::Reed => [0.45, 0.55, 0.30],
             StructureKind::Rubble => [0.50, 0.50, 0.55],
+            StructureKind::RuinTower => [0.62, 0.60, 0.58],
         }
     }
 
@@ -129,6 +131,7 @@ impl StructureKind {
                 | StructureKind::Lilypad
                 | StructureKind::Reed
                 | StructureKind::Rubble
+                | StructureKind::RuinTower
         )
     }
 
@@ -166,6 +169,7 @@ impl StructureKind {
             StructureKind::Lilypad => (14.0, 6.0, 1.0),
             StructureKind::Reed => (10.0, 20.0, 1.0),
             StructureKind::Rubble => (12.0, 8.0, 1.0),
+            StructureKind::RuinTower => (13.0, 34.0, 1.0),
         };
         let style = match self {
             StructureKind::Campfire => SpriteStyle::Campfire,
@@ -192,6 +196,7 @@ impl StructureKind {
             StructureKind::Lilypad => SpriteStyle::Lilypad,
             StructureKind::Reed => SpriteStyle::Reed,
             StructureKind::Rubble => SpriteStyle::Rubble,
+            StructureKind::RuinTower => SpriteStyle::RuinTower,
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }
@@ -229,6 +234,7 @@ pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
         TileKind::Stone if h.rem_euclid(41) == 0 => Some(StructureKind::Brazier),
         TileKind::Stone if h.rem_euclid(59) == 0 => Some(StructureKind::Pillar),
         TileKind::Stone if h.rem_euclid(199) == 0 => Some(StructureKind::Rubble),
+        TileKind::Stone if h.rem_euclid(101) == 0 => Some(StructureKind::RuinTower),
         TileKind::Sand if h.rem_euclid(61) == 0 => Some(StructureKind::Barrel),
         TileKind::Sand if h.rem_euclid(43) == 0 => Some(StructureKind::Cactus),
         TileKind::Sand if h.rem_euclid(79) == 0 => Some(StructureKind::Reed),

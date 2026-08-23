@@ -17,6 +17,14 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 
+/// Crafting recipes unlocked at an Anvil. Each is (label, cost pairs). The
+/// effect is applied by index in `craft`.
+const CRAFT_RECIPES: &[(&str, &[(ItemKind, u32)])] = &[
+    ("Honed Tools", &[(ItemKind::Wood, 5), (ItemKind::Stone, 3), (ItemKind::Gem, 1)]),
+    ("Iron Plate", &[(ItemKind::Stone, 4), (ItemKind::Gem, 2)]),
+    ("Healing Salve x3", &[(ItemKind::Herb, 3), (ItemKind::Food, 2)]),
+];
+
 /// Console-only log for the GPU pipeline (does not touch the #log HUD element).
 fn glog(msg: &str) {
     web_sys::console::log_1(&wasm_bindgen::JsValue::from_str(msg));
@@ -66,6 +74,7 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::Lilypad => "l",
         StructureKind::Reed => "d",
         StructureKind::Rubble => "u",
+        StructureKind::RuinTower => "U",
     }
 }
 
@@ -79,6 +88,7 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Spider => "Spider",
         EnemyKind::Imp => "Imp",
         EnemyKind::Ogre => "Ogre",
+        EnemyKind::Wraith => "Wraith",
     }
 }
 
@@ -518,6 +528,11 @@ pub struct App {
     build_mode: Option<StructureKind>,
     /// Cached ghost preview: (kind, tx, ty, valid) for the hovered tile.
     build_ghost: Option<(StructureKind, i32, i32, bool)>,
+    /// Crafting bonuses unlocked at an Anvil.
+    craft_harvest: u32,
+    craft_armor: f32,
+    /// Healing salves crafted at an Anvil (consumed with the R key).
+    salves: u32,
 }
 
 impl App {
@@ -571,6 +586,24 @@ impl App {
             .build_mode
             .and_then(|k| BUILDABLE.iter().find(|(bk, _, _)| *bk == k).map(|(_, _, l)| *l))
             .unwrap_or("");
+        let has_anvil = self.has_anvil();
+        let crafts: Vec<_> = CRAFT_RECIPES
+            .iter()
+            .enumerate()
+            .map(|(i, (label, cost))| {
+                let cost_json: Vec<_> = cost
+                    .iter()
+                    .map(|(item, n)| serde_json::json!([item.name(), n]))
+                    .collect();
+                let afford = cost.iter().all(|(item, n)| self.inventory.count(*item) >= *n);
+                serde_json::json!({
+                    "idx": i,
+                    "label": label,
+                    "cost": cost_json,
+                    "afford": afford,
+                })
+            })
+            .collect();
         serde_json::json!({
             "inv": {
                 "wood": self.inventory.count(ItemKind::Wood),
@@ -583,6 +616,9 @@ impl App {
             "recipes": recipes,
             "buildMode": self.build_mode.is_some(),
             "selected": selected,
+            "hasAnvil": has_anvil,
+            "salves": self.salves,
+            "crafts": crafts,
         })
         .to_string()
     }
@@ -837,6 +873,9 @@ impl App {
             mouse_screen: None,
             build_mode: None,
             build_ghost: None,
+            craft_harvest: 0,
+            craft_armor: 0.0,
+            salves: 0,
         })
     }
 
@@ -869,6 +908,9 @@ impl App {
                 "KeyK" => self.shoot_arrow(),
                 "KeyC" => {
                     self.player.eat(&mut self.inventory);
+                }
+                "KeyR" => {
+                    self.use_salve();
                 }
                 // Build mode: Q toggles it, Esc exits, 1-7 pick a structure.
                 "KeyQ" => {
@@ -910,6 +952,46 @@ impl App {
         if let Some(kind) = self.build_mode {
             self.build(kind);
         }
+    }
+
+    /// True if the player has built an Anvil (required to craft).
+    pub fn has_anvil(&self) -> bool {
+        self.structures.iter().any(|s| s.kind == StructureKind::Anvil)
+    }
+
+    /// Craft recipe `idx` at an Anvil. Returns false if no anvil, unaffordable,
+    /// or out of range.
+    pub fn craft(&mut self, idx: usize) -> bool {
+        if !self.has_anvil() {
+            return false;
+        }
+        let &(_, cost) = match CRAFT_RECIPES.get(idx) {
+            Some(r) => r,
+            None => return false,
+        };
+        if !cost.iter().all(|(k, n)| self.inventory.count(*k) >= *n) {
+            return false;
+        }
+        for (k, n) in cost {
+            self.inventory.remove(*k, *n);
+        }
+        match idx {
+            0 => self.craft_harvest = (self.craft_harvest + 1).min(3),
+            1 => self.craft_armor = (self.craft_armor + 0.15).min(0.6),
+            2 => self.salves += 3,
+            _ => {}
+        }
+        true
+    }
+
+    /// Consume a healing salve (R key): restores 40 HP if one is held.
+    pub fn use_salve(&mut self) -> bool {
+        if self.salves == 0 || self.player.hp >= player::MAX_HP {
+            return false;
+        }
+        self.salves -= 1;
+        self.player.hp = (self.player.hp + 40.0).min(player::MAX_HP);
+        true
     }
 
     /// Spawn `count` particles bursting from `(x, y)` in a ring, tinted `color`.
@@ -1025,7 +1107,8 @@ impl App {
         }
         if let Some((tx, ty, kind)) = self.nearest_resource() {
             if let Some(item) = self.nodes.chop(tx, ty, kind) {
-                self.inventory.add(item, 1);
+                // Honed Tools (crafted at an Anvil) yield bonus resources.
+                self.inventory.add(item, 1 + self.craft_harvest);
             }
         }
     }
@@ -1159,6 +1242,9 @@ impl App {
         self.arrows = Vec::new();
         self.enemies = EnemyRegistry::new();
         self.opened_chests = std::collections::HashSet::new();
+        self.craft_harvest = 0;
+        self.craft_armor = 0.0;
+        self.salves = 0;
         let mut structures = Vec::new();
         structures.push(Structure { tx: self.ruins.0, ty: self.ruins.1, kind: StructureKind::Chest });
         for (wx, wy) in ruins_walls(self.ruins.0, self.ruins.1) {
@@ -1228,6 +1314,7 @@ impl App {
             inv,
             structures: self.structures.clone(),
             opened_chests: self.opened_chests.iter().cloned().collect(),
+            depleted_nodes: self.nodes.depleted_list(),
             enemies: self.enemies.enemies().map(|e| (e.kind, e.x, e.y, e.hp)).collect(),
             quest_stage: self.quest.stage,
             slimes_killed: self.slimes_killed,
@@ -1240,6 +1327,9 @@ impl App {
             ng_plus: self.ng_plus,
             time_of_day: self.time_of_day,
             spawn_point: self.spawn_point,
+            craft_harvest: self.craft_harvest,
+            craft_armor: self.craft_armor,
+            salves: self.salves,
         }
     }
 
@@ -1288,9 +1378,15 @@ impl App {
         self.ng_plus = s.ng_plus;
         self.time_of_day = s.time_of_day;
         self.spawn_point = s.spawn_point;
+        self.craft_harvest = s.craft_harvest;
+        self.craft_armor = s.craft_armor;
+        self.salves = s.salves;
         self.respawn_timer = 0.0;
         self.arrows = Vec::new();
         self.nodes = NodeRegistry::new();
+        for (tx, ty, kind) in &s.depleted_nodes {
+            self.nodes.restore_depleted(*tx, *ty, *kind);
+        }
     }
 
     pub fn resize(&mut self) {
@@ -1409,6 +1505,8 @@ impl App {
             }
         }
         if let Some(dmg) = contact {
+            // Iron Plate (crafted at an Anvil) reduces incoming damage.
+            let dmg = dmg * (1.0 - self.craft_armor);
             self.player.take_damage(dmg);
         }
         self.sweep_dead();
@@ -1596,6 +1694,7 @@ impl App {
                 EnemyKind::Spider => 14.0,
                 EnemyKind::Imp => 14.0,
                 EnemyKind::Ogre => 28.0,
+                EnemyKind::Wraith => 24.0,
             };
             sprites.push(
                 Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)
