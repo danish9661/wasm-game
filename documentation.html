@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Starfall — Game Documentation</title>
+<style>
+  :root { --bg:#0b1018; --panel:#121a26; --ink:#e8edf3; --muted:#9fb0c3; --accent:#f2d77a; --line:#243246; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui,Segoe UI,Roboto,sans-serif; }
+  header { padding:32px 24px 18px; background:linear-gradient(180deg,#16202f,#0b1018); border-bottom:1px solid var(--line); }
+  header h1 { margin:0 0 6px; font-size:30px; letter-spacing:.5px; }
+  header p { margin:0; color:var(--muted); }
+  main { max-width:1080px; margin:0 auto; padding:24px; }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:22px 0; }
+  h2 { margin:0 0 4px; font-size:22px; color:var(--accent); }
+  h3 { margin:22px 0 10px; font-size:17px; color:#cfe0f0; border-left:3px solid var(--accent); padding-left:10px; }
+  p { color:#d6dfea; }
+  .lead { color:var(--muted); margin-top:2px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; margin-top:8px; }
+  .card { background:#0e1622; border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center; }
+  .card img { width:72px; height:72px; object-fit:contain; image-rendering:pixelated; background:
+      repeating-conic-gradient(#0a111b 0% 25%, #0d1622 0% 50%) 50% / 16px 16px; border-radius:6px; }
+  .card .nm { font-weight:600; margin-top:8px; color:#eaf1f8; }
+  .card .ds { font-size:12.5px; color:var(--muted); margin-top:3px; }
+  .sheet { text-align:center; }
+  .sheet img { width:100%; max-width:760px; image-rendering:pixelated; background:
+      repeating-conic-gradient(#0a111b 0% 25%, #0d1622 0% 50%) 50% / 16px 16px; border:1px solid var(--line); border-radius:10px; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--accent); font-weight:600; }
+  code { background:#0e1622; border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:#ffe9a8; }
+  a { color:var(--accent); }
+  ul { margin:6px 0 0; padding-left:20px; color:#d6dfea; }
+  li { margin:3px 0; }
+  .tag { display:inline-block; font-size:11px; padding:1px 7px; border-radius:20px; border:1px solid var(--line); color:var(--muted); margin-left:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Starfall — Documentation</h1>
+  <p>An isometric survival RPG written in Rust → WebAssembly. This page explains the game's
+     building blocks (every visual element) and how the whole thing works under the hood.</p>
+</header>
+<main>
+
+  <!-- ============================ ELEMENTS ============================ -->
+  <section id="elements">
+    <h2>1. The Elements</h2>
+    <p class="lead">Every sprite in Starfall is an <em>element</em>: a small Rust file in
+      <code>game/src/elements/</code> that returns a list of <code>Part</code> primitives
+      (diamonds &amp; vertical quads). Below are all 45, rendered to transparent PNGs by the
+      <code>gen_pngs</code> tool. (Checkerboard = transparency.)</p>
+
+    <h3>Terrain &amp; Decor <span class="tag">ambient</span></h3>
+    <div class="grid" id="g-terrain"></div>
+
+    <h3>Harvestable Resources <span class="tag">gather</span></h3>
+    <div class="grid" id="g-res"></div>
+
+    <h3>Buildable Structures <span class="tag">place with Q</span></h3>
+    <div class="grid" id="g-build"></div>
+
+    <h3>Enemies <span class="tag">combat</span></h3>
+    <div class="grid" id="g-enemy"></div>
+
+    <h3>Bosses &amp; Avatars <span class="tag">endgame</span></h3>
+    <div class="grid" id="g-boss"></div>
+
+    <h3>Full Sprite Sheet</h3>
+    <div class="sheet">
+      <img src="element_previews/spritesheet.png" alt="All elements on one sheet" />
+      <p class="lead">720×400 montage — every element centred in an 80×80 cell, 9 per row.</p>
+    </div>
+  </section>
+
+  <!-- ============================ HOW IT WORKS ============================ -->
+  <section id="how">
+    <h2>2. How the Game Works</h2>
+
+    <h3>Architecture</h3>
+    <p>Two Rust crates share the repo:</p>
+    <ul>
+      <li><b>game</b> — pure logic &amp; art: world generation, entities, combat, quests, items,
+        and every <code>elements/*.rs</code> sprite. No browser APIs.</li>
+      <li><b>web</b> — the host. It owns the <code>App</code> (the live game state), runs the
+        fixed-timestep loop, reads keyboard / mouse / touch input, and draws each frame.</li>
+    </ul>
+    <p><code>wasm-pack</code> compiles the <b>web</b> crate to WebAssembly, which the static
+      <code>index.html</code> loads. The result is served as plain static files — no server code.</p>
+
+    <h3>Rendering — a 2.5D software rasterizer</h3>
+    <p>Each entity is described by <code>Part</code>s: isometric <b>diamonds</b> (the flat tops)
+      and axis-aligned <b>vertical quads</b> (trunk, walls, bodies). <code>prim::rasterize</code>
+      flattens them into triangle vertices, emitting a dark <b>“skirt”</b> copy first to fake
+      2.5D depth, then the bright pass. Those vertices are drawn to the on-screen 2D canvas
+      (<code>#blit</code>), composited back-to-front by an isometric depth sort.</p>
+    <p>This is why adding art is cheap: drop a new file in <code>elements/</code>, return some
+      <code>Part</code>s, register it in <code>mod.rs</code> + the dispatch match, and it appears.</p>
+
+    <h3>World &amp; biomes</h3>
+    <p>The map is generated from value noise into tiles — <b>grass, forest, stone, swamp, sand,
+      snow,</b> and <b>water</b> — each with its own colour and walker rules. Scattered across it
+      are Points-Of-Interest: the <b>ruins</b> (with a chest), the <b>altar</b> where you woke,
+      an <b>anvil</b>, and the <b>ruin tower</b>. Harvestable nodes (trees, rocks, crystals,
+      mushrooms, ore) are placed per-biome.</p>
+
+    <h3>Player systems</h3>
+    <table>
+      <tr><th>System</th><th>What it does</th></tr>
+      <tr><td>Movement</td><td>WASD / arrows; speed scales with stamina and a dodge burst.</td></tr>
+      <tr><td>Stamina</td><td>Spent on attacking, shooting, and dodging; regenerates over time.</td></tr>
+      <tr><td>Hunger</td><td>Drains slowly; eat food (<code>C</code>) to recover HP regen.</td></tr>
+      <tr><td>Dodge roll</td><td><code>Space</code> — brief burst of speed with i-frames, costs stamina, has a cooldown.</td></tr>
+      <tr><td>Day / night</td><td>A clock tints the world and affects lighting from braziers/torches.</td></tr>
+    </table>
+
+    <h3>Combat</h3>
+    <ul>
+      <li><b>Melee</b> (<code>J</code>): a short swing arc in front of the player.</li>
+      <li><b>Ranged</b> (<code>K</code>): fires an arrow in your facing direction.</li>
+      <li><b>Enemy AI</b>: states of <i>idle → chase → attack → flee</i>, with melee reach and
+        (for the Stoneslinger) a ranged shot that damages the player.</li>
+      <li><b>Bosses</b>: the Forest Warden and the Colossus use the same AI at larger scale and
+        never respawn.</li>
+    </ul>
+
+    <h3>Crafting</h3>
+    <p>Build an <b>anvil</b>, then open the inventory (<code>I</code>) to craft:</p>
+    <ul>
+      <li><b>Honed Tools</b> — +harvest yield.</li>
+      <li><b>Iron Plate</b> — reduces damage taken.</li>
+      <li><b>Healing Salve</b> (×3) — press <code>R</code> to heal. Crafting bonuses persist across saves.</li>
+    </ul>
+
+    <h3>Quests &amp; the two endings</h3>
+    <p>A tiny FSM (<code>QuestLog</code>) advances through 8 stages: gather → shelter → first kill
+      → find ruins → open chest → defeat the Warden → recover the Crown Fragment → reforge at the
+      altar. Two endings exist:</p>
+    <ul>
+      <li><b>First ending</b> — reforge the Crown after beating the Warden: <i>“The Star Crown blazes.”</i></li>
+      <li><b>True ending</b> — also defeat the <b>Colossus</b> (it drops the second fragment):
+        <i>“The Twin Star Crowns blaze.”</i></li>
+    </ul>
+
+    <h3>Save / Load</h3>
+    <p>The game autosaves to <code>localStorage</code> every 8 seconds and on page hide. Saves
+      capture inventory, placed structures, <b>depleted</b> harvest nodes, boss kills, quest stage,
+      day/night time, and crafting bonuses — so a reloaded world feels continuous.</p>
+
+    <h3>Minimap</h3>
+    <p>A 33×33 terrain readback with markers for the player, altar, ruins, and enemies is drawn to
+      a small canvas in the corner each tick.</p>
+
+    <h3>Controls</h3>
+    <table>
+      <tr><th>Key</th><th>Action</th></tr>
+      <tr><td><code>W A S D</code></td><td>Move</td></tr>
+      <tr><td><code>J</code></td><td>Melee attack</td></tr>
+      <tr><td><code>K</code></td><td>Shoot arrow</td></tr>
+      <tr><td><code>Space</code></td><td>Dodge roll</td></tr>
+      <tr><td><code>E</code></td><td>Interact / harvest</td></tr>
+      <tr><td><code>Q</code></td><td>Toggle build mode (pick a recipe in the inventory, click to place, <code>Esc</code> exits)</td></tr>
+      <tr><td><code>I</code></td><td>Inventory &amp; crafting</td></tr>
+      <tr><td><code>C</code></td><td>Eat food</td></tr>
+      <tr><td><code>R</code></td><td>Use healing salve</td></tr>
+      <tr><td><code>Z</code></td><td>Sleep until dawn (restore)</td></tr>
+      <tr><td><code>P</code></td><td>Screenshot (saves a PNG of the canvas)</td></tr>
+    </table>
+    <p><b>Touch / mobile:</b> on touch devices an on-screen D-pad plus action buttons (attack,
+      shoot, dodge, eat, salve, sleep, build, inventory, screenshot) appear, and a build-mode
+      banner shows while placing structures.</p>
+
+    <h3>Regenerating the art</h3>
+    <p>The PNGs on this page are produced by the offline tool:</p>
+    <p><code>cargo run -p game --bin gen_pngs</code></p>
+    <p>It calls <code>elements::preview_elements()</code> (which builds every sprite and returns
+      flat triangle vertices) and rasterizes each into <code>element_previews/</code>.</p>
+  </section>
+</main>
+
+<script>
+  // Element metadata: [file, name, description, group]
+  const ELEMENTS = [
+    // terrain & decor
+    ["tree","Tree","Woodland tree; harvested for Wood.","terrain"],
+    ["rock","Rock","Stone outcrop; mined for Stone.","terrain"],
+    ["bush","Bush","Shrub that may yield food when searched.","terrain"],
+    ["flower","Flower","Decorative bloom; minor herb source.","terrain"],
+    ["grass_tuft","Grass Tuft","Tuft of grass; pure decoration.","terrain"],
+    ["fern","Fern","Leafy fern; ambient forest decor.","terrain"],
+    ["cactus","Cactus","Desert plant; spiky decor.","terrain"],
+    ["vines","Vines","Hanging vines; ruin/dungeon decor.","terrain"],
+    ["lilypad","Lily Pad","Floating pad on water; ambient.","terrain"],
+    ["reed","Reed","Marsh reeds; ambient swamp decor.","terrain"],
+    ["rubble","Rubble","Broken stones; ruin/decay decor.","terrain"],
+    ["bone_pile","Bone Pile","Scattered bones; ominous decor.","terrain"],
+    ["pillar","Pillar","Standing stone pillar; ruin decor.","terrain"],
+    ["statue","Statue","Weathered statue; landmark decor.","terrain"],
+    ["totem","Totem","Carved totem; mysterious decor.","terrain"],
+    ["sign","Sign","Wooden signpost; lore/landmark.","terrain"],
+    ["ruin_tower","Ruin Tower","Broken watchtower POI in the stone biome.","terrain"],
+    ["well","Well","Stone well; landmark/water source.","terrain"],
+    ["barrel","Barrel","Wooden barrel; prop.","terrain"],
+    ["crate_box","Crate","Storage crate; prop.","terrain"],
+    ["lantern","Lantern","Hanging lantern; light-source decor.","terrain"],
+    ["brazier","Brazier","Lit brazier; warm light decor.","terrain"],
+    ["torch","Torch","Wall torch; light source.","terrain"],
+    ["campfire","Campfire","Buildable fire; light, warmth & cooking.","terrain"],
+    // resources
+    ["mushroom","Mushroom","Yields Herbs used in crafting & healing.","res"],
+    ["crystal","Crystal","Yields Gems for upgrades/crafting.","res"],
+    ["ore","Ore","Metal ore node; mined for Stone/metal.","res"],
+    // buildable
+    ["wall","Wall","Defensive wall; blocks movement.","build"],
+    ["fence","Fence","Simple fence; decor/barrier.","build"],
+    ["chest","Chest","Storage container (lore).","build"],
+    ["anvil","Anvil","Crafting station; unlocks recipes.","build"],
+    ["bed","Bed","Rest spot.","build"],
+    ["altar","Altar","The reforge altar — and a world POI.","build"],
+    // enemies
+    ["slime","Slime","Weak starter enemy near the ruins.","enemy"],
+    ["skeleton","Skeleton","Melee undead of forest & ruins.","enemy"],
+    ["goblin","Goblin","Melee ambusher.","enemy"],
+    ["bat","Bat","Fast flying nuisance.","enemy"],
+    ["spider","Spider","Quick melee lurker.","enemy"],
+    ["imp","Imp","Small fiery melee.","enemy"],
+    ["ogre","Ogre","Heavy bruiser with big damage.","enemy"],
+    ["wraith","Wraith","Flying ghost; hard to pin down.","enemy"],
+    ["stoneslinger","Stoneslinger","Ranged thrower; snipes with enemy arrows.","enemy"],
+    // bosses / avatar
+    ["humanoid","Warden / Player","The player's sprite AND the Forest Warden boss (first fragment).","boss"],
+    ["colossus","Colossus","Towering stone golem; second fragment holder (true ending).","boss"],
+  ];
+  const mount = (id, items) => {
+    const root = document.getElementById(id);
+    items.forEach(([f, n, d]) => {
+      const c = document.createElement('div');
+      c.className = 'card';
+      c.innerHTML = `<img src="element_previews/${f}.png" alt="${n}" loading="lazy">`
+        + `<div class="nm">${n}</div><div class="ds">${d}</div>`;
+      root.appendChild(c);
+    });
+  };
+  mount('g-terrain', ELEMENTS.filter(e => e[3]==='terrain'));
+  mount('g-res',     ELEMENTS.filter(e => e[3]==='res'));
+  mount('g-build',   ELEMENTS.filter(e => e[3]==='build'));
+  mount('g-enemy',   ELEMENTS.filter(e => e[3]==='enemy'));
+  mount('g-boss',    ELEMENTS.filter(e => e[3]==='boss'));
+</script>
+</body>
+</html>

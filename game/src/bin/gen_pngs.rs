@@ -1,7 +1,11 @@
-//! Offline tool: render every game element to a transparent PNG.
+//! Offline tool: render every game element to a transparent PNG, plus a
+//! combined sprite-sheet montage.
 //!
-//! Run with: `cargo run -p game --bin gen_pngs` (writes `./element_previews/*.png`).
-//! The vertex buffers come from `game::elements::preview_elements`, which calls
+//! Run with: `cargo run -p game --bin gen_pngs`
+//! Writes into `../web/static/element_previews/` (relative to this crate's
+//! dir): one PNG per element, and `spritesheet.png`.
+//!
+//! Vertex buffers come from `game::elements::preview_elements`, which calls
 //! each element's `build()` and flattens the triangles (x, y, r, g, b, a).
 
 use std::fs;
@@ -13,11 +17,13 @@ fn main() {
     fs::create_dir_all(out_dir).expect("create previews dir");
 
     let elements = game::elements::preview_elements();
+    let mut imgs: Vec<(String, usize, usize, Vec<u8>)> = Vec::new();
     let mut written = 0;
     for (name, verts) in elements {
         if let Some((w, h, rgba)) = rasterize_png(&verts) {
             let path = out_dir.join(format!("{name}.png"));
             write_png(&path, w, h, &rgba);
+            imgs.push((name.clone(), w, h, rgba));
             written += 1;
             println!("  {name}: {}x{}", w, h);
         } else {
@@ -25,6 +31,14 @@ fn main() {
         }
     }
     println!("Wrote {written} element PNGs to {}", out_dir.display());
+
+    let sheet = build_montage(&imgs);
+    let sheet_path = out_dir.join("spritesheet.png");
+    write_png(&sheet_path, sheet.0, sheet.1, &sheet.2);
+    println!(
+        "Wrote spritesheet.png ({}x{}) — {} elements",
+        sheet.0, sheet.1, imgs.len()
+    );
 }
 
 /// Triangle-fill the vertex buffer into an RGBA image cropped to its bbox.
@@ -36,7 +50,6 @@ fn rasterize_png(verts: &[f32]) -> Option<(usize, usize, Vec<u8>)> {
     if nv < 3 {
         return None;
     }
-    // bounding box of all vertices
     let mut minx = f32::INFINITY;
     let mut miny = f32::INFINITY;
     let mut maxx = f32::NEG_INFINITY;
@@ -68,21 +81,16 @@ fn rasterize_png(verts: &[f32]) -> Option<(usize, usize, Vec<u8>)> {
         let (ax, ay, ar, ag, ab, aa) = v(verts, a);
         let (bx, by, _br, _bg, _bb, _ba) = v(verts, a + 1);
         let (cx2, cy2, _cr, _cg, _cb, _ca) = v(verts, a + 2);
-        // translate into image space
         let ax = ax - ox;
         let ay = ay - oy;
         let bx = bx - ox;
         let by = by - oy;
         let cx2 = cx2 - ox;
         let cy2 = cy2 - oy;
-        let min_tx = ax.min(bx).min(cx2).floor() as i32;
-        let max_tx = ax.max(bx).max(cx2).ceil() as i32;
-        let min_ty = ay.min(by).min(cy2).floor() as i32;
-        let max_ty = ay.max(by).max(cy2).ceil() as i32;
-        let min_tx = min_tx.max(0).min(w as i32);
-        let max_tx = max_tx.max(0).min(w as i32);
-        let min_ty = min_ty.max(0).min(h as i32);
-        let max_ty = max_ty.max(0).min(h as i32);
+        let min_tx = (ax.min(bx).min(cx2).floor() as i32).max(0).min(w as i32);
+        let max_tx = (ax.max(bx).max(cx2).ceil() as i32).max(0).min(w as i32);
+        let min_ty = (ay.min(by).min(cy2).floor() as i32).max(0).min(h as i32);
+        let max_ty = (ay.max(by).max(cy2).ceil() as i32).max(0).min(h as i32);
         let denom = (by - cy2) * (ax - cx2) + (cx2 - bx) * (ay - cy2);
         if denom.abs() < 1e-6 {
             continue;
@@ -113,6 +121,47 @@ fn rasterize_png(verts: &[f32]) -> Option<(usize, usize, Vec<u8>)> {
     Some((w, h, rgba))
 }
 
+/// Pack every element into a single transparent grid image.
+fn build_montage(imgs: &[(String, usize, usize, Vec<u8>)]) -> (usize, usize, Vec<u8>) {
+    let cols = 9;
+    let rows = (imgs.len() + cols - 1) / cols;
+    let cell = 80usize; // square cell; elements are centred within
+    let w = cols * cell;
+    let h = rows * cell;
+    let mut buf: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]; w * h];
+    for (i, (_, iw, ih, data)) in imgs.iter().enumerate() {
+        let col = i % cols;
+        let row = i / cols;
+        let ox = col * cell + (cell - *iw) / 2;
+        let oy = row * cell + (cell - *ih) / 2;
+        for y in 0..*ih {
+            for x in 0..*iw {
+                let sa = data[(y * *iw + x) * 4 + 3] as f32 / 255.0;
+                if sa <= 0.0 {
+                    continue;
+                }
+                let dx = ox + x;
+                let dy = oy + y;
+                if dx >= w || dy >= h {
+                    continue;
+                }
+                let sr = data[(y * *iw + x) * 4] as f32 / 255.0;
+                let sg = data[(y * *iw + x) * 4 + 1] as f32 / 255.0;
+                let sb = data[(y * *iw + x) * 4 + 2] as f32 / 255.0;
+                blend(&mut buf[dy * w + dx], sr, sg, sb, sa);
+            }
+        }
+    }
+    let mut rgba = Vec::with_capacity(w * h * 4);
+    for p in &buf {
+        rgba.push((p[0].clamp(0.0, 1.0) * 255.0).round() as u8);
+        rgba.push((p[1].clamp(0.0, 1.0) * 255.0).round() as u8);
+        rgba.push((p[2].clamp(0.0, 1.0) * 255.0).round() as u8);
+        rgba.push((p[3].clamp(0.0, 1.0) * 255.0).round() as u8);
+    }
+    (w, h, rgba)
+}
+
 #[inline]
 fn v(v: &[f32], i: usize) -> (f32, f32, f32, f32, f32, f32) {
     (
@@ -125,7 +174,7 @@ fn v(v: &[f32], i: usize) -> (f32, f32, f32, f32, f32, f32) {
     )
 }
 
-/// Alpha-composite `src` over `dst` (both straight alpha, premultiplied math).
+/// Alpha-composite `src` over `dst` (both straight alpha).
 #[inline]
 fn blend(dst: &mut [f32; 4], r: f32, g: f32, b: f32, a: f32) {
     let a = a.clamp(0.0, 1.0);
