@@ -623,6 +623,40 @@ impl App {
         .to_string()
     }
 
+    /// Top-down minimap centered on the player: a grid of packed RGB terrain
+    /// colors plus markers for enemies and player-built structures.
+    pub fn minimap_data(&mut self) -> String {
+        const N: i32 = 33;
+        const R: i32 = N / 2;
+        let ptx = self.player.x.floor() as i32;
+        let pty = self.player.y.floor() as i32;
+        let mut cells: Vec<u32> = Vec::with_capacity((N * N) as usize);
+        for dy in -R..=R {
+            for dx in -R..=R {
+                let kind = tile_at(&self.world, &mut self.chunks, ptx + dx, pty + dy);
+                let c = kind.color();
+                let r = (c[0] * 255.0) as u32;
+                let g = (c[1] * 255.0) as u32;
+                let b = (c[2] * 255.0) as u32;
+                cells.push((r << 16) | (g << 8) | b);
+            }
+        }
+        let enemies: Vec<[f32; 2]> = self.enemies.enemies().map(|e| [e.x, e.y]).collect();
+        let structs: Vec<(i32, i32, &str)> = self
+            .structures
+            .iter()
+            .map(|s| (s.tx, s.ty, struct_name(s.kind)))
+            .collect();
+        serde_json::json!({
+            "n": N,
+            "cells": cells,
+            "player": [self.player.x, self.player.y],
+            "enemies": enemies,
+            "structs": structs,
+        })
+        .to_string()
+    }
+
     /// Machine-readable game state for the JS HUD / test harness.
     pub fn stats_line(&mut self) -> String {
         let near = match self.nearest_resource() {

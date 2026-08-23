@@ -147,8 +147,10 @@
 
   <div id="buildhint" class="hidden"></div>
 
+  <canvas id="minimap" width="132" height="132" title="Minimap (M to toggle)"></canvas>
+
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -744,6 +746,48 @@
               updateInventory(get_ui_data());
             }
           }, 200);
+
+          // ---- Minimap ----------------------------------------------------
+          const mm = document.getElementById('minimap');
+          const mmCtx = mm.getContext('2d');
+          function drawMinimap() {
+            if (!gameStarted || bootOpen) return;
+            let d;
+            try { d = JSON.parse(get_minimap()); } catch { return; }
+            if (!d.n) return;
+            const N = d.n;
+            const cell = mm.width / N;
+            const ptx = Math.floor(d.player[0]);
+            const cx = (N / 2) * cell, cy = (N / 2) * cell;
+            mmCtx.fillStyle = '#0a0f1c';
+            mmCtx.fillRect(0, 0, mm.width, mm.height);
+            for (let i = 0; i < d.cells.length; i++) {
+              const c = d.cells[i];
+              const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
+              mmCtx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+              const x = (i % N) * cell, y = Math.floor(i / N) * cell;
+              mmCtx.fillRect(x, y, cell + 0.6, cell + 0.6);
+            }
+            (d.structs || []).forEach(([tx, ty]) => {
+              const px = cx + (tx - ptx) * cell;
+              const py = cy + (ty - Math.floor(d.player[1])) * cell;
+              mmCtx.fillStyle = '#f2d77a';
+              mmCtx.fillRect(px - 1.5, py - 1.5, 3, 3);
+            });
+            (d.enemies || []).forEach(([ex, ey]) => {
+              const px = cx + (ex - (ptx + 0.5)) * cell;
+              const py = cy + (ey - (Math.floor(d.player[1]) + 0.5)) * cell;
+              mmCtx.fillStyle = '#e05050';
+              mmCtx.beginPath();
+              mmCtx.arc(px, py, 1.6, 0, 7);
+              mmCtx.fill();
+            });
+            mmCtx.fillStyle = '#ffd27a';
+            mmCtx.beginPath();
+            mmCtx.arc(cx, cy, 2.6, 0, 7);
+            mmCtx.fill();
+          }
+          setInterval(drawMinimap, 400);
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
           //      warm-orange (player) pixels. If orange>0 the game is rendering

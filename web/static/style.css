@@ -549,4 +549,20 @@ html, body {
   text-align: center;
 }
 #buildhint.hidden { display: none; }
+
+/* minimap */
+#minimap {
+  position: fixed;
+  top: 60px;
+  right: 14px;
+  width: 132px;
+  height: 132px;
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 6px;
+  background: #0a0f1c;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 16;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
 #buildhint b { color: #54c26e; }

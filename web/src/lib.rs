@@ -160,6 +160,15 @@ pub fn craft(idx: usize) -> bool {
     })
 }
 
+/// JSON minimap data centered on the player (terrain grid + markers).
+#[wasm_bindgen]
+pub fn get_minimap() -> String {
+    APP.with(|cell| match cell.borrow_mut().as_mut() {
+        Some(app) => app.minimap_data(),
+        None => String::from("{}"),
+    })
+}
+
 /// Ask the renderer to grab a screenshot on its next frame (readback + #blit).
 #[wasm_bindgen]
 pub fn capture() {
