@@ -32,16 +32,49 @@
       <span class="inv-chip inv-stone" id="inv-stone">S 0</span>
       <span class="inv-chip inv-food" id="inv-food">F 0</span>
       <span class="inv-chip inv-frag" id="inv-frag" style="display:none">🩱 0</span>
+      <span class="inv-chip" id="hud-coords">@ 0,0</span>
+      <span class="inv-chip" id="hud-mobs">MOBS 0</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
-    <div class="hud-row hud-hint">WASD move · E harvest/open · F campfire · V wall · J attack · K shoot · C eat</div>
-    <div class="hud-row"><span class="inv-chip" id="fps">FPS --</span></div>
+    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · E harvest/open · J attack · K shoot · C eat · Z sleep (by bed) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute audio · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems</div>
+    <div class="hud-row">
+      <span class="inv-chip" id="fps">FPS --</span>
+      <span class="inv-chip" id="spd">SPD 0.0 t/s</span>
+      <span class="speed-meter" title="Movement speed (tiles/sec)"><i id="spd-bar"></i></span>
+      <span class="inv-chip" id="kev" title="Keydown events seen by the engine (last key code)">KEY ev:0</span>
+    </div>
   </div>
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
   <div id="altar-prompt" class="hidden">The Crown hums in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
 
+  <button id="help" title="Controls &amp; help">?</button>
   <button id="gear" title="Settings (Esc)">⚙</button>
+
+  <div id="help-panel" class="overlay hidden">
+    <div id="overlay-box">
+      <h2>CONTROLS</h2>
+      <div class="help-grid">
+        <span class="k">W A S D / ↑ ↓ ← →</span><span class="d">Move (the world scrolls; your character travels in the pressed direction)</span>
+        <span class="k">E</span><span class="d">Harvest wood/stone · open chest · interact at altar</span>
+        <span class="k">F</span><span class="d">Build a campfire</span>
+        <span class="k">V</span><span class="d">Build a wall (blocks movement)</span>
+        <span class="k">T</span><span class="d">Build a torch (light source)</span>
+        <span class="k">G</span><span class="d">Build a fence (blocks movement)</span>
+        <span class="k">B</span><span class="d">Build a bed</span>
+        <span class="k">N</span><span class="d">Build an anvil</span>
+        <span class="k">H</span><span class="d">Build a well (blocks movement)</span>
+        <span class="k">J</span><span class="d">Melee attack (swing)</span>
+        <span class="k">K</span><span class="d">Shoot an arrow</span>
+        <span class="k">C</span><span class="d">Eat food to restore hunger</span>
+        <span class="k">P</span><span class="d">Save a screenshot</span>
+        <span class="k">Esc</span><span class="d">Settings</span>
+      </div>
+      <p class="help-note">The <b>Speed</b> readout (top-left) shows your live movement in tiles/second — it should climb above 0 the moment you press a movement key. <b>FPS</b> is the real render rate.</p>
+      <div class="menu-btns"><button id="btn-help-close" class="menu-btn">Close</button></div>
+    </div>
+  </div>
+
 
   <div id="touch" class="hidden">
     <div class="touch-dpad">
@@ -156,41 +189,113 @@
       o.connect(g); g.connect(dest || sfxGain);
       o.start(); o.stop(actx.currentTime + dur + 0.02);
     }
-    function noise(dur, vol) {
+    function noise(dur, vol, filterFreq) {
       if (!actx) return;
       const n = Math.floor(actx.sampleRate * dur);
       const buf = actx.createBuffer(1, n, actx.sampleRate);
       const d = buf.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      for (let i = 0; i < n; i++) {
+        const env = i < n/8 ? i/(n/8) : i > n-n/8 ? (n-i)/(n/8) : 1;
+        d[i] = (Math.random() * 2 - 1) * env;
+      }
       const src = actx.createBufferSource(); src.buffer = buf;
       const g = actx.createGain(); g.gain.value = vol;
-      src.connect(g); g.connect(sfxGain); src.start();
+      if (filterFreq) {
+        const bp = actx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = filterFreq; bp.Q.value = 0.8;
+        src.connect(bp); bp.connect(g);
+      } else {
+        src.connect(g);
+      }
+      g.connect(sfxGain); src.start();
     }
     function playSfx(name) {
       if (!actx || settings.muted) return;
+      const t = actx.currentTime;
       switch (name) {
-        case 'swing': tone(240, 0.09, 'triangle', 0.14); break;
-        case 'shoot': tone(680, 0.06, 'square', 0.07); break;
-        case 'hit': noise(0.12, 0.22); break;
-        case 'hurt': tone(120, 0.2, 'sawtooth', 0.22); break;
-        case 'pickup': tone(880, 0.07, 'sine', 0.13); tone(1320, 0.07, 'sine', 0.1); break;
-        case 'eat': tone(330, 0.12, 'sine', 0.13); break;
+        case 'swing': tone(320, 0.16, 'sawtooth', 0.05); noise(0.16, 0.10, 950); break;
+        case 'shoot': tone(900, 0.10, 'triangle', 0.09); noise(0.10, 0.08, 2600); break;
+        case 'hit': noise(0.10, 0.18, 520); tone(150, 0.10, 'square', 0.20); break;
+        case 'hurt': tone(300, 0.16, 'sawtooth', 0.16); tone(190, 0.18, 'sawtooth', 0.14); break;
+        case 'pickup': tone(660, 0.08, 'sine', 0.18); tone(880, 0.08, 'sine', 0.18); tone(1175, 0.10, 'sine', 0.16); break;
+        case 'eat': tone(300, 0.06, 'triangle', 0.12); tone(250, 0.06, 'triangle', 0.12); break;
         case 'roar': tone(80, 0.5, 'sawtooth', 0.28); break;
         case 'chime': tone(523, 0.12, 'sine', 0.12); tone(784, 0.14, 'sine', 0.12); break;
         case 'death': tone(70, 0.6, 'sawtooth', 0.28); break;
         case 'victory': [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'triangle', 0.16), i * 110)); break;
         case 'shatter': [784, 587, 392, 262].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'sawtooth', 0.14), i * 110)); break;
+        case 'harvest': tone(523, 0.12, 'triangle', 0.24); tone(392, 0.14, 'triangle', 0.16); noise(0.09, 0.12, 1300); break;
+        case 'build': tone(440, 0.08, 'square', 0.15); tone(660, 0.10, 'square', 0.13); noise(0.05, 0.10, 2200); break;
+        case 'sleep': tone(440, 0.6, 'sine', 0.13); tone(330, 0.6, 'sine', 0.11); tone(220, 0.7, 'sine', 0.09); break;
+        case 'chest': tone(523, 0.10, 'sine', 0.16); tone(659, 0.10, 'sine', 0.16); tone(988, 0.18, 'sine', 0.14); break;
+        case 'levelup': [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'triangle', 0.18), i * 100)); break;
+        case 'enemydie': noise(0.22, 0.16, 420); tone(260, 0.22, 'square', 0.13); tone(130, 0.20, 'square', 0.12); break;
+        case 'ambient': {
+          const pad1 = actx.createOscillator(); pad1.type = 'sine'; pad1.frequency.value = 110;
+          const pad2 = actx.createOscillator(); pad2.type = 'sine'; pad2.frequency.value = 165;
+          const pad3 = actx.createOscillator(); pad3.type = 'sine'; pad3.frequency.value = 220;
+          const lfo = actx.createOscillator(); lfo.frequency.value = 0.06;
+          const lfoG = actx.createGain(); lfoG.gain.value = 3;
+          lfo.connect(lfoG); lfoG.connect(pad1.frequency);
+          [pad1, pad2, pad3].forEach(o => o.connect(musicGain));
+          pad1.start(); pad2.start(); pad3.start(); lfo.start();
+          break;
+        }
       }
     }
     function startMusic() {
       if (!actx) return;
-      const o1 = actx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 110;
-      const o2 = actx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 165;
-      const lfo = actx.createOscillator(); lfo.frequency.value = 0.05;
-      const lfoG = actx.createGain(); lfoG.gain.value = 4;
-      lfo.connect(lfoG); lfoG.connect(o1.frequency);
-      o1.connect(musicGain); o2.connect(musicGain);
-      o1.start(); o2.start(); lfo.start();
+      const now = actx.currentTime;
+      // --- soft wind-noise bed via filtered noise buffer ---
+      const bufLen = actx.sampleRate * 4;
+      const noiseBuf = actx.createBuffer(2, bufLen, actx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = noiseBuf.getChannelData(ch);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+      }
+      const noiseSrc = actx.createBufferSource();
+      noiseSrc.buffer = noiseBuf; noiseSrc.loop = true;
+      const noiseFilt = actx.createBiquadFilter();
+      noiseFilt.type = 'lowpass'; noiseFilt.frequency.value = 300; noiseFilt.Q.value = 0.5;
+      const noiseGain = actx.createGain(); noiseGain.gain.value = 0.025;
+      noiseSrc.connect(noiseFilt); noiseFilt.connect(noiseGain); noiseGain.connect(musicGain);
+      noiseSrc.start();
+      // --- slow LFO to gently modulate the noise filter (wind gusts) ---
+      const windLfo = actx.createOscillator(); windLfo.type = 'sine'; windLfo.frequency.value = 0.03;
+      const windLfoG = actx.createGain(); windLfoG.gain.value = 80;
+      windLfo.connect(windLfoG); windLfoG.connect(noiseFilt.frequency);
+      windLfo.start();
+      // --- warm pad: two detuned triangle oscillators through low-pass ---
+      const padFreqs = [130.81, 196.0]; // C3 + G3 (open fifth)
+      padFreqs.forEach((f, i) => {
+        const o = actx.createOscillator();
+        o.type = 'triangle'; o.frequency.value = f;
+        o.detune.value = (i - 0.5) * 8; // slight detune for warmth
+        const filt = actx.createBiquadFilter();
+        filt.type = 'lowpass'; filt.frequency.value = 400; filt.Q.value = 0.3;
+        const g = actx.createGain(); g.gain.value = 0.018;
+        o.connect(filt); filt.connect(g); g.connect(musicGain);
+        o.start();
+      });
+      // --- very slow melodic chime (pentatonic, every ~6-10s, very quiet) ---
+      const penta = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33];
+      function chime() {
+        if (!actx) return;
+        const t = actx.currentTime;
+        const f = penta[Math.floor(Math.random() * penta.length)];
+        const o = actx.createOscillator();
+        o.type = 'sine'; o.frequency.value = f * 2; // octave up, distant
+        const g = actx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.04, t + 0.8);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 4.0);
+        const filt = actx.createBiquadFilter();
+        filt.type = 'lowpass'; filt.frequency.value = 800;
+        o.connect(filt); filt.connect(g); g.connect(musicGain);
+        o.start(t); o.stop(t + 4.5);
+        setTimeout(chime, 6000 + Math.random() * 6000);
+      }
+      setTimeout(chime, 3000);
     }
 
     const showNoGpu = (reason) => {
@@ -279,7 +384,15 @@
             el('inv-wood').textContent = `W ${stats.w}`;
             el('inv-stone').textContent = `S ${stats.s}`;
             el('inv-food').textContent = `F ${stats.f}`;
+            el('hud-coords').textContent = `@ ${stats.px},${stats.py}`;
+            el('hud-mobs').textContent = `MOBS ${stats.mobs}`;
             el('hud-clock').textContent = stats.time;
+
+            el('fps').textContent = `FPS ${Math.round(stats.fps)}`;
+            el('spd').textContent = `SPD ${stats.spd.toFixed(1)} t/s`;
+            const spdBar = el('spd-bar');
+            if (spdBar) spdBar.style.width = Math.max(0, Math.min(100, (stats.spd / 8.0) * 100)) + '%';
+            el('kev').textContent = `KEY ev:${stats.kev} last:${stats.klast}`;
 
             if (stats.boss === 1) {
               el('boss-row').style.display = 'flex';
@@ -366,6 +479,13 @@
               ng: Number(get(/ng=(\d+)/) || 0),
               atk: Number(get(/atk=(\d+)/) || 0),
               shots: Number(get(/shots=(\d+)/) || 0),
+              px: Number((String(raw).match(/player=\(([\d.-]+),/) || [])[1] || 0),
+              py: Number((String(raw).match(/player=\(([\d.-]+),([\d.-]+)\)/) || [])[2] || 0),
+              mobs: Number(get(/mobs=(\d+)/) || 0),
+              fps: Number(get(/fps=(\d+)/) || 0),
+              spd: Number(get(/spd=([\d.]+)/) || 0),
+              kev: Number(get(/kev=(\d+)/) || 0),
+              klast: get(/klast=(\S+)/) || '',
             };
           };
 
@@ -396,12 +516,8 @@
               last = t;
               window.__frames++;
               if (t - lastLog >= 500) {
-                const fps = window.__frames / ((t - lastLog) / 1000);
-                window.__frames = 0;
                 lastLog = t;
-                const el = document.getElementById('fps');
-                if (el) el.textContent = `FPS ${fps.toFixed(0)}`;
-                document.getElementById('log').textContent = `[wasm] fps=${fps.toFixed(0)} ${get_stats()}`;
+                document.getElementById('log').textContent = `[wasm] ${get_stats()}`;
               }
             }
             requestAnimationFrame(frame);
@@ -448,6 +564,11 @@
           const closeSettings = () => { settingsEl.className = 'hidden'; paused = false; };
           el('gear').onclick = openSettings;
           el('btn-resume').onclick = closeSettings;
+          const helpEl = el('help-panel');
+          const openHelp = () => { helpEl.className = 'overlay'; paused = true; };
+          const closeHelp = () => { helpEl.className = 'hidden'; paused = false; };
+          el('help').onclick = openHelp;
+          el('btn-help-close').onclick = closeHelp;
           el('btn-save').onclick = () => { doSave(); toast('Game saved'); };
           el('set-master').oninput = (e) => { settings.master = Number(e.target.value); applyAudio(); saveSettings(); };
           el('set-sfx').oninput = (e) => { settings.sfx = Number(e.target.value); applyAudio(); saveSettings(); };
@@ -474,6 +595,23 @@
             }
             if (e.code === 'Escape') {
               if (settingsEl.className === 'hidden') openSettings(); else closeSettings();
+            }
+            // Screenshot: dump the visible #blit canvas (the live display) to a
+            // downloadable PNG (and POST it to /cap if a capture server listens).
+            if (e.code === 'KeyP') {
+              e.preventDefault();
+              const c = document.getElementById('blit') || document.getElementById('game');
+              try {
+                const url = c.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = url; a.download = 'starfall_' + Date.now() + '.png';
+                a.click();
+                console.log('[page] screenshot saved');
+                if (url.length > 64) {
+                  fetch('/cap', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ png: url }) }).catch(() => {});
+                }
+              } catch (err) { console.log('[page] screenshot failed: ' + err); }
             }
           });
           window.addEventListener('pointerdown', ensureAudio, { once: false });
@@ -538,6 +676,38 @@
               img.src = url;
             } catch (e) { console.error('[page] canvas self-check failed:', e); }
           }, 3000);
+
+          // ---- Visual capture hook (?cap): dump canvas PNG + signature stats ----
+          if (location.search.includes('cap')) {
+            const analyze = (cv) => {
+              const w = cv.width, h = cv.height;
+              const t = document.createElement('canvas'); t.width = w; t.height = h;
+              const c = t.getContext('2d'); c.drawImage(cv, 0, 0);
+              const d = c.getImageData(0, 0, w, h).data;
+              let player = 0, tree = 0, rock = 0, slime = 0, boss = 0, hpback = 0, wall = 0;
+              let slimeTop = 99999, slimeBot = -1;
+              for (let i = 0; i < d.length; i += 4) {
+                const r = d[i], g = d[i + 1], b = d[i + 2];
+                if (r > 180 && g > 60 && g < 200 && b < 100) player++;
+                if (g > 70 && g > r * 1.5 && g > b * 1.5) tree++;
+                if (Math.abs(r - g) < 22 && Math.abs(g - b) < 22 && r > 55 && r < 160) rock++;
+                if (g > 110 && r > 40 && r < 150 && b < 110 && g > r && g > b) {
+                  slime++; const y = (i / 4 / w) | 0; if (y < slimeTop) slimeTop = y; if (y > slimeBot) slimeBot = y;
+                }
+                if (r > 90 && b > 70 && g < r && b > r * 0.4) boss++;
+                if (r < 22 && g < 22 && b < 28) hpback++;
+                if (Math.abs(r - g) < 18 && Math.abs(g - b) < 18 && r > 120 && r < 210) wall++;
+              }
+              return { w, h, player, tree, rock, slime, boss, hpback, wall, slimeTop, slimeBot };
+            };
+            setInterval(() => {
+              const cv = document.getElementById('blit') || document.getElementById('game');
+              try {
+                fetch('/cap', { method: 'POST', body: cv.toDataURL('image/png') });
+                fetch('/stat', { method: 'POST', body: JSON.stringify(analyze(cv)) });
+              } catch (e) { console.error('[cap]', e); }
+            }, 700);
+          }
 
           requestAnimationFrame(frame);
         }).catch((e) => {

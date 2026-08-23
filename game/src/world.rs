@@ -8,6 +8,7 @@ pub const RENDER_RADIUS: i32 = 4;
 pub enum TileKind {
     DeepWater,
     Water,
+    ShallowWater,
     Sand,
     Grass,
     Forest,
@@ -21,6 +22,7 @@ impl TileKind {
         match self {
             TileKind::DeepWater => [0.08, 0.20, 0.38],
             TileKind::Water => [0.15, 0.35, 0.55],
+            TileKind::ShallowWater => [0.22, 0.48, 0.52],
             TileKind::Sand => [0.86, 0.78, 0.55],
             TileKind::Grass => [0.35, 0.58, 0.27],
             TileKind::Forest => [0.22, 0.44, 0.19],
@@ -32,6 +34,11 @@ impl TileKind {
 
     pub fn walkable(self) -> bool {
         !matches!(self, TileKind::DeepWater | TileKind::Water)
+    }
+
+    /// True for the crossable shallow water (wading) tiles.
+    pub fn wadable(self) -> bool {
+        matches!(self, TileKind::ShallowWater)
     }
 }
 
@@ -50,6 +57,7 @@ pub struct WorldGen {
     elevation: Fbm<Perlin>,
     moisture: Fbm<Perlin>,
     temperature: Fbm<Perlin>,
+    river: Fbm<Perlin>,
 }
 
 /// LRU-ish chunk cache: generates chunks on demand, clears wholesale when
@@ -103,10 +111,13 @@ impl WorldGen {
         moisture.frequency = 0.015;
         let mut temperature = Fbm::<Perlin>::new(seed ^ 0x85EBCA6B);
         temperature.frequency = 0.006;
+        let mut river = Fbm::<Perlin>::new(seed ^ 0xC2B2AE35);
+        river.frequency = 0.012;
         Self {
             elevation,
             moisture,
             temperature,
+            river,
         }
     }
 
@@ -114,12 +125,32 @@ impl WorldGen {
         let mut tiles = [[Tile { kind: TileKind::DeepWater }; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
         for ty in 0..CHUNK_SIZE {
             for tx in 0..CHUNK_SIZE {
-                let wx = (cx * CHUNK_SIZE + tx) as f64;
-                let wy = (cy * CHUNK_SIZE + ty) as f64;
+                let gx = cx * CHUNK_SIZE + tx;
+                let gy = cy * CHUNK_SIZE + ty;
+                let wx = gx as f64;
+                let wy = gy as f64;
                 let e = self.elevation.get([wx, wy]) as f32;
                 let m = self.moisture.get([wx, wy]) as f32;
                 let t = self.temperature.get([wx, wy]) as f32;
-                tiles[ty as usize][tx as usize].kind = self.classify(e, m, t);
+                let mut kind = self.classify(e, m, t);
+                // Intra-biome detail: deterministic swaps between walkable
+                // sibling tiles so regions aren't flat. Never introduces water
+                // or changes overall biome presence, so spawn/POI logic holds.
+                let h = (gx.wrapping_mul(73856093) ^ gy.wrapping_mul(19349663)) as f64;
+                kind = match kind {
+                    TileKind::Grass if h.rem_euclid(11.0) == 0.0 => TileKind::Forest,
+                    TileKind::Forest if h.rem_euclid(13.0) == 0.0 => TileKind::Grass,
+                    TileKind::Stone if h.rem_euclid(17.0) == 0.0 => TileKind::Snow,
+                    TileKind::Snow if h.rem_euclid(19.0) == 0.0 => TileKind::Stone,
+                    other => other,
+                };
+                // Rivers: where a separate low-frequency noise forms a ridge and
+                // the land is low, carve a crossable (wadeable) stream. Only
+                // cuts walkable lowlands, never deep water or high peaks.
+                if kind.walkable() && e < 0.18 && (self.river.get([wx, wy]) as f32).abs() < 0.045 {
+                    kind = TileKind::ShallowWater;
+                }
+                tiles[ty as usize][tx as usize].kind = kind;
             }
         }
         Chunk { cx, cy, tiles }

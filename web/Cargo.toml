@@ -29,5 +29,5 @@ js-sys = "0.3"
     "KeyboardEvent",
     "Performance",
     "Window",
-] }
+ ] }
 console_error_panic_hook = "0.1.7"

@@ -1,5 +1,5 @@
 use crate::items::ItemKind;
-use crate::render::Sprite;
+use crate::render::{Sprite, SpriteStyle};
 use crate::world::TileKind;
 use serde::{Deserialize, Serialize};
 use std::collections::{BinaryHeap, HashMap};
@@ -26,6 +26,14 @@ pub enum EnemyKind {
     Slime,
     /// Forest Warden: the first Crown Fragment guardian (Chapter 3 boss).
     Boss,
+    Skeleton,
+    Goblin,
+    Bat,
+    Spider,
+    /// Imp: a fast, fragile swamp/forest swarmer.
+    Imp,
+    /// Ogre: a slow, heavily-armored stone brute.
+    Ogre,
 }
 
 impl EnemyKind {
@@ -33,6 +41,12 @@ impl EnemyKind {
         match self {
             EnemyKind::Slime => 12.0,
             EnemyKind::Boss => 60.0,
+            EnemyKind::Skeleton => 16.0,
+            EnemyKind::Goblin => 18.0,
+            EnemyKind::Bat => 8.0,
+            EnemyKind::Spider => 14.0,
+            EnemyKind::Imp => 6.0,
+            EnemyKind::Ogre => 40.0,
         }
     }
 
@@ -41,6 +55,12 @@ impl EnemyKind {
         match self {
             EnemyKind::Slime => 4.0,
             EnemyKind::Boss => 14.0,
+            EnemyKind::Skeleton => 6.0,
+            EnemyKind::Goblin => 7.0,
+            EnemyKind::Bat => 3.0,
+            EnemyKind::Spider => 5.0,
+            EnemyKind::Imp => 3.0,
+            EnemyKind::Ogre => 12.0,
         }
     }
 
@@ -48,17 +68,42 @@ impl EnemyKind {
         match self {
             EnemyKind::Slime => [0.30, 0.78, 0.36],
             EnemyKind::Boss => [0.55, 0.18, 0.62],
+            EnemyKind::Skeleton => [0.92, 0.90, 0.85],
+            EnemyKind::Goblin => [0.45, 0.60, 0.30],
+            EnemyKind::Bat => [0.35, 0.30, 0.45],
+            EnemyKind::Spider => [0.40, 0.20, 0.20],
+            EnemyKind::Imp => [0.88, 0.35, 0.55],
+            EnemyKind::Ogre => [0.55, 0.45, 0.35],
         }
     }
 
     /// Sprite geometry: slightly larger than the player so it reads clearly.
-    /// Alpha fades as hp drops (a visible health telegraph).
-    pub fn sprite(self, x: f32, y: f32, hp_frac: f32) -> Sprite {
+    /// Alpha fades as hp drops (a visible health telegraph). `facing` leans the
+    /// head of humanoid figures toward where they're looking.
+    pub fn sprite(self, x: f32, y: f32, hp_frac: f32, facing: (f32, f32)) -> Sprite {
         let (hw, hh) = match self {
             EnemyKind::Slime => (14.0, 14.0),
             EnemyKind::Boss => (22.0, 20.0),
+            EnemyKind::Skeleton => (14.0, 18.0),
+            EnemyKind::Goblin => (14.0, 18.0),
+            EnemyKind::Bat => (12.0, 8.0),
+            EnemyKind::Spider => (12.0, 10.0),
+            EnemyKind::Imp => (10.0, 12.0),
+            EnemyKind::Ogre => (20.0, 22.0),
         };
-        let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0);
+        let style = match self {
+            EnemyKind::Slime => SpriteStyle::Slime,
+            EnemyKind::Boss => SpriteStyle::Humanoid,
+            EnemyKind::Skeleton => SpriteStyle::Skeleton,
+            EnemyKind::Goblin => SpriteStyle::Goblin,
+            EnemyKind::Bat => SpriteStyle::Bat,
+            EnemyKind::Spider => SpriteStyle::Spider,
+            EnemyKind::Imp => SpriteStyle::Imp,
+            EnemyKind::Ogre => SpriteStyle::Ogre,
+        };
+        let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
+            .with_style(style)
+            .with_facing(facing);
         s.alpha = 0.8 + 0.2 * hp_frac;
         s
     }
@@ -81,6 +126,8 @@ pub struct Enemy {
     pub state: AiState,
     pub facing: (f32, f32),
     pub attack_timer: f32,
+    /// Seconds remaining of the white "hit" flash (set to 1 on damage, decays).
+    pub flash: f32,
     path_timer: f32,
     path: Vec<(i32, i32)>,
     wander: f32,
@@ -96,6 +143,7 @@ impl Enemy {
             state: AiState::Idle,
             facing: (1.0, 0.0),
             attack_timer: 0.0,
+            flash: 0.0,
             path_timer: 0.0,
             path: Vec::new(),
             wander: 0.0,
@@ -111,6 +159,7 @@ impl Enemy {
             return false;
         }
         self.hp -= dmg;
+        self.flash = 1.0;
         if self.hp <= 0.0 {
             self.hp = 0.0;
         }
@@ -122,6 +171,12 @@ impl Enemy {
         match self.kind {
             EnemyKind::Slime => vec![ItemKind::Food],
             EnemyKind::Boss => vec![ItemKind::Fragment],
+            EnemyKind::Skeleton => vec![ItemKind::Food],
+            EnemyKind::Goblin => vec![ItemKind::Food],
+            EnemyKind::Bat => vec![ItemKind::Food],
+            EnemyKind::Spider => vec![ItemKind::Herb],
+            EnemyKind::Imp => vec![ItemKind::Food],
+            EnemyKind::Ogre => vec![ItemKind::Gem],
         }
     }
 
@@ -135,9 +190,16 @@ impl Enemy {
         mut is_blocked: impl FnMut(i32, i32) -> bool,
     ) -> Option<f32> {
         self.attack_timer = (self.attack_timer - dt).max(0.0);
+        self.flash = (self.flash - dt * 5.0).max(0.0);
         let (aggro, atk_range, speed, cooldown) = match self.kind {
             EnemyKind::Slime => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED, 0.8),
             EnemyKind::Boss => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
+            EnemyKind::Skeleton => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED, 0.8),
+            EnemyKind::Goblin => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 1.1, 0.8),
+            EnemyKind::Bat => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 1.6, 0.6),
+            EnemyKind::Spider => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED, 0.9),
+            EnemyKind::Imp => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 1.8, 0.5),
+            EnemyKind::Ogre => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.7, 1.2),
         };
         let d = (player.0 - self.x)
             .abs()
@@ -258,13 +320,20 @@ pub fn astar(
     path
 }
 
-/// Stateless enemy placement: roughly 1/23 of Swamp tiles carry a slime
-/// spawner (and a few in the open at night later). Enemies are session
-/// entities with persistent hp (EnemyRegistry).
+/// Stateless enemy placement. Swamp tiles carry slimes (1/23); a few more
+/// critters are scattered on other biomes so the world feels alive. Enemies
+/// are session entities with persistent hp (EnemyRegistry).
 pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
     let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663) ^ 0x51ab_ce0d;
     match tile {
         TileKind::Swamp if h.rem_euclid(23) == 0 => Some(EnemyKind::Slime),
+        TileKind::Swamp if h.rem_euclid(29) == 0 => Some(EnemyKind::Bat),
+        TileKind::Stone if h.rem_euclid(41) == 0 => Some(EnemyKind::Skeleton),
+        TileKind::Grass if h.rem_euclid(37) == 0 => Some(EnemyKind::Goblin),
+        TileKind::Forest if h.rem_euclid(43) == 0 => Some(EnemyKind::Spider),
+        TileKind::Swamp if h.rem_euclid(41) == 0 => Some(EnemyKind::Imp),
+        TileKind::Forest if h.rem_euclid(47) == 0 => Some(EnemyKind::Imp),
+        TileKind::Stone if h.rem_euclid(59) == 0 => Some(EnemyKind::Ogre),
         _ => None,
     }
 }
@@ -446,10 +515,25 @@ mod tests {
     }
 
     #[test]
-    fn spawner_only_on_swamp() {
-        assert!(spawner_on(0, 0, TileKind::Grass).is_none());
-        assert!(spawner_on(0, 0, TileKind::Stone).is_none());
-        assert!(spawner_on(0, 0, TileKind::Forest).is_none());
+    fn spawner_only_on_land_biomes() {
+        // no spawners on non-walkable / water biomes
+        assert!(spawner_on(0, 0, TileKind::Water).is_none());
+        assert!(spawner_on(0, 0, TileKind::Sand).is_none());
+        assert!(spawner_on(0, 0, TileKind::Snow).is_none());
+        assert!(spawner_on(0, 0, TileKind::DeepWater).is_none());
+    }
+
+    #[test]
+    fn each_new_biome_has_a_spawner() {
+        fn count(kind: TileKind) -> usize {
+            (-32..32)
+                .flat_map(|tx| (-32..32).map(move |ty| (tx, ty)))
+                .filter(|&(tx, ty)| spawner_on(tx, ty, kind).is_some())
+                .count()
+        }
+        assert!(count(TileKind::Stone) > 0, "skeletons should spawn on stone");
+        assert!(count(TileKind::Grass) > 0, "goblins should spawn on grass");
+        assert!(count(TileKind::Forest) > 0, "spiders should spawn on forest");
     }
 
     #[test]

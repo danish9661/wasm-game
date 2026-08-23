@@ -1,5 +1,5 @@
 use crate::items::ItemKind;
-use crate::render::Sprite;
+use crate::render::{Sprite, SpriteStyle};
 use crate::world::TileKind;
 use std::collections::HashMap;
 
@@ -11,6 +11,12 @@ pub enum ResourceKind {
     Tree,
     Bush,
     Rock,
+    Mushroom,
+    Crystal,
+    Flower,
+    GrassTuft,
+    Fern,
+    Ore,
 }
 
 impl ResourceKind {
@@ -19,6 +25,12 @@ impl ResourceKind {
             ResourceKind::Tree => 3,
             ResourceKind::Bush => 1,
             ResourceKind::Rock => 4,
+            ResourceKind::Mushroom => 1,
+            ResourceKind::Crystal => 2,
+            ResourceKind::Flower => 1,
+            ResourceKind::GrassTuft => 1,
+            ResourceKind::Fern => 1,
+            ResourceKind::Ore => 5,
         }
     }
 
@@ -27,6 +39,12 @@ impl ResourceKind {
             ResourceKind::Tree => ItemKind::Wood,
             ResourceKind::Bush => ItemKind::Wood,
             ResourceKind::Rock => ItemKind::Stone,
+            ResourceKind::Mushroom => ItemKind::Food,
+            ResourceKind::Crystal => ItemKind::Gem,
+            ResourceKind::Flower => ItemKind::Herb,
+            ResourceKind::GrassTuft => ItemKind::Herb,
+            ResourceKind::Fern => ItemKind::Herb,
+            ResourceKind::Ore => ItemKind::Gem,
         }
     }
 
@@ -35,6 +53,12 @@ impl ResourceKind {
             ResourceKind::Tree => [0.06, 0.30, 0.12],
             ResourceKind::Bush => [0.30, 0.42, 0.18],
             ResourceKind::Rock => [0.58, 0.58, 0.63],
+            ResourceKind::Mushroom => [0.80, 0.18, 0.16],
+            ResourceKind::Crystal => [0.45, 0.85, 0.95],
+            ResourceKind::Flower => [0.95, 0.55, 0.75],
+            ResourceKind::GrassTuft => [0.45, 0.62, 0.30],
+            ResourceKind::Fern => [0.20, 0.45, 0.22],
+            ResourceKind::Ore => [0.45, 0.40, 0.46],
         }
     }
 
@@ -44,21 +68,45 @@ impl ResourceKind {
             ResourceKind::Tree => (14.0, 20.0, 8.0),
             ResourceKind::Bush => (12.0, 12.0, 2.0),
             ResourceKind::Rock => (12.0, 10.0, 2.0),
+            ResourceKind::Mushroom => (12.0, 10.0, 2.0),
+            ResourceKind::Crystal => (12.0, 14.0, 2.0),
+            ResourceKind::Flower => (10.0, 13.0, 1.0),
+            ResourceKind::GrassTuft => (12.0, 11.0, 1.0),
+            ResourceKind::Fern => (14.0, 12.0, 1.0),
+            ResourceKind::Ore => (13.0, 11.0, 2.0),
         };
-        Sprite::new(tx, ty, self.color(), hw, hh, lift)
+        let style = match self {
+            ResourceKind::Tree => SpriteStyle::Tree,
+            ResourceKind::Bush => SpriteStyle::Bush,
+            ResourceKind::Rock => SpriteStyle::Rock,
+            ResourceKind::Mushroom => SpriteStyle::Mushroom,
+            ResourceKind::Crystal => SpriteStyle::Crystal,
+            ResourceKind::Flower => SpriteStyle::Flower,
+            ResourceKind::GrassTuft => SpriteStyle::GrassTuft,
+            ResourceKind::Fern => SpriteStyle::Fern,
+            ResourceKind::Ore => SpriteStyle::Ore,
+        };
+        Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }
 }
 
 /// Stateless placement: ~1/7 of Forest tiles carry a Tree, ~1/11 of Grass
 /// tiles a Bush, and ~1/8 of Stone tiles a Rock, decided by a coordinate
-/// hash (same seed world → same nodes forever). Node *health* is session
-/// state (NodeRegistry).
+/// hash (same seed world → same nodes forever). A few more forageables
+/// (mushroom, crystal, flower, grass, fern) are sprinkled on top. Node
+/// *health* is session state (NodeRegistry).
 pub fn resource_on(tx: i32, ty: i32, tile: TileKind) -> Option<ResourceKind> {
     let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663) ^ 0x51ab_ce0d;
     match tile {
         TileKind::Forest if h.rem_euclid(7) == 0 => Some(ResourceKind::Tree),
         TileKind::Grass if h.rem_euclid(11) == 0 => Some(ResourceKind::Bush),
         TileKind::Stone if h.rem_euclid(8) == 0 => Some(ResourceKind::Rock),
+        TileKind::Stone if h.rem_euclid(53) == 0 => Some(ResourceKind::Ore),
+        TileKind::Forest if h.rem_euclid(19) == 0 => Some(ResourceKind::Fern),
+        TileKind::Forest if h.rem_euclid(29) == 0 => Some(ResourceKind::Mushroom),
+        TileKind::Stone if h.rem_euclid(23) == 0 => Some(ResourceKind::Crystal),
+        TileKind::Grass if h.rem_euclid(17) == 0 => Some(ResourceKind::GrassTuft),
+        TileKind::Grass if h.rem_euclid(31) == 0 => Some(ResourceKind::Flower),
         _ => None,
     }
 }

@@ -102,6 +102,16 @@ pub fn get_stats() -> String {
     })
 }
 
+/// Ask the renderer to grab a screenshot on its next frame (readback + #blit).
+#[wasm_bindgen]
+pub fn capture() {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.request_capture();
+        }
+    });
+}
+
 /// Recompute canvas size on window resize.
 #[wasm_bindgen]
 pub fn resize() {

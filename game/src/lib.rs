@@ -1,6 +1,7 @@
 pub mod building;
 pub mod combat;
 pub mod daynight;
+pub mod elements;
 pub mod enemy;
 pub mod iso;
 pub mod items;

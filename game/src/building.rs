@@ -1,5 +1,6 @@
 use crate::items::{Inventory, ItemKind};
-use crate::render::Sprite;
+use crate::render::{Sprite, SpriteStyle};
+use crate::world::TileKind;
 use serde::{Deserialize, Serialize};
 
 /// Reach required (chebyshev distance, tile units) to open a chest. Slightly
@@ -11,22 +12,53 @@ pub const CHEST_RANGE: f32 = 2.0;
 /// Placeable structures. Walls block movement; campfires emit light;
 /// chests (only ever placed by the world's ruins POI) hold loot; the
 /// Reforging Altar is where the Crown is reforged to end the campaign.
+///
+/// In addition to the player-buildable kinds there are purely decorative
+/// props (Sign, Barrel, Totem, RockPile, Statue) that are spawned by the
+/// world generator and can never be built — they sit in the world as flavor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StructureKind {
     Campfire,
     Wall,
     Chest,
     Altar,
+    // Buildable
+    Fence,
+    Torch,
+    Anvil,
+    Bed,
+    Well,
+    // Decorative (world-gen only)
+    Sign,
+    Barrel,
+    Totem,
+    RockPile,
+    Statue,
+    Lantern,
+    Brazier,
+    Crate,
+    Pillar,
+    BonePile,
+    Cactus,
+    Vines,
+    Lilypad,
+    Reed,
+    Rubble,
 }
 
 impl StructureKind {
-    /// Build cost as (item, amount) pairs. Chests and altars are not buildable.
+    /// Build cost as (item, amount) pairs. Chests, altars and decorative props
+    /// are not buildable.
     pub fn cost(self) -> &'static [(ItemKind, u32)] {
         match self {
             StructureKind::Campfire => &[(ItemKind::Wood, 3), (ItemKind::Stone, 1)],
             StructureKind::Wall => &[(ItemKind::Wood, 2)],
-            StructureKind::Chest => &[],
-            StructureKind::Altar => &[],
+            StructureKind::Fence => &[(ItemKind::Wood, 2)],
+            StructureKind::Torch => &[(ItemKind::Wood, 2), (ItemKind::Stone, 1)],
+            StructureKind::Anvil => &[(ItemKind::Stone, 4)],
+            StructureKind::Bed => &[(ItemKind::Wood, 4)],
+            StructureKind::Well => &[(ItemKind::Stone, 6)],
+            _ => &[],
         }
     }
 
@@ -36,15 +68,68 @@ impl StructureKind {
             StructureKind::Wall => [0.66, 0.60, 0.50],
             StructureKind::Chest => [0.85, 0.65, 0.25],
             StructureKind::Altar => [0.98, 0.80, 0.30],
+            StructureKind::Fence => [0.45, 0.32, 0.18],
+            StructureKind::Torch => [0.90, 0.45, 0.12],
+            StructureKind::Anvil => [0.30, 0.30, 0.34],
+            StructureKind::Bed => [0.50, 0.34, 0.18],
+            StructureKind::Well => [0.55, 0.53, 0.52],
+            StructureKind::Sign => [0.60, 0.42, 0.24],
+            StructureKind::Barrel => [0.50, 0.34, 0.18],
+            StructureKind::Totem => [0.50, 0.35, 0.20],
+            StructureKind::RockPile => [0.55, 0.55, 0.60],
+            StructureKind::Statue => [0.70, 0.70, 0.72],
+            StructureKind::Lantern => [0.95, 0.80, 0.35],
+            StructureKind::Brazier => [0.85, 0.45, 0.15],
+            StructureKind::Crate => [0.55, 0.40, 0.22],
+            StructureKind::Pillar => [0.72, 0.72, 0.74],
+            StructureKind::BonePile => [0.86, 0.82, 0.70],
+            StructureKind::Cactus => [0.30, 0.55, 0.30],
+            StructureKind::Vines => [0.25, 0.45, 0.22],
+            StructureKind::Lilypad => [0.30, 0.55, 0.28],
+            StructureKind::Reed => [0.45, 0.55, 0.30],
+            StructureKind::Rubble => [0.50, 0.50, 0.55],
         }
     }
 
     pub fn blocks_movement(self) -> bool {
-        matches!(self, StructureKind::Wall)
+        matches!(
+            self,
+            StructureKind::Wall | StructureKind::Fence | StructureKind::Well
+        )
     }
 
     pub fn emits_light(self) -> bool {
-        matches!(self, StructureKind::Campfire | StructureKind::Altar)
+        matches!(
+            self,
+            StructureKind::Campfire
+                | StructureKind::Altar
+                | StructureKind::Torch
+                | StructureKind::Lantern
+                | StructureKind::Brazier
+        )
+    }
+
+    /// True for the decorative props that the world generator scatters but the
+    /// player can never craft.
+    pub fn is_decor(self) -> bool {
+        matches!(
+            self,
+            StructureKind::Sign
+                | StructureKind::Barrel
+                | StructureKind::Totem
+                | StructureKind::RockPile
+                | StructureKind::Statue
+                | StructureKind::Lantern
+                | StructureKind::Brazier
+                | StructureKind::Crate
+                | StructureKind::Pillar
+                | StructureKind::BonePile
+                | StructureKind::Cactus
+                | StructureKind::Vines
+                | StructureKind::Lilypad
+                | StructureKind::Reed
+                | StructureKind::Rubble
+        )
     }
 
     pub fn is_chest(self) -> bool {
@@ -61,8 +146,84 @@ impl StructureKind {
             StructureKind::Wall => (20.0, 12.0, 2.0),
             StructureKind::Chest => (16.0, 12.0, 6.0),
             StructureKind::Altar => (18.0, 22.0, 4.0),
+            StructureKind::Fence => (15.0, 16.0, 2.0),
+            StructureKind::Torch => (5.0, 18.0, 1.0),
+            StructureKind::Anvil => (14.0, 12.0, 2.0),
+            StructureKind::Bed => (18.0, 8.0, 1.0),
+            StructureKind::Well => (16.0, 14.0, 2.0),
+            StructureKind::Sign => (12.0, 14.0, 1.0),
+            StructureKind::Barrel => (8.0, 16.0, 1.0),
+            StructureKind::Totem => (8.0, 26.0, 1.0),
+            StructureKind::RockPile => (10.0, 8.0, 1.0),
+            StructureKind::Statue => (10.0, 26.0, 1.0),
+            StructureKind::Lantern => (6.0, 18.0, 1.0),
+            StructureKind::Brazier => (12.0, 18.0, 1.0),
+            StructureKind::Crate => (10.0, 12.0, 1.0),
+            StructureKind::Pillar => (10.0, 30.0, 1.0),
+            StructureKind::BonePile => (12.0, 10.0, 1.0),
+            StructureKind::Cactus => (9.0, 22.0, 1.0),
+            StructureKind::Vines => (8.0, 24.0, 1.0),
+            StructureKind::Lilypad => (14.0, 6.0, 1.0),
+            StructureKind::Reed => (10.0, 20.0, 1.0),
+            StructureKind::Rubble => (12.0, 8.0, 1.0),
         };
-        Sprite::new(tx, ty, self.color(), hw, hh, lift)
+        let style = match self {
+            StructureKind::Campfire => SpriteStyle::Campfire,
+            StructureKind::Wall => SpriteStyle::Wall,
+            StructureKind::Chest => SpriteStyle::Chest,
+            StructureKind::Altar => SpriteStyle::Altar,
+            StructureKind::Fence => SpriteStyle::Fence,
+            StructureKind::Torch => SpriteStyle::Torch,
+            StructureKind::Anvil => SpriteStyle::Anvil,
+            StructureKind::Bed => SpriteStyle::Bed,
+            StructureKind::Well => SpriteStyle::Well,
+            StructureKind::Sign => SpriteStyle::Sign,
+            StructureKind::Barrel => SpriteStyle::Barrel,
+            StructureKind::Totem => SpriteStyle::Totem,
+            StructureKind::RockPile => SpriteStyle::RockPile,
+            StructureKind::Statue => SpriteStyle::Statue,
+            StructureKind::Lantern => SpriteStyle::Lantern,
+            StructureKind::Brazier => SpriteStyle::Brazier,
+            StructureKind::Crate => SpriteStyle::Crate,
+            StructureKind::Pillar => SpriteStyle::Pillar,
+            StructureKind::BonePile => SpriteStyle::BonePile,
+            StructureKind::Cactus => SpriteStyle::Cactus,
+            StructureKind::Vines => SpriteStyle::Vines,
+            StructureKind::Lilypad => SpriteStyle::Lilypad,
+            StructureKind::Reed => SpriteStyle::Reed,
+            StructureKind::Rubble => SpriteStyle::Rubble,
+        };
+        Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
+    }
+}
+
+/// Stateless decorative-prop placement: a few flavor props sprinkled on biomes
+/// so the world isn't just trees/rocks. Decorative props never block movement,
+/// emit light, or appear in the build menu. Same seed → same layout forever.
+pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
+    let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663) ^ 0x0bad_c0de;
+    match tile {
+        TileKind::Grass if h.rem_euclid(53) == 0 => Some(StructureKind::Sign),
+        TileKind::Grass if h.rem_euclid(97) == 0 => Some(StructureKind::Statue),
+        TileKind::Grass if h.rem_euclid(151) == 0 => Some(StructureKind::Lantern),
+        TileKind::Grass if h.rem_euclid(211) == 0 => Some(StructureKind::Crate),
+        TileKind::Grass if h.rem_euclid(167) == 0 => Some(StructureKind::Pillar),
+        TileKind::Grass if h.rem_euclid(223) == 0 => Some(StructureKind::Rubble),
+        TileKind::Forest if h.rem_euclid(67) == 0 => Some(StructureKind::Totem),
+        TileKind::Forest if h.rem_euclid(71) == 0 => Some(StructureKind::BonePile),
+        TileKind::Forest if h.rem_euclid(173) == 0 => Some(StructureKind::Vines),
+        TileKind::Forest if h.rem_euclid(191) == 0 => Some(StructureKind::Rubble),
+        TileKind::Stone if h.rem_euclid(37) == 0 => Some(StructureKind::RockPile),
+        TileKind::Stone if h.rem_euclid(41) == 0 => Some(StructureKind::Brazier),
+        TileKind::Stone if h.rem_euclid(59) == 0 => Some(StructureKind::Pillar),
+        TileKind::Stone if h.rem_euclid(199) == 0 => Some(StructureKind::Rubble),
+        TileKind::Sand if h.rem_euclid(61) == 0 => Some(StructureKind::Barrel),
+        TileKind::Sand if h.rem_euclid(43) == 0 => Some(StructureKind::Cactus),
+        TileKind::Sand if h.rem_euclid(79) == 0 => Some(StructureKind::Reed),
+        TileKind::Sand if h.rem_euclid(89) == 0 => Some(StructureKind::Crate),
+        TileKind::Water if h.rem_euclid(29) == 0 => Some(StructureKind::Lilypad),
+        TileKind::Water if h.rem_euclid(47) == 0 => Some(StructureKind::Reed),
+        _ => None,
     }
 }
 
@@ -82,6 +243,10 @@ pub fn try_build(
     ty: i32,
     inv: &mut Inventory,
 ) -> Result<Structure, ItemKind> {
+    if kind.is_decor() {
+        // decorative props are world-gen only and can never be crafted
+        return Err(ItemKind::Wood);
+    }
     for (item, n) in kind.cost() {
         if inv.count(*item) < *n {
             return Err(*item);

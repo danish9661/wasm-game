@@ -254,6 +254,59 @@ html, body {
 
 #gear:hover { border-color: #f2d77a; }
 
+#help {
+  position: fixed;
+  top: 12px;
+  right: 54px;
+  z-index: 19;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: #e8edf3;
+  background: rgba(10, 16, 28, 0.8);
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+#help:hover { border-color: #f2d77a; }
+
+.speed-meter {
+  display: inline-block;
+  width: 90px;
+  height: 8px;
+  vertical-align: middle;
+  background: rgba(160, 180, 205, 0.18);
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.speed-meter > i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4aa3ff, #54c26e);
+  transition: width 0.08s linear;
+}
+
+#help-panel .help-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  text-align: left;
+  margin: 10px 0;
+  font-size: 14px;
+}
+#help-panel .help-grid .k {
+  color: #f2d77a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+#help-panel .help-grid .d { color: #cdd6e2; }
+#help-panel .help-note { color: #9fb0c4; font-size: 13px; text-align: left; }
+#help-panel .help-note b { color: #e8edf3; }
+
 #touch {
   position: fixed;
   bottom: 0;

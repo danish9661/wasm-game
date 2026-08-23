@@ -1,4 +1,4 @@
-use game::building::{CHEST_RANGE, Structure, StructureKind, try_build};
+use game::building::{decor_on, CHEST_RANGE, Structure, StructureKind, try_build};
 use game::combat::{
     ARROW_DAMAGE, SWING_DAMAGE, SWING_REACH, Arrow,
     arrow_hits, swing_hits,
@@ -9,9 +9,9 @@ use game::items::{Inventory, ItemKind};
 use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls};
 use game::quest::QuestLog;
-use game::render::{self, Camera, Sprite, VERTEX_STRIDE_BYTES};
+use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
 use game::resources::{NodeRegistry, ResourceKind, resource_on, HARVEST_RANGE};
-use game::world::{ChunkCache, WorldGen, tile_at};
+use game::world::{ChunkCache, TileKind, WorldGen, tile_at};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
@@ -30,6 +30,12 @@ fn kind_name(kind: ResourceKind) -> &'static str {
         ResourceKind::Tree => "Tree",
         ResourceKind::Bush => "Bush",
         ResourceKind::Rock => "Rock",
+        ResourceKind::Mushroom => "Mushroom",
+        ResourceKind::Crystal => "Crystal",
+        ResourceKind::Flower => "Flower",
+        ResourceKind::GrassTuft => "Grass",
+        ResourceKind::Fern => "Fern",
+        ResourceKind::Ore => "Ore",
     }
 }
 
@@ -39,6 +45,26 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::Wall => "W",
         StructureKind::Chest => "C",
         StructureKind::Altar => "A",
+        StructureKind::Fence => "f",
+        StructureKind::Torch => "T",
+        StructureKind::Anvil => "a",
+        StructureKind::Bed => "B",
+        StructureKind::Well => "O",
+        StructureKind::Sign => "s",
+        StructureKind::Barrel => "b",
+        StructureKind::Totem => "t",
+        StructureKind::RockPile => "r",
+        StructureKind::Statue => "S",
+        StructureKind::Lantern => "L",
+        StructureKind::Brazier => "Z",
+        StructureKind::Crate => "c",
+        StructureKind::Pillar => "P",
+        StructureKind::BonePile => "x",
+        StructureKind::Cactus => "k",
+        StructureKind::Vines => "v",
+        StructureKind::Lilypad => "l",
+        StructureKind::Reed => "d",
+        StructureKind::Rubble => "u",
     }
 }
 
@@ -46,7 +72,34 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
     match kind {
         EnemyKind::Slime => "Slime",
         EnemyKind::Boss => "Warden",
+        EnemyKind::Skeleton => "Skeleton",
+        EnemyKind::Goblin => "Goblin",
+        EnemyKind::Bat => "Bat",
+        EnemyKind::Spider => "Spider",
+        EnemyKind::Imp => "Imp",
+        EnemyKind::Ogre => "Ogre",
     }
+}
+
+/// Color grade applied to the whole scene by time of day: a cool blue at night
+/// warming to neutral at noon, with a golden bump at dawn/dusk (where daylight
+/// sits in the mid-range). Returned as an RGB multiplier.
+fn sky_tint(t: f32) -> [f32; 3] {
+    let d = daylight_at(t).clamp(0.25, 1.0);
+    let day = (d - 0.25) / 0.75; // 0 = night .. 1 = noon
+    let cool = [0.82, 0.88, 1.06];
+    let neutral = [1.0, 1.0, 1.0];
+    let warm = [1.10, 0.95, 0.78];
+    let mut base = [0.0f32; 3];
+    for i in 0..3 {
+        base[i] = cool[i] + (neutral[i] - cool[i]) * day;
+    }
+    let w = (4.0 * day * (1.0 - day)).clamp(0.0, 1.0); // peaks at dawn/dusk
+    let mut tint = [0.0f32; 3];
+    for i in 0..3 {
+        tint[i] = base[i] + (warm[i] - base[i]) * w * 0.6;
+    }
+    tint
 }
 
 const SHADER: &str = r#"
@@ -54,6 +107,8 @@ struct Uniforms {
     viewport: vec2<f32>,
     daylight: f32,
     _pad: f32,
+    tint: vec3<f32>,
+    _pad2: f32,
     lights: array<vec4<f32>, 16>,
 };
 
@@ -61,11 +116,11 @@ struct Uniforms {
 
 struct VsOut {
     @builtin(position) pos: vec4<f32>,
-    @location(0) color: vec3<f32>,
+    @location(0) color: vec4<f32>,
 };
 
 @vertex
-fn vs_main(@location(0) pos: vec2<f32>, @location(1) color: vec3<f32>) -> VsOut {
+fn vs_main(@location(0) pos: vec2<f32>, @location(1) color: vec4<f32>) -> VsOut {
     var out: VsOut;
     let ndc = vec2<f32>(
         pos.x * 2.0 / u.viewport.x - 1.0,
@@ -79,9 +134,16 @@ fn vs_main(@location(0) pos: vec2<f32>, @location(1) color: vec3<f32>) -> VsOut 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     var col = in.color;
-    // global day/night: blend toward a dim blue night palette
-    let night = vec3<f32>(0.16, 0.18, 0.32);
-    col = mix(night, col, u.daylight);
+    // global day/night: blend toward a dim blue night palette. The night floor
+    // is kept clearly above the background clear color so the world stays
+    // visible (and assets readable) even at deep night.
+    let night = vec4<f32>(0.22, 0.25, 0.38, 1.0);
+    let d = clamp(u.daylight, 0.25, 1.0);
+    col = mix(night, col, d);
+    // color grade: a cool tint at night warming to neutral at noon, with a
+    // golden bump at dawn/dusk (where daylight is mid-range). Applied to the
+    // base scene; point lights are added on top, untinted.
+    col = vec4<f32>(col.rgb * u.tint, col.a);
     // campfire point lights: warm additive glow with soft falloff
     let sp = (in.pos.xy * 0.5 + 0.5) * u.viewport;
     for (var i = 0u; i < 8u; i++) {
@@ -89,9 +151,9 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
         if (lp.w <= 0.0) { continue; }
         let d = distance(sp, lp.xy);
         let fall = lp.z * exp(-d * d / (lp.w * lp.w));
-        col += u.lights[i * 2u + 1u].rgb * fall;
+        col += vec4<f32>(u.lights[i * 2u + 1u].rgb * fall, 0.0);
     }
-    return vec4<f32>(col, 1.0);
+    return vec4<f32>(col.rgb, col.a);
 }
 "#;
 
@@ -110,7 +172,7 @@ static READBACK_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64
 // Internal render/readback resolution cap. (0, 0) means "native" (no cap).
 // Changed at runtime from the settings menu via set_render_cap(); read by
 // resize(). Smaller = faster readback/blit in software (SwiftShader).
-static RENDER_CAP: std::sync::Mutex<(u32, u32)> = std::sync::Mutex::new((960, 540));
+static RENDER_CAP: std::sync::Mutex<(u32, u32)> = std::sync::Mutex::new((640, 400));
 
 pub fn set_render_cap(w: u32, h: u32) {
     *RENDER_CAP.lock().unwrap() = (w, h);
@@ -162,7 +224,19 @@ fn readback_from_data(data: &[u8], width: u32, height: u32, bytes_per_row: u32) 
 /// Used as the display path when the WebGPU canvas can't be composited to the
 /// screen (e.g. SwiftShader-Vulkan in headed Chrome: the surface renders fine
 /// but the headed compositor never shows it). A 2D canvas always composites.
-fn blit_to_2d_canvas(data: &[u8], width: u32, height: u32, bytes_per_row: u32) {
+struct BlitCache {
+    canvas: HtmlCanvasElement,
+    ctx: CanvasRenderingContext2d,
+    buf: Vec<u8>,
+    w: u32,
+    h: u32,
+}
+
+thread_local! {
+    static BLIT_CACHE: std::cell::RefCell<Option<BlitCache>> = const { std::cell::RefCell::new(None) };
+}
+
+fn blit_to_2d_canvas(data: &[u8], width: u32, height: u32, bytes_per_row: u32, tod: f32, aclock: f32) {
     let window = match web_sys::window() {
         Some(w) => w,
         None => return,
@@ -171,58 +245,155 @@ fn blit_to_2d_canvas(data: &[u8], width: u32, height: u32, bytes_per_row: u32) {
         Some(d) => d,
         None => return,
     };
-    let canvas = match doc
-        .get_element_by_id("blit")
-        .and_then(|e| e.dyn_into::<HtmlCanvasElement>().ok())
-    {
-        Some(c) => c,
-        None => {
-            glog("[gfx] blit: #blit canvas not found");
-            return;
+    BLIT_CACHE.with(|c| {
+        let mut cache = c.borrow_mut();
+        let stale = match cache.as_ref() {
+            Some(x) => x.w != width || x.h != height,
+            None => true,
+        };
+        if stale {
+            let canvas = match doc
+                .get_element_by_id("blit")
+                .and_then(|e| e.dyn_into::<HtmlCanvasElement>().ok())
+            {
+                Some(c) => c,
+                None => {
+                    glog("[gfx] blit: #blit canvas not found");
+                    *cache = None;
+                    return;
+                }
+            };
+            canvas.set_width(width);
+            canvas.set_height(height);
+            let ctx = match canvas
+                .get_context("2d")
+                .ok()
+                .flatten()
+                .and_then(|c| c.dyn_into::<CanvasRenderingContext2d>().ok())
+            {
+                Some(c) => c,
+                None => {
+                    glog("[gfx] blit: 2d context unavailable");
+                    *cache = None;
+                    return;
+                }
+            };
+            *cache = Some(BlitCache {
+                canvas,
+                ctx,
+                buf: Vec::with_capacity(width as usize * height as usize * 4),
+                w: width,
+                h: height,
+            });
         }
-    };
-    if canvas.width() != width || canvas.height() != height {
-        canvas.set_width(width);
-        canvas.set_height(height);
-    }
-    let ctx = match canvas
-        .get_context("2d")
-        .ok()
-        .flatten()
-        .and_then(|c| c.dyn_into::<CanvasRenderingContext2d>().ok())
-    {
-        Some(c) => c,
-        None => {
-            glog("[gfx] blit: 2d context unavailable");
-            return;
+        let cache = match cache.as_mut() {
+            Some(x) => x,
+            None => return,
+        };
+        let w = width as usize;
+        let h = height as usize;
+        let bpr = bytes_per_row as usize;
+        cache.buf.clear();
+        for y in 0..h {
+            let src = y * bpr;
+            let take = (w * 4).min(data.len().saturating_sub(src));
+            cache.buf.extend_from_slice(&data[src..src + take]);
+            if take < w * 4 {
+                let pad = w * 4 - take;
+                cache.buf.resize(cache.buf.len() + pad, 0);
+            }
         }
-    };
-    let w = width as usize;
-    let h = height as usize;
-    let bpr = bytes_per_row as usize;
-    let mut rgba: Vec<u8> = Vec::with_capacity(w * h * 4);
-    for y in 0..h {
-        let src = y * bpr;
-        let take = (w * 4).min(data.len().saturating_sub(src));
-        rgba.extend_from_slice(&data[src..src + take]);
-        if take < w * 4 {
-            rgba.resize(rgba.len() + (w * 4 - take), 0);
+        // Force opaque alpha so the page background can't show through as holes.
+        for a in cache.buf.iter_mut().skip(3).step_by(4) {
+            *a = 255;
         }
-    }
-    let clamped = Clamped(rgba.as_slice());
-    match ImageData::new_with_u8_clamped_array_and_sh(clamped, width, height) {
-        Ok(img) => {
-            let _ = ctx.put_image_data(&img, 0.0, 0.0);
+        // vignette: gently darken toward the edges to focus the eye and add
+        // mood (computed on the unpadded CPU copy since the 2D gradient API
+        // isn't available in this build).
+        {
+            let wf = w as f64;
+            let hf = h as f64;
+            let cx = wf * 0.5;
+            let cy = hf * 0.5;
+            for y in 0..h {
+                let ny = (y as f64 - cy) / cy;
+                for x in 0..w {
+                    let nx = (x as f64 - cx) / cx;
+                    let d = (nx * nx + ny * ny).sqrt();
+                    let v = if d <= 0.6 {
+                        1.0
+                    } else {
+                        let t = ((d - 0.6) / 0.55).clamp(0.0, 1.0);
+                        let s = t * t * (3.0 - 2.0 * t);
+                        1.0 - s * 0.45
+                    };
+                    let i = (y * w + x) * 4;
+                    let r = cache.buf[i] as f64 * v;
+                    let g = cache.buf[i + 1] as f64 * v;
+                    let b = cache.buf[i + 2] as f64 * v;
+                    cache.buf[i] = r as u8;
+                    cache.buf[i + 1] = g as u8;
+                    cache.buf[i + 2] = b as u8;
+                }
+            }
         }
-        Err(e) => {
-            glog(&format!("[gfx] blit: ImageData error {e:?}"));
+        let clamped = Clamped(cache.buf.as_slice());
+        match ImageData::new_with_u8_clamped_array_and_sh(clamped, width, height) {
+            Ok(img) => {
+                let _ = cache.ctx.put_image_data(&img, 0.0, 0.0);
+            }
+            Err(e) => {
+                glog(&format!("[gfx] blit: ImageData error {e:?}"));
+            }
         }
-    }
+        // ---- atmosphere overlay (2D canvas, drawn over the WebGPU readback) ----
+        let ctx = &cache.ctx;
+        let w = width as f64;
+        let h = height as f64;
+        // drifting motes: warm fireflies at night, pale pollen by day
+        let day = daylight_at(tod).clamp(0.25_f32, 1.0_f32) as f64;
+        let night = 1.0 - day;
+        for i in 0..22u32 {
+            let fi = i as f64;
+            let r1 = (fi * 12.9898).sin().fract().abs();
+            let r2 = (fi * 78.233).sin().fract().abs();
+            let r3 = (fi * 37.719).sin().fract().abs();
+            let speed = 4.0 + r3 * 10.0;
+            let x = (((r1 * w + aclock as f64 * speed * (0.3 + r2)) % w) + w) % w;
+            let y = (((r2 * h + aclock as f64 * speed * 0.45) % h) + h) % h;
+            let blink = 0.5 + 0.5 * (aclock as f64 * 2.0 + fi).sin();
+            let (a, color) = if night > 0.35 {
+                let a = (0.25 + 0.55 * blink) * night;
+                (a, format!("rgba(255,228,120,{a:.3})"))
+            } else {
+                let a = 0.10 * day * (0.5 + 0.5 * blink);
+                (a, format!("rgba(245,245,210,{a:.3})"))
+            };
+            let radius = 1.0 + r3 * 1.5;
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(&color));
+            let _ = ctx.begin_path();
+            let _ = ctx.arc(x, y, radius, 0.0, std::f64::consts::TAU);
+            let _ = ctx.fill();
+        }
+    });
 }
 
 struct VertexBuffer {
     buffer: wgpu::Buffer,
     capacity: u32,
+}
+
+/// Short-lived visual particle (death puff, hit spark). Rendered as a fading
+/// Generic quad; it lives entirely on the render side (no game state).
+struct Particle {
+    x: f32,
+    y: f32,
+    vx: f32,
+    vy: f32,
+    life: f32,
+    max_life: f32,
+    size: f32,
+    color: [f32; 3],
 }
 
 impl VertexBuffer {
@@ -246,6 +417,13 @@ fn bytemuck_cast(data: &[f32]) -> &[u8] {
     unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len() * 4) }
 }
 
+/// Toggle which canvas the page shows. "gpu" = present via the WebGPU canvas
+/// (#game) directly; "blit" = show the read-back 2D copy (#blit). Used to hide
+/// the now-blank #blit once we know the WebGPU surface composites fine.
+fn set_backend(mode: &str) {
+    let _ = js_sys::eval(&format!("window.setBackend && window.setBackend('{mode}')"));
+}
+
 pub struct App {
     canvas: HtmlCanvasElement,
     surface: wgpu::Surface<'static>,
@@ -259,6 +437,10 @@ pub struct App {
     vertex_buffer: VertexBuffer,
     viewport: [f32; 2],
     camera: Camera,
+    /// Smoothed player velocity (tiles/sec) used for camera look-ahead.
+    last_px: f32,
+    last_py: f32,
+    cam_lead: (f32, f32),
     keys: [bool; 4],
     world: WorldGen,
     world_seed: u32,
@@ -284,6 +466,7 @@ pub struct App {
     ng_plus: u32,
     spawn_point: (f32, f32),
     time_of_day: f32,
+    anim_clock: f32,
     respawn_timer: f32,
     debug_swing_hits: u32,
     debug_attacks: u32,
@@ -293,6 +476,25 @@ pub struct App {
     frames: u64,
     player_in_mesh: bool,
     readback_buffer: Option<wgpu::Buffer>,
+    capture_requested: bool,
+    using_blit: bool,
+    backend_mode: u8,
+    /// Authoritative frames-per-second, measured from actual sim steps.
+    fps: f32,
+    fps_acc: u32,
+    fps_time: f32,
+    /// Player's current movement speed in tiles/second (0 while idle).
+    speed: f32,
+    prev_px: f32,
+    prev_py: f32,
+    /// True while the persistent readback buffer is mapped/in-flight; lets us
+    /// skip a frame's readback instead of allocating a fresh buffer.
+    readback_busy: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    /// Diagnostic: count of keydown events received and the last key code.
+    key_evt: u32,
+    key_dbg: String,
+    /// Transient visual particles (death puffs, hit sparks).
+    particles: Vec<Particle>,
 }
 
 impl App {
@@ -348,7 +550,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={} near={} boss={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -384,6 +586,10 @@ impl App {
             self.altar_tile
                 .map(|(ax, ay)| format!("({ax},{ay})"))
                 .unwrap_or_else(|| "none".to_string()),
+            self.fps,
+            self.speed,
+            self.key_evt,
+            self.key_dbg,
         )
     }
 
@@ -507,6 +713,9 @@ impl App {
             vertex_buffer,
             viewport: [width as f32, height as f32],
             camera: Camera::new(0.0, 0.0),
+            last_px: px,
+            last_py: py,
+            cam_lead: (0.0, 0.0),
             keys: [false; 4],
             world,
             world_seed: 1337,
@@ -531,6 +740,7 @@ impl App {
             ng_plus: 0,
             spawn_point: (px, py),
             time_of_day: START_TIME,
+            anim_clock: 0.0,
             respawn_timer: 0.0,
             debug_swing_hits: 0,
             debug_attacks: 0,
@@ -540,10 +750,25 @@ impl App {
             frames: 0,
             player_in_mesh: false,
             readback_buffer: None,
+            capture_requested: false,
+            using_blit: false,
+            backend_mode: 0,
+            fps: 0.0,
+            fps_acc: 0,
+            fps_time: 0.0,
+            speed: 0.0,
+            prev_px: 0.0,
+            prev_py: 0.0,
+            readback_busy: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            key_evt: 0,
+            key_dbg: String::new(),
+            particles: Vec::new(),
         })
     }
 
     pub fn set_key(&mut self, code: &str, down: bool) {
+        self.key_evt += 1;
+        self.key_dbg = code.to_string();
         let mv = match code {
             "KeyW" | "ArrowUp" => Some(0),
             "KeyS" | "ArrowDown" => Some(1),
@@ -560,6 +785,12 @@ impl App {
                 "KeyE" => self.harvest(),
                 "KeyF" => self.build(StructureKind::Campfire),
                 "KeyV" => self.build(StructureKind::Wall),
+                "KeyT" => self.build(StructureKind::Torch),
+                "KeyG" => self.build(StructureKind::Fence),
+                "KeyB" => self.build(StructureKind::Bed),
+                "KeyN" => self.build(StructureKind::Anvil),
+                "KeyH" => self.build(StructureKind::Well),
+                "KeyZ" => self.try_sleep(),
                 "KeyJ" => self.swing(),
                 "KeyK" => self.shoot_arrow(),
                 "KeyC" => {
@@ -567,6 +798,35 @@ impl App {
                 }
                 _ => {}
             }
+        }
+    }
+
+    /// Spawn `count` particles bursting from `(x, y)` in a ring, tinted `color`.
+    fn spawn_particles(
+        &mut self,
+        x: f32,
+        y: f32,
+        color: [f32; 3],
+        count: u32,
+        speed: f32,
+        life: f32,
+        size: f32,
+    ) {
+        let base = (x * 12.9898 + y * 78.233).fract().abs() * std::f32::consts::TAU;
+        for i in 0..count {
+            let ang = base + (i as f32 / count.max(1) as f32) * std::f32::consts::TAU;
+            let jitter = ((x * 3.1 + y * 1.7 + i as f32 * 0.37).fract().abs());
+            let sp = speed * (0.45 + 0.55 * jitter);
+            self.particles.push(Particle {
+                x,
+                y,
+                vx: ang.cos() * sp,
+                vy: ang.sin() * sp,
+                life,
+                max_life: life,
+                size,
+                color,
+            });
         }
     }
 
@@ -582,10 +842,15 @@ impl App {
             SWING_REACH,
         );
         self.debug_swing_hits += hits.len() as u32;
+        let mut sparks = Vec::new();
         for e in &mut hits {
             e.take_damage(SWING_DAMAGE);
+            sparks.push((e.x, e.y));
         }
         drop(hits);
+        for (x, y) in sparks {
+            self.spawn_particles(x, y, [1.0, 0.92, 0.62], 7, 55.0, 0.35, 3.5);
+        }
         self.sweep_dead();
     }
 
@@ -598,12 +863,17 @@ impl App {
             .map(|((tx, ty), e)| ((tx, ty), e.kind, e.drops()))
             .collect();
         for ((tx, ty), kind, items) in drops {
-            for it in items {
-                self.inventory.add(it, 1);
+            for it in &items {
+                self.inventory.add(*it, 1);
+            }
+            if !items.is_empty() {
             }
             match kind {
                 EnemyKind::Slime => self.slimes_killed += 1,
-                EnemyKind::Boss => self.boss_killed += 1,
+                EnemyKind::Boss => {
+                    self.boss_killed += 1;
+                }
+                _ => {}
             }
             // bosses never respawn; slimes return after 15s
             let respawn = if matches!(kind, EnemyKind::Boss) { f32::MAX } else { 15.0 };
@@ -694,6 +964,24 @@ impl App {
         }
     }
 
+    /// Sleep in a bed: skip the night and wake at dawn, restoring a little
+    /// hunger and hp. Only works when standing next to a placed Bed.
+    fn try_sleep(&mut self) {
+        let near_bed = self
+            .structures
+            .iter()
+            .any(|s| s.kind == StructureKind::Bed && {
+                let dx = s.tx as f32 + 0.5 - self.player.x;
+                let dy = s.ty as f32 + 0.5 - self.player.y;
+                dx * dx + dy * dy < 4.0
+            });
+        if near_bed {
+            self.time_of_day = 0.32; // wake ~07:40 with daylight climbing
+            self.player.hunger = (self.player.hunger + 30.0).min(100.0);
+            self.player.hp = (self.player.hp + 20.0).min(100.0);
+        }
+    }
+
     fn nearest_resource(&mut self) -> Option<(i32, i32, ResourceKind)> {
         let px = self.player.x;
         let py = self.player.y;
@@ -775,8 +1063,15 @@ impl App {
 
     pub fn to_save(&self) -> crate::save::SaveState {
         use game::items::ItemKind;
-        let inv = [ItemKind::Wood, ItemKind::Stone, ItemKind::Food, ItemKind::Fragment]
-            .iter()
+        let inv = [
+            ItemKind::Wood,
+            ItemKind::Stone,
+            ItemKind::Food,
+            ItemKind::Fragment,
+            ItemKind::Herb,
+            ItemKind::Gem,
+        ]
+        .iter()
             .map(|k| (*k, self.inventory.count(*k)))
             .collect();
         crate::save::SaveState {
@@ -904,12 +1199,16 @@ impl App {
     }
 
     fn write_uniforms(&self) {
-        let mut data = [0.0f32; 4 + LIGHT_FLOATS];
+        let mut data = [0.0f32; 8 + LIGHT_FLOATS];
         data[0] = self.viewport[0];
         data[1] = self.viewport[1];
         data[2] = daylight_at(self.time_of_day);
+        let tint = sky_tint(self.time_of_day);
+        data[4] = tint[0];
+        data[5] = tint[1];
+        data[6] = tint[2];
         let lights = self.light_data();
-        data[4..].copy_from_slice(&lights);
+        data[8..].copy_from_slice(&lights);
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck_cast(&data));
     }
@@ -917,10 +1216,26 @@ impl App {
     pub fn update(&mut self, dt: f32) {
         self.frames += 1;
         self.time_of_day = (self.time_of_day + dt / DAY_LENGTH).rem_euclid(1.0);
+        self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
 
-        // survival: hunger/stamina/temperature
+        // survival: hunger/stamina/temperature. Standing near any light source
+        // (campfire/torch/lantern/brazier) counts as "warm" — slower hunger
+        // drain and no starvation damage.
+        let warm = self.player.alive
+            && self.structures.iter().any(|s| {
+                s.kind.emits_light()
+                    && {
+                        let dx = s.tx as f32 + 0.5 - self.player.x;
+                        let dy = s.ty as f32 + 0.5 - self.player.y;
+                        dx * dx + dy * dy < 2.5 * 2.5
+                    }
+            });
         if self.player.alive {
-            self.player.tick(dt, temperature(self.time_of_day));
+            self.player.tick(dt, temperature(self.time_of_day), warm);
+            // Resting by a fire slowly mends wounds.
+            if warm && self.player.hp < 100.0 {
+                self.player.hp = (self.player.hp + dt * 3.0).min(100.0);
+            }
         } else {
             self.respawn_timer -= dt;
             if self.respawn_timer <= 0.0 {
@@ -1006,6 +1321,7 @@ impl App {
         );
 
         // arrows fly, hit, and expire (a hit removes the arrow)
+        let mut hit_pos = Vec::new();
         self.arrows.retain_mut(|a| {
             if !a.step(dt) {
                 return false;
@@ -1013,22 +1329,71 @@ impl App {
             for (_key, e) in self.enemies.iter_mut_with_key() {
                 if arrow_hits(a, std::iter::once(&*e)).is_some() {
                     e.take_damage(ARROW_DAMAGE);
+                    hit_pos.push((e.x, e.y));
                     return false;
                 }
             }
             true
         });
+        for (x, y) in hit_pos {
+            self.spawn_particles(x, y, [1.0, 0.92, 0.62], 5, 45.0, 0.35, 3.0);
+        }
         self.sweep_dead();
 
+        // integrate + cull particles
+        for p in &mut self.particles {
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= 0.88;
+            p.vy *= 0.88;
+            p.life -= dt;
+            p.size *= 0.95;
+        }
+        self.particles.retain(|p| p.life > 0.0);
+
         let dir = player::input_dir(self.keys[0], self.keys[1], self.keys[2], self.keys[3]);
-        player::move_player(&mut self.player, dir, dt, |tx, ty| {
+        let bx = self.player.x;
+        let by = self.player.y;
+        // Wading through shallow water (rivers/streams) slows you down.
+        let wade = tile_at(
+            &self.world,
+            &mut self.chunks,
+            self.player.x.floor() as i32,
+            self.player.y.floor() as i32,
+        )
+        .wadable();
+        let move_dt = if wade { dt * 0.55 } else { dt };
+        player::move_player(&mut self.player, dir, move_dt, |tx, ty| {
             !tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
                 || self
                     .structures
                     .iter()
                     .any(|s| s.tx == tx && s.ty == ty && s.kind.blocks_movement())
         });
+        let moved = ((self.player.x - bx).powi(2) + (self.player.y - by).powi(2)).sqrt();
+        self.speed = if dt > 0.0 { moved / dt } else { 0.0 };
+
+        // authoritative FPS from real sim steps
+        self.fps_acc += 1;
+        self.fps_time += dt;
+        if self.fps_time >= 0.5 {
+            self.fps = self.fps_acc as f32 / self.fps_time;
+            self.fps_acc = 0;
+            self.fps_time = 0.0;
+        }
+
+        // camera look-ahead: lead the camera a little in the direction of
+        // travel so the player sees what's coming, easing back to center.
+        let vx = (self.player.x - self.last_px) / dt.max(1e-4);
+        let vy = (self.player.y - self.last_py) / dt.max(1e-4);
+        self.last_px = self.player.x;
+        self.last_py = self.player.y;
+        let lead_target = (vx * 0.35, vy * 0.35);
+        let ka = (dt * 3.0).min(1.0);
+        self.cam_lead.0 += (lead_target.0 - self.cam_lead.0) * ka;
+        self.cam_lead.1 += (lead_target.1 - self.cam_lead.1) * ka;
         let focus = render::focus_target(&self.player, (self.viewport[0], self.viewport[1]));
+        let focus = (focus.0 + self.cam_lead.0, focus.1 + self.cam_lead.1);
         player::follow_camera(&mut self.camera, focus, dt);
         let sprites = self.sprites();
         self.quad_count = render::build_tile_mesh(
@@ -1039,6 +1404,7 @@ impl App {
             &sprites,
             Some(&self.player),
             &mut self.vertices,
+            self.anim_clock,
         );
         self.player_in_mesh = self
             .vertices
@@ -1056,6 +1422,10 @@ impl App {
                     sprites.push(kind.sprite(tx, ty));
                 }
             }
+            // decorative world-gen props (non-interactive flavor)
+            if let Some(kind) = decor_on(tx, ty, tile) {
+                sprites.push(kind.sprite(tx, ty));
+            }
         }
         for s in &self.structures {
             if s.kind == StructureKind::Chest && self.opened_chests.contains(&(s.tx, s.ty)) {
@@ -1066,20 +1436,57 @@ impl App {
         }
         for e in self.enemies.enemies() {
             let hp_frac = (e.hp / e.kind.max_hp()).clamp(0.0, 1.0);
-            sprites.push(e.kind.sprite(e.x, e.y, hp_frac));
-            // hp bar: dark back + green->red fill, just above the diamond
-            sprites.push(Sprite::new_center(e.x, e.y, [0.12, 0.12, 0.12], 10.0, 1.5, 18.0));
-            sprites.push(Sprite::new_center(
-                e.x,
-                e.y,
-                [1.0 - hp_frac, hp_frac, 0.1],
-                10.0 * hp_frac.max(0.05),
-                1.5,
-                18.0,
-            ));
+            let mut sp = e.kind.sprite(e.x, e.y, hp_frac, e.facing);
+            let f = e.flash.min(1.0);
+            if f > 0.0 {
+                sp.color = [
+                    sp.color[0] + (1.0 - sp.color[0]) * f,
+                    sp.color[1] + (1.0 - sp.color[1]) * f,
+                    sp.color[2] + (1.0 - sp.color[2]) * f,
+                ];
+            }
+            sprites.push(sp);
+            // hp bar: dark framed plate + colored fill, floating above the figure
+            let bar_lift = match e.kind {
+                EnemyKind::Boss => 54.0,
+                EnemyKind::Slime => 18.0,
+                EnemyKind::Skeleton => 22.0,
+                EnemyKind::Goblin => 22.0,
+                EnemyKind::Bat => 12.0,
+                EnemyKind::Spider => 14.0,
+                EnemyKind::Imp => 14.0,
+                EnemyKind::Ogre => 28.0,
+            };
+            sprites.push(
+                Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)
+                    .with_style(SpriteStyle::HpBack),
+            );
+            sprites.push(
+                Sprite::new_center(
+                    e.x,
+                    e.y,
+                    [1.0 - hp_frac, hp_frac, 0.1],
+                    11.0 * hp_frac.max(0.05),
+                    2.5,
+                    bar_lift,
+                )
+                .with_style(SpriteStyle::HpFill),
+            );
         }
         for a in &self.arrows {
-            sprites.push(Sprite::new_center(a.x, a.y, [0.95, 0.90, 0.85], 5.0, 2.0, 0.0));
+            sprites.push(
+                Sprite::new_center(a.x, a.y, [0.95, 0.90, 0.85], 5.0, 2.0, 0.0)
+                    .with_facing((a.dx, a.dy))
+                    .with_style(SpriteStyle::Arrow),
+            );
+        }
+        // particles (death puffs, hit sparks) — fading Generic quads
+        for p in &self.particles {
+            let a = (p.life / p.max_life).clamp(0.0, 1.0);
+            let mut ps = Sprite::new_center(p.x, p.y, p.color, p.size, p.size, 4.0)
+                .with_style(SpriteStyle::Generic);
+            ps.alpha = a;
+            sprites.push(ps);
         }
         sprites
     }
@@ -1088,6 +1495,18 @@ impl App {
     fn light_data(&self) -> [f32; LIGHT_FLOATS] {
         let mut data = [0.0f32; LIGHT_FLOATS];
         let mut n = 0;
+        // The player carries a soft, cool lantern-like aura so they stay
+        // readable at night and exploring feels atmospheric. Slot 0 is reserved
+        // for it; world lights fill the remaining slots.
+        {
+            let (sx, sy) = game::iso::world_to_iso(
+                self.player.x - self.camera.x,
+                self.player.y - self.camera.y,
+            );
+            data[0..4].copy_from_slice(&[sx, sy, 0.32, 66.0]);
+            data[4..8].copy_from_slice(&[0.85, 0.78, 0.55, 0.0]);
+            n = 1;
+        }
         for s in self
             .structures
             .iter()
@@ -1100,9 +1519,14 @@ impl App {
                 s.tx as f32 + 0.5 - self.camera.x,
                 s.ty as f32 + 0.5 - self.camera.y,
             );
+            let (intensity, radius, rgb) = match s.kind {
+                StructureKind::Lantern => (0.40, 70.0, [1.0, 0.80, 0.40]),
+                StructureKind::Brazier => (0.70, 120.0, [1.0, 0.50, 0.20]),
+                _ => (0.55, 90.0, [1.0, 0.62, 0.28]),
+            };
             let slot = n * 8;
-            data[slot..slot + 4].copy_from_slice(&[sx, sy, 0.55, 90.0]);
-            data[slot + 4..slot + 8].copy_from_slice(&[1.0, 0.62, 0.28, 0.0]);
+            data[slot..slot + 4].copy_from_slice(&[sx, sy, intensity, radius]);
+            data[slot + 4..slot + 8].copy_from_slice(&[rgb[0], rgb[1], rgb[2], 0.0]);
             n += 1;
         }
         data
@@ -1149,8 +1573,6 @@ impl App {
     }
 
     pub fn render(&mut self) {
-        // Display fallback: SwiftShader-Vulkan can't composite the WebGPU canvas
-        // to screen in headed Chrome, so read the frame back and blit to #blit.
         self.write_uniforms();
         if self.quad_count > 0 {
             self.vertex_buffer.upload(&self.queue, &self.vertices);
@@ -1168,25 +1590,56 @@ impl App {
                 label: Some("frame_encoder"),
             });
 
-        // Always render the scene to the offscreen target (the WebGPU canvas
-        // can't be composited in headed SwiftShader; #blit shows the read-back
-        // frame).
+        // The WebGPU surface (#game) can't be composited on this browser, so
+        // #blit (a 2D canvas) is the only visible output. Render to the offscreen
+        // target and read it back to #blit every frame.
+        if self.backend_mode != 2 {
+            self.backend_mode = 2;
+            self.using_blit = true;
+            set_backend("blit");
+        }
         let off_view = self
             .offscreen
             .create_view(&wgpu::TextureViewDescriptor::default());
         self.record_pass(&off_view, &mut encoder);
 
-        // Read back + blit, but never start a new readback while one is still
-        // pending — otherwise we'd allocate a buffer every frame and SwiftShader
-        // would never catch up, leaking GPU memory until the tab crashes.
-        let can_readback = !READBACK_INFLIGHT.load(std::sync::atomic::Ordering::Relaxed)
-            && self.readback_buffer.is_some();
-        if can_readback {
-            let buffer = self.readback_buffer.clone().unwrap();
-            let width = self.config.width;
-            let height = self.config.height;
-            let bytes_per_row = ((width * 4 + 255) / 256) * 256;
-            encoder.copy_texture_to_buffer(
+        // Blit the rendered frame to #blit (the only composited canvas on this
+        // browser). We reuse ONE readback buffer instead of allocating a fresh
+        // one every frame — buffer creation was the dominant per-frame cost and
+        // was tanking the FPS (making input feel unresponsive). If the buffer is
+        // still mapped from the previous frame we skip this frame's readback
+        // (cheaply presenting the last picture) rather than double-mapping.
+        let width = self.config.width;
+        let height = self.config.height;
+        let bytes_per_row = ((width * 4 + 255) / 256) * 256;
+
+        let need_new = match &self.readback_buffer {
+            Some(b) => b.size() != bytes_per_row as u64 * height as u64,
+            None => true,
+        };
+        if need_new {
+            self.readback_buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("readback"),
+                size: bytes_per_row as u64 * height as u64,
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            }));
+            self.readback_busy.store(false, std::sync::atomic::Ordering::Relaxed);
+        }
+
+        let cmd = encoder.finish();
+        if !self.readback_busy.load(std::sync::atomic::Ordering::Relaxed) {
+            self.readback_busy.store(true, std::sync::atomic::Ordering::Relaxed);
+            let buf = self.readback_buffer.as_ref().unwrap().clone();
+            let busy = self.readback_busy.clone();
+            let tod = self.time_of_day;
+            let aclock = self.anim_clock;
+            let mut enc = self
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("readback_encoder"),
+                });
+            enc.copy_texture_to_buffer(
                 wgpu::TexelCopyTextureInfo {
                     texture: &self.offscreen,
                     mip_level: 0,
@@ -1194,7 +1647,7 @@ impl App {
                     aspect: wgpu::TextureAspect::All,
                 },
                 wgpu::TexelCopyBufferInfo {
-                    buffer: &buffer,
+                    buffer: &buf,
                     layout: wgpu::TexelCopyBufferLayout {
                         offset: 0,
                         bytes_per_row: Some(bytes_per_row),
@@ -1207,20 +1660,23 @@ impl App {
                     depth_or_array_layers: 1,
                 },
             );
-            let gen = READBACK_GEN.load(std::sync::atomic::Ordering::Relaxed);
-            READBACK_INFLIGHT.store(true, std::sync::atomic::Ordering::Relaxed);
-            *READBACK.lock().unwrap() = String::from("queued");
-            let buf = buffer.clone();
-            let cmd = encoder.finish();
-            cmd.map_buffer_on_submit(
-                &buffer,
+            let rc = enc.finish();
+            rc.map_buffer_on_submit(
+                &buf.clone(),
                 wgpu::MapMode::Read,
                 ..,
                 move |res| {
                     match res {
                         Ok(()) => {
                             if let Ok(data) = buf.slice(..).get_mapped_range() {
-                                blit_to_2d_canvas(&data, width, height, bytes_per_row);
+                                blit_to_2d_canvas(
+                                    &data,
+                                    width,
+                                    height,
+                                    bytes_per_row,
+                                    tod,
+                                    aclock,
+                                );
                                 drop(data);
                                 *READBACK.lock().unwrap() = String::from("blitted");
                             } else {
@@ -1233,20 +1689,23 @@ impl App {
                             buf.unmap();
                         }
                     }
-                    // Only clear INFLIGHT if this callback belongs to the current
-                    // buffer generation (a resize may have swapped the buffer).
-                    if READBACK_GEN.load(std::sync::atomic::Ordering::Relaxed) == gen {
-                        READBACK_INFLIGHT.store(false, std::sync::atomic::Ordering::Relaxed);
-                    }
+                    busy.store(false, std::sync::atomic::Ordering::Relaxed);
                 },
             );
-            self.queue.submit([cmd]);
+            self.queue.submit([cmd, rc]);
         } else {
-            self.queue.submit([encoder.finish()]);
+            // Previous readback still in flight: just present this render.
+            self.queue.submit([cmd]);
         }
+
         if self.frames % 600 == 0 {
-            glog(&format!("[gfx] heartbeat #{} quads={}", self.frames, self.quad_count));
+            glog(&format!("[gfx] heartbeat #{} quads={} (blit fallback)", self.frames, self.quad_count));
         }
+    }
+
+    /// Request a one-off readback + #blit (used by the screenshot key).
+    pub fn request_capture(&mut self) {
+        self.capture_requested = true;
     }
 }
 
@@ -1291,7 +1750,7 @@ fn resize_canvas(canvas: &HtmlCanvasElement) -> (u32, u32) {
 }
 
 fn create_uniforms(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::BindGroup) {
-    const UNIFORM_BYTES: u64 = (4 + LIGHT_FLOATS) as u64 * 4;
+    const UNIFORM_BYTES: u64 = (8 + LIGHT_FLOATS) as u64 * 4;
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("uniforms"),
         size: UNIFORM_BYTES,
@@ -1326,7 +1785,7 @@ fn create_pipeline(device: &wgpu::Device, format: wgpu::TextureFormat) -> wgpu::
             buffers: &[Some(wgpu::VertexBufferLayout {
                 array_stride: VERTEX_STRIDE,
                 step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x3],
+                attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x4],
             })],
         },
         primitive: wgpu::PrimitiveState::default(),
@@ -1336,11 +1795,11 @@ fn create_pipeline(device: &wgpu::Device, format: wgpu::TextureFormat) -> wgpu::
             module: &module,
             entry_point: Some("fs_main"),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            targets: &[Some(wgpu::ColorTargetState {
-                format,
-                blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
+                targets: &[Some(wgpu::ColorTargetState {
+                    format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
         }),
         multiview_mask: None,
         cache: None,
@@ -1367,7 +1826,7 @@ fn create_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: false,
-                min_binding_size: wgpu::BufferSize::new((4 + LIGHT_FLOATS) as u64 * 4),
+                min_binding_size: wgpu::BufferSize::new((8 + LIGHT_FLOATS) as u64 * 4),
             },
             count: None,
         }],

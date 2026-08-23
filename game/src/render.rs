@@ -1,10 +1,11 @@
+use crate::elements::prim::{rasterize, Part};
 use crate::iso::{depth_order, iso_to_world, world_to_iso, HALF_H, HALF_W};
 use crate::player::Player;
-use crate::world::{ChunkCache, WorldGen};
+use crate::world::{ChunkCache, TileKind, WorldGen};
 use crate::TILE_HEIGHT;
 
-/// Floats per vertex: position x, y + color r, g, b.
-pub const VERTEX_FLOATS: usize = 5;
+/// Floats per vertex: position x, y + color r, g, b, a.
+pub const VERTEX_FLOATS: usize = 6;
 pub const VERTEX_STRIDE_BYTES: usize = VERTEX_FLOATS * 4;
 
 /// Player quad color (warm orange so it stands out from all biomes).
@@ -13,6 +14,65 @@ pub const PLAYER_COLOR: [f32; 3] = [1.0, 0.55, 0.15];
 /// A small diamond drawn on top of a tile (resource node, structure, ...).
 /// Centered on the world position (fractional for moving entities),
 /// optionally lifted `lift` pixels (tall sprites).
+/// How a `Sprite` should be drawn. `Generic` is the flat lifted-diamond look;
+/// everything else routes to a kind-aware silhouette so trees, rocks, walls,
+/// enemies, etc. read as distinct objects instead of colored diamonds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpriteStyle {
+    Generic,
+    Tree,
+    Rock,
+    Bush,
+    Wall,
+    Chest,
+    Campfire,
+    Altar,
+    Slime,
+    Humanoid,
+    /// HP bar backing plate (dark frame), drawn just above an enemy.
+    HpBack,
+    /// HP bar fill (colored, width encodes hp fraction).
+    HpFill,
+    /// Projectile (arrow): a shaft oriented along `facing` with an arrowhead.
+    Arrow,
+    // ---- Harvestable resources -------------------------------------------
+    Mushroom,
+    Crystal,
+    Flower,
+    GrassTuft,
+    Fern,
+    Ore,
+    // ---- Buildable structures --------------------------------------------
+    Fence,
+    Torch,
+    Anvil,
+    Bed,
+    Well,
+    // ---- Decorative props (world-gen only, non-interactive) --------------
+    Sign,
+    Barrel,
+    Totem,
+    RockPile,
+    Statue,
+    Lantern,
+    Brazier,
+    Crate,
+    Pillar,
+    BonePile,
+    Cactus,
+    Vines,
+    Lilypad,
+    Reed,
+    Rubble,
+    // ---- Enemies ----------------------------------------------------------
+    Skeleton,
+    Goblin,
+    Bat,
+    Spider,
+    Imp,
+    Ogre,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Sprite {
     pub x: f32,
@@ -22,6 +82,10 @@ pub struct Sprite {
     pub half_h: f32,
     pub lift: f32,
     pub alpha: f32,
+    pub style: SpriteStyle,
+    /// Facing direction in world coords (also the attack facing). Used to lean
+    /// the head of humanoid figures toward where they're looking/moving.
+    pub facing: (f32, f32),
 }
 
 impl Sprite {
@@ -40,7 +104,21 @@ impl Sprite {
             half_h,
             lift,
             alpha: 1.0,
+            style: SpriteStyle::Generic,
+            facing: (1.0, 0.0),
         }
+    }
+
+    /// Tag this sprite with a distinct silhouette style.
+    pub fn with_style(mut self, style: SpriteStyle) -> Self {
+        self.style = style;
+        self
+    }
+
+    /// Set the facing direction (world coords) for humanoid figures.
+    pub fn with_facing(mut self, facing: (f32, f32)) -> Self {
+        self.facing = facing;
+        self
     }
 }
 
@@ -64,6 +142,9 @@ struct Draw {
     lift: f32,
     color: [f32; 3],
     alpha: f32,
+    style: SpriteStyle,
+    facing: (f32, f32),
+    hurt: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -81,9 +162,15 @@ impl Camera {
 /// Camera position that puts the player's sprite diamond at the viewport
 /// center. The camera maps to the screen origin, so we back off by the
 /// tile-center offset: `iso(cam) = iso(player) - (vw/2, vh/2 - HALF_H)`.
+/// Fraction of viewport height where the player is drawn. 0.5 = dead-centre;
+/// 0.62 places the player in the lower third so movement is clearly visible
+/// on screen (the character actually travels in the pressed direction instead
+/// of being pinned to the centre while only the world scrolls).
+const PLAYER_SCREEN_Y: f32 = 0.62;
+
 pub fn focus_target(player: &Player, viewport: (f32, f32)) -> (f32, f32) {
     let (sx, sy) = world_to_iso(player.x, player.y);
-    iso_to_world(sx - viewport.0 / 2.0, sy + HALF_H - viewport.1 / 2.0)
+    iso_to_world(sx - viewport.0 / 2.0, sy + HALF_H - viewport.1 * PLAYER_SCREEN_Y)
 }
 
 /// Tiles visible from `camera` given `viewport` (pixels), sorted in draw
@@ -91,14 +178,21 @@ pub fn focus_target(player: &Player, viewport: (f32, f32)) -> (f32, f32) {
 pub fn visible_tiles(camera: Camera, viewport: (f32, f32)) -> Vec<(i32, i32)> {
     let vw = viewport.0;
     let vh = viewport.1;
-    let rx = (vw / (2.0 * HALF_W)).ceil() as i32 + 2;
-    let ry = (vh / (2.0 * HALF_H)).ceil() as i32 + 2;
+    // In isometric projection both world axes contribute to both screen axes,
+    // so the world-space iteration range must cover the full diagonal extent
+    // of the viewport.  The screen extents are:
+    //   screen_x = (tx - ty) * HALF_W  → needs |tx-ty| up to  vw / HALF_W
+    //   screen_y = (tx + ty) * HALF_H  → needs |tx+ty| up to  vh / HALF_H
+    // Solving for the max |tx| and |ty| gives (vw/HALF_W + vh/HALF_H) / 2.
+    let r = ((vw / HALF_W + vh / HALF_H) / 2.0).ceil() as i32 + 2;
     let mut quads: Vec<(i32, i32, i32)> = Vec::new();
 
-    for ty in camera.y as i32 - ry..=camera.y as i32 + ry {
-        for tx in camera.x as i32 - rx..=camera.x as i32 + rx {
+    for ty in camera.y as i32 - r..=camera.y as i32 + r {
+        for tx in camera.x as i32 - r..=camera.x as i32 + r {
             let (sx, sy) = world_to_iso(tx as f32 - camera.x, ty as f32 - camera.y);
-            if sx + HALF_W < 0.0 || sx - HALF_W > vw || sy + HALF_H < 0.0 || sy - HALF_H > vh {
+            // The tile diamond spans [sx - HALF_W, sx + HALF_W] horizontally
+            // and [sy, sy + TILE_HEIGHT] vertically.
+            if sx + HALF_W < 0.0 || sx - HALF_W > vw || sy + TILE_HEIGHT < 0.0 || sy > vh {
                 continue;
             }
             quads.push((depth_order(tx, ty), tx, ty));
@@ -120,6 +214,7 @@ pub fn build_tile_mesh(
     sprites: &[Sprite],
     player: Option<&Player>,
     out: &mut Vec<f32>,
+    anim_time: f32,
 ) -> u32 {
     out.clear();
     let vw = viewport.0;
@@ -140,6 +235,9 @@ pub fn build_tile_mesh(
             lift: 0.0,
             color: [0.0; 3],
             alpha: 1.0,
+            style: SpriteStyle::Generic,
+            facing: (1.0, 0.0),
+            hurt: false,
         });
     }
 
@@ -166,6 +264,9 @@ pub fn build_tile_mesh(
             lift: s.lift,
             color: s.color,
             alpha: s.alpha,
+            style: s.style,
+            facing: s.facing,
+            hurt: false,
         });
     }
 
@@ -183,6 +284,9 @@ pub fn build_tile_mesh(
             lift: 0.0,
             color: PLAYER_COLOR,
             alpha: 1.0,
+            style: SpriteStyle::Generic,
+            facing: p.facing,
+            hurt: p.hurt_timer > 0.0,
         });
     }
 
@@ -191,24 +295,50 @@ pub fn build_tile_mesh(
     for d in draws {
         match d.kind {
             DrawKind::Tile => {
-                let mut base = tile_kind_at(world, cache, d.tx, d.ty).color();
-                let v = 0.06 * (((d.tx * 7 + d.ty * 13) % 9) as f32 - 4.0);
+                let kind = tile_kind_at(world, cache, d.tx, d.ty);
+                let mut base = kind.color();
+                let v = 0.06 * (((d.tx * 7 + d.ty * 13) % 9) as f32 - 4. as f32);
                 for c in base.iter_mut() {
                     *c = (*c + v).clamp(0.0, 1.0);
                 }
+                if matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
+                    let sh = (anim_time * 1.5 + d.tx as f32 * 0.5 + d.ty as f32 * 0.35).sin() * 0.06;
+                    base[0] = (base[0] + sh).clamp(0.0, 1.0);
+                    base[2] = (base[2] + sh * 0.8).clamp(0.0, 1.0);
+                }
                 push_quad(out, d.sx, d.sy, base);
             }
-            DrawKind::Sprite => push_center_quad(
-                out,
-                d.sx,
-                d.sy,
-                d.half_w,
-                d.half_h,
-                d.lift,
-                d.color,
-                d.alpha,
-            ),
-            DrawKind::Player => push_quad(out, d.sx, d.sy, PLAYER_COLOR),
+            DrawKind::Sprite => {
+                // Fake 2.5D: ground shadow first, then a kind-aware silhouette.
+                push_shadow(out, d.sx, d.sy, d.half_w, d.half_h);
+                match d.style {
+                    SpriteStyle::Generic => {
+                        let mut g = Vec::new();
+                        g.push(Part::diamond(
+                            d.sx, d.sy, d.half_w, d.half_h, d.lift, d.color, d.alpha, d.lift > 0.0,
+                        ));
+                        rasterize(&g, out);
+                    }
+                    other => push_styled_sprite(
+                        out, d.sx, d.sy, other, d.color, d.half_w, d.half_h, d.lift, d.alpha,
+                        d.facing, anim_time,
+                    ),
+                }
+            }
+            DrawKind::Player => {
+                // Player stands on the tile center (sx, sy + HALF_H): shadow
+                // then the humanoid figure built upward from the ground point.
+                // Flash red briefly after taking a hit.
+                let gy = d.sy + HALF_H;
+                let tunic = if d.hurt {
+                    [1.0, 0.32, 0.30]
+                } else {
+                    PLAYER_COLOR
+                };
+                push_shadow(out, d.sx, gy, HALF_W * 0.7, HALF_H * 0.7);
+                let parts = crate::elements::humanoid::build(d.sx, gy, tunic, 1.0, d.facing, anim_time);
+                rasterize(&parts, out);
+            }
         }
     }
     (out.len() / (6 * VERTEX_FLOATS)) as u32
@@ -233,35 +363,119 @@ fn push_quad(out: &mut Vec<f32>, ox: f32, oy: f32, color: [f32; 3]) {
         out.push(vx);
         out.push(vy);
         out.extend_from_slice(&color);
+        out.push(1.0);
     }
 }
 
-/// Diamond centered at (cx, cy + lift): top/bottom on the vertical axis,
-/// left/right on the horizontal, sized by half_w / half_h.
-fn push_center_quad(
-    out: &mut Vec<f32>,
-    cx: f32,
-    cy: f32,
-    half_w: f32,
-    half_h: f32,
-    lift: f32,
-    color: [f32; 3],
-    alpha: f32,
-) {
-    let top = (cx, cy - half_h + lift);
-    let right = (cx + half_w, cy + lift);
-    let bottom = (cx, cy + half_h + lift);
-    let left = (cx - half_w, cy + lift);
-    let verts = [
-        top, right, bottom, top, bottom, left, // two triangles
-    ];
-    // alpha blends the sprite toward the underlying world color (cheap
-    // transparency without a blend pipeline; sprites are drawn over tiles)
-    let tint = [color[0] * alpha, color[1] * alpha, color[2] * alpha];
+/// Flat ground shadow: a darkened diamond on the tile (no lift), alpha-blended
+/// over the tile beneath it so entities read as standing on the ground.
+fn push_shadow(out: &mut Vec<f32>, cx: f32, cy: f32, half_w: f32, half_h: f32) {
+    let top = (cx, cy - half_h);
+    let right = (cx + half_w, cy);
+    let bottom = (cx, cy + half_h);
+    let left = (cx - half_w, cy);
+    let verts = [top, right, bottom, top, bottom, left];
     for (vx, vy) in verts {
         out.push(vx);
         out.push(vy);
-        out.extend_from_slice(&tint);
+        out.push(0.0);
+        out.push(0.0);
+        out.push(0.0);
+        out.push(0.30);
+    }
+}
+
+/// Draw a sprite using its kind-aware silhouette. `(cx, cy)` is the ground
+/// point (the tile top where the shadow sits); shapes are built upward.
+///
+/// Each element returns a list of [`Part`]s via its own module in
+/// `crate::elements`; the uniform `rasterize` call emits them (and the fake
+/// 2.5D dark "skirt") so the renderer never hard-codes any artwork.
+fn push_styled_sprite(
+    out: &mut Vec<f32>,
+    cx: f32,
+    cy: f32,
+    style: SpriteStyle,
+    color: [f32; 3],
+    hw: f32,
+    hh: f32,
+    lift: f32,
+    alpha: f32,
+    facing: (f32, f32),
+    anim_time: f32,
+) {
+    use crate::elements::{
+        altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
+        crate_box, crystal, fence, fern, flower, goblin, grass_tuft, humanoid, hpbar, imp, lantern,
+        lilypad, mushroom, ogre, ore, pillar, reed, rock, rock_pile, rubble, sign, skeleton, slime,
+        spider, statue, torch, totem, tree, vines, wall, well,
+    };
+    match style {
+        SpriteStyle::Generic => {
+            // handled by caller (DrawKind::Sprite branch) — never reaches here.
+            let _ = (cx, cy, color, hw, hh, lift, alpha, facing, anim_time);
+        }
+        SpriteStyle::Tree => rasterize(&tree::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Rock => rasterize(&rock::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Bush => rasterize(&bush::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Wall => rasterize(&wall::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Chest => rasterize(&chest::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Campfire => {
+            rasterize(&campfire::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
+        SpriteStyle::Altar => rasterize(&altar::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Arrow => arrow::draw(out, cx, cy, color, alpha, facing),
+        SpriteStyle::Slime => rasterize(&slime::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Humanoid => {
+            rasterize(&humanoid::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
+        SpriteStyle::HpBack => rasterize(&hpbar::back(cx, cy, hw, hh, lift, color, alpha), out),
+        SpriteStyle::HpFill => rasterize(&hpbar::fill(cx, cy, hw, hh, lift, color, alpha), out),
+        // Harvestable resources
+        SpriteStyle::Mushroom => {
+            rasterize(&mushroom::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
+        SpriteStyle::Crystal => rasterize(&crystal::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Flower => rasterize(&flower::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::GrassTuft => {
+            rasterize(&grass_tuft::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
+        SpriteStyle::Fern => rasterize(&fern::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Ore => rasterize(&ore::build(cx, cy, color, alpha, facing, anim_time), out),
+        // Buildable structures
+        SpriteStyle::Fence => rasterize(&fence::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Torch => rasterize(&torch::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Anvil => rasterize(&anvil::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Bed => rasterize(&bed::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Well => rasterize(&well::build(cx, cy, color, alpha, facing, anim_time), out),
+        // Decorative props
+        SpriteStyle::Sign => rasterize(&sign::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Barrel => rasterize(&barrel::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Totem => rasterize(&totem::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::RockPile => {
+            rasterize(&rock_pile::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
+        SpriteStyle::Statue => rasterize(&statue::build(cx, cy, color, alpha, facing, anim_time), out),
+        // Enemies
+        SpriteStyle::Skeleton => {
+            rasterize(&skeleton::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
+        SpriteStyle::Goblin => rasterize(&goblin::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Bat => rasterize(&bat::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Spider => rasterize(&spider::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Ogre => rasterize(&ogre::build(cx, cy, color, alpha, facing, anim_time), out),
+        // New decorative props
+        SpriteStyle::Lantern => rasterize(&lantern::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Brazier => rasterize(&brazier::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Crate => rasterize(&crate_box::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Pillar => rasterize(&pillar::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::BonePile => rasterize(&bone_pile::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Cactus => rasterize(&cactus::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Vines => rasterize(&vines::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Lilypad => rasterize(&lilypad::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Reed => rasterize(&reed::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Rubble => rasterize(&rubble::build(cx, cy, color, alpha, facing, anim_time), out),
     }
 }
 
@@ -304,8 +518,9 @@ mod tests {
         let cam_pos = Camera::new(3.5, -2.25);
         for (tx, ty) in visible_tiles(cam_pos, viewport) {
             let (sx, sy) = world_to_iso(tx as f32 - cam_pos.x, ty as f32 - cam_pos.y);
+            // Diamond spans [sx - HALF_W, sx + HALF_W] x [sy, sy + TILE_HEIGHT]
             assert!(sx + HALF_W >= -0.001 && sx - HALF_W <= viewport.0 + 0.001);
-            assert!(sy + HALF_H >= -0.001 && sy - HALF_H <= viewport.1 + 0.001);
+            assert!(sy + TILE_HEIGHT >= -0.001 && sy <= viewport.1 + 0.001);
         }
     }
 
@@ -314,7 +529,7 @@ mod tests {
         let world = WorldGen::new(1);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut mesh);
+        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut mesh, 0.0);
         assert!(quads > 0);
         // find the quad whose top corner sits at world (0,0) (tile 0,0)
         let mut found = None;
@@ -326,14 +541,14 @@ mod tests {
             }
         }
         let v = found.expect("tile (0,0) must be in the mesh");
-        // vertex layout per vertex: [x, y, r, g, b]
+        // vertex layout per vertex: [x, y, r, g, b, a]
         // v0=top, v1=right, v2=bottom, v3=top, v4=bottom, v5=left
-        assert!((v[5] - HALF_W).abs() < 0.001, "right corner x");
-        assert!((v[6] - HALF_H).abs() < 0.001, "right corner y");
-        assert!((v[10] - 0.0).abs() < 0.001, "bottom corner x");
-        assert!((v[11] - TILE_HEIGHT).abs() < 0.001, "bottom corner y");
-        assert!((v[25] + HALF_W).abs() < 0.001, "left corner x");
-        assert!((v[26] - HALF_H).abs() < 0.001, "left corner y");
+        assert!((v[6] - HALF_W).abs() < 0.001, "right corner x");
+        assert!((v[7] - HALF_H).abs() < 0.001, "right corner y");
+        assert!((v[12] - 0.0).abs() < 0.001, "bottom corner x");
+        assert!((v[13] - TILE_HEIGHT).abs() < 0.001, "bottom corner y");
+        assert!((v[30] + HALF_W).abs() < 0.001, "left corner x");
+        assert!((v[31] - HALF_H).abs() < 0.001, "left corner y");
     }
 
     #[test]
@@ -341,7 +556,7 @@ mod tests {
         let world = WorldGen::new(7);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut mesh);
+        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut mesh, 0.0);
         assert_eq!(mesh.len(), quads as usize * 6 * VERTEX_FLOATS);
         for i in (2..mesh.len()).step_by(VERTEX_FLOATS) {
             assert!((0.0..=1.0).contains(&mesh[i]), "r out of range at {i}");
@@ -382,10 +597,12 @@ mod tests {
         let viewport = (1280.0, 720.0);
         let player = Player::new(0.5, 0.5);
         let (fx, fy) = focus_target(&player, viewport);
-        // camera at focus maps the player's diamond center to the screen center
+        // camera at focus maps the player's diamond center to (screen-center-x,
+        // PLAYER_SCREEN_Y of the viewport height) so the character sits in the
+        // lower third and visibly travels when moving.
         let (sx, sy) = world_to_iso(player.x - fx, player.y - fy);
         assert!((sx - viewport.0 / 2.0).abs() < 0.01, "player center x");
-        assert!((sy + HALF_H - viewport.1 / 2.0).abs() < 0.01, "player center y");
+        assert!((sy + HALF_H - viewport.1 * PLAYER_SCREEN_Y).abs() < 0.01, "player screen y");
     }
 
     #[test]
@@ -403,12 +620,14 @@ mod tests {
             &[],
             Some(&player),
             &mut mesh,
+            0.0,
         );
-        // one quad more than the plain tile mesh
+        // player branch emits: ground shadow + humanoid (2 legs, torso, head,
+        // hair) each drawn as bright + dark-skirt + bright = 5*3 + 1 = 16 quads
         let mut plain = Vec::new();
         let plain_quads =
-            build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut plain);
-        assert_eq!(quads, plain_quads + 1);
+            build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut plain, 0.0);
+        assert_eq!(quads, plain_quads + 16);
 
         // find the player quad (warm orange color)
         let mut player_quad = None;
@@ -421,8 +640,13 @@ mod tests {
         }
         let v = player_quad.expect("player quad must be in the mesh");
         let (ox, oy) = world_to_iso(0.5, 0.5);
-        assert!((v[0] - ox).abs() < 0.001, "player top x");
-        assert!((v[1] - oy).abs() < 0.001, "player top y");
+        // The torso (PLAYER_COLOR) is centered on the player's screen x (ox).
+        let cx_avg = (0..6).map(|k| v[k * 6]).sum::<f32>() / 6.0;
+        assert!((cx_avg - ox).abs() < 0.001, "player center x");
+        // and it stands on the tile center (gy = oy + HALF_H), so its bottom
+        // edge sits at roughly the tile center, not the tile's top corner.
+        let cy_max = (0..6).map(|k| v[k * 6 + 1]).fold(f32::MIN, f32::max);
+        assert!(cy_max > oy, "player torso must be below the tile top corner");
 
         // depth ordering: tile (0,0) (depth 0) must come before the player (depth 1)
         let mut idx = 0;
@@ -460,6 +684,7 @@ mod tests {
             &[tree],
             None,
             &mut mesh,
+            0.0,
         );
         let tree_idx = (0..quads as usize)
             .find(|&i| quad_vertices(&mesh, i)[2] == 0.06)
@@ -503,6 +728,7 @@ mod tests {
             &[far],
             None,
             &mut mesh,
+            0.0,
         );
         assert!(
             !(0..quads as usize).any(|i| quad_vertices(&mesh, i)[2] == 0.9),
@@ -528,5 +754,42 @@ mod tests {
             })
             .all(|eq| eq);
         assert!(!same, "different seeds should produce different terrain");
+    }
+
+    #[test]
+    fn slime_bobs_with_anim_time() {
+        // The slime's blob must move vertically as anim_time advances (hop/squash),
+        // and the two sampled frames must differ — otherwise the animation is dead.
+        use crate::render::SpriteStyle;
+        let world = WorldGen::new(1);
+        let mut cache = ChunkCache::new(64);
+        let slime = Sprite::new(0, 0, [0.30, 0.78, 0.36], 14.0, 14.0, 2.0).with_style(SpriteStyle::Slime);
+
+        let mut m0 = Vec::new();
+        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[slime], None, &mut m0, 0.0);
+        let mut m1 = Vec::new();
+        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[slime], None, &mut m1, 0.3);
+
+        // slime green signature
+        let is_slime = |v: &[f32]| v[2] > 0.25 && v[2] < 0.45 && v[3] > 0.7 && v[4] < 0.45;
+        let y_extent = |m: &[f32]| -> (f32, f32) {
+            let mut top = f32::MAX;
+            let mut bot = f32::MIN;
+            for q in 0..m.len() / (6 * VERTEX_FLOATS) {
+                let v = quad_vertices(m, q);
+                if is_slime(v) {
+                    for k in 0..6 {
+                        let y = v[k * 6 + 1];
+                        top = top.min(y);
+                        bot = bot.max(y);
+                    }
+                }
+            }
+            (top, bot)
+        };
+        let (t0, b0) = y_extent(&m0);
+        let (t1, b1) = y_extent(&m1);
+        assert!(t0 < f32::MAX, "slime must be present in mesh");
+        assert!(((t0 - t1).abs() + (b0 - b1).abs()) > 1.0, "slime blob must move between frames");
     }
 }

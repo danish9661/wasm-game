@@ -92,12 +92,15 @@ impl Player {
 
     /// Per-tick survival: hunger drains slowly (3× faster in the cold at
     /// night), stamina regenerates, starving costs hp, hurt timer ticks down.
+    /// `warm` (sheltered by a campfire/lantern/brazier) slows the drain and
+    /// stops starvation damage — the light/warmth loop the world hints at.
     /// Base drain ≈ 9 hunger/minute, so a full bar lasts ~11 minutes.
-    pub fn tick(&mut self, dt: f32, temperature: f32) {
+    pub fn tick(&mut self, dt: f32, temperature: f32, warm: bool) {
         self.hurt_timer = (self.hurt_timer - dt).max(0.0);
         let cold = ((temperature).min(0.0) / -10.0).max(0.0);
-        self.hunger = (self.hunger - dt * (0.15 + 0.30 * cold)).max(0.0);
-        if self.hunger <= 0.0 {
+        let drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
+        self.hunger = (self.hunger - dt * drain).max(0.0);
+        if self.hunger <= 0.0 && !warm {
             self.hp = (self.hp - dt * 2.0).max(0.0);
             if self.hp <= 0.0 {
                 self.alive = false;

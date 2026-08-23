@@ -9,6 +9,10 @@ pub enum ItemKind {
     /// Crown Fragment — the story macguffin dropped by biome bosses. Counts
     /// toward the 5 fragments needed to reforge the Star Crown.
     Fragment,
+    /// Gathered from flowers, ferns and grass tufts — a forageable.
+    Herb,
+    /// Gathered from crystal nodes — a shiny crafting material.
+    Gem,
 }
 
 impl ItemKind {
@@ -18,11 +22,13 @@ impl ItemKind {
             ItemKind::Stone => "stone",
             ItemKind::Food => "food",
             ItemKind::Fragment => "crown fragment",
+            ItemKind::Herb => "herb",
+            ItemKind::Gem => "gem",
         }
     }
 }
 
-const SLOTS: usize = 4;
+const SLOTS: usize = 6;
 
 /// Simple stack inventory: one count per item kind.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -41,6 +47,8 @@ impl Inventory {
             ItemKind::Stone => 1,
             ItemKind::Food => 2,
             ItemKind::Fragment => 3,
+            ItemKind::Herb => 4,
+            ItemKind::Gem => 5,
         }
     }
 
