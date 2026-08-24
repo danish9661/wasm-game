@@ -155,6 +155,14 @@ impl Player {
                 self.alive = false;
             }
         }
+        // Harsh biomes (Tundra/Desert) sap health from exposure when you're
+        // not sheltered by a light source — warmth is the only real defense.
+        if harsh && !warm {
+            self.hp = (self.hp - dt * 1.0).max(0.0);
+            if self.hp <= 0.0 {
+                self.alive = false;
+            }
+        }
         let mut regen = if wet { 6.0 } else { 12.0 };
         if harsh {
             regen *= 0.6;

@@ -1925,6 +1925,7 @@ impl App {
         let speed_mul = match biome {
             TileKind::Snow => 0.7,
             TileKind::Swamp => 0.85,
+            TileKind::Sand => 0.9,
             _ => 1.0,
         };
         // During a dodge roll, move in the dodge direction at boosted speed.
