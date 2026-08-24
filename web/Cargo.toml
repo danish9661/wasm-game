@@ -25,6 +25,7 @@ js-sys = "0.3"
     "HtmlCanvasElement",
     "HtmlElement",
     "CanvasRenderingContext2d",
+    "CanvasGradient",
     "ImageData",
     "KeyboardEvent",
     "Performance",

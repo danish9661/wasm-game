@@ -23,6 +23,7 @@ const CRAFT_RECIPES: &[(&str, &[(ItemKind, u32)])] = &[
     ("Honed Tools", &[(ItemKind::Wood, 5), (ItemKind::Stone, 3), (ItemKind::Gem, 1)]),
     ("Iron Plate", &[(ItemKind::Stone, 4), (ItemKind::Gem, 2)]),
     ("Healing Salve x3", &[(ItemKind::Herb, 3), (ItemKind::Food, 2)]),
+    ("Cook Meal (Food x2)", &[(ItemKind::Herb, 2)]),
 ];
 
 /// Console-only log for the GPU pipeline (does not touch the #log HUD element).
@@ -75,6 +76,8 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::Reed => "d",
         StructureKind::Rubble => "u",
         StructureKind::RuinTower => "U",
+        StructureKind::Spike => "+",
+        StructureKind::FarmPlot => "*",
     }
 }
 
@@ -92,6 +95,7 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Stoneslinger => "Stoneslinger",
         EnemyKind::Colossus => "Colossus",
         EnemyKind::Brute => "Brute",
+        EnemyKind::Stormcaller => "Stormcaller",
     }
 }
 
@@ -257,7 +261,7 @@ fn blit_to_2d_canvas(
     bytes_per_row: u32,
     tod: f32,
     aclock: f32,
-    raining: bool,
+    weather: u8,
 ) {
     let window = match web_sys::window() {
         Some(w) => w,
@@ -413,23 +417,58 @@ fn blit_to_2d_canvas(
             let _ = ctx.arc(x, y, radius, 0.0, std::f64::consts::TAU);
             let _ = ctx.fill();
         }
-        // rain: diagonal streaks + a faint cold veil
-        if raining {
-            let fall = (aclock as f64 * 380.0) % h;
-            ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(170,200,230,0.35)"));
-            ctx.set_line_width(1.0);
-            let cols = 90u32;
-            for i in 0..cols {
-                let fi = i as f64;
-                let x = (((fi * 53.7 + aclock as f64 * 120.0) % w) + w) % w;
-                let y = (((fi * 29.3 + fall) % h) + h) % h;
-                ctx.begin_path();
-                ctx.move_to(x, y);
-                ctx.line_to(x - 4.0, y + 14.0);
-                ctx.stroke();
+        // weather: snow (2) or rain (1) — drifting particles + a faint veil
+        if weather != 0 {
+            let snow = weather == 2;
+            let fall = (aclock as f64 * (if snow { 90.0 } else { 380.0 })) % h;
+            if snow {
+                ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,255,255,0.85)"));
+                let cols = 110u32;
+                for i in 0..cols {
+                    let fi = i as f64;
+                    let x = (((fi * 37.3 + aclock as f64 * 30.0) % w) + w) % w;
+                    let y = (((fi * 19.7 + fall) % h) + h) % h;
+                    let r = 1.0 + (fi * 7.0).fract() * 1.6;
+                    ctx.begin_path();
+                    ctx.arc(x, y, r, 0.0, std::f64::consts::PI * 2.0);
+                    ctx.fill();
+                }
+                ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(200,215,235,0.08)"));
+                ctx.fill_rect(0.0, 0.0, w, h);
+            } else {
+                ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(170,200,230,0.35)"));
+                ctx.set_line_width(1.0);
+                let cols = 90u32;
+                for i in 0..cols {
+                    let fi = i as f64;
+                    let x = (((fi * 53.7 + aclock as f64 * 120.0) % w) + w) % w;
+                    let y = (((fi * 29.3 + fall) % h) + h) % h;
+                    ctx.begin_path();
+                    ctx.move_to(x, y);
+                    ctx.line_to(x - 4.0, y + 14.0);
+                    ctx.stroke();
+                }
+                ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(120,140,170,0.10)"));
+                ctx.fill_rect(0.0, 0.0, w, h);
             }
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(120,140,170,0.10)"));
-            ctx.fill_rect(0.0, 0.0, w, h);
+        }
+        // Night vignette: darken the edges when the sun is down, so campfires
+        // and lanterns read as the only light sources.
+        let night = ((tod - 0.5).abs() * 2.0).min(1.0);
+        if night > 0.05 {
+            if let Ok(grad) = ctx.create_radial_gradient(
+                w / 2.0,
+                h / 2.0,
+                (w.min(h)) * 0.25,
+                w / 2.0,
+                h / 2.0,
+                (w.max(h)) * 0.75,
+            ) {
+                let _ = grad.add_color_stop(0.0, "rgba(0,0,10,0)");
+                let _ = grad.add_color_stop(1.0, &format!("rgba(0,0,12,{})", 0.55 * night));
+                ctx.set_fill_style(grad.as_ref());
+                ctx.fill_rect(0.0, 0.0, w, h);
+            }
         }
     });
 }
@@ -565,10 +604,15 @@ pub struct App {
     salves: u32,
     /// Enemy kinds the player has seen (for the Bestiary / Codex panel).
     discovered: std::collections::HashSet<EnemyKind>,
-    /// Weather state: 0 = clear, 1 = rain. Drives the visual + stamina effect.
+    /// Weather state: 0 = clear, 1 = rain, 2 = snow. Drives the visual effect.
     weather: u8,
     /// Seconds until the weather may change again.
     weather_timer: f32,
+    /// Farm plots: seconds remaining until each planted plot is ready to
+    /// harvest again (keyed by tile). Plots not present are grown (0).
+    farm_cd: std::collections::HashMap<(i32, i32), f32>,
+    /// True once the player has crafted Iron Plate (used by the quest log).
+    crafted_iron: bool,
 }
 
 impl App {
@@ -753,7 +797,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} rain={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} weather={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -980,6 +1024,8 @@ impl App {
             discovered: std::collections::HashSet::new(),
             weather: 0,
             weather_timer: 25.0,
+            farm_cd: std::collections::HashMap::new(),
+            crafted_iron: false,
         })
     }
 
@@ -1007,6 +1053,8 @@ impl App {
                 "KeyB" => self.build(StructureKind::Bed),
                 "KeyN" => self.build(StructureKind::Anvil),
                 "KeyH" => self.build(StructureKind::Well),
+                "KeyX" => self.build(StructureKind::Spike),
+                "KeyU" => self.build(StructureKind::FarmPlot),
                 "KeyZ" => self.try_sleep(),
                 "KeyJ" => self.swing(),
                 "KeyK" => self.shoot_arrow(),
@@ -1032,6 +1080,8 @@ impl App {
                 "Digit5" => self.select_build(4),
                 "Digit6" => self.select_build(5),
                 "Digit7" => self.select_build(6),
+                "Digit8" => self.select_build(7),
+                "Digit9" => self.select_build(8),
                 _ => {}
             }
         }
@@ -1084,8 +1134,12 @@ impl App {
         }
         match idx {
             0 => self.craft_harvest = (self.craft_harvest + 1).min(3),
-            1 => self.craft_armor = (self.craft_armor + 0.15).min(0.6),
+            1 => {
+                self.craft_armor = (self.craft_armor + 0.15).min(0.6);
+                self.crafted_iron = true;
+            }
             2 => self.salves += 3,
+            3 => self.inventory.add(ItemKind::Food, 2),
             _ => {}
         }
         true
@@ -1223,6 +1277,22 @@ impl App {
         }
         if self.open_nearest_chest() {
             return;
+        }
+        // Harvest a ready farm plot if standing next to one.
+        for s in self.structures.iter() {
+            if s.kind == StructureKind::FarmPlot {
+                let d = (self.player.x - (s.tx as f32 + 0.5))
+                    .abs()
+                    .max((self.player.y - (s.ty as f32 + 0.5)).abs());
+                if d <= CHEST_RANGE {
+                    let cd = self.farm_cd.entry((s.tx, s.ty)).or_insert(0.0);
+                    if *cd <= 0.0 {
+                        self.inventory.add(ItemKind::Food, 2);
+                        *cd = 30.0;
+                        return;
+                    }
+                }
+            }
         }
         if let Some((tx, ty, kind)) = self.nearest_resource() {
             if let Some(item) = self.nodes.chop(tx, ty, kind) {
@@ -1415,6 +1485,13 @@ impl App {
         self.ng_plus = 0;
         self.ending = None;
         self.reset_world(1337);
+        self.reset_run_state();
+    }
+
+    /// Reset transient per-run state that isn't rebuilt by `reset_world`.
+    fn reset_run_state(&mut self) {
+        self.farm_cd.clear();
+        self.crafted_iron = false;
     }
 
     // ---- Save / Load ------------------------------------------------------
@@ -1485,6 +1562,7 @@ impl App {
         }
         self.structures = s.structures.clone();
         self.opened_chests = s.opened_chests.iter().cloned().collect();
+        self.reset_run_state();
 
         self.enemies = EnemyRegistry::new();
         for (kind, x, y, hp) in &s.enemies {
@@ -1595,11 +1673,12 @@ impl App {
         self.weather_timer -= dt;
         if self.weather_timer <= 0.0 {
             let r = (self.anim_clock * 7.0 + self.time_of_day * 311.0).fract();
-            if self.weather == 1 {
+            // Clear weather ends; otherwise roll a new storm (rain or snow).
+            if self.weather != 0 {
                 self.weather = 0;
                 self.weather_timer = 25.0 + r * 20.0;
-            } else if r < 0.35 {
-                self.weather = 1;
+            } else if r < 0.30 {
+                self.weather = if r < 0.15 { 1 } else { 2 };
                 self.weather_timer = 20.0 + r * 20.0;
             } else {
                 self.weather_timer = 25.0 + r * 20.0;
@@ -1661,6 +1740,17 @@ impl App {
             if let Some((dx, dy)) = e.pending_shot.take() {
                 self.arrows.push(Arrow::enemy(e.x, e.y, dx, dy));
             }
+            // Spike traps: any enemy standing on a Spike tile takes continuous
+            // damage (the player's defensive hazard).
+            let etx = e.x.floor() as i32;
+            let ety = e.y.floor() as i32;
+            if self
+                .structures
+                .iter()
+                .any(|s| s.tx == etx && s.ty == ety && s.kind == StructureKind::Spike)
+            {
+                e.take_damage(12.0 * dt);
+            }
         }
         if let Some(dmg) = contact {
             // Iron Plate (crafted at an Anvil) reduces incoming damage.
@@ -1668,6 +1758,15 @@ impl App {
             self.player.take_damage(dmg);
         }
         self.sweep_dead();
+
+        // Farm plots regrow their crops over time.
+        const FARM_GROW: f32 = 30.0;
+        for s in self.structures.iter() {
+            if s.kind == StructureKind::FarmPlot {
+                let cd = self.farm_cd.entry((s.tx, s.ty)).or_insert(0.0);
+                *cd = (*cd - dt).max(0.0);
+            }
+        }
 
         // story beats: cheap facts from the session state
         let near_ruins = (self.player.x - (self.ruins.0 as f32 + 0.5))
@@ -1708,6 +1807,8 @@ impl App {
             self.structures
                 .iter()
                 .any(|s| s.kind == StructureKind::Campfire),
+            self.has_anvil(),
+            self.crafted_iron,
             self.slimes_killed,
             near_ruins,
             self.opened_chests.contains(&self.ruins),
@@ -1874,6 +1975,7 @@ impl App {
                 EnemyKind::Stoneslinger => 24.0,
                 EnemyKind::Colossus => 64.0,
                 EnemyKind::Brute => 30.0,
+                EnemyKind::Stormcaller => 26.0,
             };
             sprites.push(
                 Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)
@@ -2069,7 +2171,7 @@ impl App {
             let busy = self.readback_busy.clone();
             let tod = self.time_of_day;
             let aclock = self.anim_clock;
-            let raining = self.weather == 1;
+            let weather = self.weather;
             let mut enc = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -2112,7 +2214,7 @@ impl App {
                                     bytes_per_row,
                                     tod,
                                     aclock,
-                                    raining,
+                                    weather,
                                 );
                                 drop(data);
                                 *READBACK.lock().unwrap() = String::from("blitted");

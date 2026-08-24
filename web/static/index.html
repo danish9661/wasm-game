@@ -37,7 +37,7 @@
       <span class="inv-chip weather" id="hud-weather" style="display:none">🌧 Rain</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
-    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · Space dodge-roll (i-frames, costs stamina) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · L codex (bestiary) · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
+    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · Space dodge-roll (i-frames, costs stamina) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · L codex (bestiary) · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · X spike trap · U farm plot · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
     <div class="hud-row">
       <span class="inv-chip" id="fps">FPS --</span>
       <span class="inv-chip" id="spd">SPD 0.0 t/s</span>
@@ -196,7 +196,7 @@
     const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
     // ---- Audio (procedural, gesture-gated) -------------------------------
-    let actx = null, masterGain = null, sfxGain = null, musicGain = null;
+    let actx = null, masterGain = null, sfxGain = null, musicGain = null, rainGain = null;
     function ensureAudio() {
       if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
       try {
@@ -204,6 +204,16 @@
         masterGain = actx.createGain(); masterGain.connect(actx.destination);
         sfxGain = actx.createGain(); sfxGain.connect(masterGain);
         musicGain = actx.createGain(); musicGain.connect(masterGain);
+        // Ambient weather loop: looping white noise through a low-pass, gain
+        // ramped by the page based on the current weather (rain / snow / clear).
+        const noiseBuf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
+        const nd = noiseBuf.getChannelData(0);
+        for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+        const rainSrc = actx.createBufferSource(); rainSrc.buffer = noiseBuf; rainSrc.loop = true;
+        const rainFilt = actx.createBiquadFilter(); rainFilt.type = 'lowpass'; rainFilt.frequency.value = 700;
+        rainGain = actx.createGain(); rainGain.gain.value = 0;
+        rainSrc.connect(rainFilt); rainFilt.connect(rainGain); rainGain.connect(sfxGain);
+        rainSrc.start();
         applyAudio();
         startMusic();
       } catch (e) { actx = null; }
@@ -266,6 +276,14 @@
         case 'chest': tone(523, 0.10, 'sine', 0.16); tone(659, 0.10, 'sine', 0.16); tone(988, 0.18, 'sine', 0.14); break;
         case 'levelup': [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'triangle', 0.18), i * 100)); break;
         case 'enemydie': noise(0.22, 0.16, 420); tone(260, 0.22, 'square', 0.13); tone(130, 0.20, 'square', 0.12); break;
+        case 'dodge': tone(520, 0.12, 'sine', 0.10); noise(0.10, 0.06, 1800); break;
+        case 'salve': tone(700, 0.10, 'sine', 0.12); tone(900, 0.12, 'sine', 0.10); break;
+        case 'craft': tone(440, 0.08, 'square', 0.12); tone(660, 0.10, 'square', 0.12); tone(880, 0.12, 'square', 0.10); break;
+        case 'codex': tone(880, 0.08, 'sine', 0.12); tone(1175, 0.10, 'sine', 0.10); break;
+        case 'plant': tone(330, 0.08, 'triangle', 0.10); noise(0.06, 0.08, 1200); break;
+        case 'spike': noise(0.10, 0.14, 300); tone(120, 0.10, 'square', 0.12); break;
+        case 'rainstart': noise(0.5, 0.10, 600); break;
+        case 'snowstart': noise(0.6, 0.06, 1600); break;
         case 'ambient': {
           const pad1 = actx.createOscillator(); pad1.type = 'sine'; pad1.frequency.value = 110;
           const pad2 = actx.createOscillator(); pad2.type = 'sine'; pad2.frequency.value = 165;
@@ -436,7 +454,8 @@
             } else {
               el('boss-row').style.display = 'none';
             }
-            el('hud-weather').style.display = stats.rain === 1 ? 'inline-block' : 'none';
+            el('hud-weather').style.display = stats.weather !== 0 ? 'inline-block' : 'none';
+            el('hud-weather').textContent = stats.weather === 2 ? '❄ Snow' : '🌧 Rain';
 
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
@@ -515,7 +534,7 @@
               time: get(/time=(\d{2}:\d{2})/),
               boss: Number(get(/boss=(\d)/) || 0),
               colossus: Number(get(/colossus=(\d+)/) || 0),
-              rain: Number(get(/rain=(\d)/) || 0),
+              weather: Number(get(/weather=(\d)/) || 0),
               bosshp: Number(get(/bosshp=(\d+)/) || 0),
               frag: Number(get(/frag=(\d+)/) || 0),
               altar: Number(get(/altar=(\d)/) || 0),
@@ -581,7 +600,7 @@
               });
               craftEl.innerHTML = ch2;
               craftEl.querySelectorAll('.recipe').forEach((node) => {
-                node.onclick = () => { craft(Number(node.dataset.idx)); };
+                node.onclick = () => { craft(Number(node.dataset.idx)); playSfx('craft'); };
               });
             }
             buildMode = !!d.buildMode;
@@ -657,7 +676,7 @@
           });
 
           // ---- Audio event detection ------------------------------------
-          let prev = { hp: 100, atk: 0, shots: 0, boss: 0, quest: -1, alive: 1, ending: -1 };
+          let prev = { hp: 100, atk: 0, shots: 0, boss: 0, quest: -1, alive: 1, ending: -1, structures: 0, inv: 0, weather: 0 };
           function audioFromStats(stats) {
             if (actx) {
               if (stats.hp < prev.hp - 0.5) playSfx('hurt');
@@ -667,8 +686,28 @@
               if (stats.quest > prev.quest && prev.quest >= 0) playSfx('chime');
               if (stats.alive === 0 && prev.alive === 1) playSfx('death');
               if (stats.ending >= 0 && prev.ending < 0) playSfx(stats.ending === 0 ? 'victory' : 'shatter');
+              // resource gain -> harvest ping
+              const invM = get_inv_total(stats);
+              if (invM > prev.inv) playSfx('harvest');
+              // new structure placed -> build clunk
+              if (stats.structures > prev.structures) playSfx('build');
+              // weather transitions -> ambience + a soft swell
+              if (stats.weather !== prev.weather) {
+                if (stats.weather === 1) playSfx('rainstart');
+                else if (stats.weather === 2) playSfx('snowstart');
+              }
             }
-            prev = { hp: stats.hp, atk: stats.atk, shots: stats.shots, boss: stats.boss, quest: stats.quest, alive: stats.alive, ending: stats.ending };
+            // drive the looping weather bed
+            if (rainGain && actx) {
+              const target = stats.weather === 1 ? 0.10 : (stats.weather === 2 ? 0.045 : 0.0);
+              rainGain.gain.linearRampToValueAtTime(target, actx.currentTime + 0.6);
+            }
+            prev = { hp: stats.hp, atk: stats.atk, shots: stats.shots, boss: stats.boss, quest: stats.quest, alive: stats.alive, ending: stats.ending, structures: stats.structures, inv: get_inv_total(stats), weather: stats.weather };
+          }
+          function get_inv_total(stats) {
+            const inv = ('' + stats.inv).match(/w(\d+),s(\d+),f(\d+),h(\d+),g(\d+)/);
+            if (!inv) return prev.inv;
+            return (+inv[1]) + (+inv[2]) + (+inv[3]) + (+inv[4]) + (+inv[5]);
           }
 
           function frame(t) {
@@ -770,6 +809,14 @@
             if (e.code === 'KeyL') {
               e.preventDefault();
               toggleCodex();
+              if (!e.repeat) playSfx('codex');
+            }
+            if (!e.repeat) {
+              if (e.code === 'KeyC') playSfx('eat');
+              else if (e.code === 'KeyR') playSfx('salve');
+              else if (e.code === 'Space') playSfx('dodge');
+              else if (e.code === 'KeyZ') playSfx('sleep');
+              else if (e.code === 'KeyX' || e.code === 'KeyU') playSfx(e.code === 'KeyU' ? 'plant' : 'build');
             }
             // Screenshot: dump the visible #blit canvas (the live display) to a
             // downloadable PNG (and POST it to /cap if a capture server listens).

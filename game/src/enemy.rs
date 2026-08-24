@@ -44,24 +44,28 @@ pub enum EnemyKind {
     /// Brute: a hulking melee tank that winds up and charges in a straight
     /// line, dealing heavy contact damage if it connects.
     Brute,
+    /// Stormcaller: a flying storm-mage that drifts over walls and hurls
+    /// lightning from range. Combines the flying and ranged behaviours.
+    Stormcaller,
 }
 
 impl EnemyKind {
     /// True for enemies that ignore terrain/structure collision (fly straight
     /// at the player). Used to skip A* pathing.
     pub fn flying(self) -> bool {
-        matches!(self, EnemyKind::Wraith)
+        matches!(self, EnemyKind::Wraith | EnemyKind::Stormcaller)
     }
 
     /// True for enemies that fire projectiles at the player from range.
     pub fn ranged(self) -> bool {
-        matches!(self, EnemyKind::Stoneslinger)
+        matches!(self, EnemyKind::Stoneslinger | EnemyKind::Stormcaller)
     }
 
     /// Range (tiles) at which a ranged enemy will fire.
     pub fn shoot_range(self) -> f32 {
         match self {
             EnemyKind::Stoneslinger => 9.0,
+            EnemyKind::Stormcaller => 10.0,
             _ => 0.0,
         }
     }
@@ -81,6 +85,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => "Stoneslinger",
             EnemyKind::Colossus => "Colossus",
             EnemyKind::Brute => "Brute",
+            EnemyKind::Stormcaller => "Stormcaller",
         }
     }
 
@@ -99,6 +104,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => "Ranged caster; hurls rocks from afar.",
             EnemyKind::Colossus => "Boss: towering stone golem; second Crown Fragment.",
             EnemyKind::Brute => "Tank that winds up and charges in a straight line.",
+            EnemyKind::Stormcaller => "Flying storm-mage; drifts over walls and hurls lightning from afar.",
         }
     }
 
@@ -122,6 +128,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => vec![ItemKind::Gem],
             EnemyKind::Colossus => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Herb],
             EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food],
+            EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb],
         }
     }
 }
@@ -141,6 +148,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => 16.0,
             EnemyKind::Colossus => 120.0,
             EnemyKind::Brute => 50.0,
+            EnemyKind::Stormcaller => 24.0,
         }
     }
 
@@ -159,6 +167,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => 6.0,
             EnemyKind::Colossus => 16.0,
             EnemyKind::Brute => 14.0,
+            EnemyKind::Stormcaller => 9.0,
         }
     }
 
@@ -176,6 +185,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => [0.45, 0.40, 0.52],
             EnemyKind::Colossus => [0.55, 0.52, 0.50],
             EnemyKind::Brute => [0.60, 0.30, 0.25],
+            EnemyKind::Stormcaller => [0.42, 0.55, 0.86],
         }
     }
 
@@ -196,6 +206,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => (12.0, 18.0),
             EnemyKind::Colossus => (26.0, 32.0),
             EnemyKind::Brute => (20.0, 22.0),
+            EnemyKind::Stormcaller => (14.0, 18.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
@@ -210,6 +221,7 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => SpriteStyle::Stoneslinger,
             EnemyKind::Colossus => SpriteStyle::Colossus,
             EnemyKind::Brute => SpriteStyle::Brute,
+            EnemyKind::Stormcaller => SpriteStyle::Stormcaller,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
@@ -322,6 +334,7 @@ impl Enemy {
             EnemyKind::Stoneslinger => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.9, 1.0),
             EnemyKind::Colossus => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
             EnemyKind::Brute => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.8, 1.0),
+            EnemyKind::Stormcaller => (AGGRO_RANGE + 3.0, ATTACK_RANGE, ENEMY_SPEED * 1.2, 0.9),
         };
         let d = (player.0 - self.x)
             .abs()
@@ -490,6 +503,7 @@ pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
         TileKind::Stone if h.rem_euclid(83) == 0 => Some(EnemyKind::Stoneslinger),
         TileKind::Stone if h.rem_euclid(211) == 0 => Some(EnemyKind::Colossus),
         TileKind::Stone if h.rem_euclid(151) == 0 => Some(EnemyKind::Brute),
+        TileKind::Stone if h.rem_euclid(97) == 0 => Some(EnemyKind::Stormcaller),
         TileKind::Swamp if h.rem_euclid(67) == 0 => Some(EnemyKind::Wraith),
         _ => None,
     }
@@ -699,6 +713,20 @@ mod tests {
         assert!(EnemyKind::Boss.max_hp() > EnemyKind::Slime.max_hp() * 4.0);
         assert!(EnemyKind::Boss.damage() > EnemyKind::Slime.damage() * 2.0);
         assert_eq!(Enemy::new(0.5, 0.5, EnemyKind::Boss).drops(), vec![ItemKind::Fragment]);
+    }
+
+    #[test]
+    fn stormcaller_is_flying_ranged_caster() {
+        assert!(EnemyKind::Stormcaller.flying(), "stormcaller drifts over walls");
+        assert!(EnemyKind::Stormcaller.ranged(), "stormcaller fires from range");
+        assert!(EnemyKind::Stormcaller.shoot_range() > 0.0);
+        assert!(!EnemyKind::Stormcaller.is_boss());
+        assert_eq!(EnemyKind::Stormcaller.name(), "Stormcaller");
+        // it should appear somewhere on the stone peaks
+        let found = (-64..64)
+            .flat_map(|tx| (-64..64).map(move |ty| (tx, ty)))
+            .any(|(tx, ty)| spawner_on(tx, ty, TileKind::Stone) == Some(EnemyKind::Stormcaller));
+        assert!(found, "stormcaller must spawn on stone");
     }
 
     #[test]

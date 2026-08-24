@@ -34,6 +34,8 @@ pub(crate) mod torch;
 pub(crate) mod anvil;
 pub(crate) mod bed;
 pub(crate) mod well;
+pub(crate) mod spike;
+pub(crate) mod farm_plot;
 
 // Decorative props
 pub(crate) mod sign;
@@ -64,6 +66,7 @@ pub(crate) mod wraith;
 pub(crate) mod stoneslinger;
 pub(crate) mod colossus;
 pub(crate) mod brute;
+pub(crate) mod stormcaller;
 
 /// Offline tooling hook: build every element into a flat vertex buffer so a
 /// `bin` in this package can rasterize and save PNGs. Each vertex is

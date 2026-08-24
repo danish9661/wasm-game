@@ -48,6 +48,8 @@ pub enum SpriteStyle {
     Anvil,
     Bed,
     Well,
+    Spike,
+    FarmPlot,
     // ---- Decorative props (world-gen only, non-interactive) --------------
     Sign,
     Barrel,
@@ -76,6 +78,7 @@ pub enum SpriteStyle {
     Stoneslinger,
     Colossus,
     Brute,
+    Stormcaller,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -469,7 +472,7 @@ fn push_styled_sprite(
         crate_box, crystal, fence, fern, flower, goblin, grass_tuft, humanoid, hpbar, imp, lantern,
         lilypad, mushroom, ogre, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
         skeleton, slime, spider, statue, torch, totem, tree, vines, wall, well, wraith,
-        stoneslinger, colossus, brute,
+        stoneslinger, colossus, brute, stormcaller, spike, farm_plot,
     };
     match style {
         SpriteStyle::Generic => {
@@ -509,6 +512,8 @@ fn push_styled_sprite(
         SpriteStyle::Anvil => rasterize(&anvil::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Bed => rasterize(&bed::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Well => rasterize(&well::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Spike => rasterize(&spike::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::FarmPlot => rasterize(&farm_plot::build(cx, cy, color, alpha, facing, anim_time), out),
         // Decorative props
         SpriteStyle::Sign => rasterize(&sign::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Barrel => rasterize(&barrel::build(cx, cy, color, alpha, facing, anim_time), out),
@@ -530,6 +535,7 @@ fn push_styled_sprite(
         SpriteStyle::Stoneslinger => rasterize(&stoneslinger::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Colossus => rasterize(&colossus::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Brute => rasterize(&brute::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Stormcaller => rasterize(&stormcaller::build(cx, cy, color, alpha, facing, anim_time), out),
         // New decorative props
         SpriteStyle::Lantern => rasterize(&lantern::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Brazier => rasterize(&brazier::build(cx, cy, color, alpha, facing, anim_time), out),

@@ -28,6 +28,9 @@ pub enum StructureKind {
     Anvil,
     Bed,
     Well,
+    // New buildables: trap + farm
+    Spike,
+    FarmPlot,
     // Decorative (world-gen only)
     Sign,
     Barrel,
@@ -59,6 +62,8 @@ impl StructureKind {
             StructureKind::Anvil => &[(ItemKind::Stone, 4)],
             StructureKind::Bed => &[(ItemKind::Wood, 4)],
             StructureKind::Well => &[(ItemKind::Stone, 6)],
+            StructureKind::Spike => &[(ItemKind::Wood, 2), (ItemKind::Stone, 1)],
+            StructureKind::FarmPlot => &[(ItemKind::Wood, 3), (ItemKind::Stone, 2)],
             _ => &[],
         }
     }
@@ -74,6 +79,8 @@ impl StructureKind {
             StructureKind::Anvil => [0.30, 0.30, 0.34],
             StructureKind::Bed => [0.50, 0.34, 0.18],
             StructureKind::Well => [0.55, 0.53, 0.52],
+            StructureKind::Spike => [0.62, 0.64, 0.68],
+            StructureKind::FarmPlot => [0.45, 0.55, 0.30],
             StructureKind::Sign => [0.60, 0.42, 0.24],
             StructureKind::Barrel => [0.50, 0.34, 0.18],
             StructureKind::Totem => [0.50, 0.35, 0.20],
@@ -154,6 +161,8 @@ impl StructureKind {
             StructureKind::Anvil => (14.0, 12.0, 2.0),
             StructureKind::Bed => (18.0, 8.0, 1.0),
             StructureKind::Well => (16.0, 14.0, 2.0),
+            StructureKind::Spike => (16.0, 6.0, 1.0),
+            StructureKind::FarmPlot => (16.0, 8.0, 1.0),
             StructureKind::Sign => (12.0, 14.0, 1.0),
             StructureKind::Barrel => (8.0, 16.0, 1.0),
             StructureKind::Totem => (8.0, 26.0, 1.0),
@@ -181,6 +190,8 @@ impl StructureKind {
             StructureKind::Anvil => SpriteStyle::Anvil,
             StructureKind::Bed => SpriteStyle::Bed,
             StructureKind::Well => SpriteStyle::Well,
+            StructureKind::Spike => SpriteStyle::Spike,
+            StructureKind::FarmPlot => SpriteStyle::FarmPlot,
             StructureKind::Sign => SpriteStyle::Sign,
             StructureKind::Barrel => SpriteStyle::Barrel,
             StructureKind::Totem => SpriteStyle::Totem,
@@ -212,6 +223,8 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
     (StructureKind::Anvil, "N", "Anvil"),
     (StructureKind::Bed, "B", "Bed"),
     (StructureKind::Well, "H", "Well"),
+    (StructureKind::Spike, "X", "Spike Trap"),
+    (StructureKind::FarmPlot, "U", "Farm Plot"),
 ];
 
 /// Stateless decorative-prop placement: a few flavor props sprinkled on biomes
