@@ -50,6 +50,7 @@
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
   <div id="altar-prompt" class="hidden">The Crown hums in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
+  <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — open <b>Inventory (I)</b> to craft upgrades</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
   <button id="codexbtn" title="Bestiary / Codex (L)">📖</button>
@@ -500,6 +501,7 @@
 
             const atAltar = stats.altar === 1 && stats.frag > 0 && stats.ending < 0 && stats.nearaltar === 1;
             el('altar-prompt').style.display = atAltar ? 'block' : 'none';
+            el('anvil-prompt').style.display = (stats.nearAnvil === 1 && stats.alive === 1) ? 'block' : 'none';
 
             const ovEnd = el('overlay');
             if (stats.ending >= 0) {
@@ -565,6 +567,7 @@
               frag: Number(get(/frag=(\d+)/) || 0),
               altar: Number(get(/altar=(\d)/) || 0),
               nearaltar: Number(get(/nearaltar=(\d)/) || 0),
+              nearAnvil: Number(get(/nearAnvil=(\d)/) || 0),
               ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : endingStr === 'twin' ? 2 : -1,
               ng: Number(get(/ng=(\d+)/) || 0),
               seed: Number(get(/seed=(\d+)/) || 0),

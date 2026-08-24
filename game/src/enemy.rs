@@ -336,6 +336,15 @@ impl Enemy {
             EnemyKind::Brute => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.8, 1.0),
             EnemyKind::Stormcaller => (AGGRO_RANGE + 3.0, ATTACK_RANGE, ENEMY_SPEED * 1.2, 0.9),
         };
+        // Colossus enrage: below half health it speeds up and attacks faster,
+        // telegraphing a second phase so the player knows to kite harder.
+        let (speed, cooldown) = if self.kind == EnemyKind::Colossus
+            && self.hp < self.kind.max_hp() * 0.5
+        {
+            (BOSS_SPEED * 1.7, BOSS_ATTACK_COOLDOWN * 0.55)
+        } else {
+            (speed, cooldown)
+        };
         let d = (player.0 - self.x)
             .abs()
             .max((player.1 - self.y).abs());

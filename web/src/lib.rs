@@ -225,6 +225,11 @@ pub fn serialize_save() -> String {
 pub fn deserialize_save(json: &str) -> bool {
     match serde_json::from_str::<SaveState>(json) {
         Ok(s) => {
+            // Reject saves from a different format version so an old save
+            // can never silently corrupt a new build.
+            if s.version != crate::save::CURRENT_SAVE_VERSION {
+                return false;
+            }
             APP.with(|cell| {
                 if let Some(app) = cell.borrow_mut().as_mut() {
                     app.apply_save(&s);

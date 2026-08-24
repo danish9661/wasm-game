@@ -4,6 +4,10 @@ use game::items::ItemKind;
 use game::resources::ResourceKind;
 use serde::{Deserialize, Serialize};
 
+/// Bump this when `SaveState`'s layout changes. Loads from a different version
+/// are rejected so an old save can never silently corrupt a new build.
+pub const CURRENT_SAVE_VERSION: u32 = 1;
+
 #[derive(Serialize, Deserialize)]
 pub struct PlayerSave {
     pub x: f32,

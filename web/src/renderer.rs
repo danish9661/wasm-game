@@ -702,6 +702,7 @@ impl App {
             "buildMode": self.build_mode.is_some(),
             "selected": selected,
             "hasAnvil": has_anvil,
+            "nearAnvil": self.near_anvil(),
             "salves": self.salves,
             "crafts": crafts,
         })
@@ -824,7 +825,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -857,6 +858,7 @@ impl App {
             self.inventory.count(ItemKind::Fragment),
             self.altar_placed as u8,
             self.near_altar as u8,
+            self.near_anvil() as u8,
             ending_str,
             self.weather,
             self.ng_plus,
@@ -1145,6 +1147,17 @@ impl App {
     /// True if the player has built an Anvil (required to craft).
     pub fn has_anvil(&self) -> bool {
         self.structures.iter().any(|s| s.kind == StructureKind::Anvil)
+    }
+
+    /// True when the player is standing within ~1.5 tiles of an Anvil, so the
+    /// crafting-station prompt can be shown.
+    pub fn near_anvil(&self) -> bool {
+        let (px, py) = (self.player.x, self.player.y);
+        self.structures.iter().any(|s| {
+            s.kind == StructureKind::Anvil
+                && (s.tx as f32 + 0.5 - px).abs() <= 1.5
+                && (s.ty as f32 + 0.5 - py).abs() <= 1.5
+        })
     }
 
     /// Craft recipe `idx` at an Anvil. Returns false if no anvil, unaffordable,
@@ -1558,7 +1571,7 @@ impl App {
             .map(|k| (*k, self.inventory.count(*k)))
             .collect();
         crate::save::SaveState {
-            version: 1,
+            version: crate::save::CURRENT_SAVE_VERSION,
             world_seed: self.world_seed,
             player: crate::save::PlayerSave {
                 x: self.player.x,
