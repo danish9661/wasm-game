@@ -1,4 +1,4 @@
-use game::building::{decor_on, BUILDABLE, CHEST_RANGE, Structure, StructureKind, try_build};
+use game::building::{BUILDABLE, CHEST_RANGE, Structure, StructureKind, try_build};
 use game::iso::iso_to_world;
 use game::combat::{
     ARROW_DAMAGE, SWING_DAMAGE, SWING_REACH, Arrow,
@@ -11,8 +11,9 @@ use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls};
 use game::quest::QuestLog;
 use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
+use game::iso::{HALF_H, HALF_W};
 use game::resources::{NodeRegistry, ResourceKind, resource_on, HARVEST_RANGE};
-use game::world::{ChunkCache, TileKind, WorldGen, tile_at};
+use game::world::{ChunkCache, TileKind, WorldGen, tile_at, CHUNK_SIZE};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
@@ -2016,19 +2017,28 @@ impl App {
     }
 
     /// Resource nodes + structures + enemies visible in the current view.
-    /// Iterates the cached visible set (no recompute/sort here).
+    /// Resource/decor sprites come from the per-chunk cache (resolved once at
+    /// generation), so we iterate the few visible chunks instead of re-hashing
+    /// ~2400 tiles every frame.
     fn sprites(&mut self) -> Vec<Sprite> {
         let mut sprites = Vec::new();
-        for &(tx, ty) in &self.visible_cache.4 {
-            let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
-            if let Some(kind) = resource_on(tx, ty, tile) {
-                if !self.nodes.is_depleted(tx, ty) {
+        // Visible chunk range (matches the tile range used by `visible_tiles`).
+        let r = ((self.viewport[0] / HALF_W + self.viewport[1] / HALF_H) / 2.0).ceil() as i32 + 2;
+        let min_cx = ((self.camera.x as i32) - r).div_euclid(CHUNK_SIZE);
+        let max_cx = ((self.camera.x as i32) + r).div_euclid(CHUNK_SIZE);
+        let min_cy = ((self.camera.y as i32) - r).div_euclid(CHUNK_SIZE);
+        let max_cy = ((self.camera.y as i32) + r).div_euclid(CHUNK_SIZE);
+        for cx in min_cx..=max_cx {
+            for cy in min_cy..=max_cy {
+                let chunk = self.chunks.get(&self.world, cx * CHUNK_SIZE, cy * CHUNK_SIZE);
+                for &(tx, ty, kind) in &chunk.resources {
+                    if !self.nodes.is_depleted(tx, ty) {
+                        sprites.push(kind.sprite(tx, ty));
+                    }
+                }
+                for &(tx, ty, kind) in &chunk.decor {
                     sprites.push(kind.sprite(tx, ty));
                 }
-            }
-            // decorative world-gen props (non-interactive flavor)
-            if let Some(kind) = decor_on(tx, ty, tile) {
-                sprites.push(kind.sprite(tx, ty));
             }
         }
         for s in &self.structures {

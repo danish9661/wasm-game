@@ -1,6 +1,9 @@
 use noise::{Fbm, NoiseFn, Perlin};
 use std::collections::HashMap;
 
+use crate::building::{decor_on, StructureKind};
+use crate::resources::{resource_on, ResourceKind};
+
 pub const CHUNK_SIZE: i32 = 32;
 pub const RENDER_RADIUS: i32 = 4;
 
@@ -55,6 +58,11 @@ pub struct Chunk {
     pub cx: i32,
     pub cy: i32,
     pub tiles: [[Tile; CHUNK_SIZE as usize]; CHUNK_SIZE as usize],
+    /// Resource nodes present in this chunk (world coords + kind), resolved
+    /// once at generation so the per-frame sprite pass never re-hashes tiles.
+    pub resources: Vec<(i32, i32, ResourceKind)>,
+    /// Decorative props present in this chunk (world coords + kind).
+    pub decor: Vec<(i32, i32, StructureKind)>,
 }
 
 pub struct WorldGen {
@@ -152,6 +160,8 @@ impl WorldGen {
 
     pub fn generate_chunk(&self, cx: i32, cy: i32) -> Chunk {
         let mut tiles = [[Tile { kind: TileKind::DeepWater }; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
+        let mut resources = Vec::new();
+        let mut decor = Vec::new();
         for ty in 0..CHUNK_SIZE {
             for tx in 0..CHUNK_SIZE {
                 let gx = cx * CHUNK_SIZE + tx;
@@ -177,16 +187,18 @@ impl WorldGen {
                     TileKind::Sand if h.rem_euclid(37.0) == 0.0 => TileKind::Desert,
                     other => other,
                 };
-                // Rivers: where a separate low-frequency noise forms a ridge and
-                // the land is low, carve a crossable (wadeable) stream. Only
-                // cuts walkable lowlands, never deep water or high peaks.
-                if kind.walkable() && e < 0.18 && (self.river.get([wx, wy]) as f32).abs() < 0.045 {
-                    kind = TileKind::ShallowWater;
-                }
                 tiles[ty as usize][tx as usize].kind = kind;
+                // Cache resource/decor placement for this tile (deterministic,
+                // so it only needs computing once, at generation time).
+                if let Some(rk) = resource_on(gx, gy, kind) {
+                    resources.push((gx, gy, rk));
+                }
+                if let Some(dk) = decor_on(gx, gy, kind) {
+                    decor.push((gx, gy, dk));
+                }
             }
         }
-        Chunk { cx, cy, tiles }
+        Chunk { cx, cy, tiles, resources, decor }
     }
 
     fn classify(&self, elevation: f32, moisture: f32, temperature: f32) -> TileKind {
