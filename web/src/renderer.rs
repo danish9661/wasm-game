@@ -541,6 +541,9 @@ pub struct App {
     world_seed: u32,
     cur_biome: TileKind,
     chunks: ChunkCache,
+    /// Cached visible-tile list, recomputed only when the camera or viewport
+    /// changes (avoids recomputing + re-sorting ~2400 tiles 3×/frame).
+    visible_cache: (i32, i32, i32, i32, Vec<(i32, i32)>),
     player: Player,
     inventory: Inventory,
     nodes: NodeRegistry,
@@ -997,6 +1000,7 @@ impl App {
             world_seed: 1337,
             cur_biome: TileKind::Grass,
             chunks,
+            visible_cache: (i32::MIN, i32::MIN, i32::MIN, i32::MIN, Vec::new()),
             player: Player::new(px, py),
             inventory: Inventory::new(),
             nodes: NodeRegistry::new(),
@@ -1708,6 +1712,7 @@ impl App {
 
     pub fn update(&mut self, dt: f32) {
         self.frames += 1;
+        self.ensure_visible();
         self.time_of_day = (self.time_of_day + dt / DAY_LENGTH).rem_euclid(1.0);
         self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
 
@@ -1764,8 +1769,7 @@ impl App {
         }
 
         // hydrate slime spawners on swamp tiles in view, then run AI
-        let vp = (self.viewport[0], self.viewport[1]);
-        for (tx, ty) in render::visible_tiles(self.camera, vp) {
+        for &(tx, ty) in &self.visible_cache.4 {
             let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
             if let Some(kind) = spawner_on(tx, ty, tile) {
                 self.enemies.get(tx, ty, kind, dt);
@@ -1966,12 +1970,15 @@ impl App {
         let focus = render::focus_target(&self.player, (self.viewport[0], self.viewport[1]));
         let focus = (focus.0 + self.cam_lead.0, focus.1 + self.cam_lead.1);
         player::follow_camera(&mut self.camera, focus, dt);
+        self.ensure_visible();
         let sprites = self.sprites();
+        let tiles = &self.visible_cache.4;
         self.quad_count = render::build_tile_mesh(
             &self.world,
             &mut self.chunks,
             self.camera,
             (self.viewport[0], self.viewport[1]),
+            tiles,
             &sprites,
             Some(&self.player),
             &mut self.vertices,
@@ -1983,10 +1990,36 @@ impl App {
             .any(|v| v[2] == render::PLAYER_COLOR[0] && v[3] == render::PLAYER_COLOR[1] && v[4] == render::PLAYER_COLOR[2]);
     }
 
+    /// Recompute the visible-tile list only when the camera or viewport
+    /// changes; otherwise reuse the cached set (avoids sorting ~2400 tiles
+    /// multiple times per frame).
+    fn ensure_visible(&mut self) {
+        let key = (
+            self.camera.x as i32,
+            self.camera.y as i32,
+            self.viewport[0] as i32,
+            self.viewport[1] as i32,
+        );
+        if self.visible_cache.0 != key.0
+            || self.visible_cache.1 != key.1
+            || self.visible_cache.2 != key.2
+            || self.visible_cache.3 != key.3
+        {
+            self.visible_cache = (
+                key.0,
+                key.1,
+                key.2,
+                key.3,
+                render::visible_tiles(self.camera, (self.viewport[0], self.viewport[1])),
+            );
+        }
+    }
+
     /// Resource nodes + structures + enemies visible in the current view.
+    /// Iterates the cached visible set (no recompute/sort here).
     fn sprites(&mut self) -> Vec<Sprite> {
         let mut sprites = Vec::new();
-        for (tx, ty) in render::visible_tiles(self.camera, (self.viewport[0], self.viewport[1])) {
+        for &(tx, ty) in &self.visible_cache.4 {
             let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
             if let Some(kind) = resource_on(tx, ty, tile) {
                 if !self.nodes.is_depleted(tx, ty) {

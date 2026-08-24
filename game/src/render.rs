@@ -219,6 +219,7 @@ pub fn build_tile_mesh(
     cache: &mut ChunkCache,
     camera: Camera,
     viewport: (f32, f32),
+    tiles: &[(i32, i32)],
     sprites: &[Sprite],
     player: Option<&Player>,
     out: &mut Vec<f32>,
@@ -229,7 +230,7 @@ pub fn build_tile_mesh(
     let vh = viewport.1;
     let mut draws: Vec<Draw> = Vec::with_capacity(1024);
 
-    for (tx, ty) in visible_tiles(camera, viewport) {
+    for &(tx, ty) in tiles {
         let (sx, sy) = world_to_iso(tx as f32 - camera.x, ty as f32 - camera.y);
         draws.push(Draw {
             depth: (tx + ty) as f32,
@@ -601,7 +602,7 @@ mod tests {
         let world = WorldGen::new(1);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut mesh, 0.0);
+        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0);
         assert!(quads > 0);
         // find the quad whose top corner sits at world (0,0) (tile 0,0)
         let mut found = None;
@@ -628,7 +629,7 @@ mod tests {
         let world = WorldGen::new(7);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut mesh, 0.0);
+        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0);
         assert_eq!(mesh.len(), quads as usize * 6 * VERTEX_FLOATS);
         for i in (2..mesh.len()).step_by(VERTEX_FLOATS) {
             assert!((0.0..=1.0).contains(&mesh[i]), "r out of range at {i}");
@@ -689,6 +690,7 @@ mod tests {
             &mut cache,
             cam(),
             (640.0, 360.0),
+            &visible_tiles(cam(), (640.0, 360.0)),
             &[],
             Some(&player),
             &mut mesh,
@@ -698,7 +700,7 @@ mod tests {
         // hair) each drawn as bright + dark-skirt + bright = 5*3 + 1 = 16 quads
         let mut plain = Vec::new();
         let plain_quads =
-            build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[], None, &mut plain, 0.0);
+            build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut plain, 0.0);
         assert_eq!(quads, plain_quads + 16);
 
         // find the player quad (warm orange color)
@@ -753,6 +755,7 @@ mod tests {
             &mut cache,
             cam(),
             (640.0, 360.0),
+            &visible_tiles(cam(), (640.0, 360.0)),
             &[tree],
             None,
             &mut mesh,
@@ -797,6 +800,7 @@ mod tests {
             &mut cache,
             cam(),
             (640.0, 360.0),
+            &visible_tiles(cam(), (640.0, 360.0)),
             &[far],
             None,
             &mut mesh,
@@ -838,9 +842,9 @@ mod tests {
         let slime = Sprite::new(0, 0, [0.30, 0.78, 0.36], 14.0, 14.0, 2.0).with_style(SpriteStyle::Slime);
 
         let mut m0 = Vec::new();
-        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[slime], None, &mut m0, 0.0);
+        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m0, 0.0);
         let mut m1 = Vec::new();
-        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &[slime], None, &mut m1, 0.3);
+        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m1, 0.3);
 
         // slime green signature
         let is_slime = |v: &[f32]| v[2] > 0.25 && v[2] < 0.45 && v[3] > 0.7 && v[4] < 0.45;
