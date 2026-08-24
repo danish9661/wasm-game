@@ -33,6 +33,9 @@ pub struct SaveState {
     pub slimes_killed: u32,
     pub boss_killed: u32,
     pub colossus_killed: u32,
+    /// Enemy kinds seen (Bestiary / Codex), persisted so the codex survives reloads.
+    #[serde(default)]
+    pub discovered: Vec<game::enemy::EnemyKind>,
     pub boss_spawned: bool,
     pub altar_placed: bool,
     pub altar_tile: Option<(i32, i32)>,

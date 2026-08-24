@@ -63,6 +63,7 @@ pub(crate) mod ogre;
 pub(crate) mod wraith;
 pub(crate) mod stoneslinger;
 pub(crate) mod colossus;
+pub(crate) mod brute;
 
 /// Offline tooling hook: build every element into a flat vertex buffer so a
 /// `bin` in this package can rasterize and save PNGs. Each vertex is

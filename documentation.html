@@ -120,7 +120,8 @@
       <li><b>Melee</b> (<code>J</code>): a short swing arc in front of the player.</li>
       <li><b>Ranged</b> (<code>K</code>): fires an arrow in your facing direction.</li>
       <li><b>Enemy AI</b>: states of <i>idle → chase → attack → flee</i>, with melee reach and
-        (for the Stoneslinger) a ranged shot that damages the player.</li>
+        (for the Stoneslinger) a ranged shot that damages the player. The <b>Brute</b> instead
+        winds up, then charges in a straight-line dash at high speed.</li>
       <li><b>Bosses</b>: the Forest Warden and the Colossus use the same AI at larger scale and
         never respawn.</li>
     </ul>
@@ -140,7 +141,8 @@
     <ul>
       <li><b>First ending</b> — reforge the Crown after beating the Warden: <i>“The Star Crown blazes.”</i></li>
       <li><b>True ending</b> — also defeat the <b>Colossus</b> (it drops the second fragment):
-        <i>“The Twin Star Crowns blaze.”</i></li>
+        <i>“The Twin Star Crowns blaze.”</i> This ending is <b>hard-gated</b>: choosing to Reign
+        only yields the first ending unless the Colossus has actually been slain first.</li>
     </ul>
 
     <h3>Save / Load</h3>
@@ -151,6 +153,16 @@
     <h3>Minimap</h3>
     <p>A 33×33 terrain readback with markers for the player, altar, ruins, and enemies is drawn to
       a small canvas in the corner each tick.</p>
+
+    <h3>Bestiary / Codex</h3>
+    <p>Press <code>L</code> to open the Bestiary. It lists every enemy <b>kind you have defeated</b>
+      (tracked in <code>discovered</code> and saved to <code>localStorage</code>), each with its
+      HP, damage, behaviour, and drops. The HUD shows a <b>MOBS</b> count of live enemies.</p>
+
+    <h3>Weather</h3>
+    <p>Periodically the world turns to <b>rain</b> (the HUD shows a 🌧 indicator). Rain is mostly
+      atmospheric — diagonal streaks fall over the scene — but being wet slows stamina regen and
+      nudges hunger up, so keep a roof / campfire nearby during storms.</p>
 
     <h3>Controls</h3>
     <table>
@@ -228,6 +240,7 @@
     ["ogre","Ogre","Heavy bruiser with big damage.","enemy"],
     ["wraith","Wraith","Flying ghost; hard to pin down.","enemy"],
     ["stoneslinger","Stoneslinger","Ranged thrower; snipes with enemy arrows.","enemy"],
+    ["brute","Brute","Charging bruiser that winds up then dashes; found on stone.","enemy"],
     // bosses / avatar
     ["humanoid","Warden / Player","The player's sprite AND the Forest Warden boss (first fragment).","boss"],
     ["colossus","Colossus","Towering stone golem; second fragment holder (true ending).","boss"],

@@ -91,6 +91,7 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Wraith => "Wraith",
         EnemyKind::Stoneslinger => "Stoneslinger",
         EnemyKind::Colossus => "Colossus",
+        EnemyKind::Brute => "Brute",
     }
 }
 
@@ -249,7 +250,15 @@ thread_local! {
     static BLIT_CACHE: std::cell::RefCell<Option<BlitCache>> = const { std::cell::RefCell::new(None) };
 }
 
-fn blit_to_2d_canvas(data: &[u8], width: u32, height: u32, bytes_per_row: u32, tod: f32, aclock: f32) {
+fn blit_to_2d_canvas(
+    data: &[u8],
+    width: u32,
+    height: u32,
+    bytes_per_row: u32,
+    tod: f32,
+    aclock: f32,
+    raining: bool,
+) {
     let window = match web_sys::window() {
         Some(w) => w,
         None => return,
@@ -404,6 +413,24 @@ fn blit_to_2d_canvas(data: &[u8], width: u32, height: u32, bytes_per_row: u32, t
             let _ = ctx.arc(x, y, radius, 0.0, std::f64::consts::TAU);
             let _ = ctx.fill();
         }
+        // rain: diagonal streaks + a faint cold veil
+        if raining {
+            let fall = (aclock as f64 * 380.0) % h;
+            ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(170,200,230,0.35)"));
+            ctx.set_line_width(1.0);
+            let cols = 90u32;
+            for i in 0..cols {
+                let fi = i as f64;
+                let x = (((fi * 53.7 + aclock as f64 * 120.0) % w) + w) % w;
+                let y = (((fi * 29.3 + fall) % h) + h) % h;
+                ctx.begin_path();
+                ctx.move_to(x, y);
+                ctx.line_to(x - 4.0, y + 14.0);
+                ctx.stroke();
+            }
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(120,140,170,0.10)"));
+            ctx.fill_rect(0.0, 0.0, w, h);
+        }
     });
 }
 
@@ -536,6 +563,12 @@ pub struct App {
     craft_armor: f32,
     /// Healing salves crafted at an Anvil (consumed with the R key).
     salves: u32,
+    /// Enemy kinds the player has seen (for the Bestiary / Codex panel).
+    discovered: std::collections::HashSet<EnemyKind>,
+    /// Weather state: 0 = clear, 1 = rain. Drives the visual + stamina effect.
+    weather: u8,
+    /// Seconds until the weather may change again.
+    weather_timer: f32,
 }
 
 impl App {
@@ -660,6 +693,33 @@ impl App {
         .to_string()
     }
 
+    /// Bestiary / Codex: every enemy kind the player has discovered so far,
+    /// with its stats and behaviour. Returns a JSON array of objects.
+    pub fn codex(&self) -> String {
+        let mut kinds: Vec<EnemyKind> = self.discovered.iter().copied().collect();
+        kinds.sort_by_key(|k| k.name());
+        let entries: Vec<_> = kinds
+            .iter()
+            .map(|k| {
+                serde_json::json!({
+                    "name": k.name(),
+                    "boss": k.is_boss(),
+                    "flying": k.flying(),
+                    "ranged": k.ranged(),
+                    "hp": k.max_hp(),
+                    "dmg": k.damage(),
+                    "behavior": k.behavior(),
+                    "drops": k.drops().iter().map(|i| i.name()).collect::<Vec<_>>(),
+                })
+            })
+            .collect();
+        serde_json::json!({
+            "total": entries.len(),
+            "discovered": entries,
+        })
+        .to_string()
+    }
+
     /// Machine-readable game state for the JS HUD / test harness.
     pub fn stats_line(&mut self) -> String {
         let near = match self.nearest_resource() {
@@ -689,10 +749,11 @@ impl App {
             None => "none",
             Some(0) => "reign",
             Some(1) => "shatter",
+            Some(2) => "twin",
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} rain={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -726,6 +787,7 @@ impl App {
             self.altar_placed as u8,
             self.near_altar as u8,
             ending_str,
+            self.weather,
             self.ng_plus,
             boss_hp,
             self.altar_tile
@@ -915,6 +977,9 @@ impl App {
             craft_harvest: 0,
             craft_armor: 0.0,
             salves: 0,
+            discovered: std::collections::HashSet::new(),
+            weather: 0,
+            weather_timer: 25.0,
         })
     }
 
@@ -1308,6 +1373,9 @@ impl App {
         self.quest = QuestLog::new();
         self.boss_killed = 0;
         self.colossus_killed = 0;
+        self.discovered.clear();
+        self.weather = 0;
+        self.weather_timer = 25.0;
         self.boss_spawned = false;
         self.altar_placed = false;
         self.altar_tile = None;
@@ -1321,13 +1389,22 @@ impl App {
     }
 
     /// Reforge the Crown (campaign finale). `choice`: 0 = Reign (victory),
-    /// 1 = Shatter (New Game+ with a harder, reseeded world). Both start a
-    /// fresh run with `ng_plus` incremented so the HUD can show the streak.
+    /// 1 = Shatter (New Game+ with a harder, reseeded world). If the Colossus
+    /// has also been defeated, a Reign reforge becomes the **true** ending
+    /// (code 2, the Twin Star Crowns) — that is the hard gate on the second
+    /// ending. Both start a fresh run with `ng_plus` incremented.
     pub fn reforge(&mut self, choice: u8) {
         if self.ending.is_some() || self.inventory.count(ItemKind::Fragment) == 0 {
             return;
         }
-        self.ending = Some(choice % 2);
+        let ending = if choice % 2 == 1 {
+            1
+        } else if self.colossus_killed >= 1 {
+            2
+        } else {
+            0
+        };
+        self.ending = Some(ending);
         self.ng_plus += 1;
         let seed = 1338 + (self.ng_plus - 1);
         self.reset_world(seed);
@@ -1375,6 +1452,7 @@ impl App {
             slimes_killed: self.slimes_killed,
             boss_killed: self.boss_killed,
             colossus_killed: self.colossus_killed,
+            discovered: self.discovered.iter().cloned().collect(),
             boss_spawned: self.boss_spawned,
             altar_placed: self.altar_placed,
             altar_tile: self.altar_tile,
@@ -1426,6 +1504,7 @@ impl App {
         self.slimes_killed = s.slimes_killed;
         self.boss_killed = s.boss_killed;
         self.colossus_killed = s.colossus_killed;
+        self.discovered = s.discovered.iter().copied().collect();
         self.boss_spawned = s.boss_spawned;
         self.altar_placed = s.altar_placed;
         self.altar_tile = s.altar_tile;
@@ -1511,6 +1590,22 @@ impl App {
         self.time_of_day = (self.time_of_day + dt / DAY_LENGTH).rem_euclid(1.0);
         self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
 
+        // Weather: periodically reconsider rain. Storms last ~20-40s; clear
+        // spells ~25-45s. Cheap deterministic-ish roll from the clock.
+        self.weather_timer -= dt;
+        if self.weather_timer <= 0.0 {
+            let r = (self.anim_clock * 7.0 + self.time_of_day * 311.0).fract();
+            if self.weather == 1 {
+                self.weather = 0;
+                self.weather_timer = 25.0 + r * 20.0;
+            } else if r < 0.35 {
+                self.weather = 1;
+                self.weather_timer = 20.0 + r * 20.0;
+            } else {
+                self.weather_timer = 25.0 + r * 20.0;
+            }
+        }
+
         // survival: hunger/stamina/temperature. Standing near any light source
         // (campfire/torch/lantern/brazier) counts as "warm" — slower hunger
         // drain and no starvation damage.
@@ -1524,7 +1619,8 @@ impl App {
                     }
             });
         if self.player.alive {
-            self.player.tick(dt, temperature(self.time_of_day), warm);
+            let wet = self.weather == 1;
+            self.player.tick(dt, temperature(self.time_of_day), warm, wet);
             // Resting by a fire slowly mends wounds.
             if warm && self.player.hp < 100.0 {
                 self.player.hp = (self.player.hp + dt * 3.0).min(100.0);
@@ -1551,6 +1647,7 @@ impl App {
         let py = self.player.y;
         let mut contact: Option<f32> = None;
         for e in self.enemies.enemies_mut() {
+            self.discovered.insert(e.kind);
             if let Some(dmg) = e.update((px, py), dt, |tx, ty| {
                 !tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
                     || self
@@ -1776,6 +1873,7 @@ impl App {
                 EnemyKind::Wraith => 24.0,
                 EnemyKind::Stoneslinger => 24.0,
                 EnemyKind::Colossus => 64.0,
+                EnemyKind::Brute => 30.0,
             };
             sprites.push(
                 Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)
@@ -1971,6 +2069,7 @@ impl App {
             let busy = self.readback_busy.clone();
             let tod = self.time_of_day;
             let aclock = self.anim_clock;
+            let raining = self.weather == 1;
             let mut enc = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -2013,6 +2112,7 @@ impl App {
                                     bytes_per_row,
                                     tod,
                                     aclock,
+                                    raining,
                                 );
                                 drop(data);
                                 *READBACK.lock().unwrap() = String::from("blitted");

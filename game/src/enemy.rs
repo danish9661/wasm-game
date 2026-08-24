@@ -21,7 +21,7 @@ pub const BOSS_ATTACK_RANGE: f32 = 1.9;
 /// Boss attack cooldown (seconds).
 pub const BOSS_ATTACK_COOLDOWN: f32 = 1.5;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EnemyKind {
     Slime,
     /// Forest Warden: the first Crown Fragment guardian (Chapter 3 boss).
@@ -41,6 +41,9 @@ pub enum EnemyKind {
     /// Colossus: a second Crown Fragment guardian — a towering stone golem
     /// that awakens in the Stone peaks.
     Colossus,
+    /// Brute: a hulking melee tank that winds up and charges in a straight
+    /// line, dealing heavy contact damage if it connects.
+    Brute,
 }
 
 impl EnemyKind {
@@ -62,6 +65,65 @@ impl EnemyKind {
             _ => 0.0,
         }
     }
+
+    /// Display name for the Bestiary / Codex.
+    pub fn name(self) -> &'static str {
+        match self {
+            EnemyKind::Slime => "Slime",
+            EnemyKind::Boss => "Forest Warden",
+            EnemyKind::Skeleton => "Skeleton",
+            EnemyKind::Goblin => "Goblin",
+            EnemyKind::Bat => "Bat",
+            EnemyKind::Spider => "Spider",
+            EnemyKind::Imp => "Imp",
+            EnemyKind::Ogre => "Ogre",
+            EnemyKind::Wraith => "Wraith",
+            EnemyKind::Stoneslinger => "Stoneslinger",
+            EnemyKind::Colossus => "Colossus",
+            EnemyKind::Brute => "Brute",
+        }
+    }
+
+    /// One-line behaviour description for the Bestiary / Codex.
+    pub fn behavior(self) -> &'static str {
+        match self {
+            EnemyKind::Slime => "Slow melee; the first thing between you and the ruins.",
+            EnemyKind::Boss => "Boss: wide reach, high hp. Guards the first Crown Fragment.",
+            EnemyKind::Skeleton => "Steady melee undead of forest and ruins.",
+            EnemyKind::Goblin => "Quick melee ambusher.",
+            EnemyKind::Bat => "Fast flyer; weak but hard to pin down.",
+            EnemyKind::Spider => "Swift melee lurker.",
+            EnemyKind::Imp => "Tiny, very fast melee swarmer.",
+            EnemyKind::Ogre => "Slow, heavily-armored bruiser with big hits.",
+            EnemyKind::Wraith => "Flying spirit that drifts straight through walls.",
+            EnemyKind::Stoneslinger => "Ranged caster; hurls rocks from afar.",
+            EnemyKind::Colossus => "Boss: towering stone golem; second Crown Fragment.",
+            EnemyKind::Brute => "Tank that winds up and charges in a straight line.",
+        }
+    }
+
+    /// True for the two Crown Fragment guardians (never respawn).
+    pub fn is_boss(self) -> bool {
+        matches!(self, EnemyKind::Boss | EnemyKind::Colossus)
+    }
+
+    /// What this enemy drops on death (used by the Bestiary / Codex too).
+    pub fn drops(self) -> Vec<ItemKind> {
+        match self {
+            EnemyKind::Slime => vec![ItemKind::Food],
+            EnemyKind::Boss => vec![ItemKind::Fragment],
+            EnemyKind::Skeleton => vec![ItemKind::Food],
+            EnemyKind::Goblin => vec![ItemKind::Food],
+            EnemyKind::Bat => vec![ItemKind::Food],
+            EnemyKind::Spider => vec![ItemKind::Herb],
+            EnemyKind::Imp => vec![ItemKind::Food],
+            EnemyKind::Ogre => vec![ItemKind::Gem],
+            EnemyKind::Wraith => vec![ItemKind::Herb],
+            EnemyKind::Stoneslinger => vec![ItemKind::Gem],
+            EnemyKind::Colossus => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Herb],
+            EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food],
+        }
+    }
 }
 
 impl EnemyKind {
@@ -78,6 +140,7 @@ impl EnemyKind {
             EnemyKind::Wraith => 10.0,
             EnemyKind::Stoneslinger => 16.0,
             EnemyKind::Colossus => 120.0,
+            EnemyKind::Brute => 50.0,
         }
     }
 
@@ -95,6 +158,7 @@ impl EnemyKind {
             EnemyKind::Wraith => 5.0,
             EnemyKind::Stoneslinger => 6.0,
             EnemyKind::Colossus => 16.0,
+            EnemyKind::Brute => 14.0,
         }
     }
 
@@ -111,6 +175,7 @@ impl EnemyKind {
             EnemyKind::Wraith => [0.62, 0.45, 0.86],
             EnemyKind::Stoneslinger => [0.45, 0.40, 0.52],
             EnemyKind::Colossus => [0.55, 0.52, 0.50],
+            EnemyKind::Brute => [0.60, 0.30, 0.25],
         }
     }
 
@@ -130,6 +195,7 @@ impl EnemyKind {
             EnemyKind::Wraith => (12.0, 17.0),
             EnemyKind::Stoneslinger => (12.0, 18.0),
             EnemyKind::Colossus => (26.0, 32.0),
+            EnemyKind::Brute => (20.0, 22.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
@@ -143,6 +209,7 @@ impl EnemyKind {
             EnemyKind::Wraith => SpriteStyle::Wraith,
             EnemyKind::Stoneslinger => SpriteStyle::Stoneslinger,
             EnemyKind::Colossus => SpriteStyle::Colossus,
+            EnemyKind::Brute => SpriteStyle::Brute,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
@@ -176,6 +243,10 @@ pub struct Enemy {
     wander: f32,
     /// Seconds until this enemy may fire again (ranged kinds only).
     shoot_timer: f32,
+    /// Brute only: seconds left in the current charge dash (0 = not charging).
+    charge_t: f32,
+    /// Brute only: cooldown until the next charge can start.
+    charge_cd: f32,
     /// Set during `update` when the enemy fires: a unit direction toward the
     /// player. The caller (renderer) turns this into an enemy arrow.
     pub pending_shot: Option<(f32, f32)>,
@@ -196,6 +267,8 @@ impl Enemy {
             path: Vec::new(),
             wander: 0.0,
             shoot_timer: 0.0,
+            charge_t: 0.0,
+            charge_cd: 0.0,
             pending_shot: None,
         }
     }
@@ -218,19 +291,7 @@ impl Enemy {
 
     /// Drops from a dead enemy.
     pub fn drops(&self) -> Vec<ItemKind> {
-        match self.kind {
-            EnemyKind::Slime => vec![ItemKind::Food],
-            EnemyKind::Boss => vec![ItemKind::Fragment],
-            EnemyKind::Skeleton => vec![ItemKind::Food],
-            EnemyKind::Goblin => vec![ItemKind::Food],
-            EnemyKind::Bat => vec![ItemKind::Food],
-            EnemyKind::Spider => vec![ItemKind::Herb],
-            EnemyKind::Imp => vec![ItemKind::Food],
-            EnemyKind::Ogre => vec![ItemKind::Gem],
-            EnemyKind::Wraith => vec![ItemKind::Herb],
-            EnemyKind::Stoneslinger => vec![ItemKind::Gem],
-            EnemyKind::Colossus => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Herb],
-        }
+        self.kind.drops()
     }
 
     /// One AI tick. `player` is the target; `is_blocked` mirrors player
@@ -245,6 +306,8 @@ impl Enemy {
         self.attack_timer = (self.attack_timer - dt).max(0.0);
         self.flash = (self.flash - dt * 5.0).max(0.0);
         self.shoot_timer = (self.shoot_timer - dt).max(0.0);
+        self.charge_t = (self.charge_t - dt).max(0.0);
+        self.charge_cd = (self.charge_cd - dt).max(0.0);
         self.pending_shot = None;
         let (aggro, atk_range, speed, cooldown) = match self.kind {
             EnemyKind::Slime => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED, 0.8),
@@ -258,6 +321,7 @@ impl Enemy {
             EnemyKind::Wraith => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.3, 0.7),
             EnemyKind::Stoneslinger => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.9, 1.0),
             EnemyKind::Colossus => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
+            EnemyKind::Brute => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.8, 1.0),
         };
         let d = (player.0 - self.x)
             .abs()
@@ -275,6 +339,20 @@ impl Enemy {
 
         if d <= aggro {
             self.state = AiState::Chase;
+            // Brute: wind up, then dash in a straight line toward the player.
+            if self.kind == EnemyKind::Brute {
+                if self.charge_t > 0.0 {
+                    // mid-charge: locked direction, fast dash (ignores pathing)
+                    self.x += self.facing.0 * speed * 3.2 * dt;
+                    self.y += self.facing.1 * speed * 3.2 * dt;
+                    return None;
+                } else if d > atk_range * 1.6 && self.charge_cd <= 0.0 {
+                    self.facing = normalize(player.0 - self.x, player.1 - self.y);
+                    self.charge_t = 0.45;
+                    self.charge_cd = 2.5;
+                    return None;
+                }
+            }
             // Ranged enemies fire a projectile when the player is in range.
             if self.kind.ranged() && d <= self.kind.shoot_range() && self.shoot_timer <= 0.0 {
                 let (dx, dy) = normalize(player.0 - self.x, player.1 - self.y);
@@ -411,6 +489,7 @@ pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
         TileKind::Stone if h.rem_euclid(73) == 0 => Some(EnemyKind::Wraith),
         TileKind::Stone if h.rem_euclid(83) == 0 => Some(EnemyKind::Stoneslinger),
         TileKind::Stone if h.rem_euclid(211) == 0 => Some(EnemyKind::Colossus),
+        TileKind::Stone if h.rem_euclid(151) == 0 => Some(EnemyKind::Brute),
         TileKind::Swamp if h.rem_euclid(67) == 0 => Some(EnemyKind::Wraith),
         _ => None,
     }
@@ -696,5 +775,27 @@ mod tests {
         assert!(p.stamina < 100.0, "dodge costs stamina");
         // immediately dodging again is blocked by cooldown
         assert!(!p.try_dodge((0.0, 1.0)), "cooldown blocks back-to-back dodges");
+    }
+
+    #[test]
+    fn brute_winds_up_then_charges() {
+        let (w, mut c) = world();
+        let mut e = Enemy::new(5.5, 5.5, EnemyKind::Brute);
+        let mut blocked = blocked(&w, &mut c);
+        // far enough to be in aggro but outside melee; first tick should arm a charge
+        e.update((9.5, 5.5), 0.05, &mut blocked);
+        assert!(e.charge_t > 0.0, "brute should begin a charge when in range");
+        // during the charge it dashes straight toward the player
+        let before = (e.x, e.y);
+        e.update((9.5, 5.5), 0.05, &mut blocked);
+        assert!((e.x - before.0).abs() > 0.05, "brute should lunge during the charge");
+    }
+
+    #[test]
+    fn enemy_kind_metadata_for_codex() {
+        assert_eq!(EnemyKind::Brute.name(), "Brute");
+        assert!(EnemyKind::Colossus.is_boss());
+        assert!(!EnemyKind::Slime.is_boss());
+        assert!(!EnemyKind::Brute.behavior().is_empty());
     }
 }

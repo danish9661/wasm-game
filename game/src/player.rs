@@ -130,13 +130,18 @@ impl Player {
     /// night), stamina regenerates, starving costs hp, hurt timer ticks down.
     /// `warm` (sheltered by a campfire/lantern/brazier) slows the drain and
     /// stops starvation damage — the light/warmth loop the world hints at.
+    /// `wet` (raining) halves stamina regen and makes the cold bite a little
+    /// harder, so you want shelter when the storm rolls in.
     /// Base drain ≈ 9 hunger/minute, so a full bar lasts ~11 minutes.
-    pub fn tick(&mut self, dt: f32, temperature: f32, warm: bool) {
+    pub fn tick(&mut self, dt: f32, temperature: f32, warm: bool, wet: bool) {
         self.hurt_timer = (self.hurt_timer - dt).max(0.0);
         self.dodge_timer = (self.dodge_timer - dt).max(0.0);
         self.dodge_cd = (self.dodge_cd - dt).max(0.0);
         let cold = ((temperature).min(0.0) / -10.0).max(0.0);
-        let drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
+        let mut drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
+        if wet {
+            drain += 0.04;
+        }
         self.hunger = (self.hunger - dt * drain).max(0.0);
         if self.hunger <= 0.0 && !warm {
             self.hp = (self.hp - dt * 2.0).max(0.0);
@@ -144,7 +149,8 @@ impl Player {
                 self.alive = false;
             }
         }
-        self.stamina = (self.stamina + dt * 12.0).min(MAX_STAMINA);
+        let regen = if wet { 6.0 } else { 12.0 };
+        self.stamina = (self.stamina + dt * regen).min(MAX_STAMINA);
     }
 }
 

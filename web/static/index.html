@@ -34,9 +34,10 @@
       <span class="inv-chip inv-frag" id="inv-frag" style="display:none">🩱 0</span>
       <span class="inv-chip" id="hud-coords">@ 0,0</span>
       <span class="inv-chip" id="hud-mobs">MOBS 0</span>
+      <span class="inv-chip weather" id="hud-weather" style="display:none">🌧 Rain</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
-    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · Space dodge-roll (i-frames, costs stamina) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
+    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · Space dodge-roll (i-frames, costs stamina) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · L codex (bestiary) · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
     <div class="hud-row">
       <span class="inv-chip" id="fps">FPS --</span>
       <span class="inv-chip" id="spd">SPD 0.0 t/s</span>
@@ -49,6 +50,7 @@
   <div id="altar-prompt" class="hidden">The Crown hums in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
+  <button id="codexbtn" title="Bestiary / Codex (L)">📖</button>
   <button id="help" title="Controls &amp; help">?</button>
   <button id="gear" title="Settings (Esc)">⚙</button>
 
@@ -96,6 +98,7 @@
       <button class="tbtn act" data-key="KeyZ">💤</button>
       <button class="tbtn act" data-key="KeyQ">🔨</button>
       <button class="tbtn act" data-key="KeyI">🎒</button>
+      <button class="tbtn act" data-key="KeyL">📖</button>
       <button class="tbtn act" data-key="KeyP">📷</button>
     </div>
     <div id="touch-build" class="hidden">BUILD MODE — tap ground to place · 🔨 to exit</div>
@@ -130,6 +133,16 @@
       <div class="menu-btns">
         <button id="btn-save" class="menu-btn">Save Game</button>
         <button id="btn-resume" class="menu-btn">Resume</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="codex" class="overlay hidden">
+    <div id="overlay-box">
+      <h2>BESTIARY</h2>
+      <div class="codex-body"></div>
+      <div class="menu-btns">
+        <button id="codex-close" class="menu-btn">Close (L)</button>
       </div>
     </div>
   </div>
@@ -423,6 +436,7 @@
             } else {
               el('boss-row').style.display = 'none';
             }
+            el('hud-weather').style.display = stats.rain === 1 ? 'inline-block' : 'none';
 
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
@@ -446,11 +460,13 @@
             if (stats.ending >= 0) {
               if (!ovEnd.classList.contains('ending') || el('overlay-sub').dataset.ng !== String(stats.ng)) {
                 ovEnd.className = 'ending';
-                el('overlay-title').textContent = stats.ending === 0
-                  ? (stats.colossus >= 1 ? 'THE TWIN STAR CROWNS BLAZE' : 'THE STAR CROWN IS REFORGED')
+                el('overlay-title').textContent =
+                  stats.ending === 2 ? 'THE TWIN STAR CROWNS BLAZE'
+                  : stats.ending === 0 ? 'THE STAR CROWN IS REFORGED'
                   : 'THE CROWN SHATTERS';
-                el('overlay-sub').textContent = (stats.ending === 0
-                  ? (stats.colossus >= 1 ? 'You healed the world completely — both Crowns reign.' : 'You reign over a healed world.')
+                el('overlay-sub').textContent = (stats.ending === 2
+                  ? 'You healed the world completely — both Crowns reign.'
+                  : stats.ending === 0 ? 'You reign over a healed world.'
                   : 'You free the trapped souls — and begin anew.')
                   + ` New Game+ ${stats.ng} begins.`;
                 el('overlay-sub').dataset.ng = String(stats.ng);
@@ -499,11 +515,12 @@
               time: get(/time=(\d{2}:\d{2})/),
               boss: Number(get(/boss=(\d)/) || 0),
               colossus: Number(get(/colossus=(\d+)/) || 0),
+              rain: Number(get(/rain=(\d)/) || 0),
               bosshp: Number(get(/bosshp=(\d+)/) || 0),
               frag: Number(get(/frag=(\d+)/) || 0),
               altar: Number(get(/altar=(\d)/) || 0),
               nearaltar: Number(get(/nearaltar=(\d)/) || 0),
-              ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : -1,
+              ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : endingStr === 'twin' ? 2 : -1,
               ng: Number(get(/ng=(\d+)/) || 0),
               atk: Number(get(/atk=(\d+)/) || 0),
               shots: Number(get(/shots=(\d+)/) || 0),
@@ -585,6 +602,42 @@
             invEl.classList.toggle('hidden', !invOpen);
           };
           el('invbtn').onclick = toggleInventory;
+
+          const codexEl = el('codex');
+          let codexOpen = false;
+          const renderCodex = () => {
+            const raw = get_codex();
+            let data;
+            try { data = JSON.parse(raw); } catch { data = { total: 0, discovered: [] }; }
+            if (!data.discovered) data.discovered = [];
+            let html = `<div class="codex-head">Bestiary — ${data.total} discovered</div>`;
+            if (data.total === 0) {
+              html += '<div class="codex-note">Defeat enemies to fill your codex.</div>';
+            } else {
+              html += '<div class="codex-grid">';
+              data.discovered.forEach((e) => {
+                const tags = [];
+                if (e.boss) tags.push('<span class="tag boss">BOSS</span>');
+                if (e.flying) tags.push('<span class="tag">flying</span>');
+                if (e.ranged) tags.push('<span class="tag">ranged</span>');
+                html += `<div class="codex-card">
+                  <div class="ck-name">${e.name} ${tags.join(' ')}</div>
+                  <div class="ck-stats">HP ${e.hp} · DMG ${e.dmg}</div>
+                  <div class="ck-beh">${e.behavior}</div>
+                  <div class="ck-drops">Drops: ${e.drops.join(', ')}</div>
+                </div>`;
+              });
+              html += '</div>';
+            }
+            codexEl.querySelector('.codex-body').innerHTML = html;
+          };
+          const toggleCodex = () => {
+            codexOpen = !codexOpen;
+            codexEl.classList.toggle('hidden', !codexOpen);
+            if (codexOpen) renderCodex();
+          };
+          el('codexbtn').onclick = toggleCodex;
+          el('codex-close').onclick = toggleCodex;
 
           // ---- Build ghost: mouse position → world tile -------------------
           const blitCanvas = document.getElementById('blit');
@@ -713,6 +766,10 @@
             if (e.code === 'KeyI') {
               e.preventDefault();
               toggleInventory();
+            }
+            if (e.code === 'KeyL') {
+              e.preventDefault();
+              toggleCodex();
             }
             // Screenshot: dump the visible #blit canvas (the live display) to a
             // downloadable PNG (and POST it to /cap if a capture server listens).

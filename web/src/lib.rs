@@ -169,6 +169,15 @@ pub fn get_minimap() -> String {
     })
 }
 
+/// Bestiary / Codex JSON: discovered enemies with stats + behaviour.
+#[wasm_bindgen]
+pub fn get_codex() -> String {
+    APP.with(|cell| match cell.borrow().as_ref() {
+        Some(app) => app.codex(),
+        None => String::from("{}"),
+    })
+}
+
 /// Ask the renderer to grab a screenshot on its next frame (readback + #blit).
 #[wasm_bindgen]
 pub fn capture() {

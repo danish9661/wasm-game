@@ -464,6 +464,35 @@ html, body {
 }
 #invbtn:hover, #invbtn.active { border-color: #f2d77a; background: rgba(40, 56, 84, 0.9); }
 
+#codexbtn {
+  position: fixed;
+  top: 12px;
+  right: 138px;
+  z-index: 19;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  color: #e8edf3;
+  background: rgba(10, 16, 28, 0.8);
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+#codexbtn:hover, #codexbtn.active { border-color: #f2d77a; background: rgba(40, 56, 84, 0.9); }
+
+span.weather { background: rgba(40, 70, 110, 0.85); color: #cfe2f5; border-color: rgba(150,190,230,0.5); }
+
+.codex-head { font-size: 15px; color: #f2d77a; margin-bottom: 10px; }
+.codex-note { color: #aab6c6; font-style: italic; }
+.codex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 60vh; overflow-y: auto; }
+.codex-card { background: rgba(20, 30, 48, 0.85); border: 1px solid rgba(160, 180, 205, 0.3); border-radius: 6px; padding: 8px 10px; }
+.ck-name { font-weight: 600; color: #e8edf3; margin-bottom: 4px; }
+.ck-stats { color: #f2d77a; font-size: 13px; margin-bottom: 3px; }
+.ck-beh { color: #c5d0dd; font-size: 12px; line-height: 1.35; margin-bottom: 4px; }
+.ck-drops { color: #9fb0c4; font-size: 12px; }
+.codex-card .tag { font-size: 10px; padding: 1px 5px; border-radius: 4px; background: rgba(120,140,170,0.35); color: #dfe7f0; margin-left: 4px; }
+.codex-card .tag.boss { background: rgba(180, 60, 60, 0.4); color: #ffd9d9; }
+
 #inventory {
   position: fixed;
   top: 56px;
