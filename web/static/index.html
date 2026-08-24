@@ -36,6 +36,7 @@
       <span class="inv-chip" id="hud-mobs">MOBS 0</span>
       <span class="inv-chip weather" id="hud-weather" style="display:none">🌧 Rain</span>
       <span class="inv-chip seed" id="hud-seed" style="display:none">🌱 Seed</span>
+      <span class="inv-chip biome" id="hud-biome" style="display:none">🌍 Biome</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
     <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · Space dodge-roll (i-frames, costs stamina) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · L codex (bestiary) · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · X spike trap · U farm plot · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
@@ -172,6 +173,7 @@
   <div id="buildhint" class="hidden"></div>
 
   <canvas id="minimap" width="132" height="132" title="Minimap (M to toggle)"></canvas>
+  <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
     import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
@@ -478,6 +480,8 @@
             el('hud-weather').textContent = stats.weather === 2 ? '❄ Snow' : '🌧 Rain';
             el('hud-seed').style.display = 'inline-block';
             el('hud-seed').textContent = '🌱 ' + stats.seed;
+            el('hud-biome').style.display = 'inline-block';
+            el('hud-biome').textContent = '🌍 ' + stats.biome.replace(/([A-Z])/g, ' $1').trim();
 
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
@@ -564,6 +568,7 @@
               ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : endingStr === 'twin' ? 2 : -1,
               ng: Number(get(/ng=(\d+)/) || 0),
               seed: Number(get(/seed=(\d+)/) || 0),
+              biome: get(/biome=(\w+)/) || 'Grass',
               atk: Number(get(/atk=(\d+)/) || 0),
               shots: Number(get(/shots=(\d+)/) || 0),
               px: Number((String(raw).match(/player=\(([\d.-]+),/) || [])[1] || 0),
@@ -934,6 +939,20 @@
             mmCtx.beginPath();
             mmCtx.arc(cx, cy, 2.6, 0, 7);
             mmCtx.fill();
+            // Biome legend key below the canvas.
+            const leg = el('mm-legend');
+            if (leg && d.legend) {
+              leg.innerHTML = d.legend
+                .map((b) => {
+                  const r = (b.color >> 16) & 255, g = (b.color >> 8) & 255, bl = b.color & 255;
+                  return (
+                    '<span class="leg"><i style="background:rgb(' +
+                    r + ',' + g + ',' + bl + ')"></i>' +
+                    b.name.replace(/([A-Z])/g, ' $1').trim() + '</span>'
+                  );
+                })
+                .join('');
+            }
           }
           setInterval(drawMinimap, 400);
 

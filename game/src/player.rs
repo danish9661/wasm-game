@@ -1,5 +1,5 @@
 use crate::items::{Inventory, ItemKind};
-use crate::world::{ChunkCache, WorldGen, tile_at};
+use crate::world::{ChunkCache, TileKind, WorldGen, tile_at};
 
 /// Tiles per second when walking (screen-up is (-1,-1) in world coords).
 pub const PLAYER_SPEED: f32 = 8.0;
@@ -133,14 +133,20 @@ impl Player {
     /// `wet` (raining) halves stamina regen and makes the cold bite a little
     /// harder, so you want shelter when the storm rolls in.
     /// Base drain ≈ 9 hunger/minute, so a full bar lasts ~11 minutes.
-    pub fn tick(&mut self, dt: f32, temperature: f32, warm: bool, wet: bool) {
+    /// `biome` is the tile under the player; the harsh Tundra/Desert biomes
+    /// drain hunger faster and regenerate stamina slower (exposure).
+    pub fn tick(&mut self, dt: f32, temperature: f32, warm: bool, wet: bool, biome: TileKind) {
         self.hurt_timer = (self.hurt_timer - dt).max(0.0);
         self.dodge_timer = (self.dodge_timer - dt).max(0.0);
         self.dodge_cd = (self.dodge_cd - dt).max(0.0);
         let cold = ((temperature).min(0.0) / -10.0).max(0.0);
+        let harsh = matches!(biome, TileKind::Tundra | TileKind::Desert);
         let mut drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
         if wet {
             drain += 0.04;
+        }
+        if harsh {
+            drain += 0.12;
         }
         self.hunger = (self.hunger - dt * drain).max(0.0);
         if self.hunger <= 0.0 && !warm {
@@ -149,7 +155,10 @@ impl Player {
                 self.alive = false;
             }
         }
-        let regen = if wet { 6.0 } else { 12.0 };
+        let mut regen = if wet { 6.0 } else { 12.0 };
+        if harsh {
+            regen *= 0.6;
+        }
         self.stamina = (self.stamina + dt * regen).min(MAX_STAMINA);
     }
 }
@@ -186,6 +195,7 @@ pub fn move_player(
     player: &mut Player,
     dir: (f32, f32),
     dt: f32,
+    speed_mul: f32,
     mut is_blocked: impl FnMut(i32, i32) -> bool,
 ) {
     let len = (dir.0 * dir.0 + dir.1 * dir.1).sqrt();
@@ -193,7 +203,9 @@ pub fn move_player(
         return;
     }
     let (dx, dy) = (dir.0 / len, dir.1 / len);
-    let step = PLAYER_SPEED * dt;
+    // `speed_mul` lets the caller slow the player on rough terrain (snow,
+    // swamp) without the per-tile logic living in the movement primitive.
+    let step = PLAYER_SPEED * dt * speed_mul;
     player.facing = (dx, dy);
 
     let (px, py) = (player.x.floor() as i32, player.y.floor() as i32);
@@ -253,7 +265,7 @@ mod tests {
     #[test]
     fn moves_along_input_dir() {
         let mut p = Player::new(0.0, 0.0);
-        move_player(&mut p, (0.0, 1.0), 0.5, |_, _| false);
+        move_player(&mut p, (0.0, 1.0), 0.5, 1.0, |_, _| false);
         assert!((p.x - 0.0).abs() < 0.001);
         assert!((p.y - PLAYER_SPEED * 0.5).abs() < 0.001);
     }
@@ -261,7 +273,7 @@ mod tests {
     #[test]
     fn diagonal_is_not_faster() {
         let mut p = Player::new(0.0, 0.0);
-        move_player(&mut p, (1.0, 1.0), 0.5, |_, _| false);
+        move_player(&mut p, (1.0, 1.0), 0.5, 1.0, |_, _| false);
         let per_axis = PLAYER_SPEED * 0.5 / 2.0_f32.sqrt();
         assert!((p.x - per_axis).abs() < 0.001);
         assert!((p.y - per_axis).abs() < 0.001);
@@ -271,7 +283,7 @@ mod tests {
     fn blocked_axis_rolls_back_and_other_slides() {
         let mut p = Player::new(0.0, 0.0);
         // block the column x=1 only: moving down-right slides along the wall
-        move_player(&mut p, (1.0, 1.0), 0.5, |tx, _| tx >= 1);
+        move_player(&mut p, (1.0, 1.0), 0.5, 1.0, |tx, _| tx >= 1);
         assert!((p.x - 0.0).abs() < 0.001, "x must be blocked");
         assert!(
             (p.y - PLAYER_SPEED * 0.5 / 2.0_f32.sqrt()).abs() < 0.001,
@@ -282,7 +294,7 @@ mod tests {
     #[test]
     fn blocked_axis_rolls_back() {
         let mut p = Player::new(0.0, 0.0);
-        move_player(&mut p, (1.0, 0.0), 0.5, |tx, _| tx >= 1);
+        move_player(&mut p, (1.0, 0.0), 0.5, 1.0, |tx, _| tx >= 1);
         assert!((p.x - 0.0).abs() < 0.001);
         assert!((p.y - 0.0).abs() < 0.001);
     }
@@ -291,7 +303,7 @@ mod tests {
     fn can_walk_out_of_a_blocked_tile() {
         // player standing inside tile (1,0) whose own tile is blocked
         let mut p = Player::new(1.5, 0.5);
-        move_player(&mut p, (1.0, 0.0), 0.5, |tx, _| tx == 1);
+        move_player(&mut p, (1.0, 0.0), 0.5, 1.0, |tx, _| tx == 1);
         assert!((p.x - 1.5 - PLAYER_SPEED * 0.5).abs() < 0.001, "must leave the blocked tile");
         assert!((p.y - 0.5).abs() < 0.001);
     }
@@ -299,7 +311,7 @@ mod tests {
     #[test]
     fn cannot_cross_into_a_blocked_tile() {
         let mut p = Player::new(0.6, 0.5);
-        move_player(&mut p, (1.0, 0.0), 0.05, |tx, _| tx == 1);
+        move_player(&mut p, (1.0, 0.0), 0.05, 1.0, |tx, _| tx == 1);
         assert!((p.x - 0.6).abs() < 0.001, "must not enter the blocked tile");
     }
 

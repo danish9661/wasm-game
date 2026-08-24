@@ -539,6 +539,7 @@ pub struct App {
     keys: [bool; 4],
     world: WorldGen,
     world_seed: u32,
+    cur_biome: TileKind,
     chunks: ChunkCache,
     player: Player,
     inventory: Inventory,
@@ -727,12 +728,34 @@ impl App {
             .iter()
             .map(|s| (s.tx, s.ty, struct_name(s.kind)))
             .collect();
+        // Biome legend: name + packed RGB, so the HUD can draw a key.
+        let legend: Vec<serde_json::Value> = [
+            TileKind::DeepWater,
+            TileKind::Water,
+            TileKind::ShallowWater,
+            TileKind::Sand,
+            TileKind::Grass,
+            TileKind::Forest,
+            TileKind::Swamp,
+            TileKind::Snow,
+            TileKind::Stone,
+            TileKind::Tundra,
+            TileKind::Desert,
+        ]
+        .iter()
+        .map(|k| {
+            let c = k.color();
+            let rgb = ((c[0] * 255.0) as u32) << 16 | ((c[1] * 255.0) as u32) << 8 | ((c[2] * 255.0) as u32);
+            serde_json::json!({ "name": format!("{:?}", k), "color": rgb })
+        })
+        .collect();
         serde_json::json!({
             "n": N,
             "cells": cells,
             "player": [self.player.x, self.player.y],
             "enemies": enemies,
             "structs": structs,
+            "legend": legend,
         })
         .to_string()
     }
@@ -797,7 +820,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} weather={} ng={} seed={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -834,6 +857,7 @@ impl App {
             self.weather,
             self.ng_plus,
             self.world_seed,
+            self.cur_biome,
             boss_hp,
             self.altar_tile
                 .map(|(ax, ay)| format!("({ax},{ay})"))
@@ -971,6 +995,7 @@ impl App {
             keys: [false; 4],
             world,
             world_seed: 1337,
+            cur_biome: TileKind::Grass,
             chunks,
             player: Player::new(px, py),
             inventory: Inventory::new(),
@@ -1715,9 +1740,15 @@ impl App {
                         dx * dx + dy * dy < 2.5 * 2.5
                     }
             });
+        // Tile under the player drives biome-specific survival + movement.
+        let ptx = self.player.x.floor() as i32;
+        let pty = self.player.y.floor() as i32;
+        let biome = tile_at(&self.world, &mut self.chunks, ptx, pty);
+        self.cur_biome = biome;
         if self.player.alive {
             let wet = self.weather == 1;
-            self.player.tick(dt, temperature(self.time_of_day), warm, wet);
+            self.player
+                .tick(dt, temperature(self.time_of_day), warm, wet, biome);
             // Resting by a fire slowly mends wounds.
             if warm && self.player.hp < 100.0 {
                 self.player.hp = (self.player.hp + dt * 3.0).min(100.0);
@@ -1890,13 +1921,19 @@ impl App {
         )
         .wadable();
         let move_dt = if wade { dt * 0.55 } else { dt };
+        // Rough terrain under the player slows travel (snow especially).
+        let speed_mul = match biome {
+            TileKind::Snow => 0.7,
+            TileKind::Swamp => 0.85,
+            _ => 1.0,
+        };
         // During a dodge roll, move in the dodge direction at boosted speed.
         let (move_dir, move_dt2) = if self.player.dodge_timer > 0.0 {
             (self.player.dodge_dir, move_dt * player::DODGE_BOOST)
         } else {
             (dir, move_dt)
         };
-        player::move_player(&mut self.player, move_dir, move_dt2, |tx, ty| {
+        player::move_player(&mut self.player, move_dir, move_dt2, speed_mul, |tx, ty| {
             !tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
                 || self
                     .structures
