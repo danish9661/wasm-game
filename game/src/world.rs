@@ -15,6 +15,8 @@ pub enum TileKind {
     Swamp,
     Snow,
     Stone,
+    Tundra,
+    Desert,
 }
 
 impl TileKind {
@@ -29,6 +31,8 @@ impl TileKind {
             TileKind::Swamp => [0.30, 0.40, 0.24],
             TileKind::Snow => [0.92, 0.95, 0.98],
             TileKind::Stone => [0.50, 0.50, 0.52],
+            TileKind::Tundra => [0.66, 0.70, 0.62],
+            TileKind::Desert => [0.91, 0.80, 0.50],
         }
     }
 
@@ -54,6 +58,7 @@ pub struct Chunk {
 }
 
 pub struct WorldGen {
+    seed: u32,
     elevation: Fbm<Perlin>,
     moisture: Fbm<Perlin>,
     temperature: Fbm<Perlin>,
@@ -64,6 +69,7 @@ pub struct WorldGen {
 /// over capacity (a new camera region invalidates old chunks anyway).
 pub struct ChunkCache {
     chunks: HashMap<(i32, i32), Chunk>,
+    order: std::collections::VecDeque<(i32, i32)>,
     capacity: usize,
 }
 
@@ -71,6 +77,7 @@ impl ChunkCache {
     pub fn new(capacity: usize) -> Self {
         Self {
             chunks: HashMap::new(),
+            order: std::collections::VecDeque::new(),
             capacity,
         }
     }
@@ -83,15 +90,31 @@ impl ChunkCache {
         self.chunks.contains_key(&(cx, cy))
     }
 
+    /// Evict the least-recently-used chunk (kept near the camera so scrolling
+    /// back doesn't force a full regenerate-and-pop like the old wholesale
+    /// clear did).
+    fn evict_one(&mut self) {
+        if let Some((cx, cy)) = self.order.pop_front() {
+            self.chunks.remove(&(cx, cy));
+        }
+    }
+
     pub fn get(&mut self, world: &WorldGen, tx: i32, ty: i32) -> &Chunk {
         let cx = tx.div_euclid(CHUNK_SIZE);
         let cy = ty.div_euclid(CHUNK_SIZE);
         if !self.chunks.contains_key(&(cx, cy)) {
-            if self.chunks.len() >= self.capacity {
-                self.chunks.clear();
+            while self.chunks.len() >= self.capacity {
+                self.evict_one();
             }
             let chunk = world.generate_chunk(cx, cy);
             self.chunks.insert((cx, cy), chunk);
+            self.order.push_back((cx, cy));
+        } else {
+            // Mark as most-recently-used.
+            if let Some(pos) = self.order.iter().position(|&k| k == (cx, cy)) {
+                self.order.remove(pos);
+            }
+            self.order.push_back((cx, cy));
         }
         &self.chunks[&(cx, cy)]
     }
@@ -114,11 +137,17 @@ impl WorldGen {
         let mut river = Fbm::<Perlin>::new(seed ^ 0xC2B2AE35);
         river.frequency = 0.012;
         Self {
+            seed,
             elevation,
             moisture,
             temperature,
             river,
         }
+    }
+
+    /// The seed this world was generated from (for display / determinism).
+    pub fn seed(&self) -> u32 {
+        self.seed
     }
 
     pub fn generate_chunk(&self, cx: i32, cy: i32) -> Chunk {
@@ -142,6 +171,10 @@ impl WorldGen {
                     TileKind::Forest if h.rem_euclid(13.0) == 0.0 => TileKind::Grass,
                     TileKind::Stone if h.rem_euclid(17.0) == 0.0 => TileKind::Snow,
                     TileKind::Snow if h.rem_euclid(19.0) == 0.0 => TileKind::Stone,
+                    TileKind::Tundra if h.rem_euclid(23.0) == 0.0 => TileKind::Snow,
+                    TileKind::Snow if h.rem_euclid(29.0) == 0.0 => TileKind::Tundra,
+                    TileKind::Desert if h.rem_euclid(31.0) == 0.0 => TileKind::Sand,
+                    TileKind::Sand if h.rem_euclid(37.0) == 0.0 => TileKind::Desert,
                     other => other,
                 };
                 // Rivers: where a separate low-frequency noise forms a ridge and
@@ -164,17 +197,26 @@ impl WorldGen {
                 TileKind::Water
             }
         } else if elevation < -0.05 {
-            TileKind::Sand
-        } else if temperature < -0.25 {
-            TileKind::Snow
+            // Lowlands: arid ones become desert, the rest sandy shore.
+            if moisture < -0.30 {
+                TileKind::Desert
+            } else {
+                TileKind::Sand
+            }
         } else if elevation > 0.45 {
             TileKind::Stone
+        } else if temperature < -0.45 {
+            TileKind::Snow
+        } else if temperature < -0.25 {
+            TileKind::Tundra
         } else if moisture > 0.35 {
             if elevation < 0.15 {
                 TileKind::Swamp
             } else {
                 TileKind::Forest
             }
+        } else if moisture < -0.30 {
+            TileKind::Desert
         } else {
             TileKind::Grass
         }

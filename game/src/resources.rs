@@ -108,6 +108,10 @@ pub fn resource_on(tx: i32, ty: i32, tile: TileKind) -> Option<ResourceKind> {
         TileKind::Stone if h.rem_euclid(23) == 0 => Some(ResourceKind::Crystal),
         TileKind::Grass if h.rem_euclid(17) == 0 => Some(ResourceKind::GrassTuft),
         TileKind::Grass if h.rem_euclid(31) == 0 => Some(ResourceKind::Flower),
+        TileKind::Tundra if h.rem_euclid(23) == 0 => Some(ResourceKind::Rock),
+        TileKind::Tundra if h.rem_euclid(41) == 0 => Some(ResourceKind::Flower),
+        TileKind::Desert if h.rem_euclid(37) == 0 => Some(ResourceKind::Crystal),
+        TileKind::Desert if h.rem_euclid(53) == 0 => Some(ResourceKind::Rock),
         _ => None,
     }
 }

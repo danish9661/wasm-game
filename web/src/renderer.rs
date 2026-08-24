@@ -797,7 +797,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} weather={} ng={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} ending={} weather={} ng={} seed={} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -833,6 +833,7 @@ impl App {
             ending_str,
             self.weather,
             self.ng_plus,
+            self.world_seed,
             boss_hp,
             self.altar_tile
                 .map(|(ax, ay)| format!("({ax},{ay})"))
@@ -1480,11 +1481,28 @@ impl App {
         self.reset_world(seed);
     }
 
-    /// Start a brand-new run at the base seed (Save/Load "New Game").
+    /// Start a brand-new run with a randomly-chosen seed.
     pub fn new_game(&mut self) {
         self.ng_plus = 0;
         self.ending = None;
-        self.reset_world(1337);
+        let seed = {
+            let mut s = 1337u32;
+            if let Some(win) = web_sys::window() {
+                if let Some(p) = win.performance() {
+                    s = (p.now() as u32) ^ 0x5eed_1337;
+                }
+            }
+            s
+        };
+        self.reset_world(seed);
+        self.reset_run_state();
+    }
+
+    /// Start a brand-new run at a specific seed (player-entered world seed).
+    pub fn new_game_with_seed(&mut self, seed: u32) {
+        self.ng_plus = 0;
+        self.ending = None;
+        self.reset_world(seed);
         self.reset_run_state();
     }
 

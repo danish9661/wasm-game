@@ -99,11 +99,28 @@
       <code>Part</code>s, register it in <code>mod.rs</code> + the dispatch match, and it appears.</p>
 
     <h3>World &amp; biomes</h3>
-    <p>The map is generated from value noise into tiles — <b>grass, forest, stone, swamp, sand,
-      snow,</b> and <b>water</b> — each with its own colour and walker rules. Scattered across it
-      are Points-Of-Interest: the <b>ruins</b> (with a chest), the <b>altar</b> where you woke,
+    <p>The world is an <b>infinite, chunk-streamed</b> map. The terrain is produced by layered
+      value noise (FBM) driven by a single integer <b>seed</b> — so the same seed always yields
+      the exact same world, and a different seed yields a wholly different one. A <code>ChunkCache</code>
+      generates 32×32 tiles on demand as the camera moves and keeps the most-recently-visited chunks
+      (LRU eviction), so exploration never regenerates or pops under you.</p>
+    <p>Biomes fall out of three noise fields — <b>elevation, moisture,</b> and <b>temperature</b>:</p>
+    <ul>
+      <li><b>Water / Sand / Grass / Forest / Swamp / Stone / Snow</b> — the core set, each with its
+        own colour, walker rules, harvest nodes, and enemy spawns.</li>
+      <li><b>Tundra</b> — cold, barren grassland (temperature just above the snow line): rocks and
+        flowers, haunted by Wraiths and Goblins.</li>
+      <li><b>Desert</b> — arid lowlands (very low moisture): rare Crystals and rocks, home to
+        Skeletons and Spiders.</li>
+    </ul>
+    <p>Intra-biome detail (deterministic swaps between sibling tiles) and carved <b>rivers</b> keep
+      regions from looking flat, and never introduce water or break spawn/POI placement. Scattered
+      Points-Of-Interest include the <b>ruins</b> (with a chest), the <b>altar</b> where you woke,
       an <b>anvil</b>, and the <b>ruin tower</b>. Harvestable nodes (trees, rocks, crystals,
       mushrooms, ore) are placed per-biome.</p>
+    <p><b>Seeds:</b> from the boot menu you can type a numeric seed or any word (hashed to a seed)
+      to spawn a specific world; leaving it blank rolls a random one. The active seed is shown in
+      the HUD and saved with your run, so <b>Continue</b> always restores the same world.</p>
 
     <h3>Player systems</h3>
     <table>

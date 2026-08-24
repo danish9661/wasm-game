@@ -254,6 +254,10 @@ pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
         TileKind::Sand if h.rem_euclid(89) == 0 => Some(StructureKind::Crate),
         TileKind::Water if h.rem_euclid(29) == 0 => Some(StructureKind::Lilypad),
         TileKind::Water if h.rem_euclid(47) == 0 => Some(StructureKind::Reed),
+        TileKind::Tundra if h.rem_euclid(59) == 0 => Some(StructureKind::RockPile),
+        TileKind::Tundra if h.rem_euclid(83) == 0 => Some(StructureKind::Pillar),
+        TileKind::Desert if h.rem_euclid(61) == 0 => Some(StructureKind::Barrel),
+        TileKind::Desert if h.rem_euclid(73) == 0 => Some(StructureKind::Cactus),
         _ => None,
     }
 }

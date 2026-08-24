@@ -504,6 +504,10 @@ pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
         TileKind::Stone if h.rem_euclid(211) == 0 => Some(EnemyKind::Colossus),
         TileKind::Stone if h.rem_euclid(151) == 0 => Some(EnemyKind::Brute),
         TileKind::Stone if h.rem_euclid(97) == 0 => Some(EnemyKind::Stormcaller),
+        TileKind::Tundra if h.rem_euclid(41) == 0 => Some(EnemyKind::Wraith),
+        TileKind::Tundra if h.rem_euclid(37) == 0 => Some(EnemyKind::Goblin),
+        TileKind::Desert if h.rem_euclid(43) == 0 => Some(EnemyKind::Skeleton),
+        TileKind::Desert if h.rem_euclid(59) == 0 => Some(EnemyKind::Spider),
         TileKind::Swamp if h.rem_euclid(67) == 0 => Some(EnemyKind::Wraith),
         _ => None,
     }

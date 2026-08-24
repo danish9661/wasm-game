@@ -35,6 +35,7 @@
       <span class="inv-chip" id="hud-coords">@ 0,0</span>
       <span class="inv-chip" id="hud-mobs">MOBS 0</span>
       <span class="inv-chip weather" id="hud-weather" style="display:none">🌧 Rain</span>
+      <span class="inv-chip seed" id="hud-seed" style="display:none">🌱 Seed</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
     <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · Space dodge-roll (i-frames, costs stamina) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · L codex (bestiary) · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · X spike trap · U farm plot · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
@@ -108,6 +109,9 @@
     <div id="overlay-box">
       <h2>STARFALL</h2>
       <p id="boot-sub">A fallen crown. A shattered world. Reforge it.</p>
+      <div class="set-row" style="justify-content:center;gap:8px;margin:6px 0 2px">
+        <label>World Seed <input id="boot-seed" type="text" placeholder="random" style="width:120px" /></label>
+      </div>
       <div class="menu-btns">
         <button id="btn-continue" class="menu-btn">Continue</button>
         <button id="btn-new" class="menu-btn">New Game</button>
@@ -170,11 +174,27 @@
   <canvas id="minimap" width="132" height="132" title="Minimap (M to toggle)"></canvas>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
     window.new_game = new_game;
+    window.new_game_with_seed = new_game_with_seed;
+
+    // Parse a world-seed string into a u32: a non-empty numeric string is used
+    // directly; otherwise the string's characters are hashed so players can use
+    // memorable words as seeds.
+    function parseSeed(str) {
+      const s = (str || '').trim();
+      if (!s) return null;
+      if (/^\d+$/.test(s)) return parseInt(s, 10) >>> 0;
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      return h >>> 0;
+    }
 
     window.onerror = (m, s, l, c, e) => {
       console.error('[page] JS ERROR:', m, 'at', s + ':' + l, e && e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : '');
@@ -456,6 +476,8 @@
             }
             el('hud-weather').style.display = stats.weather !== 0 ? 'inline-block' : 'none';
             el('hud-weather').textContent = stats.weather === 2 ? '❄ Snow' : '🌧 Rain';
+            el('hud-seed').style.display = 'inline-block';
+            el('hud-seed').textContent = '🌱 ' + stats.seed;
 
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
@@ -541,6 +563,7 @@
               nearaltar: Number(get(/nearaltar=(\d)/) || 0),
               ending: endingStr === 'reign' ? 0 : endingStr === 'shatter' ? 1 : endingStr === 'twin' ? 2 : -1,
               ng: Number(get(/ng=(\d+)/) || 0),
+              seed: Number(get(/seed=(\d+)/) || 0),
               atk: Number(get(/atk=(\d+)/) || 0),
               shots: Number(get(/shots=(\d+)/) || 0),
               px: Number((String(raw).match(/player=\(([\d.-]+),/) || [])[1] || 0),
@@ -750,7 +773,12 @@
           el('btn-new').onclick = () => {
             ensureAudio();
             localStorage.removeItem(SAVE_KEY);
-            new_game();
+            const seed = parseSeed(el('boot-seed').value);
+            if (seed === null) {
+              new_game();
+            } else {
+              new_game_with_seed(seed);
+            }
             bootmenu.className = 'hidden';
             bootOpen = false;
             gameStarted = true;

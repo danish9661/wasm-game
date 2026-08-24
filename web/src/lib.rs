@@ -246,6 +246,16 @@ pub fn new_game() {
     });
 }
 
+/// Start a fresh run at a specific world seed (player-entered).
+#[wasm_bindgen]
+pub fn new_game_with_seed(seed: u32) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.new_game_with_seed(seed);
+        }
+    });
+}
+
 /// Queue a GPU→CPU readback of the next rendered frame.
 #[wasm_bindgen]
 pub fn trigger_readback() {
