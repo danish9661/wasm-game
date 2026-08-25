@@ -1,6 +1,7 @@
 mod network;
 mod renderer;
 mod save;
+mod zip;
 
 use renderer::App;
 use save::SaveState;
@@ -280,6 +281,46 @@ pub fn new_game() {
         }
     });
 }
+
+/// Bundle the current run into a downloadable `.zip` containing `save.json`.
+/// Returns the raw zip bytes (JS turns them into a Blob download).
+#[wasm_bindgen]
+pub fn download_save_zip() -> Vec<u8> {
+    let json = APP.with(|cell| match cell.borrow().as_ref() {
+        Some(app) => serde_json::to_string(&app.to_save()).unwrap_or_else(|_| String::from("{}")),
+        None => String::from("{}"),
+    });
+    zip::make_zip(&[("save.json", json.as_bytes())])
+}
+
+/// Load a `.zip` produced by `download_save_zip`. Extracts `save.json` and
+/// applies it. Returns false if the archive/file is invalid or the version
+/// mismatches.
+#[wasm_bindgen]
+pub fn upload_save_zip(bytes: &[u8]) -> bool {
+    let s = match zip::read_zip_file(bytes, "save.json") {
+        Some(b) => match String::from_utf8(b) {
+            Ok(s) => s,
+            Err(_) => return false,
+        },
+        None => return false,
+    };
+    match serde_json::from_str::<SaveState>(&s) {
+        Ok(save) => {
+            if save.version != crate::save::CURRENT_SAVE_VERSION {
+                return false;
+            }
+            APP.with(|cell| {
+                if let Some(app) = cell.borrow_mut().as_mut() {
+                    app.apply_save(&save);
+                }
+            });
+            true
+        }
+        Err(_) => false,
+    }
+}
+
 
 /// Start a fresh run at a specific world seed (player-entered).
 #[wasm_bindgen]

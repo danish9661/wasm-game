@@ -26,7 +26,13 @@ const TURRET_CD: f32 = 1.1;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ClientMsg {
-    Join { name: String, token: Option<String> },
+    Join {
+        name: String,
+        token: Option<String>,
+        /// Co-op room code. Clients that join the same code share one
+        /// authoritative world. The server creates the room on first join.
+        room: String,
+    },
     Input(PlayerInput),
     Leave,
 }

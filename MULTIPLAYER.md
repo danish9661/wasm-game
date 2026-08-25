@@ -1,10 +1,10 @@
 # Starfall — Multiplayer Plan & Server Scaffold
 
-Status: **plan + minimal server scaffold**. The full game simulation is not yet
-networked; this document defines the target architecture and how the scaffold
-fits it. Several game systems are still being worked on, so the server is built
-behind a `Simulation` trait and currently runs a *stub* authoritative sim
-(movement only). Swapping in the real sim later is a one-line change.
+Status: **implemented (co-op, server-authoritative)**. The full `game`
+simulation now runs authoritatively on the server and M0/M1/M3/M5 are done:
+rooms, shareable join codes, snapshot interpolation, and per-token save
+persistence are live. This document captures the architecture and protocol that
+shipped.
 
 ---
 
@@ -77,7 +77,7 @@ All messages are `serde` structs. Encode as JSON text frames for now.
 struct Input { move_x: f32, move_y: f32, dodge: bool, attack: bool }
 
 enum ClientMsg {
-    Join { name: String },
+    Join { name: String, token: Option<String>, room: String },
     Input(Input),
     Leave,
 }
@@ -185,9 +185,9 @@ client render path is identical; networking is a small additive layer.
 ## 8. Milestones summary
 | M | Work | Depends on |
 |---|------|-----------|
-| M0 | Extract `game::Simulation` (orchestration from `renderer.rs`) | — |
-| M1 | Server crate + netcode (scaffold ✅ movement sim) | M0 (for real sim) |
+| M0 | Extract `game::Simulation` (orchestration from `renderer.rs`) | ✅ done |
+| M1 | Server crate + netcode (real sim swapped in) | ✅ done |
 | M2 | Protocol hardening (bincode, deltas) | M1 |
-| M3 | Client prediction + interpolation | M1, M2 |
+| M3 | Client prediction + interpolation | ✅ done (interpolation + local predict) |
 | M4 | Interest management / view culling | M2 |
-| M5 | Lobby, rooms, persistence | M3, M4 |
+| M5 | Lobby, rooms, persistence | ✅ done (room codes + token saves) |

@@ -793,6 +793,8 @@ pub struct App {
     net: Option<NetClient>,
     /// Our server-assigned player id (set once the server Welcomes us).
     net_id: Option<u32>,
+    /// Co-op room code we joined (shown in the HUD so it can be shared).
+    room_code: Option<String>,
     /// Remote co-op players, rebuilt each frame from the server snapshot.
     /// Stored as (server_id, Player) so we can tint each ally a distinct color.
     remote_players: Vec<(u32, Player)>,
@@ -1267,6 +1269,7 @@ impl App {
             analog: None,
             net: None,
             net_id: None,
+            room_code: None,
             remote_players: Vec::new(),
             net_atk: false,
             net_dodge: false,
@@ -1307,8 +1310,21 @@ impl App {
                 .iter()
                 .find(|(k, _)| k == "token")
                 .map(|(_, v)| v.clone());
-            if let Ok(client) = NetClient::connect(&url, &name, token) {
+            let room = query
+                .iter()
+                .find(|(k, _)| k == "room")
+                .map(|(_, v)| v.clone())
+                .unwrap_or_default();
+            if let Ok(client) = NetClient::connect(&url, &name, token, &room) {
                 app.net = Some(client);
+                app.room_code = if room.is_empty() { None } else { Some(room.clone()) };
+                // Surface the room code in the HUD so it can be shared.
+                if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
+                    if let Some(el) = doc.get_element_by_id("hud-room") {
+                        let _ = el.set_text_content(Some(&format!("🛡 Room {}", room)));
+                        let _ = el.set_attribute("style", "display:inline-block");
+                    }
+                }
                 glog("[net] joined co-op server");
             }
         }

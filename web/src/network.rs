@@ -41,7 +41,12 @@ pub struct NetClient {
 }
 
 impl NetClient {
-    pub fn connect(url: &str, name: &str, token: Option<String>) -> Result<NetClient, JsValue> {
+    pub fn connect(
+        url: &str,
+        name: &str,
+        token: Option<String>,
+        room: &str,
+    ) -> Result<NetClient, JsValue> {
         let ws = WebSocket::new(url)?;
         let curr = Rc::new(RefCell::new(None));
         let prev = Rc::new(RefCell::new(None));
@@ -72,6 +77,7 @@ impl NetClient {
         if let Ok(t) = serde_json::to_string(&ClientMsg::Join {
             name: name.to_string(),
             token,
+            room: room.to_string(),
         }) {
             let _ = ws.send_with_str(&t);
         }

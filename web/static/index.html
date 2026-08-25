@@ -37,7 +37,8 @@
       <span class="inv-chip" id="hud-coords">@ 0,0</span>
       <span class="inv-chip" id="hud-mobs">MOBS 0</span>
       <span class="inv-chip weather" id="hud-weather" style="display:none">🌧 Rain</span>
-      <span class="inv-chip seed" id="hud-seed" style="display:none">🌱 Seed</span>
+              <span class="inv-chip seed" id="hud-seed" style="display:none">🌱 Seed</span>
+              <span class="inv-chip seed" id="hud-room" style="display:none;cursor:pointer" title="Click to copy room code">🛡 Room</span>
       <span class="inv-chip biome" id="hud-biome" style="display:none">🌍 Biome</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
@@ -114,13 +115,39 @@
     <div id="overlay-box">
       <h2>STARFALL</h2>
       <p id="boot-sub">A fallen crown. A shattered world. Reforge it.</p>
-      <div class="set-row" style="justify-content:center;gap:8px;margin:6px 0 2px">
-        <label>World Seed <input id="boot-seed" type="text" placeholder="random" style="width:120px" /></label>
-      </div>
       <div class="menu-btns">
         <button id="btn-continue" class="menu-btn">Continue</button>
         <button id="btn-new" class="menu-btn">New Game</button>
+        <button id="btn-mp" class="menu-btn">Multiplayer</button>
+        <button id="btn-options" class="menu-btn">Options</button>
+        <button id="btn-help" class="menu-btn">Help / Demo</button>
+        <a id="btn-github" class="menu-btn" href="https://github.com/danish9661/wasm-game" target="_blank" rel="noopener">GitHub</a>
       </div>
+      <div class="set-row" style="justify-content:center;gap:8px;margin:6px 0 2px">
+        <label>World Seed <input id="boot-seed" type="text" placeholder="random" style="width:120px" /></label>
+      </div>
+      <div class="menu-btns" style="margin-top:4px">
+        <button id="btn-download" class="menu-btn small">⬇ Save file (.zip)</button>
+        <button id="btn-upload" class="menu-btn small">⬆ Load file (.zip)</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mpmenu" class="overlay hidden">
+    <div id="overlay-box">
+      <h2>MULTIPLAYER</h2>
+      <p>Share a room code with a friend to explore the <b>same world</b> together. The host creates a room; the guest joins with that code.</p>
+      <label class="set-row">Display name <input id="mp-name" type="text" placeholder="Wanderer" style="width:130px" /></label>
+      <label class="set-row">Server <input id="mp-server" type="text" value="ws://localhost:8081" style="width:210px" /></label>
+      <div class="menu-btns">
+        <button id="btn-mp-create" class="menu-btn">Create Room</button>
+        <button id="btn-mp-join" class="menu-btn">Join Room</button>
+      </div>
+      <div class="set-row" style="justify-content:center;gap:8px;margin-top:6px">
+        <label>Room code <input id="mp-code" type="text" placeholder="friend's code" style="width:160px" /></label>
+      </div>
+      <p id="mp-note" class="help-note"></p>
+      <div class="menu-btns"><button id="btn-mp-back" class="menu-btn">Back</button></div>
     </div>
   </div>
 
@@ -181,12 +208,14 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog, download_save_zip, upload_save_zip } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
     window.new_game = new_game;
     window.new_game_with_seed = new_game_with_seed;
+    window.download_save_zip = download_save_zip;
+    window.upload_save_zip = upload_save_zip;
 
     // Parse a world-seed string into a u32: a non-empty numeric string is used
     // directly; otherwise the string's characters are hashed so players can use
@@ -940,36 +969,140 @@
             requestAnimationFrame(frame);
           }
 
-          // ---- Boot menu (Continue / New Game) ---------------------------
+          // ---- IndexedDB save store (replaces localStorage) --------------
+          const DB_NAME = 'starfall', STORE = 'saves';
+          function idbOpen() {
+            return new Promise((res, rej) => {
+              const r = indexedDB.open(DB_NAME, 1);
+              r.onupgradeneeded = () => { try { r.result.createObjectStore(STORE); } catch (_) {} };
+              r.onsuccess = () => res(r.result);
+              r.onerror = () => rej(r.error);
+            });
+          }
+          async function idbGet() {
+            try {
+              const db = await idbOpen();
+              return await new Promise((res) => {
+                const tx = db.transaction(STORE, 'readonly');
+                const req = tx.objectStore(STORE).get('slot1');
+                req.onsuccess = () => res(req.result || null);
+                req.onerror = () => res(null);
+              });
+            } catch (_) { return null; }
+          }
+          async function idbPut(json) {
+            try {
+              const db = await idbOpen();
+              return await new Promise((res) => {
+                const tx = db.transaction(STORE, 'readwrite');
+                tx.objectStore(STORE).put(json, 'slot1');
+                tx.oncomplete = () => res(true);
+                tx.onerror = () => res(false);
+              });
+            } catch (_) { return false; }
+          }
+
+          // ---- Boot menu (Continue / New Game / Multiplayer / etc.) ------
           const bootmenu = el('bootmenu');
-          const saved = localStorage.getItem(SAVE_KEY);
-          if (saved && saved.length > 2) {
+          const mpmenu = el('mpmenu');
+          const autoMultiplayer = location.search.includes('mp=');
+          if (autoMultiplayer) {
+            // Joining a room via URL (?mp=...&room=...): skip the menu and let
+            // the renderer connect to the shared world.
+            bootmenu.className = 'hidden';
+            mpmenu.className = 'hidden';
+            bootOpen = false;
+            gameStarted = true;
+          } else {
             bootOpen = true;
             bootmenu.className = 'overlay';
-          } else {
-            bootmenu.className = 'hidden';
-            gameStarted = true;
+            idbGet().then((s) => {
+              el('btn-continue').disabled = !s;
+              el('btn-continue').classList.toggle('disabled', !s);
+            });
           }
-          el('btn-continue').onclick = () => {
+          el('btn-continue').onclick = async () => {
             ensureAudio();
-            const ok = deserialize_save(saved);
+            const s = await idbGet();
+            const ok = s ? deserialize_save(s) : false;
             bootmenu.className = 'hidden';
             bootOpen = false;
             gameStarted = true;
-            if (!ok) { new_game(); }
+            if (!ok) new_game();
           };
           el('btn-new').onclick = () => {
             ensureAudio();
-            localStorage.removeItem(SAVE_KEY);
             const seed = parseSeed(el('boot-seed').value);
-            if (seed === null) {
-              new_game();
-            } else {
-              new_game_with_seed(seed);
-            }
+            if (seed === null) new_game(); else new_game_with_seed(seed);
             bootmenu.className = 'hidden';
             bootOpen = false;
             gameStarted = true;
+          };
+          // Options opens the existing settings overlay; Help opens the
+          // controls/goals panel.
+          el('btn-options').onclick = () => openSettings();
+          el('btn-help').onclick = () => openHelp();
+          // Save file download / upload (.zip)
+          el('btn-download').onclick = () => {
+            try {
+              const bytes = download_save_zip();
+              const blob = new Blob([bytes], { type: 'application/zip' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'starfall-save.zip';
+              a.click();
+              URL.revokeObjectURL(a.href);
+            } catch (e) { console.error('[page] download failed', e); }
+          };
+          el('btn-upload').onclick = () => {
+            const inp = document.createElement('input');
+            inp.type = 'file'; inp.accept = '.zip';
+            inp.onchange = () => {
+              const f = inp.files && inp.files[0]; if (!f) return;
+              f.arrayBuffer().then((ab) => {
+                const ok = upload_save_zip(new Uint8Array(ab));
+                el('mp-note').textContent = ok ? 'Save loaded from file.' : 'Invalid save file.';
+              });
+            };
+            inp.click();
+          };
+          // ---- Multiplayer sub-menu -------------------------------------
+          el('btn-mp').onclick = () => { bootmenu.className = 'hidden'; mpmenu.className = 'overlay'; };
+          el('btn-mp-back').onclick = () => { mpmenu.className = 'hidden'; bootmenu.className = 'overlay'; };
+          function mpStart(server, code, name) {
+            ensureAudio();
+            const params = new URLSearchParams();
+            params.set('mp', server);
+            if (code) params.set('room', code);
+            if (name) params.set('name', name);
+            const seed = el('boot-seed').value.trim();
+            if (seed) params.set('seed', seed);
+            location.href = location.pathname + '?' + params.toString();
+          }
+          function randomCode() {
+            const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let s = ''; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)];
+            return s;
+          }
+          el('btn-mp-create').onclick = () => {
+            const name = el('mp-name').value.trim() || 'Wanderer';
+            const server = el('mp-server').value.trim() || 'ws://localhost:8081';
+            mpStart(server, randomCode(), name);
+          };
+          el('btn-mp-join').onclick = () => {
+            const code = el('mp-code').value.trim().toUpperCase();
+            if (!code) { el('mp-note').textContent = 'Enter the room code your friend shared.'; return; }
+            const name = el('mp-name').value.trim() || 'Wanderer';
+            const server = el('mp-server').value.trim() || 'ws://localhost:8081';
+            mpStart(server, code, name);
+          };
+          // ---- HUD room code: click to copy ------------------------------
+          el('hud-room').onclick = () => {
+            const t = el('hud-room').textContent || '';
+            const code = t.replace(/[^A-Z0-9]/gi, '').replace(/^ROOM/i, '');
+            if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => {
+              el('mp-note') && (el('mp-note').textContent = 'Room code copied: ' + code);
+            });
           };
 
           // ---- Settings menu --------------------------------------------
@@ -1018,7 +1151,7 @@
           };
 
           function doSave() {
-            try { localStorage.setItem(SAVE_KEY, serialize_save()); } catch (e) {}
+            try { idbPut(serialize_save()); } catch (e) {}
           }
 
           // ---- Keyboard: reforge choice + pause -------------------------
