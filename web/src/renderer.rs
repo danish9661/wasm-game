@@ -620,6 +620,14 @@ pub struct App {
     readback_buffer: Option<wgpu::Buffer>,
     capture_requested: bool,
     using_blit: bool,
+    /// True once we've seen the WebGPU surface actually vend a frame texture.
+    /// When false the game is stuck on the GPU->CPU readback path (e.g. the
+    /// default Linux backend without Vulkan can't present a canvas), which is
+    /// much slower, so we render at a reduced internal resolution.
+    surface_present: bool,
+    /// Mirrors `surface_present` at the time of the last resize, so we only
+    /// re-resize when the present capability actually flips.
+    applied_surface_present: bool,
     backend_mode: u8,
     /// Authoritative frames-per-second, measured from actual sim steps.
     fps: f32,
@@ -1078,6 +1086,8 @@ impl App {
             readback_buffer: None,
             capture_requested: false,
             using_blit: false,
+            surface_present: true,
+            applied_surface_present: true,
             backend_mode: 0,
             fps: 0.0,
             fps_acc: 0,
@@ -1712,7 +1722,16 @@ impl App {
         // readback+blit very expensive and the #blit display lags behind the
         // simulation -> movement looks "very slow". Render at a smaller backing
         // and let CSS upscale it (pixelated). (0, 0) = native (no cap).
-        let (cap_w, cap_h) = get_render_cap();
+        let user_cap = get_render_cap();
+        // When the WebGPU surface can't present (default Linux backend without
+        // Vulkan), the game runs on the slow GPU->CPU readback path. Clamp the
+        // internal resolution so the readback stays cheap and fps stays high;
+        // Vulkan / present-capable backends keep the user's chosen resolution.
+        let (cap_w, cap_h) = if self.surface_present {
+            user_cap
+        } else {
+            (user_cap.0.min(640), user_cap.1.min(400))
+        };
         if cap_w > 0 && cap_h > 0 {
             let scale = (cap_w as f64 / width as f64)
                 .min(cap_h as f64 / height as f64)
@@ -2294,9 +2313,19 @@ impl App {
                     self.using_blit = true;
                     set_backend("blit");
                 }
+                // Genuine surface failure: we're on the slow readback path.
+                self.surface_present = false;
                 None
             }
         };
+
+        // If the surface-present capability just changed, re-resize so the
+        // internal render/readback resolution matches (full res when we can
+        // present directly, reduced res when stuck on the slow readback path).
+        if self.surface_present != self.applied_surface_present {
+            self.applied_surface_present = self.surface_present;
+            self.resize();
+        }
 
         let mut encoder = self
             .device
@@ -2305,6 +2334,8 @@ impl App {
             });
 
         if let Some(f) = surface_tex {
+            // Surface presented successfully at least once.
+            self.surface_present = true;
             // The WebGPU surface may not composite on this browser, but its
             // backing is still drawable — so we present (to recycle the
             // swapchain) and then copy it onto the 2D #blit canvas with a fast
