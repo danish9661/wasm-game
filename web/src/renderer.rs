@@ -32,6 +32,22 @@ fn glog(msg: &str) {
     web_sys::console::log_1(&wasm_bindgen::JsValue::from_str(msg));
 }
 
+/// Fire a named SFX in the page's WebAudio engine (playSfx is a global defined
+/// in index.html). No-op when audio is unavailable. Used to surface gameplay
+/// outcomes (chops, pickups, footsteps, enemy deaths) that happen in Rust.
+fn play_sfx(name: &str) {
+    if let Some(win) = web_sys::window() {
+        if let Ok(f) = js_sys::Reflect::get(&win, &wasm_bindgen::JsValue::from_str("playSfx"))
+            .and_then(|v| v.dyn_into::<js_sys::Function>())
+        {
+            let _ = f.call1(
+                &wasm_bindgen::JsValue::NULL,
+                &wasm_bindgen::JsValue::from_str(name),
+            );
+        }
+    }
+}
+
 /// Campfire point light slots (each = position/intensity vec4 + color vec4).
 const MAX_LIGHTS: usize = 8;
 const LIGHT_FLOATS: usize = MAX_LIGHTS * 8;
@@ -668,6 +684,8 @@ pub struct App {
     max_res_level: usize,
     fps_est: f32,
     res_timer: f32,
+    /// Throttle for footstep SFX (seconds until next step is allowed).
+    step_timer: f32,
     backend_mode: u8,
     /// Authoritative frames-per-second, measured from actual sim steps.
     fps: f32,
@@ -1136,6 +1154,7 @@ impl App {
             max_res_level: 0,
             fps_est: 60.0,
             res_timer: 0.0,
+            step_timer: 0.0,
             backend_mode: 0,
             fps: 0.0,
             fps_acc: 0,
@@ -1369,6 +1388,7 @@ impl App {
             .map(|((tx, ty), e)| ((tx, ty), e.x, e.y, e.kind, e.drops()))
             .collect();
         for ((tx, ty), ex, ey, kind, items) in drops {
+            play_sfx("enemydie");
             // Drop loot on the ground at the enemy's position; the player walks
             // over it to collect (see collect_loot). Spread multiple drops in a
             // small ring so they don't perfectly overlap.
@@ -1417,6 +1437,7 @@ impl App {
             let dy = l.y - py;
             if dx * dx + dy * dy < 1.1 * 1.1 {
                 self.inventory.add(l.kind, l.count);
+                play_sfx("pickup");
                 self.loot.remove(i);
                 continue;
             }
@@ -1465,6 +1486,7 @@ impl App {
                     let cd = self.farm_cd.entry((s.tx, s.ty)).or_insert(0.0);
                     if *cd <= 0.0 {
                         self.inventory.add(ItemKind::Food, 2);
+                        play_sfx("harvest");
                         *cd = 30.0;
                         return;
                     }
@@ -1473,6 +1495,7 @@ impl App {
         }
         if let Some((tx, ty, kind)) = self.nearest_resource() {
             if let Some(item) = self.nodes.chop(tx, ty, kind) {
+                play_sfx("harvest");
                 // Honed Tools (crafted at an Anvil) yield bonus resources. Drop
                 // the yield as ground loot (collected on proximity) rather than
                 // crediting inventory directly, so harvesting reads like looting.
@@ -1507,6 +1530,7 @@ impl App {
         }
         if let Some((_, tx, ty)) = best {
             self.opened_chests.insert((tx, ty));
+            play_sfx("chest");
             self.inventory.add(ItemKind::Food, 2);
             self.inventory.add(ItemKind::Wood, 2);
             self.inventory.add(ItemKind::Stone, 1);
@@ -2153,6 +2177,14 @@ impl App {
         });
         let moved = ((self.player.x - bx).powi(2) + (self.player.y - by).powi(2)).sqrt();
         self.speed = if dt > 0.0 { moved / dt } else { 0.0 };
+
+        // Footstep SFX: while actually moving, tick on a cadence scaled by speed
+        // (faster = quicker steps). Suppressed during a dodge roll.
+        self.step_timer -= dt;
+        if self.speed > 0.6 && self.player.dodge_timer <= 0.0 && self.step_timer <= 0.0 {
+            play_sfx("step");
+            self.step_timer = (0.42 - (self.speed * 0.02).min(0.18)).max(0.18);
+        }
 
         // authoritative FPS from real sim steps
         self.fps_acc += 1;
