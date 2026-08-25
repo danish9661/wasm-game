@@ -75,6 +75,19 @@ impl ResourceKind {
 
     /// Sprite geometry for this node kind (diamond centered on the tile).
     pub fn sprite(self, tx: i32, ty: i32) -> Sprite {
+        // Trees get a small per-tile green variation so a forest doesn't read as
+        // one repeated sprite.
+        let color = if matches!(self, ResourceKind::Tree) {
+            let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663);
+            let v = (((h % 7) as f32) - 3.0) * 0.03;
+            [
+                0.06,
+                (0.30 + v).clamp(0.0, 1.0),
+                (0.12 + v).clamp(0.0, 1.0),
+            ]
+        } else {
+            self.color()
+        };
         let (hw, hh, lift) = match self {
             ResourceKind::Tree => (14.0, 20.0, 8.0),
             ResourceKind::Bush => (12.0, 12.0, 2.0),
@@ -97,7 +110,7 @@ impl ResourceKind {
             ResourceKind::Fern => SpriteStyle::Fern,
             ResourceKind::Ore => SpriteStyle::Ore,
         };
-        Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
+        Sprite::new(tx, ty, color, hw, hh, lift).with_style(style)
     }
 }
 
@@ -109,7 +122,7 @@ impl ResourceKind {
 pub fn resource_on(tx: i32, ty: i32, tile: TileKind) -> Option<ResourceKind> {
     let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663) ^ 0x51ab_ce0d;
     match tile {
-        TileKind::Forest if h.rem_euclid(7) == 0 => Some(ResourceKind::Tree),
+        TileKind::Forest if h.rem_euclid(6) == 0 => Some(ResourceKind::Tree),
         TileKind::Grass if h.rem_euclid(11) == 0 => Some(ResourceKind::Bush),
         TileKind::Stone if h.rem_euclid(8) == 0 => Some(ResourceKind::Rock),
         TileKind::Stone if h.rem_euclid(53) == 0 => Some(ResourceKind::Ore),

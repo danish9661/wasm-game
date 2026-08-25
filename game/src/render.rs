@@ -332,13 +332,47 @@ pub fn build_tile_mesh(
                     c_n[i] = (c_n[i] * 1.06).clamp(0.0, 1.0);
                     c_s[i] = (c_s[i] * 0.92).clamp(0.0, 1.0);
                 }
-                // Water shimmer: a travelling wave of brightness, now strong
-                // enough to clearly read on screen (corner-agnostic).
+                // Water: depth-dependent shimmer + a finer sparkle ripple, plus
+                // foam crests on corners that border land (so shorelines read).
                 if matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
-                    let sh = (anim_time * 2.2 + d.tx as f32 * 0.7 + d.ty as f32 * 0.5).sin() * 0.12;
+                    let is_water = |k: TileKind| {
+                        matches!(k, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater)
+                    };
+                    // Slower, calmer swells in deep water; quick sparkle in shallows.
+                    let (speed, amp, sparkle) = match kind {
+                        TileKind::DeepWater => (1.3, 0.09, 0.03),
+                        TileKind::Water => (2.1, 0.12, 0.07),
+                        TileKind::ShallowWater => (3.0, 0.14, 0.13),
+                        _ => (2.0, 0.1, 0.05),
+                    };
+                    let sh = (anim_time * speed + d.tx as f32 * 0.7 + d.ty as f32 * 0.5).sin() * amp;
+                    let sp = (anim_time * speed * 2.3
+                        + d.tx as f32 * 1.9
+                        - d.ty as f32 * 1.3)
+                        .sin()
+                        * sparkle;
                     for c in [&mut c_n, &mut c_e, &mut c_s, &mut c_w] {
-                        c[0] = (c[0] + sh).clamp(0.0, 1.0);
-                        c[2] = (c[2] + sh * 0.85).clamp(0.0, 1.0);
+                        c[0] = (c[0] + sh + sp).clamp(0.0, 1.0);
+                        c[2] = (c[2] + (sh + sp) * 0.85).clamp(0.0, 1.0);
+                    }
+                    // Foam on each corner whose neighbour is land (not water).
+                    let foam = |nb: TileKind| -> f32 {
+                        if is_water(kind) && !is_water(nb) {
+                            0.22
+                        } else {
+                            0.0
+                        }
+                    };
+                    let foams = [foam(nk), foam(ek), foam(sk), foam(wk)];
+                    for (c, fa) in [&mut c_n, &mut c_e, &mut c_s, &mut c_w]
+                        .iter_mut()
+                        .zip(foams.iter())
+                    {
+                        if *fa > 0.0 {
+                            c[0] = (c[0] + fa * 0.9).clamp(0.0, 1.0);
+                            c[1] = (c[1] + fa * 0.95).clamp(0.0, 1.0);
+                            c[2] = (c[2] + fa).clamp(0.0, 1.0);
+                        }
                     }
                 }
                 push_quad_blended(out, d.sx, d.sy, c_n, c_e, c_s, c_w);
