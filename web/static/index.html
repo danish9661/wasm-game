@@ -178,7 +178,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -1188,6 +1188,34 @@
           setInterval(() => {
             try { if (actx) setBiomeAmbience(current_biome()); } catch (_) {}
           }, 800);
+
+          // ---- Auto direct-presentation -------------------------------------
+          // If the WebGPU surface actually composites on this browser, present it
+          // directly and skip the per-frame drawImage copy to #blit (the "direct
+          // WebGPU presentation" path). If the surface can't reach the screen
+          // (e.g. default Linux Chrome without Vulkan), we stay on #blit. Safe:
+          // we only flip to gpu mode after confirming the surface shows content.
+          if (location.search.includes('blit')) window.__forceBlit = true;
+          function tryEnableGpuDirect() {
+            if (window.__forceBlit || window.__autoGpu || !gameStarted) return;
+            const g = document.getElementById('game');
+            if (!g || g.width < 4 || g.height < 4) return;
+            const c = document.createElement('canvas'); c.width = 24; c.height = 24;
+            const cx = c.getContext('2d');
+            try {
+              cx.drawImage(g, g.width / 2 - 12, g.height / 2 - 12, 24, 24, 0, 0, 24, 24);
+              const d = cx.getImageData(0, 0, 24, 24).data;
+              let lit = 0;
+              for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 24) lit++;
+              if (lit > 3) {
+                window.__autoGpu = true;
+                try { set_force_gpu(true); } catch (_) {}
+                setBackend('gpu');
+                console.log('[page] direct presentation enabled (surface composites)');
+              }
+            } catch (e) {}
+          }
+          setInterval(tryEnableGpuDirect, 500);
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
           //      warm-orange (player) pixels. If orange>0 the game is rendering
