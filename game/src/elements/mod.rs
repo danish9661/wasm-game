@@ -93,7 +93,7 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "campfire", campfire::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "altar", altar::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "slime", slime::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "humanoid", humanoid::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "humanoid", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
     add(&mut out, "mushroom", mushroom::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "crystal", crystal::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "flower", flower::build(0.0, 0.0, color, alpha, facing, t));

@@ -2216,6 +2216,8 @@ impl App {
         self.ensure_visible();
         let sprites = self.sprites();
         let tiles = &self.visible_cache.4;
+        // Movement intensity drives the humanoid walk cycle (0 = standing, 1 = brisk walk).
+        let player_walk = (self.speed / 8.0).clamp(0.0, 1.0);
         self.quad_count = render::build_tile_mesh(
             &self.world,
             &mut self.chunks,
@@ -2226,6 +2228,7 @@ impl App {
             Some(&self.player),
             &mut self.vertices,
             self.anim_clock,
+            player_walk,
         );
         // The player quad is always emitted while `player` is Some (it is, in
         // the live loop), so scanning the whole vertex buffer every frame to
@@ -2301,6 +2304,12 @@ impl App {
                     sp.color[2] + (1.0 - sp.color[2]) * f,
                 ];
             }
+            // Drive walk-cycle animation: idle enemies breathe; chasing/attacking
+            // ones stride. Only the humanoid (Boss) element uses this today.
+            sp.walk = match e.state {
+                AiState::Idle => 0.15,
+                _ => 0.9,
+            };
             sprites.push(sp);
             // hp bar: dark framed plate + colored fill, floating above the figure
             let bar_lift = match e.kind {

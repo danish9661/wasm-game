@@ -1,4 +1,4 @@
-use crate::elements::prim::{rasterize, Part};
+use crate::elements::prim::{rasterize, sway, Part};
 use crate::iso::{depth_order, iso_to_world, world_to_iso, HALF_H, HALF_W};
 use crate::player::Player;
 use crate::world::{ChunkCache, TileKind, WorldGen};
@@ -94,6 +94,8 @@ pub struct Sprite {
     /// Facing direction in world coords (also the attack facing). Used to lean
     /// the head of humanoid figures toward where they're looking/moving.
     pub facing: (f32, f32),
+    /// Movement intensity 0..1 for walk-cycle animation (humanoid figures).
+    pub walk: f32,
 }
 
 impl Sprite {
@@ -114,6 +116,7 @@ impl Sprite {
             alpha: 1.0,
             style: SpriteStyle::Generic,
             facing: (1.0, 0.0),
+            walk: 0.0,
         }
     }
 
@@ -126,6 +129,12 @@ impl Sprite {
     /// Set the facing direction (world coords) for humanoid figures.
     pub fn with_facing(mut self, facing: (f32, f32)) -> Self {
         self.facing = facing;
+        self
+    }
+
+    /// Set the movement intensity (0..1) driving the walk-cycle animation.
+    pub fn with_walk(mut self, walk: f32) -> Self {
+        self.walk = walk;
         self
     }
 }
@@ -153,6 +162,7 @@ struct Draw {
     style: SpriteStyle,
     facing: (f32, f32),
     hurt: bool,
+    walk: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -224,6 +234,7 @@ pub fn build_tile_mesh(
     player: Option<&Player>,
     out: &mut Vec<f32>,
     anim_time: f32,
+    player_walk: f32,
 ) -> u32 {
     out.clear();
     let vw = viewport.0;
@@ -247,6 +258,7 @@ pub fn build_tile_mesh(
             style: SpriteStyle::Generic,
             facing: (1.0, 0.0),
             hurt: false,
+            walk: 0.0,
         });
     }
 
@@ -276,6 +288,7 @@ pub fn build_tile_mesh(
             style: s.style,
             facing: s.facing,
             hurt: false,
+            walk: s.walk,
         });
     }
 
@@ -296,6 +309,7 @@ pub fn build_tile_mesh(
             style: SpriteStyle::Generic,
             facing: p.facing,
             hurt: p.hurt_timer > 0.0,
+            walk: player_walk,
         });
     }
 
@@ -332,8 +346,9 @@ pub fn build_tile_mesh(
                     c_n[i] = (c_n[i] * 1.06).clamp(0.0, 1.0);
                     c_s[i] = (c_s[i] * 0.92).clamp(0.0, 1.0);
                 }
-                // Water: depth-dependent shimmer + a finer sparkle ripple, plus
-                // foam crests on corners that border land (so shorelines read).
+                // Water: depth-dependent swells + a finer sparkle ripple, a slow
+                // traveling wave so the surface rolls, and foam crests on corners
+                // that border land (so shorelines read). Foam gently pulses.
                 if matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
                     let is_water = |k: TileKind| {
                         matches!(k, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater)
@@ -351,14 +366,22 @@ pub fn build_tile_mesh(
                         - d.ty as f32 * 1.3)
                         .sin()
                         * sparkle;
+                    // Slow rolling wave travelling diagonally across the surface.
+                    let wave = (anim_time * speed * 0.6 + (d.tx + d.ty) as f32 * 0.5).sin() * amp * 0.7;
+                    let crest = (anim_time * speed * 1.7 + (d.tx - d.ty) as f32 * 0.8).sin().max(0.0)
+                        * sparkle
+                        * 0.6;
                     for c in [&mut c_n, &mut c_e, &mut c_s, &mut c_w] {
-                        c[0] = (c[0] + sh + sp).clamp(0.0, 1.0);
-                        c[2] = (c[2] + (sh + sp) * 0.85).clamp(0.0, 1.0);
+                        let a = (sh + sp + wave + crest).clamp(-0.3, 0.3);
+                        c[0] = (c[0] + a).clamp(0.0, 1.0);
+                        c[2] = (c[2] + a * 0.85).clamp(0.0, 1.0);
                     }
-                    // Foam on each corner whose neighbour is land (not water).
+                    // Foam on each corner whose neighbour is land (not water),
+                    // gently pulsing so the shoreline shimmers.
+                    let foam_pulse = 0.18 + 0.06 * (anim_time * 2.0 + d.tx as f32 * 0.7).sin();
                     let foam = |nb: TileKind| -> f32 {
                         if is_water(kind) && !is_water(nb) {
-                            0.22
+                            foam_pulse
                         } else {
                             0.0
                         }
@@ -375,7 +398,12 @@ pub fn build_tile_mesh(
                         }
                     }
                 }
+                // Emit the tile itself, then scatter a little procedural detail
+                // (grass blades, pebbles, sparkle) so flat ground reads as textured.
                 push_quad_blended(out, d.sx, d.sy, c_n, c_e, c_s, c_w);
+                if !matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
+                    tile_detail(out, kind, d.sx, d.sy, d.tx, d.ty, anim_time);
+                }
             }
             DrawKind::Sprite => {
                 // Fake 2.5D: ground shadow first, then a kind-aware silhouette.
@@ -390,7 +418,7 @@ pub fn build_tile_mesh(
                     }
                     other => push_styled_sprite(
                         out, d.sx, d.sy, other, d.color, d.half_w, d.half_h, d.lift, d.alpha,
-                        d.facing, anim_time,
+                        d.facing, d.walk, anim_time,
                     ),
                 }
             }
@@ -405,7 +433,7 @@ pub fn build_tile_mesh(
                     PLAYER_COLOR
                 };
                 push_shadow(out, d.sx, gy, HALF_W * 0.7, HALF_H * 0.7);
-                let parts = crate::elements::humanoid::build(d.sx, gy, tunic, 1.0, d.facing, anim_time);
+                let parts = crate::elements::humanoid::build(d.sx, gy, tunic, 1.0, d.facing, d.walk, anim_time);
                 rasterize(&parts, out);
             }
         }
@@ -483,6 +511,91 @@ fn push_shadow(out: &mut Vec<f32>, cx: f32, cy: f32, half_w: f32, half_h: f32) {
     }
 }
 
+/// Deterministic per-tile pseudo-random so scattered detail is stable across
+/// frames (no flicker) but varies from tile to tile.
+fn tile_hash(tx: i32, ty: i32) -> u32 {
+    let mut h = (tx as u32).wrapping_mul(374761393).wrapping_add((ty as u32).wrapping_mul(668265263));
+    h ^= h >> 13;
+    h = h.wrapping_mul(1274126177);
+    h ^= h >> 16;
+    h
+}
+
+/// Scatter small procedural detail onto a ground tile so it no longer reads as
+/// a flat colour sheet: grass blades (with a gentle sway), dirt/stone speckles,
+/// sand grains, snow sparkle. Detail is confined to the tile diamond.
+fn tile_detail(out: &mut Vec<f32>, kind: TileKind, sx: f32, sy: f32, tx: i32, ty: i32, anim_time: f32) {
+    let cx = sx;
+    let cy = sy + HALF_H; // tile center
+    let h = tile_hash(tx, ty);
+    let mut parts: Vec<Part> = Vec::new();
+    match kind {
+        TileKind::Grass | TileKind::Forest => {
+            let n = 2 + (h % 2);
+            for i in 0..n {
+                let r1 = (((h >> (i * 5)) & 31) as f32) / 31.0;
+                let r2 = (((h >> (i * 5 + 2)) & 31) as f32) / 31.0;
+                let ox = (r1 - 0.5) * (HALF_W * 0.9);
+                let oy = (r2 - 0.5) * (HALF_H * 0.7);
+                let s = sway(cx + ox, cy + oy, anim_time, 1.2);
+                let bh = 4.0 + r2 * 3.0;
+                let g = [0.18 + r1 * 0.06, 0.40 + r2 * 0.12, 0.15];
+                parts.push(Part::vquad(cx + ox + s - 0.6, cy + oy - bh, 1.2, bh, g, 1.0, false));
+            }
+            if kind == TileKind::Grass && (h & 7) == 0 {
+                let fx = cx + ((h % 17) as f32 - 8.0);
+                let fy = cy + ((h % 11) as f32 - 5.0);
+                parts.push(Part::diamond(fx, fy - 2.0, 1.6, 1.6, 0.0, [0.92, 0.82, 0.32], 1.0, false));
+            }
+        }
+        TileKind::Swamp => {
+            let n = 3 + (h % 3);
+            for i in 0..n {
+                let r1 = (((h >> (i * 4)) & 15) as f32) / 15.0;
+                let r2 = (((h >> (i * 4 + 2)) & 15) as f32) / 15.0;
+                let ox = (r1 - 0.5) * (HALF_W * 1.2);
+                let oy = (r2 - 0.5) * (HALF_H * 0.9);
+                let sh = 0.12 + r2 * 0.10;
+                parts.push(Part::diamond(cx + ox, cy + oy, 1.6, 1.0, 0.0, [sh, sh * 0.8, sh * 0.6], 1.0, false));
+            }
+        }
+        TileKind::Sand | TileKind::Desert => {
+            let n = 3 + (h % 3);
+            for i in 0..n {
+                let r1 = (((h >> (i * 4)) & 15) as f32) / 15.0;
+                let r2 = (((h >> (i * 4 + 2)) & 15) as f32) / 15.0;
+                let ox = (r1 - 0.5) * (HALF_W * 1.3);
+                let oy = (r2 - 0.5) * (HALF_H * 1.0);
+                let c = if r2 > 0.5 { [0.86, 0.78, 0.55] } else { [0.62, 0.54, 0.34] };
+                parts.push(Part::diamond(cx + ox, cy + oy, 1.3, 0.8, 0.0, c, 1.0, false));
+            }
+        }
+        TileKind::Snow => {
+            let n = 2 + (h % 3);
+            for i in 0..n {
+                let r1 = (((h >> (i * 4)) & 15) as f32) / 15.0;
+                let r2 = (((h >> (i * 4 + 2)) & 15) as f32) / 15.0;
+                let ox = (r1 - 0.5) * (HALF_W * 1.2);
+                let oy = (r2 - 0.5) * (HALF_H * 0.9);
+                let tw = 0.7 + 0.3 * (anim_time * 1.5 + (i as f32) + r1 * 6.0).sin().max(0.0);
+                parts.push(Part::diamond(cx + ox, cy + oy, 1.2, 1.0, 0.0, [0.95 * tw, 0.97 * tw, 1.0], 1.0, false));
+            }
+        }
+        TileKind::Stone | TileKind::Tundra => {
+            let n = 1 + (h % 2);
+            for i in 0..n {
+                let r1 = (((h >> (i * 4)) & 15) as f32) / 15.0;
+                let ox = (r1 - 0.5) * (HALF_W * 0.8);
+                parts.push(Part::vquad(cx + ox, cy - 8.0, 0.8, 16.0, [0.12, 0.12, 0.14], 0.6, false));
+            }
+        }
+        _ => {}
+    }
+    if !parts.is_empty() {
+        rasterize(&parts, out);
+    }
+}
+
 /// Draw a sprite using its kind-aware silhouette. `(cx, cy)` is the ground
 /// point (the tile top where the shadow sits); shapes are built upward.
 ///
@@ -500,6 +613,7 @@ fn push_styled_sprite(
     lift: f32,
     alpha: f32,
     facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) {
     use crate::elements::{
@@ -526,7 +640,7 @@ fn push_styled_sprite(
         SpriteStyle::Arrow => arrow::draw(out, cx, cy, color, alpha, facing),
         SpriteStyle::Slime => rasterize(&slime::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Humanoid => {
-            rasterize(&humanoid::build(cx, cy, color, alpha, facing, anim_time), out)
+            rasterize(&humanoid::build(cx, cy, color, alpha, facing, walk, anim_time), out)
         }
         SpriteStyle::HpBack => rasterize(&hpbar::back(cx, cy, hw, hh, lift, color, alpha), out),
         SpriteStyle::HpFill => rasterize(&hpbar::fill(cx, cy, hw, hh, lift, color, alpha), out),
@@ -636,7 +750,7 @@ mod tests {
         let world = WorldGen::new(1);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0);
+        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0, 0.0);
         assert!(quads > 0);
         // find the quad whose top corner sits at world (0,0) (tile 0,0)
         let mut found = None;
@@ -663,7 +777,7 @@ mod tests {
         let world = WorldGen::new(7);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0);
+        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0, 0.0);
         assert_eq!(mesh.len(), quads as usize * 6 * VERTEX_FLOATS);
         for i in (2..mesh.len()).step_by(VERTEX_FLOATS) {
             assert!((0.0..=1.0).contains(&mesh[i]), "r out of range at {i}");
@@ -729,13 +843,15 @@ mod tests {
             Some(&player),
             &mut mesh,
             0.0,
+            0.0,
         );
-        // player branch emits: ground shadow + humanoid (2 legs, torso, head,
-        // hair) each drawn as bright + dark-skirt + bright = 5*3 + 1 = 16 quads
+        // player branch emits: ground shadow (1) + humanoid (2 legs, torso, 2
+        // arms, 2 hands, head, hair = 9 parts) each drawn as bright + dark-skirt
+        // + bright = 9*3 + 1 = 28 quads
         let mut plain = Vec::new();
         let plain_quads =
-            build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut plain, 0.0);
-        assert_eq!(quads, plain_quads + 16);
+            build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut plain, 0.0, 0.0);
+        assert_eq!(quads, plain_quads + 28);
 
         // find the player quad (warm orange color)
         let mut player_quad = None;
@@ -794,6 +910,7 @@ mod tests {
             None,
             &mut mesh,
             0.0,
+            0.0,
         );
         let tree_idx = (0..quads as usize)
             .find(|&i| quad_vertices(&mesh, i)[2] == 0.06)
@@ -839,6 +956,7 @@ mod tests {
             None,
             &mut mesh,
             0.0,
+            0.0,
         );
         assert!(
             !(0..quads as usize).any(|i| quad_vertices(&mesh, i)[2] == 0.9),
@@ -876,9 +994,9 @@ mod tests {
         let slime = Sprite::new(0, 0, [0.30, 0.78, 0.36], 14.0, 14.0, 2.0).with_style(SpriteStyle::Slime);
 
         let mut m0 = Vec::new();
-        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m0, 0.0);
+        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m0, 0.0, 0.0);
         let mut m1 = Vec::new();
-        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m1, 0.3);
+        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m1, 0.3, 0.0);
 
         // slime green signature
         let is_slime = |v: &[f32]| v[2] > 0.25 && v[2] < 0.45 && v[3] > 0.7 && v[4] < 0.45;
