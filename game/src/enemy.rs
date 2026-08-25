@@ -8,6 +8,17 @@ use std::collections::{BinaryHeap, HashMap};
 pub const AGGRO_RANGE: f32 = 6.0;
 /// Contact damage range for attacks (chebyshev, tile units).
 pub const ATTACK_RANGE: f32 = 1.1;
+/// Telegraph duration (seconds) before a melee strike lands — the player can
+/// dodge during this window. Kept short so combat still feels snappy.
+pub const WINDUP: f32 = 0.38;
+/// Fraction of max HP at/below which "cowardly" enemies (goblin/imp) break and
+/// flee instead of fighting.
+pub const FLEE_HP_FRAC: f32 = 0.25;
+/// Ranged enemies try to hold this fraction of their shoot range as standoff
+/// distance: they back off if the player gets closer than `KITE_MIN_FRAC` of
+/// range, and close in if farther than `KITE_MAX_FRAC` of range.
+pub const KITE_MIN_FRAC: f32 = 0.55;
+pub const KITE_MAX_FRAC: f32 = 0.9;
 /// How often (seconds) an enemy replans its A* path.
 pub const REPLAN_INTERVAL: f32 = 0.5;
 /// Enemy speed in tiles/second (slower than the player, so you can escape).
@@ -237,6 +248,7 @@ pub enum AiState {
     Idle,
     Chase,
     Attack,
+    Flee,
 }
 
 #[derive(Debug, Clone)]
@@ -248,6 +260,10 @@ pub struct Enemy {
     pub state: AiState,
     pub facing: (f32, f32),
     pub attack_timer: f32,
+    /// Seconds remaining of a wind-up before a melee strike lands. While > 0 the
+    /// enemy is telegraphing (caller can render a tell); the hit only fires once
+    /// this reaches 0, giving the player a dodge window. 0 = not winding up.
+    pub windup: f32,
     /// Seconds remaining of the white "hit" flash (set to 1 on damage, decays).
     pub flash: f32,
     path_timer: f32,
@@ -274,6 +290,7 @@ impl Enemy {
             state: AiState::Idle,
             facing: (1.0, 0.0),
             attack_timer: 0.0,
+            windup: 0.0,
             flash: 0.0,
             path_timer: 0.0,
             path: Vec::new(),
@@ -351,15 +368,39 @@ impl Enemy {
 
         if d <= atk_range {
             self.state = AiState::Attack;
-            if self.attack_timer <= 0.0 {
-                self.attack_timer = cooldown;
-                self.facing = normalize(player.0 - self.x, player.1 - self.y);
-                return Some(self.kind.damage());
+            self.facing = normalize(player.0 - self.x, player.1 - self.y);
+            if self.attack_timer > 0.0 {
+                // on cooldown after a landed strike
+                return None;
             }
+            if self.windup > 0.0 {
+                // mid-telegraph: count down, then strike when it elapses
+                self.windup -= dt;
+                if self.windup <= 0.0 {
+                    self.attack_timer = cooldown;
+                    return Some(self.kind.damage());
+                }
+                return None;
+            }
+            // ready to attack: begin a visible wind-up (dodge window)
+            self.windup = WINDUP;
             return None;
         }
 
         if d <= aggro {
+            // Cowardly enemies (goblin/imp) break and flee once badly hurt,
+            // darting away from the player instead of pressing the attack.
+            if self.hp < self.kind.max_hp() * FLEE_HP_FRAC
+                && matches!(self.kind, EnemyKind::Goblin | EnemyKind::Imp)
+            {
+                self.state = AiState::Flee;
+                let (dx, dy) = normalize(self.x - player.0, self.y - player.1);
+                self.facing = (dx, dy);
+                self.x += dx * speed * 1.15 * dt;
+                self.y += dy * speed * 1.15 * dt;
+                return None;
+            }
+
             self.state = AiState::Chase;
             // Brute: wind up, then dash in a straight line toward the player.
             if self.kind == EnemyKind::Brute {
@@ -375,20 +416,37 @@ impl Enemy {
                     return None;
                 }
             }
-            // Ranged enemies fire a projectile when the player is in range.
-            if self.kind.ranged() && d <= self.kind.shoot_range() && self.shoot_timer <= 0.0 {
-                let (dx, dy) = normalize(player.0 - self.x, player.1 - self.y);
-                self.facing = (dx, dy);
-                self.pending_shot = Some((dx, dy));
-                self.shoot_timer = 1.8;
+            // Ranged enemies keep their distance: back off if the player gets
+            // too close, close in if too far, and only fire from standoff.
+            if self.kind.ranged() {
+                let sr = self.kind.shoot_range();
+                let to_p = normalize(player.0 - self.x, player.1 - self.y);
+                self.facing = (to_p.0, to_p.1);
+                if d <= sr * KITE_MIN_FRAC {
+                    // too close — kite away while still able to shoot
+                    self.x -= to_p.0 * speed * dt;
+                    self.y -= to_p.1 * speed * dt;
+                } else if d >= sr * KITE_MAX_FRAC {
+                    // too far — close the gap
+                    self.x += to_p.0 * speed * dt;
+                    self.y += to_p.1 * speed * dt;
+                }
+                if d <= sr && self.shoot_timer <= 0.0 {
+                    self.pending_shot = Some(to_p);
+                    self.shoot_timer = 1.8;
+                }
+                return None;
             }
-            // Flying enemies ignore terrain/structures and drift straight at
-            // the player (can't be juked behind walls).
+            // Flying enemies ignore terrain/structures and weave erratically
+            // toward the player (can't be juked behind walls).
             if self.kind.flying() {
                 let (dx, dy) = normalize(player.0 - self.x, player.1 - self.y);
+                // perpendicular sine weave so the flight path isn't a straight line
+                let wob = (self.x * 1.7 + self.y * 1.3 + self.path_timer * 4.0).sin() * 0.45;
+                let (px, py) = (-dy * wob, dx * wob);
                 self.facing = (dx, dy);
-                self.x += dx * speed * dt;
-                self.y += dy * speed * dt;
+                self.x += (dx + px) * speed * dt;
+                self.y += (dy + py) * speed * dt;
                 return None;
             }
             self.path_timer -= dt;
@@ -636,8 +694,15 @@ mod tests {
         let (w, mut c) = world();
         let mut e = Enemy::new(5.5, 5.5, EnemyKind::Slime);
         let mut blocked = blocked(&w, &mut c);
-        let hit = e.update((6.0, 6.0), 0.05, &mut blocked);
-        assert!(hit.is_some(), "adjacent slime must hit");
+        // The first tick begins a wind-up telegraph; damage lands once it elapses.
+        let mut hit = None;
+        for _ in 0..20 {
+            hit = e.update((6.0, 6.0), 0.05, &mut blocked);
+            if hit.is_some() {
+                break;
+            }
+        }
+        assert!(hit.is_some(), "adjacent slime must eventually hit after wind-up");
         assert_eq!(e.state, AiState::Attack);
     }
 
@@ -748,9 +813,40 @@ mod tests {
         let mut e = Enemy::new(5.5, 5.5, EnemyKind::Boss);
         let mut blocked = blocked(&w, &mut c);
         // within the boss melee reach (1.9) but outside the slime reach (1.1)
-        let hit = e.update((6.8, 5.5), 0.05, &mut blocked);
-        assert!(hit.is_some(), "boss must hit from its wider reach");
+        let mut hit = None;
+        for _ in 0..20 {
+            hit = e.update((6.8, 5.5), 0.05, &mut blocked);
+            if hit.is_some() {
+                break;
+            }
+        }
+        assert!(hit.is_some(), "boss must hit from its wider reach after wind-up");
         assert_eq!(e.state, AiState::Attack);
+    }
+
+    #[test]
+    fn melee_telegraphs_before_striking() {
+        let (w, mut c) = world();
+        let mut e = Enemy::new(5.5, 5.5, EnemyKind::Slime);
+        let mut blocked = blocked(&w, &mut c);
+        let first = e.update((6.0, 6.0), 0.05, &mut blocked);
+        assert!(first.is_none(), "first tick begins the wind-up, no hit yet");
+        assert!(e.windup > 0.0, "wind-up should be active");
+        assert_eq!(e.state, AiState::Attack);
+    }
+
+    #[test]
+    fn goblin_flees_when_low() {
+        let (w, mut c) = world();
+        let mut e = Enemy::new(5.5, 5.5, EnemyKind::Goblin);
+        e.hp = e.kind.max_hp() * 0.1;
+        let start = (e.x, e.y);
+        let mut blocked = blocked(&w, &mut c);
+        for _ in 0..12 {
+            e.update((9.0, 5.5), 0.05, &mut blocked);
+        }
+        assert_eq!(e.state, AiState::Flee, "badly hurt goblin should flee");
+        assert!(e.x < start.0, "goblin should move away from the player");
     }
 
     #[test]

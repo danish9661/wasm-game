@@ -5,7 +5,7 @@ use game::combat::{
     arrow_hits, swing_hits,
 };
 use game::daynight::{DAY_LENGTH, START_TIME, clock, daylight as daylight_at, temperature};
-use game::enemy::{AGGRO_RANGE, AiState, EnemyRegistry, EnemyKind, spawner_on};
+use game::enemy::{AGGRO_RANGE, AiState, EnemyRegistry, EnemyKind, WINDUP, spawner_on};
 use game::items::{Inventory, ItemKind};
 use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls};
@@ -2403,6 +2403,16 @@ impl App {
                     sp.color[0] + (1.0 - sp.color[0]) * f,
                     sp.color[1] + (1.0 - sp.color[1]) * f,
                     sp.color[2] + (1.0 - sp.color[2]) * f,
+                ];
+            }
+            // Wind-up telegraph: as the strike nears, the figure flushes red so
+            // the player gets a clear dodge cue before contact damage lands.
+            if e.windup > 0.0 {
+                let t = (e.windup / WINDUP).clamp(0.0, 1.0);
+                sp.color = [
+                    sp.color[0] + (1.0 - sp.color[0]) * 0.6 * t,
+                    sp.color[1] * (1.0 - 0.45 * t),
+                    sp.color[2] * (1.0 - 0.45 * t),
                 ];
             }
             // Drive walk-cycle animation: idle enemies breathe; chasing/attacking
