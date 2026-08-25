@@ -172,6 +172,26 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
         let fall = lp.z * exp(-d * d / (lp.w * lp.w));
         col += vec4<f32>(u.lights[i * 2u + 1u].rgb * fall, 0.0);
     }
+    // Screen-space vignette + horizon fog, done on the GPU so the readback
+    // fallback path (which previously ran a 500k-pixel CPU loop per frame)
+    // stays cheap. u.tint already holds the sky tint for the time of day.
+    let p = in.pos.xy;
+    let cx = u.viewport.x * 0.5;
+    let cy = u.viewport.y * 0.5;
+    let nx = (p.x - cx) / cx;
+    let ny = (p.y - cy) / cy;
+    let dd = sqrt(nx * nx + ny * ny);
+    var v = 1.0;
+    if (dd > 0.6) {
+        let t = clamp((dd - 0.6) / 0.55, 0.0, 1.0);
+        let s = t * t * (3.0 - 2.0 * t);
+        v = 1.0 - s * 0.45;
+    }
+    let y_norm = p.y / u.viewport.y;
+    let fog_t = clamp((0.55 - y_norm) / 0.55, 0.0, 1.0) * 0.26;
+    let fog = clamp(u.tint * 0.8 + 0.2, vec3<f32>(0.0), vec3<f32>(1.0));
+    col = vec4<f32>(col.rgb * v, col.a);
+    col = vec4<f32>(mix(col.rgb, fog, fog_t), col.a);
     return vec4<f32>(col.rgb, col.a);
 }
 "#;
@@ -331,54 +351,11 @@ fn blit_to_2d_canvas(
             }
         }
         // Force opaque alpha so the page background can't show through as holes.
+        // (Vignette + horizon fog now run in the fragment shader on the GPU; the
+        // readback path used to recompute them here in a 500k-pixel CPU loop
+        // every frame, which was the fps bottleneck on slower machines.)
         for a in cache.buf.iter_mut().skip(3).step_by(4) {
             *a = 255;
-        }
-        // vignette: gently darken toward the edges to focus the eye and add
-        // mood (computed on the unpadded CPU copy since the 2D gradient API
-        // isn't available in this build).
-        {
-        let wf = w as f64;
-        let hf = h as f64;
-        let cx = wf * 0.5;
-        let cy = hf * 0.5;
-        // Atmospheric distance fog: the far (upper) screen fades toward the
-        // horizon tint so the flat isometric ground gains depth. Pre-compute
-        // the fog target colour (0..255) from the time-of-day sky tint.
-        let fog = sky_tint(tod);
-        let fog_r = (fog[0] * 0.8 + 0.2).clamp(0.0, 1.0) as f64 * 255.0;
-        let fog_g = (fog[1] * 0.8 + 0.2).clamp(0.0, 1.0) as f64 * 255.0;
-        let fog_b = (fog[2] * 0.8 + 0.2).clamp(0.0, 1.0) as f64 * 255.0;
-        const FOG_MAX: f64 = 0.26;
-        for y in 0..h {
-            let ny = (y as f64 - cy) / cy;
-            // fog strength: 0 at ~55% screen height (player band) rising to
-            // FOG_MAX at the top (horizon).
-            let y_norm = y as f64 / hf;
-            let fog_t = (((0.55 - y_norm) / 0.55).clamp(0.0, 1.0) * FOG_MAX).clamp(0.0, 1.0);
-            for x in 0..w {
-                let nx = (x as f64 - cx) / cx;
-                let d = (nx * nx + ny * ny).sqrt();
-                let v = if d <= 0.6 {
-                    1.0
-                } else {
-                    let t = ((d - 0.6) / 0.55).clamp(0.0, 1.0);
-                    let s = t * t * (3.0 - 2.0 * t);
-                    1.0 - s * 0.45
-                };
-                let i = (y * w + x) * 4;
-                let mut r = cache.buf[i] as f64 * v;
-                let mut g = cache.buf[i + 1] as f64 * v;
-                let mut b = cache.buf[i + 2] as f64 * v;
-                // blend toward fog colour
-                r = r + (fog_r - r) * fog_t;
-                g = g + (fog_g - g) * fog_t;
-                b = b + (fog_b - b) * fog_t;
-                cache.buf[i] = r as u8;
-                cache.buf[i + 1] = g as u8;
-                cache.buf[i + 2] = b as u8;
-            }
-        }
         }
         let clamped = Clamped(cache.buf.as_slice());
         match ImageData::new_with_u8_clamped_array_and_sh(clamped, width, height) {
