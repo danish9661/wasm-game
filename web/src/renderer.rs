@@ -575,6 +575,15 @@ fn set_backend(mode: &str) {
     let _ = js_sys::eval(&format!("window.setBackend && window.setBackend('{mode}')"));
 }
 
+/// EXPERIMENT switch: when true, on a successful surface present we display the
+/// WebGPU surface directly (gpu mode) and SKIP the per-frame `drawImage` readback
+/// to #blit that is the measured ~50-70ms fps wall. Set via the `?gpu` URL param.
+static FORCE_GPU: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn set_force_gpu(v: bool) {
+    FORCE_GPU.store(v, std::sync::atomic::Ordering::Relaxed);
+}
+
 pub struct App {
     canvas: HtmlCanvasElement,
     surface: wgpu::Surface<'static>,
@@ -2328,17 +2337,27 @@ impl App {
             let cmd = encoder.finish();
             self.queue.submit([cmd]);
             self.queue.present(f);
-            blit_via_draw(
-                self.config.width,
-                self.config.height,
-                self.time_of_day,
-                self.anim_clock,
-                self.weather,
-            );
-            if self.backend_mode != 2 {
-                self.backend_mode = 2;
-                self.using_blit = true;
-                set_backend("blit");
+            if FORCE_GPU.load(std::sync::atomic::Ordering::Relaxed) {
+                // EXPERIMENT (?gpu): trust that the surface composites and show
+                // it directly, skipping the per-frame readback that stalls fps.
+                if self.backend_mode != 1 {
+                    self.backend_mode = 1;
+                    self.using_blit = false;
+                    set_backend("gpu");
+                }
+            } else {
+                blit_via_draw(
+                    self.config.width,
+                    self.config.height,
+                    self.time_of_day,
+                    self.anim_clock,
+                    self.weather,
+                );
+                if self.backend_mode != 2 {
+                    self.backend_mode = 2;
+                    self.using_blit = true;
+                    set_backend("blit");
+                }
             }
         } else if self.backend_mode == 2 {
             // Blit fallback: render to the offscreen target and read it back to

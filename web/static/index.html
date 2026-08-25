@@ -221,6 +221,9 @@
     // ---- Audio (procedural, gesture-gated) -------------------------------
     let actx = null, masterGain = null, sfxGain = null, musicGain = null, rainGain = null;
     function setBackend(mode) {
+      // EXPERIMENT (?gpu): prefer the real WebGPU surface and ignore the
+      // fallback to #blit so we can confirm whether the surface composites.
+      if (window.__forceGpu && mode === 'blit') return;
       const g = document.getElementById('game');
       const b = document.getElementById('blit');
       if (mode === 'gpu') { if (g) g.style.display = 'block'; if (b) b.style.display = 'none'; }
@@ -230,6 +233,7 @@
     window.setBackend = setBackend;
     // Default to the real WebGPU canvas; Rust switches to #blit only if the
     // surface can't present (e.g. SwiftShader). This avoids the frozen-blit flash.
+    if (location.search.includes('gpu')) window.__forceGpu = true;
     setBackend('gpu');
     function displayCanvas() {
       return window.backend === 'gpu' ? document.getElementById('game') : document.getElementById('blit');
@@ -763,7 +767,7 @@
 
           function frame(t) {
             if (!window.__firstFrame) { window.__firstFrame = true; console.log('[page] first animation frame (rAF firing)'); }
-            if (!didResize && app_ready()) { try { resize(); } catch (_) {} didResize = true; }
+            if (!didResize && app_ready()) { try { resize(); } catch (_) {} didResize = true; if (window.__forceGpu) { try { set_force_gpu(true); } catch (_) {} } }
             if (!paused && t - lastStep >= 8) {
               lastStep = t;
               const ts = performance.now();
