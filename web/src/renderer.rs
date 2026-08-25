@@ -321,6 +321,7 @@ fn blit_to_2d_canvas(
     tod: f32,
     aclock: f32,
     weather: u8,
+    hp01: f32,
 ) {
     let window = match web_sys::window() {
         Some(w) => w,
@@ -404,7 +405,7 @@ fn blit_to_2d_canvas(
                 glog(&format!("[gfx] blit: ImageData error {e:?}"));
             }
         }
-        draw_atmosphere(&cache.ctx, width, height, tod, aclock, weather);
+        draw_atmosphere(&cache.ctx, width, height, tod, aclock, weather, hp01);
     });
 }
 
@@ -417,6 +418,7 @@ fn draw_atmosphere(
     tod: f32,
     aclock: f32,
     weather: u8,
+    hp01: f32,
 ) {
     let w = width as f64;
     let h = height as f64;
@@ -498,13 +500,30 @@ fn draw_atmosphere(
             ctx.fill_rect(0.0, 0.0, w, h);
         }
     }
+    // Low-HP warning: a pulsing red vignette when health is critical (<40%).
+    let low = ((0.4 - hp01) / 0.4).clamp(0.0, 1.0);
+    if low > 0.001 {
+        let pulse = 0.55 + 0.45 * (aclock * 4.0).sin();
+        let a = 0.5 * low * pulse;
+        if let Ok(grad) = ctx.create_radial_gradient(
+            w / 2.0, h / 2.0,
+            (w.min(h)) * 0.18,
+            w / 2.0, h / 2.0,
+            (w.max(h)) * 0.78,
+        ) {
+            let _ = grad.add_color_stop(0.0, "rgba(150,0,0,0)");
+            let _ = grad.add_color_stop(1.0, &format!("rgba(150,0,0,{})", a));
+            ctx.set_fill_style(grad.as_ref());
+            ctx.fill_rect(0.0, 0.0, w, h);
+        }
+    }
 }
 
 /// Fast display path: copy the WebGPU surface (#game) onto the 2D #blit canvas
 /// with a GPU->GPU `drawImage` instead of a GPU->CPU readback + `putImageData`.
 /// The surface's backing is still drawable even when the browser won't composite
 /// the WebGPU canvas itself, so this avoids the slow CPU stall entirely.
-fn blit_via_draw(width: u32, height: u32, tod: f32, aclock: f32, weather: u8) {
+fn blit_via_draw(width: u32, height: u32, tod: f32, aclock: f32, weather: u8, hp01: f32) {
     let window = match web_sys::window() {
         Some(w) => w,
         None => return,
@@ -541,7 +560,7 @@ fn blit_via_draw(width: u32, height: u32, tod: f32, aclock: f32, weather: u8) {
         None => return,
     };
     let _ = ctx.draw_image_with_html_canvas_element(&game, 0.0, 0.0);
-    draw_atmosphere(&ctx, width, height, tod, aclock, weather);
+    draw_atmosphere(&ctx, width, height, tod, aclock, weather, hp01);
 }
 
 struct VertexBuffer {
@@ -1391,6 +1410,12 @@ impl App {
         let mut sparks = Vec::new();
         for e in &mut hits {
             e.take_damage(SWING_DAMAGE);
+            // Knock the struck enemy back along the player->enemy vector.
+            let dx = e.x - self.player.x;
+            let dy = e.y - self.player.y;
+            let len = (dx * dx + dy * dy).sqrt().max(0.01);
+            e.x += dx / len * 0.2;
+            e.y += dy / len * 0.2;
             sparks.push((e.x, e.y));
         }
         if !hits.is_empty() {
@@ -1400,6 +1425,12 @@ impl App {
         for (x, y) in sparks {
             self.spawn_particles(x, y, [1.0, 0.92, 0.62], 7, 55.0, 0.35, 3.5);
         }
+        // Swept slash: a short white arc of particles in front of the player.
+        let (fx, fy) = self.player.facing;
+        let flen = (fx * fx + fy * fy).sqrt().max(0.01);
+        let cx = self.player.x + fx / flen * SWING_REACH * 0.5;
+        let cy = self.player.y + fy / flen * SWING_REACH * 0.5;
+        self.spawn_particles(cx, cy, [1.0, 1.0, 0.95], 6, 40.0, 0.18, 2.5);
         self.sweep_dead();
     }
 
@@ -1432,9 +1463,11 @@ impl App {
                 EnemyKind::Slime => self.slimes_killed += 1,
                 EnemyKind::Boss => {
                     self.boss_killed += 1;
+                    play_sfx("victory");
                 }
                 EnemyKind::Colossus => {
                     self.colossus_killed += 1;
+                    play_sfx("victory");
                 }
                 _ => {}
             }
@@ -2090,6 +2123,7 @@ impl App {
         if self.quest.stage >= 5 && !self.boss_spawned {
             self.enemies.get(self.ruins.0, self.ruins.1, EnemyKind::Boss, dt);
             self.boss_spawned = true;
+            play_sfx("roar");
         }
         // The Reforging Altar rises at the waking place once the fragment is taken.
         if self.quest.stage >= 6 && !self.altar_placed {
@@ -2590,6 +2624,7 @@ impl App {
                     self.time_of_day,
                     self.anim_clock,
                     self.weather,
+                    self.player.hp / 100.0,
                 );
                 if self.backend_mode != 2 {
                     self.backend_mode = 2;
@@ -2662,6 +2697,7 @@ impl App {
                     },
                 );
                 let rc = enc.finish();
+                let hp01 = self.player.hp / 100.0;
                 rc.map_buffer_on_submit(
                     &buf.clone(),
                     wgpu::MapMode::Read,
@@ -2678,6 +2714,7 @@ impl App {
                                         tod,
                                         aclock,
                                         weather,
+                                        hp01,
                                     );
                                     drop(data);
                                     *READBACK.lock().unwrap() = String::from("blitted");
