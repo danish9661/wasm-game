@@ -79,6 +79,13 @@
         <span class="k">Esc</span><span class="d">Settings</span>
       </div>
       <p class="help-note">The <b>Speed</b> readout (top-left) shows your live movement in tiles/second — it should climb above 0 the moment you press a movement key. <b>FPS</b> is the real render rate.</p>
+      <h2 style="margin-top:14px">GOALS</h2>
+      <div class="help-grid">
+        <span class="k">1 · Survive</span><span class="d">Gather wood &amp; stone, build a campfire + bed, craft tools at an anvil. Eat to stay fed.</span>
+        <span class="k">2 · Explore</span><span class="d">Open chests, harvest nodes, read the Codex (L) to learn each enemy's drops and weakness.</span>
+        <span class="k">3 · Defeat</span><span class="d">Slay the roaming Boss (and the Colossus) — they guard the Fragments you need to win.</span>
+        <span class="k">FPS low?</span><span class="d">Launch Chrome with <code>--enable-features=Vulkan</code> (or use <code>launch.sh</code>), or turn on <i>Auto Resolution</i> in Settings (Esc).</span>
+      </div>
       <div class="menu-btns"><button id="btn-help-close" class="menu-btn">Close</button></div>
     </div>
   </div>
@@ -989,6 +996,13 @@
           const closeHelp = () => { helpEl.className = 'hidden'; paused = false; };
           el('help').onclick = openHelp;
           el('btn-help-close').onclick = closeHelp;
+          // Auto-open the controls/help panel on a player's first ever visit.
+          try {
+            if (!localStorage.getItem('sf_help_seen')) {
+              openHelp();
+              localStorage.setItem('sf_help_seen', '1');
+            }
+          } catch (_) {}
           el('btn-save').onclick = () => { doSave(); toast('Game saved'); };
           el('set-master').oninput = (e) => { settings.master = Number(e.target.value); applyAudio(); saveSettings(); };
           el('set-sfx').oninput = (e) => { settings.sfx = Number(e.target.value); applyAudio(); saveSettings(); };

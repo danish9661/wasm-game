@@ -725,6 +725,8 @@ pub struct App {
     farm_cd: std::collections::HashMap<(i32, i32), f32>,
     /// True once the player has crafted Iron Plate (used by the quest log).
     crafted_iron: bool,
+    /// Screen-shake impulse (px), decays each frame; set on player damage.
+    shake: f32,
 }
 
 impl App {
@@ -1182,6 +1184,7 @@ impl App {
             weather_timer: 25.0,
             farm_cd: std::collections::HashMap::new(),
             crafted_iron: false,
+            shake: 0.0,
         })
     }
 
@@ -1212,16 +1215,27 @@ impl App {
                 "KeyX" => self.build(StructureKind::Spike),
                 "KeyU" => self.build(StructureKind::FarmPlot),
                 "KeyZ" => self.try_sleep(),
-                "KeyJ" => self.swing(),
-                "KeyK" => self.shoot_arrow(),
+                "KeyJ" => {
+                    self.swing();
+                    play_sfx("swing");
+                }
+                "KeyK" => {
+                    self.shoot_arrow();
+                    play_sfx("shoot");
+                }
                 "KeyC" => {
-                    self.player.eat(&mut self.inventory);
+                    if self.player.eat(&mut self.inventory) {
+                        play_sfx("eat");
+                    }
                 }
                 "KeyR" => {
-                    self.use_salve();
+                    if self.use_salve() {
+                        play_sfx("salve");
+                    }
                 }
                 "Space" => {
                     self.dodge();
+                    play_sfx("dodge");
                 }
                 // Build mode: Q toggles it, Esc exits, 1-7 pick a structure.
                 "KeyQ" => {
@@ -1264,6 +1278,7 @@ impl App {
     pub fn place_selected(&mut self) {
         if let Some(kind) = self.build_mode {
             self.build(kind);
+            play_sfx("build");
         }
     }
 
@@ -1309,6 +1324,7 @@ impl App {
             3 => self.inventory.add(ItemKind::Food, 2),
             _ => {}
         }
+        play_sfx("craft");
         true
     }
 
@@ -1376,6 +1392,9 @@ impl App {
         for e in &mut hits {
             e.take_damage(SWING_DAMAGE);
             sparks.push((e.x, e.y));
+        }
+        if !hits.is_empty() {
+            play_sfx("hit");
         }
         drop(hits);
         for (x, y) in sparks {
@@ -1605,6 +1624,7 @@ impl App {
             self.time_of_day = 0.32; // wake ~07:40 with daylight climbing
             self.player.hunger = (self.player.hunger + 30.0).min(100.0);
             self.player.hp = (self.player.hp + 20.0).min(100.0);
+            play_sfx("sleep");
         }
     }
 
@@ -1927,10 +1947,10 @@ impl App {
             self.res_timer += dt;
             if self.res_timer >= 1.5 {
                 self.res_timer = 0.0;
-                if self.fps_est < 55.0 && self.res_level < RES_LEVELS.len() - 1 {
+                if self.fps_est < 50.0 && self.res_level < RES_LEVELS.len() - 1 {
                     self.res_level += 1;
                     self.resize();
-                } else if self.fps_est > 80.0 && self.res_level > self.max_res_level {
+                } else if self.fps_est > 75.0 && self.res_level > self.max_res_level {
                     self.res_level -= 1;
                     self.resize();
                 }
@@ -2037,9 +2057,16 @@ impl App {
             }
         }
         if let Some(dmg) = contact {
-            // Iron Plate (crafted at an Anvil) reduces incoming damage.
-            let dmg = dmg * (1.0 - self.craft_armor);
+            // Iron Plate (crafted at an Anvil) reduces incoming damage, and the
+            // world bites harder at night.
+            let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
+            let dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
             self.player.take_damage(dmg);
+            play_sfx("hurt");
+            self.shake = self.shake.max(7.0);
+            if !self.player.alive {
+                play_sfx("death");
+            }
         }
         self.sweep_dead();
         self.collect_loot(dt);
@@ -2114,6 +2141,7 @@ impl App {
                     if arrow_hits(a, std::iter::once(&*e)).is_some() {
                         e.take_damage(ARROW_DAMAGE);
                         hit_pos.push((e.x, e.y));
+                        play_sfx("hit");
                         return false;
                     }
                 }
@@ -2122,7 +2150,14 @@ impl App {
                 let dx = self.player.x - a.x;
                 let dy = self.player.y - a.y;
                 if dx * dx + dy * dy <= 0.8 * 0.8 {
-                    self.player.take_damage(ARROW_DAMAGE * (1.0 - self.craft_armor));
+                    let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
+                    let dmg = ARROW_DAMAGE * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
+                    self.player.take_damage(dmg);
+                    play_sfx("hurt");
+                    self.shake = self.shake.max(7.0);
+                    if !self.player.alive {
+                        play_sfx("death");
+                    }
                     hit_pos.push((a.x, a.y));
                     return false;
                 }
@@ -2213,7 +2248,20 @@ impl App {
         let focus = render::focus_target(&self.player, (self.viewport[0], self.viewport[1]));
         let focus = (focus.0 + self.cam_lead.0, focus.1 + self.cam_lead.1);
         player::follow_camera(&mut self.camera, focus, dt);
+        // Screen shake: jitter the camera for this frame's render, then restore so
+        // the follow camera doesn't drift. Decays toward 0 over the next frames.
+        let cam_save = self.camera;
+        if self.shake > 0.15 {
+            let n = (self.frames as f32 * 0.7).sin() * 43758.5453;
+            let r1 = n.fract() * 2.0 - 1.0;
+            let r2 = ((self.frames as f32 * 1.3).sin() * 12543.13).fract() * 2.0 - 1.0;
+            self.camera.x += r1 * self.shake;
+            self.camera.y += r2 * self.shake;
+        }
         self.ensure_visible();
+        if self.shake > 0.0 {
+            self.shake = (self.shake * 0.85).max(0.0);
+        }
         let sprites = self.sprites();
         let tiles = &self.visible_cache.4;
         // Movement intensity drives the humanoid walk cycle (0 = standing, 1 = brisk walk).
@@ -2230,6 +2278,9 @@ impl App {
             self.anim_clock,
             player_walk,
         );
+        // The jittered camera was only for this frame's render; restore the real
+        // one so the follow camera doesn't accumulate the shake offset.
+        self.camera = cam_save;
         // The player quad is always emitted while `player` is Some (it is, in
         // the live loop), so scanning the whole vertex buffer every frame to
         // rediscover it is wasted work.
