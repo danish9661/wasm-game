@@ -213,6 +213,15 @@ impl NodeRegistry {
     pub fn restore_depleted(&mut self, tx: i32, ty: i32, kind: ResourceKind) {
         self.nodes.insert((tx, ty), ResourceNode { tx, ty, kind, hp: 0 });
     }
+
+    /// Every node (live or depleted) with its depleted flag — used by the
+    /// multiplayer server to describe harvestable resources to clients.
+    pub fn all(&self) -> Vec<(i32, i32, ResourceKind, bool)> {
+        self.nodes
+            .iter()
+            .map(|(&(tx, ty), n)| (tx, ty, n.kind, n.depleted()))
+            .collect()
+    }
 }
 
 #[cfg(test)]

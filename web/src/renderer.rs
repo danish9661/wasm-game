@@ -5,7 +5,7 @@ use game::combat::{
     arrow_hits, swing_hits,
 };
 use game::daynight::{DAY_LENGTH, START_TIME, clock, daylight as daylight_at, temperature};
-use game::enemy::{AGGRO_RANGE, AiState, EnemyRegistry, EnemyKind, WINDUP, spawner_on};
+use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, WINDUP, spawner_on};
 use game::items::{Inventory, ItemKind};
 use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls};
@@ -13,7 +13,9 @@ use game::quest::QuestLog;
 use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
 use game::iso::{HALF_H, HALF_W};
 use game::resources::{NodeRegistry, ResourceKind, resource_on, HARVEST_RANGE};
+use game::sim::PlayerInput;
 use game::world::{ChunkCache, TileKind, WorldGen, tile_at, CHUNK_SIZE};
+use crate::network::NetClient;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
@@ -766,6 +768,18 @@ pub struct App {
     /// input; Some((x,y)) is an un-normalized drag offset that yields a
     /// direction). Takes priority over the WASD keys while active.
     analog: Option<(f32, f32)>,
+    /// Multiplayer client (None in single-player).
+    net: Option<NetClient>,
+    /// Our server-assigned player id (set once the server Welcomes us).
+    net_id: Option<u32>,
+    /// Remote co-op players, rebuilt each frame from the server snapshot.
+    remote_players: Vec<Player>,
+    /// One-shot action intents latched by input handlers, consumed each
+    /// frame when building the network PlayerInput.
+    net_atk: bool,
+    net_dodge: bool,
+    net_harvest: bool,
+    net_eat: bool,
 }
 
 impl App {
@@ -1140,7 +1154,7 @@ impl App {
             structures.push(Structure { tx: wx, ty: wy, kind: StructureKind::Wall });
         }
 
-        Ok(Self {
+        let mut app = Self {
             canvas,
             surface,
             device,
@@ -1227,7 +1241,40 @@ impl App {
             shake: 0.0,
             hurt_flash: 0.0,
             analog: None,
-        })
+            net: None,
+            net_id: None,
+            remote_players: Vec::new(),
+            net_atk: false,
+            net_dodge: false,
+            net_harvest: false,
+            net_eat: false,
+        };
+
+        // Multiplayer: a `?mp=ws://host:port` URL query joins a co-op server.
+        // The server is authoritative; the client overlays the synced world
+        // each frame on top of its local (predictive) simulation.
+        if let Some(url) = web_sys::window()
+            .and_then(|w| w.location().search().ok())
+            .and_then(|q| {
+                q.split('&')
+                    .find_map(|kv| {
+                        let mut it = kv.trim_start_matches('?').splitn(2, '=');
+                        let k = it.next()?;
+                        let v = it.next()?;
+                        if k == "mp" {
+                            Some(v.to_string())
+                        } else {
+                            None
+                        }
+                    })
+            })
+        {
+            if let Ok(client) = NetClient::connect(&url) {
+                app.net = Some(client);
+            }
+        }
+
+        Ok(app)
     }
 
     pub fn set_key(&mut self, code: &str, down: bool) {
@@ -1266,6 +1313,7 @@ impl App {
                     play_sfx("shoot");
                 }
                 "KeyC" => {
+                    self.net_eat = true;
                     if self.player.eat(&mut self.inventory) {
                         play_sfx("eat");
                     }
@@ -1397,6 +1445,7 @@ impl App {
         if !self.player.alive {
             return;
         }
+        self.net_dodge = true;
         let dir = if let Some((ax, ay)) = self.analog {
             let len = (ax * ax + ay * ay).sqrt();
             if len < 1e-4 {
@@ -1441,6 +1490,7 @@ impl App {
 
     /// Melee swing in the facing direction: hits every enemy in the arc.
     fn swing(&mut self) {
+        self.net_atk = true;
         if !self.player.spend_stamina(6.0) {
             return;
         }
@@ -1561,6 +1611,7 @@ impl App {
     }
 
     fn harvest(&mut self) {
+        self.net_harvest = true;
         // Reforge at the altar when carrying the fragment: this arms the
         // choice; the HUD shows Reign/Shatter and forwards the pick to reforge().
         if self.ending.is_none() {
@@ -2393,6 +2444,9 @@ impl App {
             self.camera.y += r2 * self.shake;
         }
         self.ensure_visible();
+        // Multiplayer: send our input and overlay the authoritative server
+        // world on top of this frame's local (predictive) simulation.
+        self.net_sync();
         if self.shake > 0.0 {
             self.shake = (self.shake * 0.85).max(0.0);
         }
@@ -2419,6 +2473,101 @@ impl App {
         // the live loop), so scanning the whole vertex buffer every frame to
         // rediscover it is wasted work.
         self.player_in_mesh = true;
+    }
+
+    /// Synchronize with the multiplayer server: send this frame's input and
+    /// overlay the authoritative snapshot onto our local fields. Single-player
+    /// (no `net`) is a no-op. Remote players are rebuilt here and drawn as
+    /// humanoid sprites in `sprites()`.
+    fn net_sync(&mut self) {
+        let client = match self.net.as_ref() {
+            Some(c) => c,
+            None => return,
+        };
+
+        let (mx, my) = match self.analog {
+            Some((ax, ay)) => (ax, ay),
+            None => player::input_dir(self.keys[0], self.keys[1], self.keys[2], self.keys[3]),
+        };
+        let input = PlayerInput {
+            move_x: mx,
+            move_y: my,
+            dodge: self.net_dodge,
+            attack: self.net_atk,
+            harvest: self.net_harvest,
+            eat: self.net_eat,
+            build: None,
+        };
+        self.net_dodge = false;
+        self.net_atk = false;
+        self.net_harvest = false;
+        self.net_eat = false;
+        client.send_input(&input);
+
+        let my_id = match client.id() {
+            Some(id) => id,
+            None => return,
+        };
+        let snap = match client.take_latest() {
+            Some(s) => s,
+            None => return,
+        };
+
+        if let Some(lp) = snap.players.iter().find(|p| p.id == my_id) {
+            self.player.x = lp.x;
+            self.player.y = lp.y;
+            self.player.hp = lp.hp;
+            self.player.hunger = lp.hunger;
+            self.player.stamina = lp.stamina;
+            self.player.facing = lp.facing;
+            self.player.alive = lp.alive;
+        }
+
+        let mut enemies = Vec::with_capacity(snap.enemies.len());
+        for es in &snap.enemies {
+            let mut e = Enemy::new(es.x, es.y, es.kind);
+            e.hp = es.hp;
+            e.facing = es.facing;
+            e.state = es.state;
+            e.windup = es.windup;
+            e.flash = es.flash;
+            enemies.push(e);
+        }
+        self.enemies.render_sync(enemies);
+
+        self.structures = snap
+            .structures
+            .iter()
+            .map(|s| Structure { tx: s.tx, ty: s.ty, kind: s.kind })
+            .collect();
+        self.arrows = snap
+            .arrows
+            .iter()
+            .map(|a| Arrow {
+                x: a.x,
+                y: a.y,
+                dx: a.dx,
+                dy: a.dy,
+                life: 3.0,
+                from_player: a.from_player,
+            })
+            .collect();
+        self.time_of_day = snap.time_of_day;
+
+        self.remote_players = snap
+            .players
+            .iter()
+            .filter(|p| p.id != my_id)
+            .map(|p| {
+                let mut pl = Player::new(p.x, p.y);
+                pl.hp = p.hp;
+                pl.hunger = p.hunger;
+                pl.stamina = p.stamina;
+                pl.facing = p.facing;
+                pl.alive = p.alive;
+                pl
+            })
+            .collect();
     }
 
     /// Recompute the visible-tile list only when the camera or viewport
@@ -2536,6 +2685,28 @@ impl App {
                     bar_lift,
                 )
                 .with_style(SpriteStyle::HpFill),
+            );
+        }
+        // Remote multiplayer players: humanoid figures with a distinct tint
+        // (and a small HP plate) so allies are easy to tell apart.
+        for rp in &self.remote_players {
+            if !rp.alive {
+                continue;
+            }
+            sprites.push(
+                Sprite::new_center(rp.x, rp.y, [0.35, 0.65, 1.0], 16.0, 22.0, 0.0)
+                    .with_style(SpriteStyle::Humanoid)
+                    .with_facing(rp.facing)
+                    .with_walk(0.6),
+            );
+            sprites.push(
+                Sprite::new_center(rp.x, rp.y, [0.0, 0.0, 0.0], 11.0, 2.5, 28.0)
+                    .with_style(SpriteStyle::HpBack),
+            );
+            let hp01 = (rp.hp / 100.0).clamp(0.0, 1.0);
+            sprites.push(
+                Sprite::new_center(rp.x, rp.y, [1.0 - hp01, hp01, 0.1], 11.0 * hp01.max(0.05), 2.5, 28.0)
+                    .with_style(SpriteStyle::HpFill),
             );
         }
         for a in &self.arrows {

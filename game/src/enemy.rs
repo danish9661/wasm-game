@@ -246,7 +246,7 @@ impl EnemyKind {
 }
 
 /// Internal AI state of one enemy.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AiState {
     Idle,
     Chase,
@@ -633,6 +633,15 @@ pub fn get(&mut self, tx: i32, ty: i32, kind: EnemyKind, dt: f32) -> Option<&mut
 
     pub fn count(&self) -> usize {
         self.enemies.len()
+    }
+
+    /// Replace the entire enemy set with the server's snapshot (multiplayer
+    /// client). Keyed by tile so the spawner registry logic keeps working.
+    pub fn render_sync(&mut self, enemies: Vec<Enemy>) {
+        self.enemies = enemies
+            .into_iter()
+            .map(|e| ((e.x as i32, e.y as i32), e))
+            .collect();
     }
 
     /// Marks a spawner dead and starts its respawn timer.

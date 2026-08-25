@@ -10,6 +10,7 @@ pub mod poi;
 pub mod quest;
 pub mod render;
 pub mod resources;
+pub mod sim;
 pub mod world;
 
 pub const TILE_WIDTH: f32 = 64.0;
