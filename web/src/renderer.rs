@@ -879,6 +879,11 @@ impl App {
 
     /// Bestiary / Codex: every enemy kind the player has discovered so far,
     /// with its stats and behaviour. Returns a JSON array of objects.
+    /// Human-readable name of the biome under the player (e.g. "Forest").
+    pub fn biome_name(&self) -> String {
+        format!("{:?}", self.cur_biome)
+    }
+
     pub fn codex(&self) -> String {
         let mut kinds: Vec<EnemyKind> = self.discovered.iter().copied().collect();
         kinds.sort_by_key(|k| k.name());

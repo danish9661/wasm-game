@@ -177,6 +177,16 @@ pub fn get_minimap() -> String {
     })
 }
 
+/// Current biome under the player (e.g. "Forest"). Used by the page to pick a
+/// gentle ambient sound bed.
+#[wasm_bindgen]
+pub fn current_biome() -> String {
+    APP.with(|cell| match cell.borrow().as_ref() {
+        Some(app) => app.biome_name(),
+        None => String::from("Grass"),
+    })
+}
+
 /// Bestiary / Codex JSON: discovered enemies with stats + behaviour.
 #[wasm_bindgen]
 pub fn get_codex() -> String {

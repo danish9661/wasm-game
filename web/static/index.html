@@ -178,7 +178,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -368,18 +368,44 @@
       const windLfoG = actx.createGain(); windLfoG.gain.value = 80;
       windLfo.connect(windLfoG); windLfoG.connect(noiseFilt.frequency);
       windLfo.start();
-      // --- warm pad: two detuned triangle oscillators through low-pass ---
-      const padFreqs = [130.81, 196.0]; // C3 + G3 (open fifth)
-      padFreqs.forEach((f, i) => {
-        const o = actx.createOscillator();
-        o.type = 'triangle'; o.frequency.value = f;
-        o.detune.value = (i - 0.5) * 8; // slight detune for warmth
-        const filt = actx.createBiquadFilter();
-        filt.type = 'lowpass'; filt.frequency.value = 400; filt.Q.value = 0.3;
-        const g = actx.createGain(); g.gain.value = 0.018;
-        o.connect(filt); filt.connect(g); g.connect(musicGain);
-        o.start();
-      });
+      // --- warm pad: a slow, gentle chord progression of detuned triangle
+      // oscillators through a low-pass, so the bed evolves without ever getting
+      // busy or harsh. Calm, low volume. ---
+      const chords = [
+        [130.81, 164.81, 196.00], // C  (C E G)
+        [146.83, 174.61, 220.00], // Dm (D F A)
+        [174.61, 220.00, 261.63], // F  (F A C)
+        [196.00, 246.94, 293.66], // G  (G B D)
+      ];
+      const padGain = actx.createGain();
+      padGain.gain.value = 0.0;
+      padGain.connect(musicGain);
+      let padOscs = [];
+      function setChord(idx, fade) {
+        padOscs.forEach((o) => { try { o.stop(actx.currentTime + fade + 0.2); } catch (_) {} });
+        padOscs = [];
+        chords[idx].forEach((f, i) => {
+          const o = actx.createOscillator();
+          o.type = 'triangle'; o.frequency.value = f;
+          o.detune.value = (i - 1) * 6; // gentle spread
+          const filt = actx.createBiquadFilter();
+          filt.type = 'lowpass'; filt.frequency.value = 520; filt.Q.value = 0.3;
+          const g = actx.createGain(); g.gain.value = 0.020 / chords[idx].length + 0.004;
+          o.connect(filt); filt.connect(g); g.connect(padGain);
+          o.start();
+          padOscs.push(o);
+        });
+      }
+      setChord(0, 0);
+      padGain.gain.linearRampToValueAtTime(0.5, actx.currentTime + 5);
+      let chordIdx = 0;
+      function nextChord() {
+        if (!actx) return;
+        chordIdx = (chordIdx + 1) % chords.length;
+        setChord(chordIdx, 3);
+        setTimeout(nextChord, 9000);
+      }
+      setTimeout(nextChord, 9000);
       // --- very slow melodic chime (pentatonic, every ~6-10s, very quiet) ---
       const penta = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33];
       function chime() {
@@ -399,6 +425,106 @@
         setTimeout(chime, 6000 + Math.random() * 6000);
       }
       setTimeout(chime, 3000);
+    }
+
+    // ---- Biome ambience -------------------------------------------------
+    // Sparse, very quiet, gentle sounds keyed to the player's current biome,
+    // so the world feels alive without ever becoming noisy. Routed to musicGain
+    // so the Music slider governs the whole audio bed.
+    let ambientBiome = null;
+    let ambientTimer = null;
+    function softTone(freq, type, peak, dur, filtHz) {
+      if (!actx || settings.muted) return;
+      const t = actx.currentTime;
+      const o = actx.createOscillator(); o.type = type || 'sine'; o.frequency.value = freq;
+      const g = actx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + dur * 0.3);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filtHz || 1200;
+      o.connect(f); f.connect(g); g.connect(musicGain);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function birdChirp() {
+      const n = 1 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < n; i++) {
+        const t0 = actx.currentTime + i * 0.12;
+        const base = 1700 + Math.random() * 1300;
+        const o = actx.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(base, t0);
+        o.frequency.exponentialRampToValueAtTime(base * 1.35, t0 + 0.07);
+        o.frequency.exponentialRampToValueAtTime(base * 0.92, t0 + 0.14);
+        const g = actx.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.03, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+        o.connect(g); g.connect(musicGain);
+        o.start(t0); o.stop(t0 + 0.22);
+      }
+    }
+    function cricket() {
+      const o = actx.createOscillator(); o.type = 'sine'; o.frequency.value = 3600 + Math.random() * 600;
+      const g = actx.createGain();
+      const t = actx.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.018, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + 0.12);
+    }
+    function waterLap() {
+      const dur = 1.1;
+      const n = Math.floor(actx.sampleRate * dur);
+      const buf = actx.createBuffer(1, n, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) {
+        const env = Math.sin((i / n) * Math.PI);
+        d[i] = (Math.random() * 2 - 1) * env;
+      }
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 480;
+      const g = actx.createGain(); g.gain.value = 0.05;
+      src.connect(f); f.connect(g); g.connect(musicGain); src.start();
+    }
+    function drip() {
+      softTone(720 + Math.random() * 220, 'sine', 0.03, 0.35, 1400);
+      // tiny echo for a cave feel
+      setTimeout(() => softTone(540 + Math.random() * 160, 'sine', 0.015, 0.3, 1200), 120);
+    }
+    function windGust() {
+      const dur = 1.6;
+      const n = Math.floor(actx.sampleRate * dur);
+      const buf = actx.createBuffer(1, n, actx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) {
+        const env = i < n / 4 ? i / (n / 4) : i > n - n / 4 ? (n - i) / (n / 4) : 1;
+        d[i] = (Math.random() * 2 - 1) * env;
+      }
+      const src = actx.createBufferSource(); src.buffer = buf;
+      const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 600; f.Q.value = 0.7;
+      const g = actx.createGain(); g.gain.value = 0.03;
+      src.connect(f); f.connect(g); g.connect(musicGain); src.start();
+    }
+    function playBiomeEvent(biome) {
+      switch (biome) {
+        case 'Forest': birdChirp(); break;
+        case 'Grass': cricket(); break;
+        case 'Water': case 'ShallowWater': case 'DeepWater': waterLap(); break;
+        case 'Stone': case 'Swamp': drip(); break;
+        case 'Snow': case 'Tundra': case 'Desert': windGust(); break;
+        default: break;
+      }
+    }
+    function scheduleBiomeEvent(biome) {
+      if (ambientBiome !== biome || !actx) return;
+      playBiomeEvent(biome);
+      // sparse: next event a few seconds out
+      ambientTimer = setTimeout(() => scheduleBiomeEvent(biome), 1800 + Math.random() * 4200);
+    }
+    function setBiomeAmbience(biome) {
+      if (biome === ambientBiome) return;
+      ambientBiome = biome;
+      if (ambientTimer) clearTimeout(ambientTimer);
+      scheduleBiomeEvent(biome);
     }
 
     const showNoGpu = (reason) => {
@@ -1057,6 +1183,11 @@
             }
           }
           setInterval(drawMinimap, 600);
+
+          // Poll the current biome and keep the matching ambient bed running.
+          setInterval(() => {
+            try { if (actx) setBiomeAmbience(current_biome()); } catch (_) {}
+          }, 800);
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
           //      warm-orange (player) pixels. If orange>0 the game is rendering
