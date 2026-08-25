@@ -766,13 +766,23 @@
             if (!didResize && app_ready()) { try { resize(); } catch (_) {} didResize = true; }
             if (!paused && t - lastStep >= 8) {
               lastStep = t;
+              const ts = performance.now();
               try {
                 step(Math.min((t - last) / 1000, 0.1));
               } catch (e) {
                 console.error('[page] step() threw:', e && e.stack ? e.stack : e);
               }
+              const stepMs = performance.now() - ts;
               last = t;
               window.__frames++;
+              // PERF PROBE: isolate WASM step() cost from frame scheduling.
+              frame._acc = (frame._acc || 0) + stepMs;
+              frame._n = (frame._n || 0) + 1;
+              if (t - (frame._plog || 0) >= 1000) {
+                const fps = (frame._n * 1000) / (t - frame._plog);
+                console.log(`[perf] fps≈${fps.toFixed(0)} stepAvg=${ (frame._acc / frame._n).toFixed(1)}ms over ${frame._n} frames`);
+                frame._plog = t; frame._acc = 0; frame._n = 0;
+              }
               if (t - lastLog >= 500) {
                 lastLog = t;
                 document.getElementById('log').textContent = `[wasm] ${get_stats()}`;
@@ -939,15 +949,27 @@
             const cell = mm.width / N;
             const ptx = Math.floor(d.player[0]);
             const cx = (N / 2) * cell, cy = (N / 2) * cell;
-            mmCtx.fillStyle = '#0a0f1c';
-            mmCtx.fillRect(0, 0, mm.width, mm.height);
+            // Fast path: paint the tile grid into a tiny N x N ImageData and
+            // scale it up in a single drawImage instead of thousands of
+            // fillRect calls (which stalled the main thread ~200ms/frame).
+            if (!mm._off || mm._off.width !== N) {
+              mm._off = document.createElement('canvas');
+              mm._off.width = N; mm._off.height = N;
+              mm._offCtx = mm._off.getContext('2d');
+            }
+            const img = mm._offCtx.createImageData(N, N);
+            const pix = img.data;
             for (let i = 0; i < d.cells.length; i++) {
               const c = d.cells[i];
-              const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
-              mmCtx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-              const x = (i % N) * cell, y = Math.floor(i / N) * cell;
-              mmCtx.fillRect(x, y, cell + 0.6, cell + 0.6);
+              const o = i * 4;
+              pix[o] = (c >> 16) & 255;
+              pix[o + 1] = (c >> 8) & 255;
+              pix[o + 2] = c & 255;
+              pix[o + 3] = 255;
             }
+            mm._offCtx.putImageData(img, 0, 0);
+            mmCtx.imageSmoothingEnabled = false;
+            mmCtx.drawImage(mm._off, 0, 0, mm.width, mm.height);
             (d.structs || []).forEach(([tx, ty]) => {
               const px = cx + (tx - ptx) * cell;
               const py = cy + (ty - Math.floor(d.player[1])) * cell;
@@ -966,19 +988,23 @@
             mmCtx.beginPath();
             mmCtx.arc(cx, cy, 2.6, 0, 7);
             mmCtx.fill();
-            // Biome legend key below the canvas.
+            // Biome legend key below the canvas (rebuild only when it changes).
             const leg = el('mm-legend');
             if (leg && d.legend) {
-              leg.innerHTML = d.legend
-                .map((b) => {
-                  const r = (b.color >> 16) & 255, g = (b.color >> 8) & 255, bl = b.color & 255;
-                  return (
-                    '<span class="leg"><i style="background:rgb(' +
-                    r + ',' + g + ',' + bl + ')"></i>' +
-                    b.name.replace(/([A-Z])/g, ' $1').trim() + '</span>'
-                  );
-                })
-                .join('');
+              const sig = d.legend.map((b) => b.name).join('|');
+              if (leg._sig !== sig) {
+                leg._sig = sig;
+                leg.innerHTML = d.legend
+                  .map((b) => {
+                    const r = (b.color >> 16) & 255, g = (b.color >> 8) & 255, bl = b.color & 255;
+                    return (
+                      '<span class="leg"><i style="background:rgb(' +
+                      r + ',' + g + ',' + bl + ')"></i>' +
+                      b.name.replace(/([A-Z])/g, ' $1').trim() + '</span>'
+                    );
+                  })
+                  .join('');
+              }
             }
           }
           setInterval(drawMinimap, 400);
@@ -988,7 +1014,7 @@
           //      correctly and a white window means a browser DISPLAY/compositing
           //      problem (e.g. SwiftShader in a windowed Chrome); if orange=0 the
           //      render pipeline itself is the problem.
-          setInterval(() => {
+          if (location.search.includes('selfcheck')) setInterval(() => {
             const cv = displayCanvas();
             try {
               const url = cv.toDataURL('image/png');
@@ -1016,7 +1042,7 @@
               img.onerror = () => console.error('[page] canvas self-check: toDataURL image failed to load');
               img.src = url;
             } catch (e) { console.error('[page] canvas self-check failed:', e); }
-          }, 3000);
+          }, 3000); }
 
           // ---- Visual capture hook (?cap): dump canvas PNG + signature stats ----
           if (location.search.includes('cap')) {
