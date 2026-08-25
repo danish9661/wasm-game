@@ -389,89 +389,144 @@ fn blit_to_2d_canvas(
                 glog(&format!("[gfx] blit: ImageData error {e:?}"));
             }
         }
-        // ---- atmosphere overlay (2D canvas, drawn over the WebGPU readback) ----
-        let ctx = &cache.ctx;
-        let w = width as f64;
-        let h = height as f64;
-        // drifting motes: warm fireflies at night, pale pollen by day
-        let day = daylight_at(tod).clamp(0.25_f32, 1.0_f32) as f64;
-        let night = 1.0 - day;
-        for i in 0..22u32 {
-            let fi = i as f64;
-            let r1 = (fi * 12.9898).sin().fract().abs();
-            let r2 = (fi * 78.233).sin().fract().abs();
-            let r3 = (fi * 37.719).sin().fract().abs();
-            let speed = 4.0 + r3 * 10.0;
-            let x = (((r1 * w + aclock as f64 * speed * (0.3 + r2)) % w) + w) % w;
-            let y = (((r2 * h + aclock as f64 * speed * 0.45) % h) + h) % h;
-            let blink = 0.5 + 0.5 * (aclock as f64 * 2.0 + fi).sin();
-            let (a, color) = if night > 0.35 {
-                let a = (0.25 + 0.55 * blink) * night;
-                (a, format!("rgba(255,228,120,{a:.3})"))
-            } else {
-                let a = 0.10 * day * (0.5 + 0.5 * blink);
-                (a, format!("rgba(245,245,210,{a:.3})"))
-            };
-            let radius = 1.0 + r3 * 1.5;
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(&color));
-            let _ = ctx.begin_path();
-            let _ = ctx.arc(x, y, radius, 0.0, std::f64::consts::TAU);
-            let _ = ctx.fill();
-        }
-        // weather: snow (2) or rain (1) — drifting particles + a faint veil
-        if weather != 0 {
-            let snow = weather == 2;
-            let fall = (aclock as f64 * (if snow { 90.0 } else { 380.0 })) % h;
-            if snow {
-                ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,255,255,0.85)"));
-                let cols = 110u32;
-                for i in 0..cols {
-                    let fi = i as f64;
-                    let x = (((fi * 37.3 + aclock as f64 * 30.0) % w) + w) % w;
-                    let y = (((fi * 19.7 + fall) % h) + h) % h;
-                    let r = 1.0 + (fi * 7.0).fract() * 1.6;
-                    ctx.begin_path();
-                    ctx.arc(x, y, r, 0.0, std::f64::consts::PI * 2.0);
-                    ctx.fill();
-                }
-                ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(200,215,235,0.08)"));
-                ctx.fill_rect(0.0, 0.0, w, h);
-            } else {
-                ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(170,200,230,0.35)"));
-                ctx.set_line_width(1.0);
-                let cols = 90u32;
-                for i in 0..cols {
-                    let fi = i as f64;
-                    let x = (((fi * 53.7 + aclock as f64 * 120.0) % w) + w) % w;
-                    let y = (((fi * 29.3 + fall) % h) + h) % h;
-                    ctx.begin_path();
-                    ctx.move_to(x, y);
-                    ctx.line_to(x - 4.0, y + 14.0);
-                    ctx.stroke();
-                }
-                ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(120,140,170,0.10)"));
-                ctx.fill_rect(0.0, 0.0, w, h);
-            }
-        }
-        // Night vignette: darken the edges when the sun is down, so campfires
-        // and lanterns read as the only light sources.
-        let night = ((tod - 0.5).abs() * 2.0).min(1.0);
-        if night > 0.05 {
-            if let Ok(grad) = ctx.create_radial_gradient(
-                w / 2.0,
-                h / 2.0,
-                (w.min(h)) * 0.25,
-                w / 2.0,
-                h / 2.0,
-                (w.max(h)) * 0.75,
-            ) {
-                let _ = grad.add_color_stop(0.0, "rgba(0,0,10,0)");
-                let _ = grad.add_color_stop(1.0, &format!("rgba(0,0,12,{})", 0.55 * night));
-                ctx.set_fill_style(grad.as_ref());
-                ctx.fill_rect(0.0, 0.0, w, h);
-            }
-        }
+        draw_atmosphere(&cache.ctx, width, height, tod, aclock, weather);
     });
+}
+
+/// Atmosphere / weather / night-vignette overlay, drawn in 2D over the base
+/// frame. Shared by both the readback path and the fast GPU->GPU blit path.
+fn draw_atmosphere(
+    ctx: &CanvasRenderingContext2d,
+    width: u32,
+    height: u32,
+    tod: f32,
+    aclock: f32,
+    weather: u8,
+) {
+    let w = width as f64;
+    let h = height as f64;
+    // drifting motes: warm fireflies at night, pale pollen by day
+    let day = daylight_at(tod).clamp(0.25_f32, 1.0_f32) as f64;
+    let night = 1.0 - day;
+    for i in 0..22u32 {
+        let fi = i as f64;
+        let r1 = (fi * 12.9898).sin().fract().abs();
+        let r2 = (fi * 78.233).sin().fract().abs();
+        let r3 = (fi * 37.719).sin().fract().abs();
+        let speed = 4.0 + r3 * 10.0;
+        let x = (((r1 * w + aclock as f64 * speed * (0.3 + r2)) % w) + w) % w;
+        let y = (((r2 * h + aclock as f64 * speed * 0.45) % h) + h) % h;
+        let blink = 0.5 + 0.5 * (aclock as f64 * 2.0 + fi).sin();
+        let (a, color) = if night > 0.35 {
+            let a = (0.25 + 0.55 * blink) * night;
+            (a, format!("rgba(255,228,120,{a:.3})"))
+        } else {
+            let a = 0.10 * day * (0.5 + 0.5 * blink);
+            (a, format!("rgba(245,245,210,{a:.3})"))
+        };
+        let radius = 1.0 + r3 * 1.5;
+        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(&color));
+        let _ = ctx.begin_path();
+        let _ = ctx.arc(x, y, radius, 0.0, std::f64::consts::TAU);
+        let _ = ctx.fill();
+    }
+    // weather: snow (2) or rain (1) — drifting particles + a faint veil
+    if weather != 0 {
+        let snow = weather == 2;
+        let fall = (aclock as f64 * (if snow { 90.0 } else { 380.0 })) % h;
+        if snow {
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,255,255,0.85)"));
+            let cols = 110u32;
+            for i in 0..cols {
+                let fi = i as f64;
+                let x = (((fi * 37.3 + aclock as f64 * 30.0) % w) + w) % w;
+                let y = (((fi * 19.7 + fall) % h) + h) % h;
+                let r = 1.0 + (fi * 7.0).fract() * 1.6;
+                ctx.begin_path();
+                ctx.arc(x, y, r, 0.0, std::f64::consts::PI * 2.0);
+                ctx.fill();
+            }
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(200,215,235,0.08)"));
+            ctx.fill_rect(0.0, 0.0, w, h);
+        } else {
+            ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(170,200,230,0.35)"));
+            ctx.set_line_width(1.0);
+            let cols = 90u32;
+            for i in 0..cols {
+                let fi = i as f64;
+                let x = (((fi * 53.7 + aclock as f64 * 120.0) % w) + w) % w;
+                let y = (((fi * 29.3 + fall) % h) + h) % h;
+                ctx.begin_path();
+                ctx.move_to(x, y);
+                ctx.line_to(x - 4.0, y + 14.0);
+                ctx.stroke();
+            }
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(120,140,170,0.10)"));
+            ctx.fill_rect(0.0, 0.0, w, h);
+        }
+    }
+    // Night vignette: darken the edges when the sun is down, so campfires
+    // and lanterns read as the only light sources.
+    let night = ((tod - 0.5).abs() * 2.0).min(1.0);
+    if night > 0.05 {
+        if let Ok(grad) = ctx.create_radial_gradient(
+            w / 2.0,
+            h / 2.0,
+            (w.min(h)) * 0.25,
+            w / 2.0,
+            h / 2.0,
+            (w.max(h)) * 0.75,
+        ) {
+            let _ = grad.add_color_stop(0.0, "rgba(0,0,10,0)");
+            let _ = grad.add_color_stop(1.0, &format!("rgba(0,0,12,{})", 0.55 * night));
+            ctx.set_fill_style(grad.as_ref());
+            ctx.fill_rect(0.0, 0.0, w, h);
+        }
+    }
+}
+
+/// Fast display path: copy the WebGPU surface (#game) onto the 2D #blit canvas
+/// with a GPU->GPU `drawImage` instead of a GPU->CPU readback + `putImageData`.
+/// The surface's backing is still drawable even when the browser won't composite
+/// the WebGPU canvas itself, so this avoids the slow CPU stall entirely.
+fn blit_via_draw(width: u32, height: u32, tod: f32, aclock: f32, weather: u8) {
+    let window = match web_sys::window() {
+        Some(w) => w,
+        None => return,
+    };
+    let doc = match window.document() {
+        Some(d) => d,
+        None => return,
+    };
+    let game = match doc
+        .get_element_by_id("game")
+        .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+    {
+        Some(c) => c,
+        None => return,
+    };
+    let blit = match doc
+        .get_element_by_id("blit")
+        .and_then(|e| e.dyn_into::<web_sys::HtmlCanvasElement>().ok())
+    {
+        Some(c) => c,
+        None => return,
+    };
+    if blit.width() != width || blit.height() != height {
+        blit.set_width(width);
+        blit.set_height(height);
+    }
+    let ctx = match blit
+        .get_context("2d")
+        .ok()
+        .flatten()
+        .and_then(|c| c.dyn_into::<CanvasRenderingContext2d>().ok())
+    {
+        Some(c) => c,
+        None => return,
+    };
+    let _ = ctx.draw_image_with_html_canvas_element(&game, 0.0, 0.0);
+    draw_atmosphere(&ctx, width, height, tod, aclock, weather);
 }
 
 struct VertexBuffer {
@@ -2264,16 +2319,27 @@ impl App {
             });
 
         if let Some(f) = surface_tex {
-            if self.backend_mode != 1 {
-                self.backend_mode = 1;
-                self.using_blit = false;
-                set_backend("gpu");
-            }
+            // The WebGPU surface may not composite on this browser, but its
+            // backing is still drawable — so we present (to recycle the
+            // swapchain) and then copy it onto the 2D #blit canvas with a fast
+            // GPU->GPU `drawImage`, avoiding the slow GPU->CPU readback entirely.
             let view = f.texture.create_view(&wgpu::TextureViewDescriptor::default());
             self.record_pass(&view, &mut encoder);
             let cmd = encoder.finish();
             self.queue.submit([cmd]);
             self.queue.present(f);
+            blit_via_draw(
+                self.config.width,
+                self.config.height,
+                self.time_of_day,
+                self.anim_clock,
+                self.weather,
+            );
+            if self.backend_mode != 2 {
+                self.backend_mode = 2;
+                self.using_blit = true;
+                set_backend("blit");
+            }
         } else if self.backend_mode == 2 {
             // Blit fallback: render to the offscreen target and read it back to
             // the 2D #blit canvas (only used when the surface can't present).

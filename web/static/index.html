@@ -224,7 +224,7 @@
       const g = document.getElementById('game');
       const b = document.getElementById('blit');
       if (mode === 'gpu') { if (g) g.style.display = 'block'; if (b) b.style.display = 'none'; }
-      else { if (g) g.style.display = 'none'; if (b) b.style.display = 'block'; }
+      else { if (b) b.style.display = 'block'; /* keep #game visible behind #blit; it is the drawImage source */ }
       window.backend = mode;
     }
     window.setBackend = setBackend;
