@@ -184,12 +184,12 @@ pub fn input_dir(up: bool, down: bool, left: bool, right: bool) -> (f32, f32) {
         dy += 1.0;
     }
     if left {
-        dx += 1.0;
-        dy -= 1.0;
-    }
-    if right {
         dx -= 1.0;
         dy += 1.0;
+    }
+    if right {
+        dx += 1.0;
+        dy -= 1.0;
     }
     (dx, dy)
 }
@@ -265,8 +265,8 @@ mod tests {
     fn input_directions() {
         assert_eq!(input_dir(true, false, false, false), (-1.0, -1.0));
         assert_eq!(input_dir(false, true, false, false), (1.0, 1.0));
-        assert_eq!(input_dir(false, false, true, false), (1.0, -1.0));
-        assert_eq!(input_dir(false, false, false, true), (-1.0, 1.0));
+        assert_eq!(input_dir(false, false, true, false), (-1.0, 1.0));
+        assert_eq!(input_dir(false, false, false, true), (1.0, -1.0));
         assert_eq!(input_dir(false, false, false, false), (0.0, 0.0));
     }
 

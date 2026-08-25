@@ -919,7 +919,10 @@
             if (raw && !raw.startsWith('no app') && !raw.startsWith('pending')) {
               updateHud(parseStats(raw));
             }
-            if (gameStarted && !bootOpen) {
+            // Only rebuild the (heavy) inventory/craft DOM while the panel is
+            // open — doing it every tick stalled the main thread ~200ms and
+            // capped the whole game at ~13fps.
+            if (gameStarted && !bootOpen && invOpen) {
               updateInventory(get_ui_data());
             }
           }, 200);
