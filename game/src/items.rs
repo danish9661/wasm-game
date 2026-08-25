@@ -26,6 +26,18 @@ impl ItemKind {
             ItemKind::Gem => "gem",
         }
     }
+
+    /// Display color for ground loot / UI.
+    pub fn color(self) -> [f32; 3] {
+        match self {
+            ItemKind::Wood => [0.55, 0.38, 0.20],
+            ItemKind::Stone => [0.62, 0.62, 0.66],
+            ItemKind::Food => [0.85, 0.35, 0.25],
+            ItemKind::Fragment => [1.00, 0.84, 0.30],
+            ItemKind::Herb => [0.45, 0.80, 0.40],
+            ItemKind::Gem => [0.45, 0.85, 0.95],
+        }
+    }
 }
 
 const SLOTS: usize = 6;

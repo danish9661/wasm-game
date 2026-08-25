@@ -49,6 +49,16 @@ impl ResourceKind {
         }
     }
 
+    /// Whether a live node of this kind blocks player/enemy movement (acts as a
+    /// solid obstacle). Trees, rocks, ore veins and crystals block; small
+    /// forageables (bush, mushroom, flower, grass, fern) are walk-through.
+    pub fn blocks_movement(self) -> bool {
+        matches!(
+            self,
+            ResourceKind::Tree | ResourceKind::Rock | ResourceKind::Ore | ResourceKind::Crystal
+        )
+    }
+
     pub fn color(self) -> [f32; 3] {
         match self {
             ResourceKind::Tree => [0.06, 0.30, 0.12],
@@ -266,5 +276,18 @@ mod tests {
         assert!(reg.is_depleted(0, 0));
         assert!(!reg.has_live(0, 0));
         assert_eq!(reg.chop(0, 0, ResourceKind::Tree), None);
+    }
+
+    #[test]
+    fn only_solid_props_block_movement() {
+        assert!(ResourceKind::Tree.blocks_movement());
+        assert!(ResourceKind::Rock.blocks_movement());
+        assert!(ResourceKind::Ore.blocks_movement());
+        assert!(ResourceKind::Crystal.blocks_movement());
+        assert!(!ResourceKind::Bush.blocks_movement());
+        assert!(!ResourceKind::Mushroom.blocks_movement());
+        assert!(!ResourceKind::Flower.blocks_movement());
+        assert!(!ResourceKind::GrassTuft.blocks_movement());
+        assert!(!ResourceKind::Fern.blocks_movement());
     }
 }

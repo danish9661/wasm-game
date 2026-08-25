@@ -583,6 +583,19 @@ pub fn set_force_gpu(v: bool) {
     FORCE_GPU.store(v, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// A ground loot drop the player walks over to collect. Spawned when enemies
+/// (and optionally resources) are destroyed; auto-collected on proximity.
+#[derive(Clone, Copy)]
+pub struct LootDrop {
+    pub kind: game::items::ItemKind,
+    pub x: f32,
+    pub y: f32,
+    /// Remaining lifetime in seconds; despawned at 0 so the world stays clean.
+    pub ttl: f32,
+    /// Animation phase for the bob/sparkle.
+    pub phase: f32,
+}
+
 pub struct App {
     canvas: HtmlCanvasElement,
     surface: wgpu::Surface<'static>,
@@ -614,6 +627,8 @@ pub struct App {
     structures: Vec<Structure>,
     enemies: EnemyRegistry,
     arrows: Vec<Arrow>,
+    /// Ground loot dropped by enemies (and harvest), collected on proximity.
+    loot: Vec<LootDrop>,
     quest: QuestLog,
     ruins: (i32, i32),
     opened_chests: std::collections::HashSet<(i32, i32)>,
@@ -1082,6 +1097,7 @@ impl App {
             structures,
             enemies: EnemyRegistry::new(),
             arrows: Vec::new(),
+            loot: Vec::new(),
             quest: QuestLog::new(),
             ruins,
             opened_chests: std::collections::HashSet::new(),
@@ -1339,17 +1355,26 @@ impl App {
 
     /// Resolve kills: drop loot and start respawn timers.
     fn sweep_dead(&mut self) {
-        let drops: Vec<((i32, i32), EnemyKind, Vec<ItemKind>)> = self
+        let drops: Vec<((i32, i32), f32, f32, EnemyKind, Vec<ItemKind>)> = self
             .enemies
             .iter_mut_with_key()
             .filter(|(_, e)| !e.alive())
-            .map(|((tx, ty), e)| ((tx, ty), e.kind, e.drops()))
+            .map(|((tx, ty), e)| ((tx, ty), e.x, e.y, e.kind, e.drops()))
             .collect();
-        for ((tx, ty), kind, items) in drops {
-            for it in &items {
-                self.inventory.add(*it, 1);
-            }
-            if !items.is_empty() {
+        for ((tx, ty), ex, ey, kind, items) in drops {
+            // Drop loot on the ground at the enemy's position; the player walks
+            // over it to collect (see collect_loot). Spread multiple drops in a
+            // small ring so they don't perfectly overlap.
+            let n = items.len().max(1) as f32;
+            for (i, it) in items.iter().enumerate() {
+                let ang = (i as f32 / n) * std::f32::consts::TAU;
+                self.loot.push(LootDrop {
+                    kind: *it,
+                    x: ex + ang.cos() * 0.25,
+                    y: ey + ang.sin() * 0.25,
+                    ttl: 60.0,
+                    phase: (ex + ey).fract().abs() * std::f32::consts::TAU,
+                });
             }
             match kind {
                 EnemyKind::Slime => self.slimes_killed += 1,
@@ -1364,6 +1389,30 @@ impl App {
             // bosses never respawn; slimes return after 15s
             let respawn = if matches!(kind, EnemyKind::Boss | EnemyKind::Colossus) { f32::MAX } else { 15.0 };
             self.enemies.kill(tx, ty, respawn);
+        }
+    }
+
+    /// Auto-collect nearby ground loot and expire old drops.
+    fn collect_loot(&mut self, dt: f32) {
+        let px = self.player.x;
+        let py = self.player.y;
+        let mut i = 0;
+        while i < self.loot.len() {
+            let l = &mut self.loot[i];
+            l.ttl -= dt;
+            l.phase += dt * 3.0;
+            if l.ttl <= 0.0 {
+                self.loot.remove(i);
+                continue;
+            }
+            let dx = l.x - px;
+            let dy = l.y - py;
+            if dx * dx + dy * dy < 0.5 * 0.5 {
+                self.inventory.add(l.kind, 1);
+                self.loot.remove(i);
+                continue;
+            }
+            i += 1;
         }
     }
 
@@ -1912,11 +1961,14 @@ impl App {
         for e in self.enemies.enemies_mut() {
             self.discovered.insert(e.kind);
             if let Some(dmg) = e.update((px, py), dt, |tx, ty| {
-                !tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
+                let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
+                !tile.walkable()
                     || self
                         .structures
                         .iter()
                         .any(|s| s.tx == tx && s.ty == ty && s.kind.blocks_movement())
+                    || resource_on(tx, ty, tile).is_some_and(|k| k.blocks_movement())
+                        && !self.nodes.is_depleted(tx, ty)
             }) {
                 contact = Some(dmg);
             }
@@ -1942,6 +1994,7 @@ impl App {
             self.player.take_damage(dmg);
         }
         self.sweep_dead();
+        self.collect_loot(dt);
 
         // Farm plots regrow their crops over time.
         const FARM_GROW: f32 = 30.0;
@@ -2070,11 +2123,14 @@ impl App {
             (dir, move_dt)
         };
         player::move_player(&mut self.player, move_dir, move_dt2, speed_mul, |tx, ty| {
-            !tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
+            let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
+            !tile.walkable()
                 || self
                     .structures
                     .iter()
                     .any(|s| s.tx == tx && s.ty == ty && s.kind.blocks_movement())
+                || resource_on(tx, ty, tile).is_some_and(|k| k.blocks_movement())
+                    && !self.nodes.is_depleted(tx, ty)
         });
         let moved = ((self.player.x - bx).powi(2) + (self.player.y - by).powi(2)).sqrt();
         self.speed = if dt > 0.0 { moved / dt } else { 0.0 };
@@ -2228,6 +2284,19 @@ impl App {
                     .with_facing((a.dx, a.dy))
                     .with_style(SpriteStyle::Arrow),
             );
+        }
+        // ground loot: small bobbing diamonds tinted by item kind
+        for l in &self.loot {
+            let bob = (l.phase.sin() * 2.0).max(0.0);
+            let mut sp = Sprite::new_center(l.x, l.y, l.kind.color(), 7.0, 7.0, 6.0 + bob)
+                .with_style(SpriteStyle::Generic);
+            sp.alpha = 1.0;
+            sprites.push(sp);
+            // bright core
+            let mut core = Sprite::new_center(l.x, l.y, [1.0, 1.0, 1.0], 2.5, 2.5, 7.0 + bob)
+                .with_style(SpriteStyle::Generic);
+            core.alpha = 0.8;
+            sprites.push(core);
         }
         // particles (death puffs, hit sparks) — fading Generic quads
         for p in &self.particles {
