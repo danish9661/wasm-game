@@ -286,6 +286,12 @@ pub fn set_render_cap(w: u32, h: u32) {
     crate::renderer::set_render_cap(w, h);
 }
 
+/// Enable/disable fps-driven adaptive resolution. Used by the settings menu.
+#[wasm_bindgen]
+pub fn set_adaptive_res(v: bool) {
+    crate::renderer::set_adaptive_res(v);
+}
+
 /// Result of the last completed readback ("pending" until the map callback runs).
 #[wasm_bindgen]
 pub fn readback_stats() -> String {

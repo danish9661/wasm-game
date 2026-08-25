@@ -217,6 +217,15 @@ pub fn set_render_cap(w: u32, h: u32) {
     *RENDER_CAP.lock().unwrap() = (w, h);
 }
 
+/// When true (default) the renderer auto-steps the internal resolution down on
+/// slow backends (fps-driven). When false, the resolution stays pinned to the
+/// user's chosen cap. Exposed so the settings menu can toggle it.
+static ADAPTIVE_RES: std::sync::Mutex<bool> = std::sync::Mutex::new(true);
+
+pub fn set_adaptive_res(v: bool) {
+    *ADAPTIVE_RES.lock().unwrap() = v;
+}
+
 pub fn get_render_cap() -> (u32, u32) {
     *RENDER_CAP.lock().unwrap()
 }
@@ -1813,18 +1822,25 @@ impl App {
         // readback path (e.g. default Linux Chrome without Vulkan). We measure
         // the real step rate (EMA) and step the internal resolution down when
         // it sags, back up when there's headroom. Hysteresis avoids oscillation.
-        let inst_fps = 1.0 / dt.max(0.001);
-        self.fps_est = self.fps_est * 0.9 + inst_fps * 0.1;
-        self.res_timer += dt;
-        if self.res_timer >= 1.5 {
-            self.res_timer = 0.0;
-            if self.fps_est < 55.0 && self.res_level < RES_LEVELS.len() - 1 {
-                self.res_level += 1;
-                self.resize();
-            } else if self.fps_est > 80.0 && self.res_level > self.max_res_level {
-                self.res_level -= 1;
-                self.resize();
+        // Disabled via the settings menu: resolution stays at the user's cap.
+        let adaptive = *ADAPTIVE_RES.lock().unwrap();
+        if adaptive {
+            let inst_fps = 1.0 / dt.max(0.001);
+            self.fps_est = self.fps_est * 0.9 + inst_fps * 0.1;
+            self.res_timer += dt;
+            if self.res_timer >= 1.5 {
+                self.res_timer = 0.0;
+                if self.fps_est < 55.0 && self.res_level < RES_LEVELS.len() - 1 {
+                    self.res_level += 1;
+                    self.resize();
+                } else if self.fps_est > 80.0 && self.res_level > self.max_res_level {
+                    self.res_level -= 1;
+                    self.resize();
+                }
             }
+        } else if self.res_level != self.max_res_level {
+            self.res_level = self.max_res_level;
+            self.resize();
         }
 
         self.ensure_visible();

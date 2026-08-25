@@ -128,7 +128,7 @@
       <label class="set-row">SFX <input id="set-sfx" type="range" min="0" max="1" step="0.05" /></label>
       <label class="set-row">Music <input id="set-music" type="range" min="0" max="1" step="0.05" /></label>
       <label class="set-row">Mute <input id="set-mute" type="checkbox" /></label>
-      <label class="set-row">Resolution
+       <label class="set-row">Resolution
         <select id="set-res">
           <option value="640x360">Low (640×360)</option>
           <option value="960x540">Medium (960×540)</option>
@@ -136,6 +136,7 @@
           <option value="native">Native (full res)</option>
         </select>
       </label>
+      <label class="set-row">Auto Resolution <input id="set-adaptive" type="checkbox" /></label>
       <div class="menu-btns">
         <button id="btn-save" class="menu-btn">Save Game</button>
         <button id="btn-resume" class="menu-btn">Resume</button>
@@ -177,7 +178,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -215,7 +216,7 @@
     const SETTINGS_KEY = 'starfall_settings';
     const SAVE_KEY = 'starfall_save';
     const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-    let settings = Object.assign({ master: 1, sfx: 1, music: 0.5, muted: false, res: '960x540' }, loadJSON(SETTINGS_KEY, {}));
+    let settings = Object.assign({ master: 1, sfx: 1, music: 0.5, muted: false, res: '960x540', adaptive: true }, loadJSON(SETTINGS_KEY, {}));
     const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
     // ---- Audio (procedural, gesture-gated) -------------------------------
@@ -442,6 +443,7 @@
           // Apply the saved resolution cap now that the wasm module is ready.
           if (settings.res === 'native') set_render_cap(0, 0);
           else { const _r = settings.res.split('x').map(Number); set_render_cap(_r[0], _r[1]); }
+          set_adaptive_res(settings.adaptive);
           try { resize(); } catch (_) {}
           let last = performance.now();
           let lastLog = performance.now();
@@ -835,6 +837,7 @@
             el('set-music').value = settings.music;
             el('set-mute').checked = settings.muted;
             el('set-res').value = settings.res;
+            el('set-adaptive').checked = settings.adaptive;
             settingsEl.className = 'overlay';
             paused = true;
           };
@@ -851,12 +854,17 @@
           el('set-sfx').oninput = (e) => { settings.sfx = Number(e.target.value); applyAudio(); saveSettings(); };
           el('set-music').oninput = (e) => { settings.music = Number(e.target.value); applyAudio(); saveSettings(); };
           el('set-mute').onchange = (e) => { settings.muted = e.target.checked; applyAudio(); saveSettings(); };
+          el('set-adaptive').onchange = (e) => {
+            settings.adaptive = e.target.checked;
+            saveSettings();
+            set_adaptive_res(settings.adaptive);
+          };
           el('set-res').onchange = (e) => {
             settings.res = e.target.value;
             saveSettings();
             if (settings.res === 'native') set_render_cap(0, 0);
             else { const [w, h] = settings.res.split('x').map(Number); set_render_cap(w, h); }
-            try { resize(); } catch (_) {}
+            if (!settings.adaptive) { try { resize(); } catch (_) {} }
           };
 
           function doSave() {
