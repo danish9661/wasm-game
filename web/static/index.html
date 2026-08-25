@@ -92,12 +92,7 @@
 
 
   <div id="touch" class="hidden">
-    <div class="touch-dpad">
-      <button class="tbtn" data-key="KeyW" style="grid-area:up">▲</button>
-      <button class="tbtn" data-key="KeyA" style="grid-area:left">◀</button>
-      <button class="tbtn" data-key="KeyS" style="grid-area:down">▼</button>
-      <button class="tbtn" data-key="KeyD" style="grid-area:right">▶</button>
-    </div>
+    <div id="joystick"><div id="joy-knob"></div></div>
     <div class="touch-actions">
       <button class="tbtn act" data-key="KeyE">E</button>
       <button class="tbtn act" data-key="KeyJ">⚔</button>
@@ -185,7 +180,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -1084,6 +1079,40 @@
             b.addEventListener('pointerleave', up);
             b.addEventListener('pointercancel', up);
           });
+
+          // ---- Virtual joystick (analog movement) -------------------------
+          const joy = document.getElementById('joystick');
+          const knob = document.getElementById('joy-knob');
+          let joyId = null;
+          const JOY_R = 48.0;
+          const joyMove = (ev) => {
+            if (joyId === null || ev.pointerId !== joyId) return;
+            const r = joy.getBoundingClientRect();
+            let dx = ev.clientX - (r.left + r.width / 2);
+            let dy = ev.clientY - (r.top + r.height / 2);
+            const len = Math.hypot(dx, dy);
+            if (len > JOY_R) { dx = (dx / len) * JOY_R; dy = (dy / len) * JOY_R; }
+            knob.style.transform = `translate(${dx}px, ${dy}px)`;
+            // send a normalized-ish vector (clamped to radius) — the Rust side
+            // normalizes it to a direction, so magnitude only gates dead-zone.
+            set_analog(dx, dy);
+          };
+          const joyEnd = (ev) => {
+            if (ev.pointerId !== joyId) return;
+            joyId = null;
+            knob.style.transform = 'translate(0px, 0px)';
+            set_analog(0, 0);
+          };
+          joy.addEventListener('pointerdown', (ev) => {
+            ev.preventDefault(); ensureAudio();
+            joyId = ev.pointerId;
+            joy.setPointerCapture(ev.pointerId);
+            joyMove(ev);
+          });
+          joy.addEventListener('pointermove', joyMove);
+          joy.addEventListener('pointerup', joyEnd);
+          joy.addEventListener('pointercancel', joyEnd);
+          joy.addEventListener('lostpointercapture', joyEnd);
 
           // ---- Autosave --------------------------------------------------
           setInterval(() => { if (gameStarted && !paused && !bootOpen) doSave(); }, 8000);

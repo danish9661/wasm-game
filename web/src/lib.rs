@@ -139,6 +139,17 @@ pub fn set_build_mode(on: bool) {
     });
 }
 
+/// Virtual-joystick input for touch devices. `(x, y)` is the raw drag offset in
+/// pixels from the stick origin; `(0, 0)` clears analog control.
+#[wasm_bindgen]
+pub fn set_analog(x: f64, y: f64) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.set_analog(x as f32, y as f32);
+        }
+    });
+}
+
 /// Select a buildable structure by its index in the build menu (0..7).
 #[wasm_bindgen]
 pub fn select_build(idx: usize) {

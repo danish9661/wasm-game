@@ -331,6 +331,32 @@ html, body {
   pointer-events: auto;
 }
 
+#joystick {
+  position: fixed;
+  left: 26px;
+  bottom: 26px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: rgba(10, 16, 28, 0.32);
+  border: 1px solid rgba(160, 180, 205, 0.35);
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 16;
+}
+#joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  background: rgba(242, 215, 122, 0.55);
+  border: 1px solid rgba(242, 215, 122, 0.9);
+  pointer-events: none;
+}
+
 .touch-actions {
   display: grid;
   grid-template-columns: repeat(2, 56px);

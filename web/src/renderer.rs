@@ -762,6 +762,10 @@ pub struct App {
     shake: f32,
     /// Red damage-flash intensity (0..1), decays each frame; set to 1 on hit.
     hurt_flash: f32,
+    /// Virtual-joystick vector for touch/mobile movement (None = no analog
+    /// input; Some((x,y)) is an un-normalized drag offset that yields a
+    /// direction). Takes priority over the WASD keys while active.
+    analog: Option<(f32, f32)>,
 }
 
 impl App {
@@ -1222,6 +1226,7 @@ impl App {
             crafted_iron: false,
             shake: 0.0,
             hurt_flash: 0.0,
+            analog: None,
         })
     }
 
@@ -1304,6 +1309,18 @@ impl App {
         self.build_mode = if on { Some(StructureKind::Campfire) } else { None };
     }
 
+    /// Virtual-joystick input for touch devices. `(x, y)` is the raw drag offset
+    /// in pixels from the stick origin; `(0, 0)` clears analog control so the
+    /// WASD keys take over again. The movement code normalizes this to a
+    /// direction each tick.
+    pub fn set_analog(&mut self, x: f32, y: f32) {
+        if x == 0.0 && y == 0.0 {
+            self.analog = None;
+        } else {
+            self.analog = Some((x, y));
+        }
+    }
+
     /// Select a buildable structure by its index in `BUILDABLE`.
     pub fn select_build(&mut self, idx: usize) {
         if idx < BUILDABLE.len() {
@@ -1380,7 +1397,16 @@ impl App {
         if !self.player.alive {
             return;
         }
-        let dir = player::input_dir(self.keys[0], self.keys[1], self.keys[2], self.keys[3]);
+        let dir = if let Some((ax, ay)) = self.analog {
+            let len = (ax * ax + ay * ay).sqrt();
+            if len < 1e-4 {
+                (0.0, 0.0)
+            } else {
+                (ax / len, ay / len)
+            }
+        } else {
+            player::input_dir(self.keys[0], self.keys[1], self.keys[2], self.keys[3])
+        };
         self.player.try_dodge(dir);
     }
 
@@ -2279,7 +2305,16 @@ impl App {
         }
         self.particles.retain(|p| p.life > 0.0);
 
-        let dir = player::input_dir(self.keys[0], self.keys[1], self.keys[2], self.keys[3]);
+        let dir = if let Some((ax, ay)) = self.analog {
+            let len = (ax * ax + ay * ay).sqrt();
+            if len < 1e-4 {
+                (0.0, 0.0)
+            } else {
+                (ax / len, ay / len)
+            }
+        } else {
+            player::input_dir(self.keys[0], self.keys[1], self.keys[2], self.keys[3])
+        };
         let bx = self.player.x;
         let by = self.player.y;
         // Wading through shallow water (rivers/streams) slows you down.
