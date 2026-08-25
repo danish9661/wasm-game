@@ -70,17 +70,14 @@ pub enum SpriteStyle {
     Rubble,
     RuinTower,
     // ---- Enemies ----------------------------------------------------------
-    Skeleton,
-    Goblin,
+    // Humanoid foes (Skeleton, Goblin, Ogre, Brute, Stormcaller, Stoneslinger,
+    // Boss) all share SpriteStyle::Humanoid for a consistent cast; only the
+    // non-humanoid creatures below keep bespoke silhouettes.
     Bat,
     Spider,
     Imp,
-    Ogre,
     Wraith,
-    Stoneslinger,
     Colossus,
-    Brute,
-    Stormcaller,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -620,10 +617,10 @@ fn push_styled_sprite(
 ) {
     use crate::elements::{
         altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
-        crate_box, crystal, fence, fern, flower, goblin, grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
-        lilypad, mushroom, ogre, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
-        skeleton, slime, spider, statue, torch, totem, tree, turret, vines, wall, well, wraith,
-        stoneslinger, colossus, brute, stormcaller, spike, farm_plot,
+        crate_box, crystal, fence, fern, flower, grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
+        lilypad, mushroom, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
+        slime, spider, statue, torch, totem, tree, turret, vines, wall, well, wraith,
+        colossus, spike, farm_plot,
     };
     match style {
         SpriteStyle::Generic => {
@@ -677,20 +674,12 @@ fn push_styled_sprite(
             rasterize(&rock_pile::build(cx, cy, color, alpha, facing, anim_time), out)
         }
         SpriteStyle::Statue => rasterize(&statue::build(cx, cy, color, alpha, facing, anim_time), out),
-        // Enemies
-        SpriteStyle::Skeleton => {
-            rasterize(&skeleton::build(cx, cy, color, alpha, facing, anim_time), out)
-        }
-        SpriteStyle::Goblin => rasterize(&goblin::build(cx, cy, color, alpha, facing, anim_time), out),
+        // Enemies (humanoid foes render via SpriteStyle::Humanoid above)
         SpriteStyle::Bat => rasterize(&bat::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Spider => rasterize(&spider::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Ogre => rasterize(&ogre::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Wraith => rasterize(&wraith::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Stoneslinger => rasterize(&stoneslinger::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Colossus => rasterize(&colossus::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Brute => rasterize(&brute::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Stormcaller => rasterize(&stormcaller::build(cx, cy, color, alpha, facing, anim_time), out),
         // New decorative props
         SpriteStyle::Lantern => rasterize(&lantern::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Brazier => rasterize(&brazier::build(cx, cy, color, alpha, facing, anim_time), out),

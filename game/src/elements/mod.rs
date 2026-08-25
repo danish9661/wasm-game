@@ -57,18 +57,12 @@ pub(crate) mod reed;
 pub(crate) mod rubble;
 pub(crate) mod ruin_tower;
 
-// Enemies
-pub(crate) mod skeleton;
-pub(crate) mod goblin;
+// Enemies (humanoid foes share the `humanoid` rig; only creatures keep bespoke art)
 pub(crate) mod bat;
 pub(crate) mod spider;
 pub(crate) mod imp;
-pub(crate) mod ogre;
 pub(crate) mod wraith;
-pub(crate) mod stoneslinger;
 pub(crate) mod colossus;
-pub(crate) mod brute;
-pub(crate) mod stormcaller;
 
 /// Offline tooling hook: build every element into a flat vertex buffer so a
 /// `bin` in this package can rasterize and save PNGs. Each vertex is
@@ -123,14 +117,14 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "reed", reed::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "rubble", rubble::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "ruin_tower", ruin_tower::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "skeleton", skeleton::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "goblin", goblin::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "skeleton", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
+    add(&mut out, "goblin", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
     add(&mut out, "bat", bat::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "spider", spider::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "imp", imp::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "ogre", ogre::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "ogre", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
     add(&mut out, "wraith", wraith::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "stoneslinger", stoneslinger::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "stoneslinger", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
     add(&mut out, "colossus", colossus::build(0.0, 0.0, color, alpha, facing, t));
     out
 }

@@ -221,18 +221,21 @@ impl EnemyKind {
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
+            // The player and every humanoid foe share one consistent character
+            // rig (legs/torso/arms/head with a walk cycle), tinted per kind, so
+            // the cast reads as the same world. Creatures keep bespoke silhouettes.
             EnemyKind::Boss => SpriteStyle::Humanoid,
-            EnemyKind::Skeleton => SpriteStyle::Skeleton,
-            EnemyKind::Goblin => SpriteStyle::Goblin,
+            EnemyKind::Skeleton => SpriteStyle::Humanoid,
+            EnemyKind::Goblin => SpriteStyle::Humanoid,
             EnemyKind::Bat => SpriteStyle::Bat,
             EnemyKind::Spider => SpriteStyle::Spider,
             EnemyKind::Imp => SpriteStyle::Imp,
-            EnemyKind::Ogre => SpriteStyle::Ogre,
+            EnemyKind::Ogre => SpriteStyle::Humanoid,
             EnemyKind::Wraith => SpriteStyle::Wraith,
-            EnemyKind::Stoneslinger => SpriteStyle::Stoneslinger,
+            EnemyKind::Stoneslinger => SpriteStyle::Humanoid,
             EnemyKind::Colossus => SpriteStyle::Colossus,
-            EnemyKind::Brute => SpriteStyle::Brute,
-            EnemyKind::Stormcaller => SpriteStyle::Stormcaller,
+            EnemyKind::Brute => SpriteStyle::Humanoid,
+            EnemyKind::Stormcaller => SpriteStyle::Humanoid,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
