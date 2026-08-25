@@ -221,6 +221,19 @@ pub fn get_render_cap() -> (u32, u32) {
     *RENDER_CAP.lock().unwrap()
 }
 
+/// Internal render/readback resolution ladder (descending). Index 0 is the
+/// highest quality; higher indices trade sharpness for fps. The adaptive
+/// controller (see `update`) steps down when the measured fps is low so the
+/// game stays smooth even on backends with a slow GPU->CPU readback path.
+const RES_LEVELS: [(u32, u32); 6] = [
+    (960, 540),
+    (800, 450),
+    (640, 400),
+    (560, 315),
+    (480, 270),
+    (384, 216),
+];
+
 fn readback_from_data(data: &[u8], width: u32, height: u32, bytes_per_row: u32) -> String {
     if data.is_empty() {
         return String::from("empty readback");
@@ -620,14 +633,15 @@ pub struct App {
     readback_buffer: Option<wgpu::Buffer>,
     capture_requested: bool,
     using_blit: bool,
-    /// True once we've seen the WebGPU surface actually vend a frame texture.
-    /// When false the game is stuck on the GPU->CPU readback path (e.g. the
-    /// default Linux backend without Vulkan can't present a canvas), which is
-    /// much slower, so we render at a reduced internal resolution.
-    surface_present: bool,
-    /// Mirrors `surface_present` at the time of the last resize, so we only
-    /// re-resize when the present capability actually flips.
-    applied_surface_present: bool,
+    /// Index into RES_LEVELS (higher index = smaller internal resolution).
+    /// Driven by the fps-based adaptive controller so slow backends (e.g.
+    /// default Linux Chrome without Vulkan, where WebGPU can't present a
+    /// canvas and falls back to a slow GPU->CPU readback) still run smoothly.
+    res_level: usize,
+    /// Highest RES_LEVELS index allowed by the user's render-cap setting.
+    max_res_level: usize,
+    fps_est: f32,
+    res_timer: f32,
     backend_mode: u8,
     /// Authoritative frames-per-second, measured from actual sim steps.
     fps: f32,
@@ -1086,8 +1100,10 @@ impl App {
             readback_buffer: None,
             capture_requested: false,
             using_blit: false,
-            surface_present: true,
-            applied_surface_present: true,
+            res_level: 0,
+            max_res_level: 0,
+            fps_est: 60.0,
+            res_timer: 0.0,
             backend_mode: 0,
             fps: 0.0,
             fps_acc: 0,
@@ -1723,15 +1739,21 @@ impl App {
         // simulation -> movement looks "very slow". Render at a smaller backing
         // and let CSS upscale it (pixelated). (0, 0) = native (no cap).
         let user_cap = get_render_cap();
-        // When the WebGPU surface can't present (default Linux backend without
-        // Vulkan), the game runs on the slow GPU->CPU readback path. Clamp the
-        // internal resolution so the readback stays cheap and fps stays high;
-        // Vulkan / present-capable backends keep the user's chosen resolution.
-        let (cap_w, cap_h) = if self.surface_present {
-            user_cap
-        } else {
-            (user_cap.0.min(640), user_cap.1.min(400))
-        };
+        // Highest-quality ladder level allowed by the user's render cap.
+        self.max_res_level = RES_LEVELS
+            .iter()
+            .enumerate()
+            .filter(|(_, (w, h))| *w <= user_cap.0 && *h <= user_cap.1)
+            .map(|(i, _)| i)
+            .next()
+            .unwrap_or(0);
+        if self.res_level < self.max_res_level {
+            self.res_level = self.max_res_level;
+        }
+        // Effective internal resolution: the chosen ladder level, never above the
+        // user's cap.
+        let (lvl_w, lvl_h) = RES_LEVELS[self.res_level.min(RES_LEVELS.len() - 1)];
+        let (cap_w, cap_h) = (lvl_w.min(user_cap.0), lvl_h.min(user_cap.1));
         if cap_w > 0 && cap_h > 0 {
             let scale = (cap_w as f64 / width as f64)
                 .min(cap_h as f64 / height as f64)
@@ -1786,6 +1808,25 @@ impl App {
 
     pub fn update(&mut self, dt: f32) {
         self.frames += 1;
+
+        // Adaptive resolution: keep fps high on backends with a slow present /
+        // readback path (e.g. default Linux Chrome without Vulkan). We measure
+        // the real step rate (EMA) and step the internal resolution down when
+        // it sags, back up when there's headroom. Hysteresis avoids oscillation.
+        let inst_fps = 1.0 / dt.max(0.001);
+        self.fps_est = self.fps_est * 0.9 + inst_fps * 0.1;
+        self.res_timer += dt;
+        if self.res_timer >= 1.5 {
+            self.res_timer = 0.0;
+            if self.fps_est < 55.0 && self.res_level < RES_LEVELS.len() - 1 {
+                self.res_level += 1;
+                self.resize();
+            } else if self.fps_est > 80.0 && self.res_level > self.max_res_level {
+                self.res_level -= 1;
+                self.resize();
+            }
+        }
+
         self.ensure_visible();
         self.time_of_day = (self.time_of_day + dt / DAY_LENGTH).rem_euclid(1.0);
         self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
@@ -2313,19 +2354,9 @@ impl App {
                     self.using_blit = true;
                     set_backend("blit");
                 }
-                // Genuine surface failure: we're on the slow readback path.
-                self.surface_present = false;
                 None
             }
         };
-
-        // If the surface-present capability just changed, re-resize so the
-        // internal render/readback resolution matches (full res when we can
-        // present directly, reduced res when stuck on the slow readback path).
-        if self.surface_present != self.applied_surface_present {
-            self.applied_surface_present = self.surface_present;
-            self.resize();
-        }
 
         let mut encoder = self
             .device
@@ -2334,8 +2365,6 @@ impl App {
             });
 
         if let Some(f) = surface_tex {
-            // Surface presented successfully at least once.
-            self.surface_present = true;
             // The WebGPU surface may not composite on this browser, but its
             // backing is still drawable — so we present (to recycle the
             // swapchain) and then copy it onto the 2D #blit canvas with a fast
