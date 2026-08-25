@@ -681,6 +681,15 @@
 
           const codexEl = el('codex');
           let codexOpen = false;
+          // Item-name -> RGB, mirrors ItemKind::color() in the Rust code.
+          const ITEM_RGB = {
+            'wood': [140, 97, 51], 'stone': [158, 158, 168], 'food': [217, 89, 64],
+            'crown fragment': [255, 214, 77], 'herb': [115, 204, 102], 'gem': [115, 217, 242],
+          };
+          const dropPill = (name) => {
+            const c = ITEM_RGB[name] || [200, 200, 200];
+            return `<span class="pill" style="background:rgba(${c[0]},${c[1]},${c[2]},0.22);color:rgb(${c[0]},${c[1]},${c[2]})">${name}</span>`;
+          };
           const renderCodex = () => {
             const raw = get_codex();
             let data;
@@ -696,11 +705,12 @@
                 if (e.boss) tags.push('<span class="tag boss">BOSS</span>');
                 if (e.flying) tags.push('<span class="tag">flying</span>');
                 if (e.ranged) tags.push('<span class="tag">ranged</span>');
-                html += `<div class="codex-card">
+                const drops = (e.drops || []).map(dropPill).join('');
+                html += `<div class="codex-card${e.boss ? ' boss' : ''}">
                   <div class="ck-name">${e.name} ${tags.join(' ')}</div>
                   <div class="ck-stats">HP ${e.hp} · DMG ${e.dmg}</div>
                   <div class="ck-beh">${e.behavior}</div>
-                  <div class="ck-drops">Drops: ${e.drops.join(', ')}</div>
+                  <div class="ck-drops">Drops: ${drops}</div>
                 </div>`;
               });
               html += '</div>';
@@ -994,18 +1004,35 @@
               mmCtx.fillStyle = '#f2d77a';
               mmCtx.fillRect(px - 1.5, py - 1.5, 3, 3);
             });
-            (d.enemies || []).forEach(([ex, ey]) => {
+            (d.enemies || []).forEach(([ex, ey, name, boss]) => {
               const px = cx + (ex - (ptx + 0.5)) * cell;
               const py = cy + (ey - (Math.floor(d.player[1]) + 0.5)) * cell;
-              mmCtx.fillStyle = '#e05050';
+              // Bosses glow gold and large; others red — so threats read at a glance.
+              mmCtx.fillStyle = boss ? '#ffcf4d' : '#e05050';
               mmCtx.beginPath();
-              mmCtx.arc(px, py, 1.6, 0, 7);
+              mmCtx.arc(px, py, boss ? 2.4 : 1.6, 0, 7);
               mmCtx.fill();
+              if (boss) {
+                mmCtx.strokeStyle = 'rgba(255,207,77,0.5)';
+                mmCtx.lineWidth = 1;
+                mmCtx.beginPath();
+                mmCtx.arc(px, py, 4, 0, 7);
+                mmCtx.stroke();
+              }
             });
-            mmCtx.fillStyle = '#ffd27a';
+            // Player marker: a triangle pointing in the facing direction.
+            const fa = Math.atan2(d.facing ? d.facing[1] : 0, d.facing ? d.facing[0] : 1);
+            mmCtx.save();
+            mmCtx.translate(cx, cy);
+            mmCtx.rotate(fa);
+            mmCtx.fillStyle = '#9fe6ff';
             mmCtx.beginPath();
-            mmCtx.arc(cx, cy, 2.6, 0, 7);
+            mmCtx.moveTo(4.5, 0);
+            mmCtx.lineTo(-3, -3);
+            mmCtx.lineTo(-3, 3);
+            mmCtx.closePath();
             mmCtx.fill();
+            mmCtx.restore();
             // Biome legend key below the canvas (rebuild only when it changes).
             const leg = el('mm-legend');
             if (leg && d.legend) {
@@ -1025,7 +1052,7 @@
               }
             }
           }
-          setInterval(drawMinimap, 1500);
+          setInterval(drawMinimap, 600);
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
           //      warm-orange (player) pixels. If orange>0 the game is rendering

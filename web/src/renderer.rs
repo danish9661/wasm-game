@@ -584,12 +584,14 @@ pub fn set_force_gpu(v: bool) {
 }
 
 /// A ground loot drop the player walks over to collect. Spawned when enemies
-/// (and optionally resources) are destroyed; auto-collected on proximity.
+/// or resource nodes are destroyed; auto-collected on proximity.
 #[derive(Clone, Copy)]
 pub struct LootDrop {
     pub kind: game::items::ItemKind,
     pub x: f32,
     pub y: f32,
+    /// Stack size carried by this drop.
+    pub count: u32,
     /// Remaining lifetime in seconds; despawned at 0 so the world stays clean.
     pub ttl: f32,
     /// Animation phase for the bob/sparkle.
@@ -814,7 +816,11 @@ impl App {
                 cells.push((r << 16) | (g << 8) | b);
             }
         }
-        let enemies: Vec<[f32; 2]> = self.enemies.enemies().map(|e| [e.x, e.y]).collect();
+        let enemies: Vec<serde_json::Value> = self
+            .enemies
+            .enemies()
+            .map(|e| serde_json::json!([e.x, e.y, e.kind.name(), e.kind.is_boss()]))
+            .collect();
         let structs: Vec<(i32, i32, &str)> = self
             .structures
             .iter()
@@ -845,6 +851,7 @@ impl App {
             "n": N,
             "cells": cells,
             "player": [self.player.x, self.player.y],
+            "facing": [self.player.facing.0, self.player.facing.1],
             "enemies": enemies,
             "structs": structs,
             "legend": legend,
@@ -1372,6 +1379,7 @@ impl App {
                     kind: *it,
                     x: ex + ang.cos() * 0.25,
                     y: ey + ang.sin() * 0.25,
+                    count: 1,
                     ttl: 60.0,
                     phase: (ex + ey).fract().abs() * std::f32::consts::TAU,
                 });
@@ -1407,8 +1415,8 @@ impl App {
             }
             let dx = l.x - px;
             let dy = l.y - py;
-            if dx * dx + dy * dy < 0.5 * 0.5 {
-                self.inventory.add(l.kind, 1);
+            if dx * dx + dy * dy < 1.1 * 1.1 {
+                self.inventory.add(l.kind, l.count);
                 self.loot.remove(i);
                 continue;
             }
@@ -1465,8 +1473,19 @@ impl App {
         }
         if let Some((tx, ty, kind)) = self.nearest_resource() {
             if let Some(item) = self.nodes.chop(tx, ty, kind) {
-                // Honed Tools (crafted at an Anvil) yield bonus resources.
-                self.inventory.add(item, 1 + self.craft_harvest);
+                // Honed Tools (crafted at an Anvil) yield bonus resources. Drop
+                // the yield as ground loot (collected on proximity) rather than
+                // crediting inventory directly, so harvesting reads like looting.
+                let n = 1 + self.craft_harvest;
+                let (lx, ly) = (tx as f32 + 0.5, ty as f32 + 0.5);
+                self.loot.push(LootDrop {
+                    kind: item,
+                    x: lx,
+                    y: ly,
+                    count: n,
+                    ttl: 60.0,
+                    phase: (lx + ly).fract().abs() * std::f32::consts::TAU,
+                });
             }
         }
     }
