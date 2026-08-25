@@ -929,6 +929,7 @@
           document.addEventListener('visibilitychange', () => { if (document.hidden && !bootOpen) doSave(); });
 
           setInterval(() => {
+            const t0 = performance.now();
             const raw = get_stats();
             if (raw && !raw.startsWith('no app') && !raw.startsWith('pending')) {
               updateHud(parseStats(raw));
@@ -939,6 +940,8 @@
             if (gameStarted && !bootOpen && invOpen) {
               updateInventory(get_ui_data());
             }
+            const dt = performance.now() - t0;
+            if (dt > 16) console.log('[perf] 200ms interval', dt.toFixed(1), 'ms');
           }, 200);
 
           // ---- Minimap ----------------------------------------------------
@@ -946,8 +949,11 @@
           const mmCtx = mm.getContext('2d');
           function drawMinimap() {
             if (!gameStarted || bootOpen) return;
+            const t0 = performance.now();
             let d;
             try { d = JSON.parse(get_minimap()); } catch { return; }
+            const dtGm = performance.now() - t0;
+            if (dtGm > 16) console.log('[perf] get_minimap', dtGm.toFixed(1), 'ms');
             if (!d.n) return;
             const N = d.n;
             const cell = mm.width / N;
@@ -1011,7 +1017,7 @@
               }
             }
           }
-          setInterval(drawMinimap, 400);
+          setInterval(drawMinimap, 1500);
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
           //      warm-orange (player) pixels. If orange>0 the game is rendering
@@ -1020,33 +1026,24 @@
           //      render pipeline itself is the problem.
           if (location.search.includes('selfcheck')) setInterval(() => {
             const cv = displayCanvas();
+            const c = cv.getContext('2d');
+            const w = cv.width, h = cv.height;
+            // Sample only a small center region (cheap readback) instead of a
+            // full-canvas toDataURL + getImageData, which stalled ~400ms/fire.
+            const sw = Math.min(80, w), sh = Math.min(80, h);
+            const sx = (w - sw) >> 1, sy = (h - sh) >> 1;
+            let orange = 0;
             try {
-              const url = cv.toDataURL('image/png');
-              const img = new Image();
-              img.onload = () => {
-                try {
-                  const c2 = document.createElement('canvas');
-                  c2.width = img.width; c2.height = img.height;
-                  const cx = c2.getContext('2d');
-                  cx.drawImage(img, 0, 0);
-                  const d = cx.getImageData(0, 0, img.width, img.height).data;
-                  let orange = 0;
-                  const cy = Math.floor(img.height / 2), cx2 = Math.floor(img.width / 2);
-                  const ci = (cy * img.width + cx2) * 4;
-                  const center = [d[ci], d[ci + 1], d[ci + 2]];
-                  for (let i = 0; i < d.length; i += 28) {
-                    if (d[i] > 180 && d[i + 1] > 60 && d[i + 1] < 200 && d[i + 2] < 100) orange++;
-                  }
-                  const verdict = orange > 0
-                    ? 'GAME RENDERS (orange>0)'
-                    : 'NO ORANGE -> render pipeline output is empty';
-                  console.log(`[page] CANVAS SELF-CHECK ${img.width}x${img.height} center=[${center}] orange=${orange} :: ${verdict}`);
-                } catch (e) { console.error('[page] canvas self-check decode failed:', e); }
-              };
-              img.onerror = () => console.error('[page] canvas self-check: toDataURL image failed to load');
-              img.src = url;
+              const d = c.getImageData(sx, sy, sw, sh).data;
+              for (let i = 0; i < d.length; i += 4) {
+                if (d[i] > 180 && d[i + 1] > 60 && d[i + 1] < 200 && d[i + 2] < 100) orange++;
+              }
             } catch (e) { console.error('[page] canvas self-check failed:', e); }
-          }, 3000); }
+            const verdict = orange > 0
+              ? 'GAME RENDERS (orange>0)'
+              : 'NO ORANGE -> render pipeline output is empty';
+            console.log(`[page] CANVAS SELF-CHECK ${w}x${h} center ${sw}x${sh} orange=${orange} :: ${verdict}`);
+          }, 3000);
 
           // ---- Visual capture hook (?cap): dump canvas PNG + signature stats ----
           if (location.search.includes('cap')) {
