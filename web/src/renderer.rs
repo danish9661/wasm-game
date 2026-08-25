@@ -322,6 +322,7 @@ fn blit_to_2d_canvas(
     aclock: f32,
     weather: u8,
     hp01: f32,
+    hurt01: f32,
 ) {
     let window = match web_sys::window() {
         Some(w) => w,
@@ -405,7 +406,7 @@ fn blit_to_2d_canvas(
                 glog(&format!("[gfx] blit: ImageData error {e:?}"));
             }
         }
-        draw_atmosphere(&cache.ctx, width, height, tod, aclock, weather, hp01);
+        draw_atmosphere(&cache.ctx, width, height, tod, aclock, weather, hp01, hurt01);
     });
 }
 
@@ -419,6 +420,7 @@ fn draw_atmosphere(
     aclock: f32,
     weather: u8,
     hp01: f32,
+    hurt01: f32,
 ) {
     let w = width as f64;
     let h = height as f64;
@@ -517,13 +519,21 @@ fn draw_atmosphere(
             ctx.fill_rect(0.0, 0.0, w, h);
         }
     }
+    // Instant red flash on taking a hit (decays quickly via hurt01).
+    if hurt01 > 0.001 {
+        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(&format!(
+            "rgba(190,10,10,{})",
+            0.32 * hurt01
+        )));
+        ctx.fill_rect(0.0, 0.0, w, h);
+    }
 }
 
 /// Fast display path: copy the WebGPU surface (#game) onto the 2D #blit canvas
 /// with a GPU->GPU `drawImage` instead of a GPU->CPU readback + `putImageData`.
 /// The surface's backing is still drawable even when the browser won't composite
 /// the WebGPU canvas itself, so this avoids the slow CPU stall entirely.
-fn blit_via_draw(width: u32, height: u32, tod: f32, aclock: f32, weather: u8, hp01: f32) {
+fn blit_via_draw(width: u32, height: u32, tod: f32, aclock: f32, weather: u8, hp01: f32, hurt01: f32) {
     let window = match web_sys::window() {
         Some(w) => w,
         None => return,
@@ -560,7 +570,7 @@ fn blit_via_draw(width: u32, height: u32, tod: f32, aclock: f32, weather: u8, hp
         None => return,
     };
     let _ = ctx.draw_image_with_html_canvas_element(&game, 0.0, 0.0);
-    draw_atmosphere(&ctx, width, height, tod, aclock, weather, hp01);
+    draw_atmosphere(&ctx, width, height, tod, aclock, weather, hp01, hurt01);
 }
 
 struct VertexBuffer {
@@ -746,6 +756,8 @@ pub struct App {
     crafted_iron: bool,
     /// Screen-shake impulse (px), decays each frame; set on player damage.
     shake: f32,
+    /// Red damage-flash intensity (0..1), decays each frame; set to 1 on hit.
+    hurt_flash: f32,
 }
 
 impl App {
@@ -1204,6 +1216,7 @@ impl App {
             farm_cd: std::collections::HashMap::new(),
             crafted_iron: false,
             shake: 0.0,
+            hurt_flash: 0.0,
         })
     }
 
@@ -1967,6 +1980,7 @@ impl App {
 
     pub fn update(&mut self, dt: f32) {
         self.frames += 1;
+        self.hurt_flash = (self.hurt_flash * 0.86).max(0.0);
 
         // Adaptive resolution: keep fps high on backends with a slow present /
         // readback path (e.g. default Linux Chrome without Vulkan). We measure
@@ -2097,6 +2111,7 @@ impl App {
             self.player.take_damage(dmg);
             play_sfx("hurt");
             self.shake = self.shake.max(7.0);
+            self.hurt_flash = 1.0;
             if !self.player.alive {
                 play_sfx("death");
             }
@@ -2189,6 +2204,7 @@ impl App {
                     self.player.take_damage(dmg);
                     play_sfx("hurt");
                     self.shake = self.shake.max(7.0);
+                    self.hurt_flash = 1.0;
                     if !self.player.alive {
                         play_sfx("death");
                     }
@@ -2625,6 +2641,7 @@ impl App {
                     self.anim_clock,
                     self.weather,
                     self.player.hp / 100.0,
+                    self.hurt_flash,
                 );
                 if self.backend_mode != 2 {
                     self.backend_mode = 2;
@@ -2698,6 +2715,7 @@ impl App {
                 );
                 let rc = enc.finish();
                 let hp01 = self.player.hp / 100.0;
+                let hurt01 = self.hurt_flash;
                 rc.map_buffer_on_submit(
                     &buf.clone(),
                     wgpu::MapMode::Read,
@@ -2715,6 +2733,7 @@ impl App {
                                         aclock,
                                         weather,
                                         hp01,
+                                        hurt01,
                                     );
                                     drop(data);
                                     *READBACK.lock().unwrap() = String::from("blitted");
