@@ -1196,6 +1196,7 @@
           // (e.g. default Linux Chrome without Vulkan), we stay on #blit. Safe:
           // we only flip to gpu mode after confirming the surface shows content.
           if (location.search.includes('blit')) window.__forceBlit = true;
+          let __gpuTries = 0;
           function tryEnableGpuDirect() {
             if (window.__forceBlit || window.__autoGpu || !gameStarted) return;
             const g = document.getElementById('game');
@@ -1212,10 +1213,34 @@
                 try { set_force_gpu(true); } catch (_) {}
                 setBackend('gpu');
                 console.log('[page] direct presentation enabled (surface composites)');
+                return;
               }
             } catch (e) {}
+            // If, after a few seconds, the surface never composites, this visitor
+            // is on a backend that needs the Vulkan flag for full speed. Tell them.
+            __gpuTries++;
+            if (__gpuTries === 10 && !window.__vulkanNoticeShown) showVulkanNotice();
           }
           setInterval(tryEnableGpuDirect, 500);
+
+          // On-screen notice for visitors whose browser can't composite WebGPU
+          // directly: tell them how to get full fps (launch Chrome with Vulkan).
+          function showVulkanNotice() {
+            window.__vulkanNoticeShown = true;
+            if (document.getElementById('vulkanNotice')) return;
+            const n = document.createElement('div');
+            n.id = 'vulkanNotice';
+            n.innerHTML =
+              '<div class="vn-body">' +
+                '<b>Low fps?</b> This browser isn\'t compositing WebGPU directly. ' +
+                'For full speed, launch Chrome with Vulkan and open this page:' +
+                '<br><code>chrome --enable-features=Vulkan ' + location.origin + location.pathname + '</code>' +
+                '<br><span class="vn-hint">(or run the included <code>launch.sh</code>). The in-game <i>Auto Resolution</i> setting also helps.</span>' +
+              '</div>' +
+              '<button id="vnClose" aria-label="Dismiss">×</button>';
+            document.body.appendChild(n);
+            document.getElementById('vnClose').onclick = () => n.remove();
+          }
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
           //      warm-orange (player) pixels. If orange>0 the game is rendering

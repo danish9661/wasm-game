@@ -639,3 +639,25 @@ span.weather { background: rgba(40, 70, 110, 0.85); color: #cfe2f5; border-color
   border: 1px solid rgba(255,255,255,0.25);
 }
 #buildhint b { color: #54c26e; }
+/* Vulkan / low-fps notice */
+#vulkanNotice {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+  max-width: 560px; width: calc(100% - 24px); z-index: 60;
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(18, 22, 30, 0.94); color: #e7ecf3;
+  border: 1px solid rgba(120, 160, 220, 0.45); border-radius: 10px;
+  padding: 10px 12px; box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  font: 13px/1.45 system-ui, sans-serif;
+}
+#vulkanNotice .vn-body { flex: 1; }
+#vulkanNotice code {
+  background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px;
+  font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: #ffd9a0;
+  word-break: break-all;
+}
+#vulkanNotice .vn-hint { color: #9fb0c4; }
+#vulkanNotice #vnClose {
+  background: none; border: none; color: #9fb0c4; font-size: 20px;
+  line-height: 1; cursor: pointer; padding: 0 2px;
+}
+#vulkanNotice #vnClose:hover { color: #fff; }
