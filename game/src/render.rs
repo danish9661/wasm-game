@@ -50,6 +50,8 @@ pub enum SpriteStyle {
     Well,
     Spike,
     FarmPlot,
+    Turret,
+    HealingTotem,
     // ---- Decorative props (world-gen only, non-interactive) --------------
     Sign,
     Barrel,
@@ -618,9 +620,9 @@ fn push_styled_sprite(
 ) {
     use crate::elements::{
         altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
-        crate_box, crystal, fence, fern, flower, goblin, grass_tuft, humanoid, hpbar, imp, lantern,
+        crate_box, crystal, fence, fern, flower, goblin, grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
         lilypad, mushroom, ogre, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
-        skeleton, slime, spider, statue, torch, totem, tree, vines, wall, well, wraith,
+        skeleton, slime, spider, statue, torch, totem, tree, turret, vines, wall, well, wraith,
         stoneslinger, colossus, brute, stormcaller, spike, farm_plot,
     };
     match style {
@@ -663,6 +665,10 @@ fn push_styled_sprite(
         SpriteStyle::Well => rasterize(&well::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Spike => rasterize(&spike::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::FarmPlot => rasterize(&farm_plot::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Turret => rasterize(&turret::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::HealingTotem => {
+            rasterize(&healing_totem::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
         // Decorative props
         SpriteStyle::Sign => rasterize(&sign::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Barrel => rasterize(&barrel::build(cx, cy, color, alpha, facing, anim_time), out),

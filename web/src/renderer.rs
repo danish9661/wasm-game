@@ -95,6 +95,8 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::RuinTower => "U",
         StructureKind::Spike => "+",
         StructureKind::FarmPlot => "*",
+        StructureKind::Turret => "Y",
+        StructureKind::HealingTotem => "H",
     }
 }
 
@@ -752,6 +754,8 @@ pub struct App {
     /// Farm plots: seconds remaining until each planted plot is ready to
     /// harvest again (keyed by tile). Plots not present are grown (0).
     farm_cd: std::collections::HashMap<(i32, i32), f32>,
+    /// Turret emplacements: seconds until each may fire again (keyed by tile).
+    turret_cd: std::collections::HashMap<(i32, i32), f32>,
     /// True once the player has crafted Iron Plate (used by the quest log).
     crafted_iron: bool,
     /// Screen-shake impulse (px), decays each frame; set on player damage.
@@ -1214,6 +1218,7 @@ impl App {
             weather: 0,
             weather_timer: 25.0,
             farm_cd: std::collections::HashMap::new(),
+            turret_cd: std::collections::HashMap::new(),
             crafted_iron: false,
             shake: 0.0,
             hurt_flash: 0.0,
@@ -1791,6 +1796,7 @@ impl App {
     /// Reset transient per-run state that isn't rebuilt by `reset_world`.
     fn reset_run_state(&mut self) {
         self.farm_cd.clear();
+        self.turret_cd.clear();
         self.crafted_iron = false;
     }
 
@@ -2125,6 +2131,49 @@ impl App {
             if s.kind == StructureKind::FarmPlot {
                 let cd = self.farm_cd.entry((s.tx, s.ty)).or_insert(0.0);
                 *cd = (*cd - dt).max(0.0);
+            }
+        }
+
+        // Turrets auto-fire at the nearest enemy in range; Healing Totems slowly
+        // regenerate the player while they linger nearby.
+        const TURRET_RANGE: f32 = 9.0;
+        const TURRET_CD: f32 = 1.1;
+        const HEAL_RADIUS: f32 = 4.0;
+        const HEAL_RATE: f32 = 8.0;
+        let px = self.player.x;
+        let py = self.player.y;
+        for s in &self.structures {
+            if s.kind == StructureKind::Turret {
+                let cx = s.tx as f32 + 0.5;
+                let cy = s.ty as f32 + 0.5;
+                let cd = self.turret_cd.entry((s.tx, s.ty)).or_insert(0.0);
+                *cd = (*cd - dt).max(0.0);
+                if *cd <= 0.0 {
+                    let r2 = TURRET_RANGE * TURRET_RANGE;
+                    let mut best: Option<(f32, f32, f32)> = None; // (dist2, ex, ey)
+                    for e in self.enemies.enemies() {
+                        let dx = e.x - cx;
+                        let dy = e.y - cy;
+                        let d2 = dx * dx + dy * dy;
+                        if d2 <= r2 && best.map_or(true, |(bd, _, _)| d2 < bd) {
+                            best = Some((d2, e.x, e.y));
+                        }
+                    }
+                    if let Some((_, ex, ey)) = best {
+                        let (dx, dy) = (ex - cx, ey - cy);
+                        let len = (dx * dx + dy * dy).sqrt().max(1e-4);
+                        self.arrows.push(Arrow::new(cx, cy, dx / len, dy / len));
+                        *cd = TURRET_CD;
+                    }
+                }
+            } else if s.kind == StructureKind::HealingTotem {
+                let cx = s.tx as f32 + 0.5;
+                let cy = s.ty as f32 + 0.5;
+                let dx = px - cx;
+                let dy = py - cy;
+                if dx * dx + dy * dy <= HEAL_RADIUS * HEAL_RADIUS && self.player.alive {
+                    self.player.hp = (self.player.hp + HEAL_RATE * dt).min(player::MAX_HP);
+                }
             }
         }
 

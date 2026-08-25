@@ -31,6 +31,9 @@ pub enum StructureKind {
     // New buildables: trap + farm
     Spike,
     FarmPlot,
+    // New buildables: defensive + support
+    Turret,
+    HealingTotem,
     // Decorative (world-gen only)
     Sign,
     Barrel,
@@ -64,6 +67,9 @@ impl StructureKind {
             StructureKind::Well => &[(ItemKind::Stone, 6)],
             StructureKind::Spike => &[(ItemKind::Wood, 2), (ItemKind::Stone, 1)],
             StructureKind::FarmPlot => &[(ItemKind::Wood, 3), (ItemKind::Stone, 2)],
+            StructureKind::Lantern => &[(ItemKind::Wood, 1), (ItemKind::Stone, 1)],
+            StructureKind::Turret => &[(ItemKind::Wood, 4), (ItemKind::Stone, 4), (ItemKind::Gem, 1)],
+            StructureKind::HealingTotem => &[(ItemKind::Wood, 3), (ItemKind::Herb, 2)],
             _ => &[],
         }
     }
@@ -81,6 +87,8 @@ impl StructureKind {
             StructureKind::Well => [0.55, 0.53, 0.52],
             StructureKind::Spike => [0.62, 0.64, 0.68],
             StructureKind::FarmPlot => [0.45, 0.55, 0.30],
+            StructureKind::Turret => [0.50, 0.50, 0.55],
+            StructureKind::HealingTotem => [0.50, 0.35, 0.20],
             StructureKind::Sign => [0.60, 0.42, 0.24],
             StructureKind::Barrel => [0.50, 0.34, 0.18],
             StructureKind::Totem => [0.50, 0.35, 0.20],
@@ -103,7 +111,11 @@ impl StructureKind {
     pub fn blocks_movement(self) -> bool {
         matches!(
             self,
-            StructureKind::Wall | StructureKind::Fence | StructureKind::Well
+            StructureKind::Wall
+                | StructureKind::Fence
+                | StructureKind::Well
+                | StructureKind::Turret
+                | StructureKind::HealingTotem
         )
     }
 
@@ -115,6 +127,7 @@ impl StructureKind {
                 | StructureKind::Torch
                 | StructureKind::Lantern
                 | StructureKind::Brazier
+                | StructureKind::HealingTotem
         )
     }
 
@@ -163,6 +176,8 @@ impl StructureKind {
             StructureKind::Well => (16.0, 14.0, 2.0),
             StructureKind::Spike => (16.0, 6.0, 1.0),
             StructureKind::FarmPlot => (16.0, 8.0, 1.0),
+            StructureKind::Turret => (11.0, 14.0, 1.0),
+            StructureKind::HealingTotem => (8.0, 22.0, 1.0),
             StructureKind::Sign => (12.0, 14.0, 1.0),
             StructureKind::Barrel => (8.0, 16.0, 1.0),
             StructureKind::Totem => (8.0, 26.0, 1.0),
@@ -192,6 +207,8 @@ impl StructureKind {
             StructureKind::Well => SpriteStyle::Well,
             StructureKind::Spike => SpriteStyle::Spike,
             StructureKind::FarmPlot => SpriteStyle::FarmPlot,
+            StructureKind::Turret => SpriteStyle::Turret,
+            StructureKind::HealingTotem => SpriteStyle::HealingTotem,
             StructureKind::Sign => SpriteStyle::Sign,
             StructureKind::Barrel => SpriteStyle::Barrel,
             StructureKind::Totem => SpriteStyle::Totem,
@@ -225,6 +242,9 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
     (StructureKind::Well, "H", "Well"),
     (StructureKind::Spike, "X", "Spike Trap"),
     (StructureKind::FarmPlot, "U", "Farm Plot"),
+    (StructureKind::Turret, "Y", "Turret"),
+    (StructureKind::HealingTotem, "M", "Healing Totem"),
+    (StructureKind::Lantern, "L", "Lantern"),
 ];
 
 /// Stateless decorative-prop placement: a few flavor props sprinkled on biomes
@@ -349,5 +369,26 @@ mod tests {
         assert!(!StructureKind::Altar.blocks_movement());
         assert!(StructureKind::Altar.emits_light());
         assert!(StructureKind::Altar.cost().is_empty(), "altars are not buildable");
+    }
+
+    #[test]
+    fn turret_and_totem_are_buildable_and_block() {
+        assert!(StructureKind::Turret.blocks_movement());
+        assert!(!StructureKind::Turret.emits_light());
+        assert!(!StructureKind::Turret.cost().is_empty(), "turret should cost materials");
+
+        assert!(StructureKind::HealingTotem.blocks_movement());
+        assert!(StructureKind::HealingTotem.emits_light(), "totem glows as a light");
+        assert!(!StructureKind::HealingTotem.cost().is_empty());
+
+        // Lantern becomes a cheap, buildable light source.
+        assert!(StructureKind::Lantern.emits_light());
+        assert!(!StructureKind::Lantern.cost().is_empty(), "lantern should now be buildable");
+
+        // New buildables appear in the build menu.
+        assert!(BUILDABLE
+            .iter()
+            .any(|(k, _, _)| *k == StructureKind::Turret || *k == StructureKind::HealingTotem
+                || *k == StructureKind::Lantern));
     }
 }

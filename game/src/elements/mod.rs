@@ -36,6 +36,8 @@ pub(crate) mod bed;
 pub(crate) mod well;
 pub(crate) mod spike;
 pub(crate) mod farm_plot;
+pub(crate) mod turret;
+pub(crate) mod healing_totem;
 
 // Decorative props
 pub(crate) mod sign;
