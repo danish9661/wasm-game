@@ -177,7 +177,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap } from './wasm_game.js';
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -401,6 +401,11 @@
     let paused = false;
     let bootOpen = false;
     let gameStarted = false;
+    // Apply the resolution cap exactly once the WebGPU App exists. resize() is
+    // also called at boot, but there the App isn't ready yet and the call is
+    // ignored — without this, the live render target stays at NATIVE res and
+    // the blit readback crawls (~13fps).
+    let didResize = false;
 
     const boot = () => {
       console.log('[page] boot() start; WebGPU present:', 'gpu' in navigator, '; userAgent:', navigator.userAgent);
@@ -758,6 +763,7 @@
 
           function frame(t) {
             if (!window.__firstFrame) { window.__firstFrame = true; console.log('[page] first animation frame (rAF firing)'); }
+            if (!didResize && app_ready()) { try { resize(); } catch (_) {} didResize = true; }
             if (!paused && t - lastStep >= 8) {
               lastStep = t;
               try {

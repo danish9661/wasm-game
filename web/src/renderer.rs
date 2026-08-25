@@ -2382,7 +2382,7 @@ impl App {
             drop(encoder);
         }
 
-        if self.frames % 600 == 0 {
+        if self.frames % 120 == 0 {
             glog(&format!(
                 "[gfx] heartbeat #{} quads={} backend={}",
                 self.frames,

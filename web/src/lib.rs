@@ -93,6 +93,14 @@ pub fn step(dt_seconds: f64) {
     });
 }
 
+/// True once the WebGPU App has finished initializing (so calls like
+/// `resize()` won't be silently ignored). Used by the page to apply the
+/// resolution cap exactly once the render target exists.
+#[wasm_bindgen]
+pub fn app_ready() -> bool {
+    APP.with(|c| c.borrow().is_some())
+}
+
 /// Machine-readable stats for the JS HUD / test harness.
 #[wasm_bindgen]
 pub fn get_stats() -> String {
