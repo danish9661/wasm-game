@@ -2233,124 +2233,162 @@ impl App {
             ));
         }
 
+        // Prefer presenting directly to the WebGPU surface (#game): a single GPU
+        // present per frame that never stalls. The read-back-to-#blit path is
+        // only a fallback for environments where the surface can't reach the
+        // screen (e.g. SwiftShader where present() is a no-op). Forcing it
+        // unconditionally made the whole game freeze on normal GPUs, because the
+        // readback buffer stayed busy and frames were skipped.
+        let frame = self.surface.get_current_texture();
+        let surface_tex: Option<wgpu::SurfaceTexture> = match frame {
+            wgpu::CurrentSurfaceTexture::Success(f) => Some(f),
+            wgpu::CurrentSurfaceTexture::Suboptimal(f) => Some(f),
+            // Momentarily unavailable (tab hidden / vsync timeout): keep the last
+            // presented frame on screen.
+            wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => None,
+            // Genuinely broken surface: drop to the blit readback fallback.
+            _ => {
+                if self.backend_mode != 2 {
+                    self.backend_mode = 2;
+                    self.using_blit = true;
+                    set_backend("blit");
+                }
+                None
+            }
+        };
+
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("frame_encoder"),
             });
 
-        // The WebGPU surface (#game) can't be composited on this browser, so
-        // #blit (a 2D canvas) is the only visible output. Render to the offscreen
-        // target and read it back to #blit every frame.
-        if self.backend_mode != 2 {
-            self.backend_mode = 2;
-            self.using_blit = true;
-            set_backend("blit");
-        }
-        let off_view = self
-            .offscreen
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        self.record_pass(&off_view, &mut encoder);
-
-        // Blit the rendered frame to #blit (the only composited canvas on this
-        // browser). We reuse ONE readback buffer instead of allocating a fresh
-        // one every frame — buffer creation was the dominant per-frame cost and
-        // was tanking the FPS (making input feel unresponsive). If the buffer is
-        // still mapped from the previous frame we skip this frame's readback
-        // (cheaply presenting the last picture) rather than double-mapping.
-        let width = self.config.width;
-        let height = self.config.height;
-        let bytes_per_row = ((width * 4 + 255) / 256) * 256;
-
-        let need_new = match &self.readback_buffer {
-            Some(b) => b.size() != bytes_per_row as u64 * height as u64,
-            None => true,
-        };
-        if need_new {
-            self.readback_buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("readback"),
-                size: bytes_per_row as u64 * height as u64,
-                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                mapped_at_creation: false,
-            }));
-            self.readback_busy.store(false, std::sync::atomic::Ordering::Relaxed);
-        }
-
-        let cmd = encoder.finish();
-        if !self.readback_busy.load(std::sync::atomic::Ordering::Relaxed) {
-            self.readback_busy.store(true, std::sync::atomic::Ordering::Relaxed);
-            let buf = self.readback_buffer.as_ref().unwrap().clone();
-            let busy = self.readback_busy.clone();
-            let tod = self.time_of_day;
-            let aclock = self.anim_clock;
-            let weather = self.weather;
-            let mut enc = self
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("readback_encoder"),
-                });
-            enc.copy_texture_to_buffer(
-                wgpu::TexelCopyTextureInfo {
-                    texture: &self.offscreen,
-                    mip_level: 0,
-                    origin: wgpu::Origin3d::ZERO,
-                    aspect: wgpu::TextureAspect::All,
-                },
-                wgpu::TexelCopyBufferInfo {
-                    buffer: &buf,
-                    layout: wgpu::TexelCopyBufferLayout {
-                        offset: 0,
-                        bytes_per_row: Some(bytes_per_row),
-                        rows_per_image: Some(height),
-                    },
-                },
-                wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-            );
-            let rc = enc.finish();
-            rc.map_buffer_on_submit(
-                &buf.clone(),
-                wgpu::MapMode::Read,
-                ..,
-                move |res| {
-                    match res {
-                        Ok(()) => {
-                            if let Ok(data) = buf.slice(..).get_mapped_range() {
-                                blit_to_2d_canvas(
-                                    &data,
-                                    width,
-                                    height,
-                                    bytes_per_row,
-                                    tod,
-                                    aclock,
-                                    weather,
-                                );
-                                drop(data);
-                                *READBACK.lock().unwrap() = String::from("blitted");
-                            } else {
-                                *READBACK.lock().unwrap() = String::from("mapped but no range");
-                            }
-                            buf.unmap();
-                        }
-                        Err(e) => {
-                            *READBACK.lock().unwrap() = format!("map error: {e}");
-                            buf.unmap();
-                        }
-                    }
-                    busy.store(false, std::sync::atomic::Ordering::Relaxed);
-                },
-            );
-            self.queue.submit([cmd, rc]);
-        } else {
-            // Previous readback still in flight: just present this render.
+        if let Some(f) = surface_tex {
+            if self.backend_mode != 1 {
+                self.backend_mode = 1;
+                self.using_blit = false;
+                set_backend("gpu");
+            }
+            let view = f.texture.create_view(&wgpu::TextureViewDescriptor::default());
+            self.record_pass(&view, &mut encoder);
+            let cmd = encoder.finish();
             self.queue.submit([cmd]);
+            self.queue.present(f);
+        } else if self.backend_mode == 2 {
+            // Blit fallback: render to the offscreen target and read it back to
+            // the 2D #blit canvas (only used when the surface can't present).
+            let off_view = self
+                .offscreen
+                .create_view(&wgpu::TextureViewDescriptor::default());
+            self.record_pass(&off_view, &mut encoder);
+
+            // We reuse ONE readback buffer instead of allocating a fresh one every
+            // frame. If the buffer is still mapped from the previous frame we skip
+            // this frame's readback (cheaply presenting the last picture) rather
+            // than double-mapping.
+            let width = self.config.width;
+            let height = self.config.height;
+            let bytes_per_row = ((width * 4 + 255) / 256) * 256;
+
+            let need_new = match &self.readback_buffer {
+                Some(b) => b.size() != bytes_per_row as u64 * height as u64,
+                None => true,
+            };
+            if need_new {
+                self.readback_buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("readback"),
+                    size: bytes_per_row as u64 * height as u64,
+                    usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                    mapped_at_creation: false,
+                }));
+                self.readback_busy.store(false, std::sync::atomic::Ordering::Relaxed);
+            }
+
+            let cmd = encoder.finish();
+            if !self.readback_busy.load(std::sync::atomic::Ordering::Relaxed) {
+                self.readback_busy.store(true, std::sync::atomic::Ordering::Relaxed);
+                let buf = self.readback_buffer.as_ref().unwrap().clone();
+                let busy = self.readback_busy.clone();
+                let tod = self.time_of_day;
+                let aclock = self.anim_clock;
+                let weather = self.weather;
+                let mut enc = self
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: Some("readback_encoder"),
+                    });
+                enc.copy_texture_to_buffer(
+                    wgpu::TexelCopyTextureInfo {
+                        texture: &self.offscreen,
+                        mip_level: 0,
+                        origin: wgpu::Origin3d::ZERO,
+                        aspect: wgpu::TextureAspect::All,
+                    },
+                    wgpu::TexelCopyBufferInfo {
+                        buffer: &buf,
+                        layout: wgpu::TexelCopyBufferLayout {
+                            offset: 0,
+                            bytes_per_row: Some(bytes_per_row),
+                            rows_per_image: Some(height),
+                        },
+                    },
+                    wgpu::Extent3d {
+                        width,
+                        height,
+                        depth_or_array_layers: 1,
+                    },
+                );
+                let rc = enc.finish();
+                rc.map_buffer_on_submit(
+                    &buf.clone(),
+                    wgpu::MapMode::Read,
+                    ..,
+                    move |res| {
+                        match res {
+                            Ok(()) => {
+                                if let Ok(data) = buf.slice(..).get_mapped_range() {
+                                    blit_to_2d_canvas(
+                                        &data,
+                                        width,
+                                        height,
+                                        bytes_per_row,
+                                        tod,
+                                        aclock,
+                                        weather,
+                                    );
+                                    drop(data);
+                                    *READBACK.lock().unwrap() = String::from("blitted");
+                                } else {
+                                    *READBACK.lock().unwrap() = String::from("mapped but no range");
+                                }
+                                buf.unmap();
+                            }
+                            Err(e) => {
+                                *READBACK.lock().unwrap() = format!("map error: {e}");
+                                buf.unmap();
+                            }
+                        }
+                        busy.store(false, std::sync::atomic::Ordering::Relaxed);
+                    },
+                );
+                self.queue.submit([cmd, rc]);
+            } else {
+                // Previous readback still in flight: just present this render.
+                self.queue.submit([cmd]);
+            }
+        } else {
+            // Surface transiently unavailable (Timeout/Occluded): nothing to
+            // present this frame; drop the encoder so the last frame persists.
+            drop(encoder);
         }
 
         if self.frames % 600 == 0 {
-            glog(&format!("[gfx] heartbeat #{} quads={} (blit fallback)", self.frames, self.quad_count));
+            glog(&format!(
+                "[gfx] heartbeat #{} quads={} backend={}",
+                self.frames,
+                self.quad_count,
+                if self.using_blit { "blit" } else { "gpu" }
+            ));
         }
     }
 

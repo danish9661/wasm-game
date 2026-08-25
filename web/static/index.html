@@ -220,6 +220,21 @@
 
     // ---- Audio (procedural, gesture-gated) -------------------------------
     let actx = null, masterGain = null, sfxGain = null, musicGain = null, rainGain = null;
+    function setBackend(mode) {
+      const g = document.getElementById('game');
+      const b = document.getElementById('blit');
+      if (mode === 'gpu') { if (g) g.style.display = 'block'; if (b) b.style.display = 'none'; }
+      else { if (g) g.style.display = 'none'; if (b) b.style.display = 'block'; }
+      window.backend = mode;
+    }
+    window.setBackend = setBackend;
+    // Default to the real WebGPU canvas; Rust switches to #blit only if the
+    // surface can't present (e.g. SwiftShader). This avoids the frozen-blit flash.
+    setBackend('gpu');
+    function displayCanvas() {
+      return window.backend === 'gpu' ? document.getElementById('game') : document.getElementById('blit');
+    }
+
     function ensureAudio() {
       if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
       try {
@@ -692,7 +707,7 @@
           // ---- Build ghost: mouse position → world tile -------------------
           const blitCanvas = document.getElementById('blit');
           window.addEventListener('pointermove', (e) => {
-            const cv = blitCanvas || document.getElementById('game');
+            const cv = displayCanvas();
             if (!cv || !cv.getBoundingClientRect) return;
             const rect = cv.getBoundingClientRect();
             if (rect.width === 0 || rect.height === 0) return;
@@ -858,7 +873,7 @@
             // downloadable PNG (and POST it to /cap if a capture server listens).
             if (e.code === 'KeyP') {
               e.preventDefault();
-              const c = document.getElementById('blit') || document.getElementById('game');
+              const c = displayCanvas();
               try {
                 const url = c.toDataURL('image/png');
                 const a = document.createElement('a');
@@ -965,7 +980,7 @@
           //      problem (e.g. SwiftShader in a windowed Chrome); if orange=0 the
           //      render pipeline itself is the problem.
           setInterval(() => {
-            const cv = document.getElementById('blit') || document.getElementById('game');
+            const cv = displayCanvas();
             try {
               const url = cv.toDataURL('image/png');
               const img = new Image();
@@ -1018,7 +1033,7 @@
               return { w, h, player, tree, rock, slime, boss, hpback, wall, slimeTop, slimeBot };
             };
             setInterval(() => {
-              const cv = document.getElementById('blit') || document.getElementById('game');
+              const cv = displayCanvas();
               try {
                 fetch('/cap', { method: 'POST', body: cv.toDataURL('image/png') });
                 fetch('/stat', { method: 'POST', body: JSON.stringify(analyze(cv)) });
