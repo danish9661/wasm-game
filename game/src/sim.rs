@@ -26,7 +26,7 @@ const TURRET_CD: f32 = 1.1;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ClientMsg {
-    Join { name: String },
+    Join { name: String, token: Option<String> },
     Input(PlayerInput),
     Leave,
 }
@@ -46,6 +46,7 @@ pub struct PlayerInput {
     pub attack: bool,
     pub harvest: bool,
     pub eat: bool,
+    pub shoot: bool,
     pub build: Option<(StructureKind, i32, i32)>,
 }
 
@@ -110,9 +111,23 @@ pub struct SimSnapshot {
     pub arrows: Vec<ArrowSnapshot>,
 }
 
+/// Persisted player state for cross-device saves (keyed by an account
+/// `token` on the server). Everything here is serde so it can round-trip to
+/// JSON on disk.
+#[derive(Serialize, Deserialize, Default)]
+pub struct SaveData {
+    pub inv: Inventory,
+    pub x: f32,
+    pub y: f32,
+    pub hp: f32,
+    pub hunger: f32,
+    pub stamina: f32,
+}
+
 struct NetPlayer {
     id: u32,
     name: String,
+    token: Option<String>,
     player: Player,
     inv: Inventory,
     salves: u32,
@@ -121,6 +136,7 @@ struct NetPlayer {
     eat_cd: f32,
     harvest_cd: f32,
     dodge_cd: f32,
+    shoot_cd: f32,
     respawn_timer: f32,
 }
 
@@ -168,7 +184,7 @@ impl Simulation {
         }
     }
 
-    pub fn add_player(&mut self, name: String) -> u32 {
+    pub fn add_player(&mut self, name: String, token: Option<String>) -> u32 {
         let id = self.next_id;
         self.next_id += 1;
         let (x, y) = self.spawn_point;
@@ -177,6 +193,7 @@ impl Simulation {
             NetPlayer {
                 id,
                 name: name.clone(),
+                token: token.clone(),
                 player: Player::new(x, y),
                 inv: Inventory::new(),
                 salves: 0,
@@ -185,10 +202,42 @@ impl Simulation {
                 eat_cd: 0.0,
                 harvest_cd: 0.0,
                 dodge_cd: 0.0,
+                shoot_cd: 0.0,
                 respawn_timer: 0.0,
             },
         );
         id
+    }
+
+    /// Build `SaveData` for a connected player (used when they leave so the
+    /// server can persist progress to disk).
+    pub fn save_player(&self, id: u32) -> Option<SaveData> {
+        let p = self.players.get(&id)?;
+        Some(SaveData {
+            inv: p.inv.clone(),
+            x: p.player.x,
+            y: p.player.y,
+            hp: p.player.hp,
+            hunger: p.player.hunger,
+            stamina: p.player.stamina,
+        })
+    }
+
+    /// Restore a player's persisted state after (re)joining with a token.
+    pub fn restore_player(&mut self, id: u32, save: &SaveData) {
+        if let Some(p) = self.players.get_mut(&id) {
+            p.inv = save.inv.clone();
+            p.player.x = save.x;
+            p.player.y = save.y;
+            p.player.hp = save.hp;
+            p.player.hunger = save.hunger;
+            p.player.stamina = save.stamina;
+        }
+    }
+
+    /// Account token for a player (used by the server to pickle save files).
+    pub fn token_of(&self, id: u32) -> Option<String> {
+        self.players.get(&id).and_then(|p| p.token.clone())
     }
 
     pub fn remove_player(&mut self, id: u32) {
@@ -256,6 +305,7 @@ impl Simulation {
                 &mut self.enemies,
                 &mut self.structures,
                 &mut self.nodes,
+                &mut self.arrows,
                 spawn,
                 dt,
                 temp,
@@ -323,6 +373,7 @@ fn step_player(
     enemies: &mut EnemyRegistry,
     structures: &mut Vec<Structure>,
     nodes: &mut NodeRegistry,
+    arrows: &mut Vec<Arrow>,
     spawn_point: (f32, f32),
     dt: f32,
     temp: f32,
@@ -332,6 +383,7 @@ fn step_player(
     np.eat_cd = (np.eat_cd - dt).max(0.0);
     np.harvest_cd = (np.harvest_cd - dt).max(0.0);
     np.dodge_cd = (np.dodge_cd - dt).max(0.0);
+    np.shoot_cd = (np.shoot_cd - dt).max(0.0);
 
     if !np.player.alive {
         np.respawn_timer -= dt;
@@ -373,6 +425,14 @@ fn step_player(
         let mut hits = crate::combat::swing_hits(&np.player, enemies.enemies_mut(), SWING_REACH);
         for e in hits.iter_mut() {
             e.take_damage(SWING_DAMAGE);
+        }
+    }
+
+    if np.input.shoot && np.shoot_cd <= 0.0 {
+        let (fx, fy) = np.player.facing;
+        if (fx * fx + fy * fy) > 1e-4 {
+            arrows.push(Arrow::new(np.player.x, np.player.y, fx, fy));
+            np.shoot_cd = 0.5;
         }
     }
 

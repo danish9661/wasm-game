@@ -20,6 +20,27 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 
+/// Convert an HSV color (h in degrees, s/v in 0..1) to an RGB triplet.
+fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [f32; 3] {
+    let c = v * s;
+    let x = c * (1.0 - ((h / 60.0) % 2.0 - 1.0).abs());
+    let m = v - c;
+    let (r, g, b) = if h < 60.0 {
+        (c, x, 0.0)
+    } else if h < 120.0 {
+        (x, c, 0.0)
+    } else if h < 180.0 {
+        (0.0, c, x)
+    } else if h < 240.0 {
+        (0.0, x, c)
+    } else if h < 300.0 {
+        (x, 0.0, c)
+    } else {
+        (c, 0.0, x)
+    };
+    [r + m, g + m, b + m]
+}
+
 /// Crafting recipes unlocked at an Anvil. Each is (label, cost pairs). The
 /// effect is applied by index in `craft`.
 const CRAFT_RECIPES: &[(&str, &[(ItemKind, u32)])] = &[
@@ -773,13 +794,16 @@ pub struct App {
     /// Our server-assigned player id (set once the server Welcomes us).
     net_id: Option<u32>,
     /// Remote co-op players, rebuilt each frame from the server snapshot.
-    remote_players: Vec<Player>,
+    /// Stored as (server_id, Player) so we can tint each ally a distinct color.
+    remote_players: Vec<(u32, Player)>,
     /// One-shot action intents latched by input handlers, consumed each
     /// frame when building the network PlayerInput.
     net_atk: bool,
     net_dodge: bool,
     net_harvest: bool,
     net_eat: bool,
+    net_shoot: bool,
+    net_build: Option<(StructureKind, i32, i32)>,
 }
 
 impl App {
@@ -1248,29 +1272,44 @@ impl App {
             net_dodge: false,
             net_harvest: false,
             net_eat: false,
+            net_shoot: false,
+            net_build: None,
         };
 
-        // Multiplayer: a `?mp=ws://host:port` URL query joins a co-op server.
-        // The server is authoritative; the client overlays the synced world
-        // each frame on top of its local (predictive) simulation.
-        if let Some(url) = web_sys::window()
+        // Multiplayer: `?mp=ws://host:port[&name=Alias][&token=abc]` joins a
+        // co-op server. The server is authoritative; the client overlays the
+        // synced world each frame on top of its local (predictive) sim.
+        let query: Vec<(String, String)> = web_sys::window()
             .and_then(|w| w.location().search().ok())
-            .and_then(|q| {
-                q.split('&')
-                    .find_map(|kv| {
-                        let mut it = kv.trim_start_matches('?').splitn(2, '=');
+            .map(|q| {
+                q.trim_start_matches('?')
+                    .split('&')
+                    .filter_map(|kv| {
+                        let mut it = kv.splitn(2, '=');
                         let k = it.next()?;
-                        let v = it.next()?;
-                        if k == "mp" {
-                            Some(v.to_string())
-                        } else {
-                            None
-                        }
+                        let v = it.next().unwrap_or("");
+                        Some((k.to_string(), v.to_string()))
                     })
+                    .collect()
             })
+            .unwrap_or_default();
+        if let Some(url) = query
+            .iter()
+            .find(|(k, _)| k == "mp")
+            .map(|(_, v)| v.clone())
         {
-            if let Ok(client) = NetClient::connect(&url) {
+            let name = query
+                .iter()
+                .find(|(k, _)| k == "name")
+                .map(|(_, v)| v.clone())
+                .unwrap_or_else(|| "Wanderer".to_string());
+            let token = query
+                .iter()
+                .find(|(k, _)| k == "token")
+                .map(|(_, v)| v.clone());
+            if let Ok(client) = NetClient::connect(&url, &name, token) {
                 app.net = Some(client);
+                glog("[net] joined co-op server");
             }
         }
 
@@ -1598,6 +1637,7 @@ impl App {
 
     /// Shoot an arrow in the facing direction (costs stamina).
     fn shoot_arrow(&mut self) {
+        self.net_shoot = true;
         if !self.player.spend_stamina(4.0) {
             return;
         }
@@ -1724,6 +1764,17 @@ impl App {
     /// ghost tile (mouse); otherwise the structure is dropped on the player's
     /// own tile (the original hotkey behaviour).
     fn build(&mut self, kind: StructureKind) {
+        // Latch a networked build intent (server validates range + cost).
+        let (bk, btx, bty) = if let Some((gk, gx, gy, valid)) = self.build_ghost {
+            if gk == kind && valid {
+                (kind, gx, gy)
+            } else {
+                (kind, self.player.x.floor() as i32, self.player.y.floor() as i32)
+            }
+        } else {
+            (kind, self.player.x.floor() as i32, self.player.y.floor() as i32)
+        };
+        self.net_build = Some((bk, btx, bty));
         if let Some((gk, gx, gy, valid)) = self.build_ghost {
             if gk == kind {
                 if valid {
@@ -2496,19 +2547,29 @@ impl App {
             attack: self.net_atk,
             harvest: self.net_harvest,
             eat: self.net_eat,
-            build: None,
+            shoot: self.net_shoot,
+            build: self.net_build.take(),
         };
         self.net_dodge = false;
         self.net_atk = false;
         self.net_harvest = false;
         self.net_eat = false;
+        self.net_shoot = false;
         client.send_input(&input);
 
+        // Play a one-shot "join" cue the first time the server welcomes us.
         let my_id = match client.id() {
-            Some(id) => id,
+            Some(id) => {
+                if self.net_id.is_none() {
+                    play_sfx("join");
+                    glog("[net] connected to co-op server");
+                }
+                id
+            }
             None => return,
         };
-        let snap = match client.take_latest() {
+        self.net_id = Some(my_id);
+        let snap = match client.sample() {
             Some(s) => s,
             None => return,
         };
@@ -2565,7 +2626,7 @@ impl App {
                 pl.stamina = p.stamina;
                 pl.facing = p.facing;
                 pl.alive = p.alive;
-                pl
+                (p.id, pl)
             })
             .collect();
     }
@@ -2687,14 +2748,17 @@ impl App {
                 .with_style(SpriteStyle::HpFill),
             );
         }
-        // Remote multiplayer players: humanoid figures with a distinct tint
-        // (and a small HP plate) so allies are easy to tell apart.
-        for rp in &self.remote_players {
+        // Remote multiplayer players: humanoid figures, each tinted a distinct
+        // hue from their server id (and a small HP plate) so allies are easy to
+        // tell apart at a glance.
+        for (id, rp) in &self.remote_players {
             if !rp.alive {
                 continue;
             }
+            let hue = ((*id * 47) % 360) as f32;
+            let col = hsv_to_rgb(hue, 0.6, 1.0);
             sprites.push(
-                Sprite::new_center(rp.x, rp.y, [0.35, 0.65, 1.0], 16.0, 22.0, 0.0)
+                Sprite::new_center(rp.x, rp.y, col, 16.0, 22.0, 0.0)
                     .with_style(SpriteStyle::Humanoid)
                     .with_facing(rp.facing)
                     .with_walk(0.6),

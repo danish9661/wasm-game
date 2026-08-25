@@ -11,8 +11,13 @@ use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 use tokio_tungstenite::tungstenite::Message;
 
-use game::sim::{Simulation, SimSnapshot};
+use game::sim::{SaveData, Simulation, SimSnapshot};
 use protocol::{ClientMsg, ServerMsg};
+use std::path::PathBuf;
+
+fn save_path(token: &str) -> PathBuf {
+    PathBuf::from("saves").join(format!("{token}.json"))
+}
 
 const TICK_RATE: u32 = 30;
 const DT: f32 = 1.0 / TICK_RATE as f32;
@@ -101,14 +106,25 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
                     Err(_) => continue,
                 };
                 match client {
-                    ClientMsg::Join { name } => {
-                        let id = shared.sim.lock().await.add_player(name);
+                    ClientMsg::Join { name, token } => {
+                        let id = shared.sim.lock().await.add_player(name, token.clone());
                         shared
                             .clients
                             .lock()
                             .await
                             .insert(id, tx.clone());
                         player_id = Some(id);
+                        // Cross-device save: if the client supplied an account
+                        // token, restore any previously persisted progress.
+                        if let Some(tok) = &token {
+                            let path = save_path(tok);
+                            if let Ok(bytes) = std::fs::read(&path) {
+                                if let Ok(save) = serde_json::from_slice::<SaveData>(&bytes) {
+                                    shared.sim.lock().await.restore_player(id, &save);
+                                    println!("[server] player {id} restored save '{tok}'");
+                                }
+                            }
+                        }
                         let welcome = ServerMsg::Welcome {
                             player_id: id,
                             tick_rate: TICK_RATE,
@@ -131,7 +147,16 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
     }
 
     if let Some(id) = player_id {
-        shared.sim.lock().await.remove_player(id);
+        let mut sim = shared.sim.lock().await;
+        // Persist progress for accounts that joined with a token.
+        if let Some(tok) = sim.token_of(id) {
+            if let Some(save) = sim.save_player(id) {
+                let _ = std::fs::create_dir_all("saves");
+                let _ = std::fs::write(save_path(&tok), serde_json::to_vec(&save).unwrap_or_default());
+            }
+        }
+        sim.remove_player(id);
+        drop(sim);
         shared.clients.lock().await.remove(&id);
         println!("[server] player {id} left");
     }

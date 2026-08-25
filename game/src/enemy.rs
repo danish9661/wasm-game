@@ -281,6 +281,9 @@ pub struct Enemy {
     /// Set during `update` when the enemy fires: a unit direction toward the
     /// player. The caller (renderer) turns this into an enemy arrow.
     pub pending_shot: Option<(f32, f32)>,
+    /// Boss only: latches true once it drops below 40% HP, entering an enraged
+    /// second phase (faster, shorter wind-ups). Purely an AI flag.
+    pub enraged: bool,
 }
 
 impl Enemy {
@@ -302,6 +305,7 @@ impl Enemy {
             charge_t: 0.0,
             charge_cd: 0.0,
             pending_shot: None,
+            enraged: false,
         }
     }
 
@@ -365,6 +369,17 @@ impl Enemy {
         } else {
             (speed, cooldown)
         };
+        // Boss second phase: below 40% HP it enrages (latches on) — faster,
+        // shorter wind-ups — so a drawn-out fight turns frantic at the end.
+        let (speed, cooldown) = if self.kind == EnemyKind::Boss
+            && self.hp < self.kind.max_hp() * 0.4
+        {
+            self.enraged = true;
+            (BOSS_SPEED * 1.5, BOSS_ATTACK_COOLDOWN * 0.6)
+        } else {
+            (speed, cooldown)
+        };
+        let windup_time = if self.enraged { WINDUP * 0.6 } else { WINDUP };
         let d = (player.0 - self.x)
             .abs()
             .max((player.1 - self.y).abs());
@@ -386,7 +401,7 @@ impl Enemy {
                 return None;
             }
             // ready to attack: begin a visible wind-up (dodge window)
-            self.windup = WINDUP;
+            self.windup = windup_time;
             return None;
         }
 
