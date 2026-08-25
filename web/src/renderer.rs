@@ -2142,7 +2142,7 @@ impl App {
             let dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
             self.player.take_damage(dmg);
             play_sfx("hurt");
-            self.shake = self.shake.max(2.5);
+                    self.shake = self.shake.max(1.0);
             self.hurt_flash = 1.0;
             if !self.player.alive {
                 play_sfx("death");
@@ -2278,7 +2278,7 @@ impl App {
                     let dmg = ARROW_DAMAGE * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
                     self.player.take_damage(dmg);
                     play_sfx("hurt");
-                    self.shake = self.shake.max(2.5);
+            self.shake = self.shake.max(1.0);
                     self.hurt_flash = 1.0;
                     if !self.player.alive {
                         play_sfx("death");

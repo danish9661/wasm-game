@@ -362,6 +362,7 @@ html, body {
   grid-template-columns: repeat(2, 56px);
   gap: 8px;
   pointer-events: auto;
+  margin-left: auto;
 }
 
 .tbtn {

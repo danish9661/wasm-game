@@ -41,7 +41,6 @@
       <span class="inv-chip biome" id="hud-biome" style="display:none">🌍 Biome</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
-    <div class="hud-row hud-hint">WASD/Arrows move (wade rivers slowly) · Space dodge-roll (i-frames, costs stamina) · E harvest/open · J attack · K shoot · C eat · R use salve · Z sleep (by bed) · I inventory · L codex (bestiary) · Q build mode (then click ground to place) · Build: F campfire · V wall · T torch · G fence · B bed · N anvil · H well · X spike trap · U farm plot · M mute · P screenshot · Rest by any fire: slower hunger + heal · Mine Ore veins on stone for gems · Craft at an Anvil (in inventory)</div>
     <div class="hud-row">
       <span class="inv-chip" id="fps">FPS --</span>
       <span class="inv-chip" id="spd">SPD 0.0 t/s</span>
@@ -1285,6 +1284,7 @@
               '<button id="vnClose" aria-label="Dismiss">×</button>';
             document.body.appendChild(n);
             document.getElementById('vnClose').onclick = () => n.remove();
+            setTimeout(() => n.remove(), 5000);
           }
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
