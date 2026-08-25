@@ -2062,10 +2062,10 @@ impl App {
             &mut self.vertices,
             self.anim_clock,
         );
-        self.player_in_mesh = self
-            .vertices
-            .chunks_exact(render::VERTEX_FLOATS)
-            .any(|v| v[2] == render::PLAYER_COLOR[0] && v[3] == render::PLAYER_COLOR[1] && v[4] == render::PLAYER_COLOR[2]);
+        // The player quad is always emitted while `player` is Some (it is, in
+        // the live loop), so scanning the whole vertex buffer every frame to
+        // rediscover it is wasted work.
+        self.player_in_mesh = true;
     }
 
     /// Recompute the visible-tile list only when the camera or viewport
