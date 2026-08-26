@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::items::ItemKind;
+
 /// Non-hostile townsfolk that populate villages. They wander, chat when you
 /// approach, and give the world a lived-in feel. Guards can hint at danger;
 /// merchants can (later) trade. Enemies never target them.
@@ -73,6 +75,10 @@ pub struct Npc {
     retarget: f32,
     /// Home anchor so they don't drift too far from the village.
     home: (f32, f32),
+    /// An optional fetch quest this townsperson has given the player:
+    /// (need item, need count, reward xp, reward item, reward count). When the
+    /// player fulfills it (via talk), the reward is granted and this clears.
+    pub quest: Option<(ItemKind, u32, u32, ItemKind, u32)>,
 }
 
 impl Npc {
@@ -87,6 +93,7 @@ impl Npc {
             target: (x, y),
             retarget: 0.0,
             home,
+            quest: None,
         }
     }
 

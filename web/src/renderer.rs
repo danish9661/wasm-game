@@ -1118,8 +1118,14 @@ impl App {
             best.map(|(_, n)| n).unwrap_or_else(|| "wilderness".to_string())
         };
         let online = self.remote_players.len();
+        let coopids = self
+            .remote_players
+            .iter()
+            .map(|(id, _)| id.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={}",
 
             self.quad_count(),
             self.frames(),
@@ -1175,6 +1181,7 @@ impl App {
              self.player.xp,
              near_str,
              online,
+             coopids,
           )
     }
 
@@ -1511,6 +1518,7 @@ impl App {
                 }
                 "KeyM" => self.craft_weapon(),
                 "KeyO" => self.talk_nearest_npc(),
+                "KeyL" => self.cook(),
                 "Enter" => self.toggle_interior(),
                 "Space" => {
                     self.dodge();
@@ -1587,6 +1595,36 @@ impl App {
                 && (s.tx as f32 + 0.5 - px).abs() <= 1.5
                 && (s.ty as f32 + 0.5 - py).abs() <= 1.5
         })
+    }
+
+    /// True when the player is standing within ~1.5 tiles of a lit Campfire,
+    /// which lets them cook raw food into a hot meal (see `cook`).
+    pub fn near_campfire(&self) -> bool {
+        let (px, py) = (self.player.x, self.player.y);
+        self.structures.iter().any(|s| {
+            s.kind == StructureKind::Campfire
+                && (s.tx as f32 + 0.5 - px).abs() <= 1.5
+                && (s.ty as f32 + 0.5 - py).abs() <= 1.5
+        })
+    }
+
+    /// Cook at a campfire: two raw Food become a hot meal that restores more
+    /// health and a little thirst than eating raw. Bound to KeyL.
+    pub fn cook(&mut self) {
+        if !self.near_campfire() {
+            toast("Stand near a campfire to cook");
+            return;
+        }
+        if self.inventory.count(ItemKind::Food) < 2 {
+            toast("Need 2 food to cook a meal");
+            return;
+        }
+        self.inventory.remove(ItemKind::Food, 2);
+        self.player.hp = (self.player.hp + 25.0).min(self.player.max_hp());
+        self.player.hunger = (self.player.hunger + 20.0).min(100.0);
+        self.player.thirst = (self.player.thirst + 10.0).min(100.0);
+        play_sfx("eat");
+        toast("Cooked a hot meal (+25 HP, +hunger)");
     }
 
     /// Craft the next uncrafted weapon at an anvil: spends its resource cost,
@@ -1692,15 +1730,72 @@ impl App {
                 }
             }
         }
-        match best {
-            Some((_, i)) => {
-                let n = &self.npcs[i];
-                let seed = ((n.x * 13.0 + n.y * 7.0) as u32) ^ (i as u32).wrapping_mul(2654435761);
-                toast(&format!("{}: \"{}\"", n.name.clone(), n.kind.line(seed)));
-                play_sfx("pickup");
+        let idx = match best {
+            Some((_, i)) => i,
+            None => {
+                toast("No one nearby to talk to");
+                return;
             }
-            None => toast("No one nearby to talk to"),
+        };
+        let seed = ((self.npcs[idx].x * 13.0 + self.npcs[idx].y * 7.0) as u32)
+            ^ (idx as u32).wrapping_mul(2654435761);
+        let npc = &mut self.npcs[idx];
+
+        // Fulfill an active quest if the player carries the goods.
+        if let Some((item, need, xp, ritem, rcount)) = npc.quest {
+            let have = self.inventory.count(item);
+            if have >= need {
+                self.inventory.remove(item, need);
+                self.inventory.add(ritem, rcount);
+                let lvl_before = self.player.level;
+                self.player.add_xp(xp);
+                let reward_name = ritem.name();
+                let mut msg =
+                    format!("{}: Quest done! +{}xp, +{} {}", npc.name, xp, rcount, reward_name);
+                if self.player.level > lvl_before {
+                    play_sfx("levelup");
+                    msg.push_str(&format!(" — Level {}!", self.player.level));
+                } else {
+                    play_sfx("pickup");
+                }
+                toast(&msg);
+                npc.quest = None;
+                return;
+            }
+            toast(&format!(
+                "{}: Bring {} {} (you have {}). Reward: {}xp + {} {}",
+                npc.name,
+                need,
+                item.name(),
+                have,
+                xp,
+                rcount,
+                ritem.name()
+            ));
+            return;
         }
+
+        // Otherwise hand the player a fresh fetch quest (seeded so it's stable
+        // for this NPC until fulfilled).
+        let pool: &[(ItemKind, u32, u32, ItemKind, u32)] = &[
+            (ItemKind::Wood, 5, 15, ItemKind::Food, 3),
+            (ItemKind::Stone, 4, 12, ItemKind::Food, 2),
+            (ItemKind::Food, 3, 20, ItemKind::Gem, 1),
+            (ItemKind::Herb, 3, 18, ItemKind::Food, 2),
+            (ItemKind::Gem, 1, 30, ItemKind::Food, 3),
+        ];
+        let q = pool[(seed as usize) % pool.len()];
+        npc.quest = Some(q);
+        toast(&format!(
+            "{}: \"Bring me {} {}. I'll pay {}xp and {} {}.\"",
+            npc.name,
+            q.1,
+            q.0.name(),
+            q.2,
+            q.4,
+            q.3.name()
+        ));
+        play_sfx("pickup");
     }
 
     /// Enter the building the player is standing next to, or leave the current

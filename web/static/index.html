@@ -75,7 +75,8 @@
         <span class="k">Q</span><span class="d">Toggle build mode — then move the cursor and click the ground (or press the structure's key) to place it</span>
         <span class="k">F</span><span class="d">Build a campfire</span>
         <span class="k">V</span><span class="d">Build a wall (blocks movement)</span>
-        <span class="k">O</span><span class="d">Talk to a nearby villager, guard or merchant</span>
+        <span class="k">O</span><span class="d">Talk to a nearby villager, guard or merchant — hand in or take a fetch quest</span>
+        <span class="k">L</span><span class="d">Cook a hot meal at a campfire (2 food → +25 HP, +hunger)</span>
         <span class="k">G</span><span class="d">Build a fence (blocks movement)</span>
         <span class="k">B</span><span class="d">Build a bed</span>
         <span class="k">N</span><span class="d">Build an anvil</span>
@@ -706,7 +707,8 @@
 
               if (stats.online > 0) {
                 el('hud-coop').style.display = 'inline-block';
-                el('hud-coop').textContent = `👥 Co-op: ${stats.online + 1} online`;
+                const ids = stats.coopids ? stats.coopids.split(',').map(s => 'P' + s).join(', ') : '';
+                el('hud-coop').textContent = `👥 Co-op: ${stats.online + 1} online${ids ? ' (' + ids + ')' : ''}`;
               } else {
                 el('hud-coop').style.display = 'none';
               }
@@ -832,6 +834,7 @@
               level: Number(get(/level=(\d+)/) || 1),
               xp: Number(get(/xp=(\d+)/) || 0),
               online: Number(get(/online=(\d+)/) || 0),
+              coopids: get(/coopids=([^\s]*)/) || '',
               near: get(/near2=(\S+)/) || 'wilderness',
             };
           };
