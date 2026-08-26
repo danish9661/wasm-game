@@ -84,6 +84,10 @@ pub enum SpriteStyle {
     Colossus,
     /// Lupine melee swarmer: a low, fast four-legged silhouette.
     Wolf,
+    /// Old-world vehicles and railway props scattered through towns.
+    Car,
+    Train,
+    Rail,
     /// Flat ground diamond drawn at the sprite's base — used for building interiors
     /// (floors) so a room reads as an enclosed space rather than open terrain.
     Floor,
@@ -799,6 +803,49 @@ fn push_styled_sprite(
             p.push(Part::vquad(cx - 1.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
             p.push(Part::vquad(cx + 3.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
             p.push(Part::vquad(cx + 7.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
+            rasterize(&p, out);
+        }
+        SpriteStyle::Car => {
+            // Abandoned old-world automobile: body + cabin + two wheels.
+            let mut p = Vec::new();
+            p.push(Part::diamond(cx - hw * 0.6, cy - 2.0, 3.2, 3.2, -2.0, [0.08, 0.08, 0.09], alpha, false));
+            p.push(Part::diamond(cx + hw * 0.6, cy - 2.0, 3.2, 3.2, -2.0, [0.08, 0.08, 0.09], alpha, false));
+            p.push(Part::vquad(cx, cy - 14.0, hw, 14.0, color, alpha, true));
+            p.push(Part::vquad(
+                cx,
+                cy - 26.0,
+                hw * 0.62,
+                12.0,
+                [color[0] * 1.15, color[1] * 1.15, color[2] * 1.15],
+                alpha,
+                true,
+            ));
+            rasterize(&p, out);
+        }
+        SpriteStyle::Train => {
+            // A rusted locomotive car: long body, roof, lit window strip, wheels.
+            let mut p = Vec::new();
+            p.push(Part::diamond(cx - hw * 0.7, cy - 2.0, 3.5, 3.5, -2.0, [0.08, 0.08, 0.09], alpha, false));
+            p.push(Part::diamond(cx + hw * 0.7, cy - 2.0, 3.5, 3.5, -2.0, [0.08, 0.08, 0.09], alpha, false));
+            p.push(Part::vquad(cx, cy - 18.0, hw, 18.0, color, alpha, true));
+            p.push(Part::vquad(
+                cx,
+                cy - 34.0,
+                hw,
+                8.0,
+                [color[0] * 1.1, color[1] * 1.1, color[2] * 1.1],
+                alpha,
+                true,
+            ));
+            p.push(Part::vquad(cx, cy - 22.0, hw * 0.7, 6.0, [0.7, 0.8, 0.9], alpha, false));
+            rasterize(&p, out);
+        }
+        SpriteStyle::Rail => {
+            // A railway tie bed with two steel rails running through it.
+            let mut p = Vec::new();
+            p.push(Part::diamond(cx, cy, hw, hh.max(2.0), 0.0, [0.22, 0.2, 0.16], alpha, false));
+            p.push(Part::diamond(cx, cy - 2.0, hw * 0.85, 1.4, 0.0, [0.6, 0.6, 0.66], alpha, false));
+            p.push(Part::diamond(cx, cy + 2.0, hw * 0.85, 1.4, 0.0, [0.6, 0.6, 0.66], alpha, false));
             rasterize(&p, out);
         }
         // New decorative props

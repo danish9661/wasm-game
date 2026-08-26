@@ -92,6 +92,56 @@ pub fn village_name(tx: i32, ty: i32) -> String {
     format!("{}{}", p, s)
 }
 
+/// Candidate town sites, kept far from spawn (and from the villages) so the
+/// city reads as a distant destination you travel to rather than a backyard.
+const TOWN_CANDIDATES: [(i32, i32); 8] = [
+    (0, 80),
+    (80, 0),
+    (-80, 0),
+    (0, -80),
+    (60, 60),
+    (-60, -60),
+    (60, -60),
+    (-60, 60),
+];
+
+/// Deterministic town site for a seed (a single city per world). Picks the first
+/// walkable candidate; a spiral scan guards against all candidates hitting water.
+pub fn town_site(seed: u32, mut is_walkable: impl FnMut(i32, i32) -> bool) -> (i32, i32) {
+    let mut h = seed.wrapping_mul(0x2545F491).wrapping_add(0x9e37);
+    for _ in 0..TOWN_CANDIDATES.len() * 2 {
+        h = h.wrapping_mul(1664525).wrapping_add(1013904223);
+        let (tx, ty) = TOWN_CANDIDATES[(h >> 16) as usize % TOWN_CANDIDATES.len()];
+        if is_walkable(tx, ty) {
+            return (tx, ty);
+        }
+    }
+    let (cx, cy) = TOWN_CANDIDATES[0];
+    for r in 1i32..48 {
+        for dx in -r..=r {
+            for dy in -r..=r {
+                if dx.abs().max(dy.abs()) != r {
+                    continue;
+                }
+                if is_walkable(cx + dx, cy + dy) {
+                    return (cx + dx, cy + dy);
+                }
+            }
+        }
+    }
+    (cx, cy)
+}
+
+/// A stable, more "industrial" name for the town (old-world flavor).
+pub fn town_name(tx: i32, ty: i32) -> String {
+    const PRE: &[&str] = &["Old", "Ash", "Iron", "Cog", "Rust", "Vale", "Stone", "North", "East", "Grand"];
+    const SUF: &[&str] = &["ford", "haven", "burgh", "ton", "gate", "hollow", "cross", "port", "reach", "field"];
+    let h = ((tx as u32).wrapping_mul(0x85EBCA6B) ^ (ty as u32).wrapping_mul(0xC2B2AE35)).wrapping_add(0x1234);
+    let p = PRE[(h >> 4) as usize % PRE.len()];
+    let s = SUF[(h >> 12) as usize % SUF.len()];
+    format!("{}{}", p, s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

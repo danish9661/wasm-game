@@ -9,7 +9,7 @@ use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, WINDUP,
 use game::items::{Inventory, ItemKind};
 use game::npc::{Npc, NpcKind};
 use game::player::{self, Player};
-use game::poi::{ruins_at, ruins_walls, village_sites, village_name};
+use game::poi::{ruins_at, ruins_walls, town_name, town_site, village_sites, village_name};
 use game::weapons::WeaponKind;
 use game::quest::QuestLog;
 use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
@@ -138,6 +138,9 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::House => "Hh",
         StructureKind::Cabin => "Cb",
         StructureKind::Hut => "Hu",
+        StructureKind::Car => "Car",
+        StructureKind::Train => "Train",
+        StructureKind::Rail => "Rail",
     }
 }
 
@@ -756,6 +759,9 @@ pub struct App {
     villages: Vec<(i32, i32, String)>,
     /// Village centers the player has already entered (so the welcome toast fires once).
     visited_villages: std::collections::HashSet<(i32, i32)>,
+    /// The single city per world (walled, with a railway + old vehicles).
+    towns: Vec<(i32, i32, String)>,
+    visited_towns: std::collections::HashSet<(i32, i32)>,
     /// Villagers, guards and merchants wandering the hamlets. Cosmetic/local.
     npcs: Vec<Npc>,
     /// Active building interior (None = outside). Entering a house paints a
@@ -1011,6 +1017,16 @@ impl App {
             serde_json::json!({ "name": format!("{:?}", k), "color": rgb })
         })
         .collect();
+        let village_markers: Vec<(i32, i32, String)> = self
+            .villages
+            .iter()
+            .map(|(x, y, n)| (*x, *y, n.clone()))
+            .collect();
+        let town_markers: Vec<(i32, i32, String)> = self
+            .towns
+            .iter()
+            .map(|(x, y, n)| (*x, *y, n.clone()))
+            .collect();
         serde_json::json!({
             "n": N,
             "cells": cells,
@@ -1018,6 +1034,8 @@ impl App {
             "facing": [self.player.facing.0, self.player.facing.1],
             "enemies": enemies,
             "structs": structs,
+            "villages": village_markers,
+            "towns": town_markers,
             "legend": legend,
         })
         .to_string()
@@ -1283,6 +1301,8 @@ impl App {
             ruins,
             villages: Vec::new(),
             visited_villages: std::collections::HashSet::new(),
+            towns: Vec::new(),
+            visited_towns: std::collections::HashSet::new(),
             npcs: Vec::new(),
             interior: None,
             opened_chests: std::collections::HashSet::new(),
@@ -2359,6 +2379,9 @@ impl App {
         let sites = village_sites(seed, 3, |tx, ty| {
             tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
         });
+        // Capture the first village so we can (re)spawn the player inside a
+        // settlement even after `sites` is consumed by the generation loop below.
+        let first_village = sites.first().copied();
         let house_kinds = [
             StructureKind::House,
             StructureKind::Cabin,
@@ -2423,6 +2446,115 @@ impl App {
                 ));
             }
         }
+
+        // ---------------------------------------------------------------------
+        // Town / city: a walled settlement far from spawn, crossed by an old
+        // railway with a parked train and a few abandoned cars. Villages are left
+        // open; only the town gets a wall boundary (with gated gaps).
+        // ---------------------------------------------------------------------
+        self.towns.clear();
+        let (tx0, ty0) = town_site(seed, |tx, ty| tile_at(&self.world, &mut self.chunks, tx, ty).walkable());
+        let town_nm = town_name(tx0, ty0);
+        self.towns.push((tx0, ty0, town_nm.clone()));
+        let r = 14;
+        // Wall boundary ring with a 2-tile gate centered on each side.
+        for x in (tx0 - r)..=(tx0 + r) {
+            for y in (ty0 - r)..=(ty0 + r) {
+                let edge = x == tx0 - r || x == tx0 + r || y == ty0 - r || y == ty0 + r;
+                if !edge {
+                    continue;
+                }
+                let gate = ((x == tx0 - r || x == tx0 + r) && (y - ty0).abs() <= 1)
+                    || ((y == ty0 - r || y == ty0 + r) && (x - tx0).abs() <= 1);
+                if gate {
+                    continue;
+                }
+                if tile_at(&self.world, &mut self.chunks, x, y).walkable() {
+                    structures.push(Structure { tx: x, ty: y, kind: StructureKind::Wall });
+                }
+            }
+        }
+        // Central plaza marker.
+        structures.push(Structure { tx: tx0, ty: ty0, kind: StructureKind::Sign });
+        // Railway: a horizontal run of rails across the town (train sits at center).
+        let rail_y = ty0 + 4;
+        for x in (tx0 - r + 1)..=(tx0 + r - 1) {
+            if tile_at(&self.world, &mut self.chunks, x, rail_y).walkable() {
+                structures.push(Structure { tx: x, ty: rail_y, kind: StructureKind::Rail });
+            }
+        }
+        structures.push(Structure { tx: tx0, ty: rail_y, kind: StructureKind::Train });
+        // Buildings on a grid, skipping the plaza and the rail row.
+        let bkinds = [StructureKind::House, StructureKind::Cabin, StructureKind::Hut];
+        let mut bi = 0usize;
+        for gx in (tx0 - 10..=tx0 + 10).step_by(4) {
+            for gy in (ty0 - 10..=ty0 + 10).step_by(4) {
+                if (gx - tx0).abs() <= 2 && (gy - ty0).abs() <= 2 {
+                    continue;
+                }
+                if gy == rail_y {
+                    continue;
+                }
+                if tile_at(&self.world, &mut self.chunks, gx, gy).walkable() {
+                    let k = bkinds[bi % 3];
+                    bi += 1;
+                    structures.push(Structure { tx: gx, ty: gy, kind: k });
+                }
+            }
+        }
+        // A few parked old cars along the streets (deterministic scatter).
+        let mut h = ((tx0 as u32) ^ (ty0 as u32)).wrapping_mul(2654435761);
+        for _ in 0..8 {
+            h = h.wrapping_mul(1664525).wrapping_add(1013904223);
+            let cx = tx0 - 10 + (((h as i32) % 21i32).abs());
+            let cy = ty0 - 10 + (((h >> 8) as i32) % 21i32).abs();
+            if (cx - tx0).abs() <= 1 && (cy - ty0).abs() <= 1 {
+                continue;
+            }
+            if cy == rail_y {
+                continue;
+            }
+            if tile_at(&self.world, &mut self.chunks, cx, cy).walkable()
+                && !structures.iter().any(|s| s.tx == cx && s.ty == cy)
+            {
+                structures.push(Structure { tx: cx, ty: cy, kind: StructureKind::Car });
+            }
+        }
+        // Populate the town with citizens: guards at the gates, a merchant, villagers.
+        let tc = (tx0 as f32 + 0.5, ty0 as f32 + 0.5);
+        self.npcs.push(Npc::new(
+            NpcKind::Guard,
+            tx0 as f32 - r as f32 + 1.5,
+            ty0 as f32,
+            format!("Gate Guard of {}", town_nm),
+            (tx0 as f32 - r as f32 + 1.0, ty0 as f32),
+        ));
+        self.npcs.push(Npc::new(
+            NpcKind::Merchant,
+            tx0 as f32 + 0.5,
+            ty0 as f32 + 2.5,
+            format!("{} the Trader", FIRST_NAMES[(tx0.unsigned_abs() as usize) % FIRST_NAMES.len()]),
+            tc,
+        ));
+        for k in 0..6 {
+            let hx = tx0 + ring[k % 8].0;
+            let hy = ty0 + ring[k % 8].1;
+            let nm = FIRST_NAMES[(tx0.unsigned_abs() as usize + k as usize * 5) % FIRST_NAMES.len()].to_string();
+            self.npcs.push(Npc::new(
+                NpcKind::Villager,
+                hx as f32 + 0.5,
+                hy as f32 + 0.5,
+                nm,
+                (hx as f32, hy as f32),
+            ));
+        }
+
+        // Always start the player inside a settlement (a village first, else the town).
+        let start = first_village.unwrap_or((tx0, ty0));
+        let (spx, spy) = (start.0 as f32 + 0.5, start.1 as f32 + 0.5);
+        self.spawn_point = (spx, spy);
+        self.player = Player::new(spx, spy);
+
         self.structures = structures;
         self.quest = QuestLog::new();
         self.boss_killed = 0;
@@ -2794,6 +2926,17 @@ impl App {
                 if dx * dx + dy * dy < 36.0 {
                     self.visited_villages.insert((*vx, *vy));
                     toast(&format!("Entered {} — a safe haven", name));
+                }
+            }
+        }
+        // Town welcome: a walled city with a railway — announced once on entry.
+        for (vx, vy, name) in &self.towns {
+            if !self.visited_towns.contains(&(*vx, *vy)) {
+                let dx = self.player.x - (*vx as f32 + 0.5);
+                let dy = self.player.y - (*vy as f32 + 0.5);
+                if dx * dx + dy * dy < 256.0 {
+                    self.visited_towns.insert((*vx, *vy));
+                    toast(&format!("Entered {} — a walled old-world city", name));
                 }
             }
         }

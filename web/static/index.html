@@ -20,7 +20,6 @@
   </div>
 
   <div id="hud">
-    <canvas id="minimap" width="132" height="132" style="position:fixed;right:10px;bottom:10px;border:2px solid #0009;border-radius:6px;background:#000a;image-rendering:pixelated;z-index:30;"></canvas>
     <div class="hud-row">
       <div class="bar"><span class="bar-label">HP</span><div class="bar-track"><div class="bar-fill" id="bar-hp"></div></div><span class="bar-num" id="num-hp">100</span></div>
       <div class="bar"><span class="bar-label">HUNGER</span><div class="bar-track"><div class="bar-fill" id="bar-hunger"></div></div><span class="bar-num" id="num-hunger">100</span></div>
@@ -1358,6 +1357,18 @@
                 mmCtx.arc(px, py, 4, 0, 7);
                 mmCtx.stroke();
               }
+            });
+            (d.villages || []).forEach(([tx, ty]) => {
+              const px = cx + (tx - ptx) * cell;
+              const py = cy + (ty - Math.floor(d.player[1])) * cell;
+              mmCtx.fillStyle = '#7fd0ff';
+              mmCtx.fillRect(px - 2, py - 2, 4, 4);
+            });
+            (d.towns || []).forEach(([tx, ty]) => {
+              const px = cx + (tx - ptx) * cell;
+              const py = cy + (ty - Math.floor(d.player[1])) * cell;
+              mmCtx.fillStyle = '#ffd76b';
+              mmCtx.fillRect(px - 3, py - 3, 6, 6);
             });
             // Player marker: a triangle pointing in the facing direction.
             const fa = Math.atan2(d.facing ? d.facing[1] : 0, d.facing ? d.facing[0] : 1);

@@ -58,6 +58,10 @@ pub enum StructureKind {
     House,
     Cabin,
     Hut,
+    // Old-world town decor: abandoned vehicles and a railway crossing.
+    Car,
+    Train,
+    Rail,
 }
 
 impl StructureKind {
@@ -117,6 +121,9 @@ impl StructureKind {
             StructureKind::House => [0.74, 0.72, 0.66],
             StructureKind::Cabin => [0.52, 0.34, 0.20],
             StructureKind::Hut => [0.66, 0.52, 0.30],
+            StructureKind::Car => [0.62, 0.18, 0.18],
+            StructureKind::Train => [0.32, 0.36, 0.44],
+            StructureKind::Rail => [0.34, 0.32, 0.28],
         }
     }
 
@@ -128,6 +135,8 @@ impl StructureKind {
                 | StructureKind::Well
                 | StructureKind::Turret
                 | StructureKind::HealingTotem
+                | StructureKind::Car
+                | StructureKind::Train
         )
     }
 
@@ -167,6 +176,9 @@ impl StructureKind {
                 | StructureKind::House
                 | StructureKind::Cabin
                 | StructureKind::Hut
+                | StructureKind::Car
+                | StructureKind::Train
+                | StructureKind::Rail
         )
     }
 
@@ -213,6 +225,9 @@ impl StructureKind {
             StructureKind::House => (13.0, 22.0, 1.0),
             StructureKind::Cabin => (11.0, 18.0, 1.0),
             StructureKind::Hut => (9.0, 14.0, 1.0),
+            StructureKind::Car => (16.0, 12.0, 2.0),
+            StructureKind::Train => (20.0, 16.0, 4.0),
+            StructureKind::Rail => (16.0, 6.0, 0.0),
         };
         let style = match self {
             StructureKind::Campfire => SpriteStyle::Campfire,
@@ -248,6 +263,9 @@ impl StructureKind {
             StructureKind::House => SpriteStyle::House,
             StructureKind::Cabin => SpriteStyle::Cabin,
             StructureKind::Hut => SpriteStyle::Hut,
+            StructureKind::Car => SpriteStyle::Car,
+            StructureKind::Train => SpriteStyle::Train,
+            StructureKind::Rail => SpriteStyle::Rail,
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }
