@@ -8,7 +8,7 @@ use game::daynight::{DAY_LENGTH, START_TIME, clock, daylight as daylight_at, tem
 use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, WINDUP, spawner_on};
 use game::items::{Inventory, ItemKind};
 use game::player::{self, Player};
-use game::poi::{ruins_at, ruins_walls};
+use game::poi::{ruins_at, ruins_walls, village_sites, village_name};
 use game::weapons::WeaponKind;
 use game::quest::QuestLog;
 use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
@@ -735,6 +735,11 @@ pub struct App {
     weapon_loot: Vec<WeaponDrop>,
     quest: QuestLog,
     ruins: (i32, i32),
+    /// Village hamlets: (center_x, center_y, name). Generated at world init so the
+    /// same seed always yields the same settlements. Houses there act as shelters.
+    villages: Vec<(i32, i32, String)>,
+    /// Village centers the player has already entered (so the welcome toast fires once).
+    visited_villages: std::collections::HashSet<(i32, i32)>,
     opened_chests: std::collections::HashSet<(i32, i32)>,
     slimes_killed: u32,
     boss_killed: u32,
@@ -1063,7 +1068,8 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={} weapon={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={}",
+
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -1109,10 +1115,11 @@ impl App {
                 .unwrap_or_else(|| "none".to_string()),
             self.fps,
             self.speed,
-            self.key_evt,
-            self.key_dbg,
-            self.player.weapon.name(),
-        )
+             self.key_evt,
+             self.key_dbg,
+             self.player.weapon.name(),
+             self.player.enchant,
+         )
     }
 
     /// Nearest alive enemy within aggro range, as "Kind@(tx,ty)" or "none".
@@ -1254,6 +1261,8 @@ impl App {
             weapon_loot: Vec::new(),
             quest: QuestLog::new(),
             ruins,
+            villages: Vec::new(),
+            visited_villages: std::collections::HashSet::new(),
             opened_chests: std::collections::HashSet::new(),
             slimes_killed: 0,
             boss_killed: 0,
@@ -1537,10 +1546,36 @@ impl App {
         let k = match target {
             Some(&k) => k,
             None => {
-                // All weapons forged — the anvil now lets you forge Iron Plate,
-                // which permanently reduces incoming damage by 25%.
+                // All weapons forged. If Iron Plate isn't yet forged, do that
+                // first; once everything is forged, spend Gems to enchant the
+                // equipped weapon (+15% damage per level, capped at 5).
                 if self.craft_armor > 0.0 {
-                    toast("Everything is already forged");
+                    if self.player.weapon == game::weapons::WeaponKind::Fists {
+                        toast("Equip a weapon first to enchant it");
+                        return;
+                    }
+                    if self.player.enchant >= 5 {
+                        toast("Weapon is already maximally enchanted (★★★★★)");
+                        return;
+                    }
+                    let cost = 1 + self.player.enchant as u32; // 1,2,3,4,5 gems per level
+                    if self.inventory.count(ItemKind::Gem) < cost {
+                        toast(&format!(
+                            "Need {} gems to enchant (have {})",
+                            cost,
+                            self.inventory.count(ItemKind::Gem)
+                        ));
+                        return;
+                    }
+                    self.inventory.remove(ItemKind::Gem, cost);
+                    self.player.enchant += 1;
+                    play_sfx("craft");
+                    toast(&format!(
+                        "Enchanted {}! ({}★) +{}% damage",
+                        self.player.weapon.name(),
+                        self.player.enchant,
+                        self.player.enchant * 15
+                    ));
                     return;
                 }
                 let (w, s, h) = (2u32, 5u32, 3u32);
@@ -1702,7 +1737,7 @@ impl App {
             }
             self.debug_shots += 1;
             let mut a = Arrow::new(self.player.x, self.player.y, self.player.facing.0, self.player.facing.1);
-            a.damage = w.damage();
+            a.damage = self.player.weapon_damage();
             self.arrows.push(a);
             play_sfx("shoot");
             // small recoil puff
@@ -1723,7 +1758,7 @@ impl App {
             let mut sparks = Vec::new();
             for e in &mut hits {
                 // Weak-point bonus: the Bestiary tells you which weapon a foe fears.
-                let dmg = w.damage() * e.kind.weakness_to(w);
+                let dmg = self.player.weapon_damage() * e.kind.weakness_to(w);
                 e.take_damage(dmg);
                 // Knock the struck enemy back along the player->enemy vector.
                 let dx = e.x - self.player.x;
@@ -1738,15 +1773,22 @@ impl App {
                 self.hitstop = 0.06;
             }
             drop(hits);
+            let tint = w.color();
+            let spark = [
+                (tint[0] * 0.5 + 0.5).min(1.0),
+                (tint[1] * 0.5 + 0.5).min(1.0),
+                (tint[2] * 0.5 + 0.5).min(1.0),
+            ];
             for (x, y) in sparks {
-                self.spawn_particles(x, y, [1.0, 0.92, 0.62], 7, 55.0, 0.35, 3.5);
+                self.spawn_particles(x, y, spark, 7, 55.0, 0.35, 3.5);
             }
-            // Swept slash: a short white arc of particles in front of the player.
+            // Swept slash: a short arc of particles, tinted by the weapon, in front
+            // of the player — so each weapon reads differently on screen.
             let (fx, fy) = self.player.facing;
             let flen = (fx * fx + fy * fy).sqrt().max(0.01);
             let cx = self.player.x + fx / flen * w.reach() * 0.5;
             let cy = self.player.y + fy / flen * w.reach() * 0.5;
-            self.spawn_particles(cx, cy, [1.0, 1.0, 0.95], 6, 40.0, 0.18, 2.5);
+            self.spawn_particles(cx, cy, tint, 6, 40.0, 0.18, 2.5);
             self.sweep_dead();
         }
     }
@@ -1975,6 +2017,17 @@ impl App {
     /// ghost tile (mouse); otherwise the structure is dropped on the player's
     /// own tile (the original hotkey behaviour).
     fn build(&mut self, kind: StructureKind) {
+        // Tech tree: advanced structures require prerequisites so progression
+        // has a shape. Anvil unlocks support/turret tech; forging iron at the
+        // anvil (any weapon/plate) unlocks the Turret specifically.
+        if matches!(kind, StructureKind::HealingTotem | StructureKind::Turret) && !self.has_anvil() {
+            toast("Build an Anvil before advanced structures");
+            return;
+        }
+        if kind == StructureKind::Turret && !self.crafted_iron {
+            toast("Forge iron at an anvil first (craft any weapon/plate)");
+            return;
+        }
         // Latch a networked build intent (server validates range + cost).
         let (bk, btx, bty) = if let Some((gk, gx, gy, valid)) = self.build_ghost {
             if gk == kind && valid {
@@ -2065,6 +2118,49 @@ impl App {
         structures.push(Structure { tx: self.ruins.0, ty: self.ruins.1, kind: StructureKind::Chest });
         for (wx, wy) in ruins_walls(self.ruins.0, self.ruins.1) {
             structures.push(Structure { tx: wx, ty: wy, kind: StructureKind::Wall });
+        }
+        // Villages: a few named hamlets of houses (which double as shelters) plus
+        // a sign, an anvil and a well so each is a functional safe haven.
+        self.villages.clear();
+        let sites = village_sites(seed, 3, |tx, ty| {
+            tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
+        });
+        let house_kinds = [
+            StructureKind::House,
+            StructureKind::Cabin,
+            StructureKind::Hut,
+        ];
+        let ring: [(i32, i32); 8] = [
+            (1, 0),
+            (-1, 0),
+            (0, 1),
+            (0, -1),
+            (1, 1),
+            (-1, -1),
+            (1, -1),
+            (-1, 1),
+        ];
+        for (vx, vy) in sites {
+            let name = village_name(vx, vy);
+            self.villages.push((vx, vy, name));
+            structures.push(Structure { tx: vx, ty: vy, kind: StructureKind::Sign });
+            for (i, (dx, dy)) in ring.iter().enumerate() {
+                let hx = vx + dx;
+                let hy = vy + dy;
+                if tile_at(&self.world, &mut self.chunks, hx, hy).walkable() {
+                    structures.push(Structure {
+                        tx: hx,
+                        ty: hy,
+                        kind: house_kinds[i % 3],
+                    });
+                }
+            }
+            if tile_at(&self.world, &mut self.chunks, vx + 2, vy).walkable() {
+                structures.push(Structure { tx: vx + 2, ty: vy, kind: StructureKind::Anvil });
+            }
+            if tile_at(&self.world, &mut self.chunks, vx - 2, vy).walkable() {
+                structures.push(Structure { tx: vx - 2, ty: vy, kind: StructureKind::Well });
+            }
         }
         self.structures = structures;
         self.quest = QuestLog::new();
@@ -2190,6 +2286,7 @@ impl App {
             salves: self.salves,
             weapon: self.player.weapon.as_u8(),
             weapon_unlocked: self.player.unlocked,
+            enchant: self.player.enchant,
         }
     }
 
@@ -2246,6 +2343,7 @@ impl App {
         self.salves = s.salves;
         self.player.weapon = game::weapons::WeaponKind::from_u8(s.weapon);
         self.player.unlocked = s.weapon_unlocked;
+        self.player.enchant = s.enchant;
         self.respawn_timer = 0.0;
         self.arrows = Vec::new();
         self.nodes = NodeRegistry::new();
@@ -2420,6 +2518,17 @@ impl App {
         let pty = self.player.y.floor() as i32;
         let biome = tile_at(&self.world, &mut self.chunks, ptx, pty);
         self.cur_biome = biome;
+        // Village welcome: when the player first wanders into a hamlet, announce it.
+        for (vx, vy, name) in &self.villages {
+            if !self.visited_villages.contains(&(*vx, *vy)) {
+                let dx = self.player.x - (*vx as f32 + 0.5);
+                let dy = self.player.y - (*vy as f32 + 0.5);
+                if dx * dx + dy * dy < 36.0 {
+                    self.visited_villages.insert((*vx, *vy));
+                    toast(&format!("Entered {} — a safe haven", name));
+                }
+            }
+        }
         if self.player.alive {
             let wet = self.weather == 1;
             self.player
@@ -2814,6 +2923,7 @@ impl App {
             build: self.net_build.take(),
             weapon: self.player.weapon.as_u8(),
             weapon_unlocked: self.player.unlocked,
+            enchant: self.player.enchant,
         };
         self.net_dodge = false;
         self.net_atk = false;

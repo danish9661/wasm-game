@@ -47,6 +47,51 @@ pub fn ruins_walls(tx: i32, ty: i32) -> [(i32, i32); 4] {
     ]
 }
 
+/// Candidate village sites, further out than ruins so hamlets feel like their
+/// own settlements rather than backyard camps.
+const VILLAGE_CANDIDATES: [(i32, i32); 12] = [
+    (30, -18),
+    (-28, 22),
+    (34, 14),
+    (-32, -10),
+    (20, 30),
+    (-22, -30),
+    (40, -8),
+    (-38, 16),
+    (26, -32),
+    (8, 38),
+    (-40, -22),
+    (38, 30),
+];
+
+/// Deterministic village sites for a seed (up to `count`). Each is placed on the
+/// first walkable candidate so hamlets never spawn in the sea.
+pub fn village_sites(seed: u32, count: usize, mut is_walkable: impl FnMut(i32, i32) -> bool) -> Vec<(i32, i32)> {
+    let mut out = Vec::new();
+    let mut h = seed.wrapping_mul(40503).wrapping_add(0x9e37);
+    let mut i = 0;
+    while out.len() < count && i < VILLAGE_CANDIDATES.len() * 2 {
+        h = h.wrapping_mul(1664525).wrapping_add(1013904223);
+        let (tx, ty) = VILLAGE_CANDIDATES[(h >> 16) as usize % VILLAGE_CANDIDATES.len()];
+        if is_walkable(tx, ty) && !out.contains(&(tx, ty)) {
+            out.push((tx, ty));
+        }
+        i += 1;
+    }
+    out
+}
+
+/// A stable, vaguely fantasy village name derived from the site coordinates so
+/// the same world always names its hamlets the same way.
+pub fn village_name(tx: i32, ty: i32) -> String {
+    const PRE: &[&str] = &["Briar", "Oak", "Stone", "Moor", "Fen", "Hollow", "Ash", "Thorn", "Mist", "Grey"];
+    const SUF: &[&str] = &["dale", "ford", "wick", "mere", "bury", "hollow", "stead", "reach", "croft", "end"];
+    let h = ((tx as u32).wrapping_mul(73856093) ^ (ty as u32).wrapping_mul(19349663)).wrapping_add(0x51ab);
+    let p = PRE[(h >> 4) as usize % PRE.len()];
+    let s = SUF[(h >> 12) as usize % SUF.len()];
+    format!("{}{}", p, s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

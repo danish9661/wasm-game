@@ -60,6 +60,9 @@ pub struct PlayerInput {
     pub weapon: u8,
     /// Bitmask of owned weapons, so the sim can validate/permit weapon use.
     pub weapon_unlocked: u8,
+    /// Enchantment level of the equipped weapon (raises its damage). Sent by the
+    /// client; the server trusts it (co-op is collaborative, not competitive).
+    pub enchant: u8,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -406,6 +409,7 @@ fn step_player(
         np.player.weapon = w;
         np.player.unlocked = np.input.weapon_unlocked;
     }
+    np.player.enchant = np.input.enchant;
 
     if !np.player.alive {
         np.respawn_timer -= dt;
@@ -447,7 +451,7 @@ fn step_player(
         let w = np.player.weapon;
         let mut hits = crate::combat::swing_hits(&np.player, enemies.enemies_mut(), w.reach());
         for e in hits.iter_mut() {
-            e.take_damage(w.damage());
+            e.take_damage(np.player.weapon_damage());
         }
     }
 
@@ -456,7 +460,7 @@ fn step_player(
         let (fx, fy) = np.player.facing;
         if w.ranged() && (fx * fx + fy * fy) > 1e-4 {
             let mut a = Arrow::new(np.player.x, np.player.y, fx, fy);
-            a.damage = w.damage();
+            a.damage = np.player.weapon_damage();
             arrows.push(a);
             np.shoot_cd = 0.5;
         }

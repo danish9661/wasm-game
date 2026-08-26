@@ -61,4 +61,7 @@ pub struct SaveState {
     /// Bitmask of owned weapons (mirrors `Player::unlocked`).
     #[serde(default)]
     pub weapon_unlocked: u8,
+    /// Enchantment level of the equipped weapon (mirrors `Player::enchant`).
+    #[serde(default)]
+    pub enchant: u8,
 }

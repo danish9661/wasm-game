@@ -51,6 +51,9 @@ pub struct Player {
     pub weapon: WeaponKind,
     /// Bitmask of weapons the player owns (bit `k as usize`; Fists is always set).
     pub unlocked: u8,
+    /// Enchantment level of the equipped weapon (0 = none). Each level adds +15%
+    /// damage and a faint glow. Gems spent at an Enchanting Table raise it.
+    pub enchant: u8,
 }
 
 impl Player {
@@ -71,6 +74,7 @@ impl Player {
             blocking: false,
             weapon: WeaponKind::Fists,
             unlocked: 1, // Fists (bit 0) always available
+            enchant: 0,
         }
     }
 
@@ -111,6 +115,13 @@ impl Player {
     pub fn equip_weapon(&mut self, k: WeaponKind) {
         self.unlock_weapon(k);
         self.weapon = k;
+    }
+
+    /// Damage of the currently equipped weapon including the enchant bonus
+    /// (+15% per enchant level). Both the client and server use this so co-op
+    /// damage stays consistent.
+    pub fn weapon_damage(&self) -> f32 {
+        self.weapon.damage() * (1.0 + 0.15 * self.enchant as f32)
     }
 
     /// Applies damage; respects the hurt-timer (brief invulnerability after

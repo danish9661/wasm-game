@@ -42,6 +42,7 @@
               <span class="inv-chip seed" id="hud-seed" style="display:none">🌱 Seed</span>
               <span class="inv-chip seed" id="hud-room" style="display:none;cursor:pointer" title="Click to copy room code">🛡 Room</span>
       <span class="inv-chip biome" id="hud-biome" style="display:none">🌍 Biome</span>
+      <span class="inv-chip objective" id="hud-objective" style="display:none">🎯</span>
       <span class="inv-chip weapon" id="hud-weapon" style="display:none">🗡 Fists</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
@@ -82,7 +83,7 @@
         <span class="k">C</span><span class="d">Eat food to restore hunger</span>
         <span class="k">T</span><span class="d">Drink at a well / shoreline (restores thirst)</span>
         <span class="k">Shift</span><span class="d">Hold to block (raises guard, cuts incoming damage)</span>
-        <span class="k">M</span><span class="d">Craft a weapon at an anvil</span>
+        <span class="k">M</span><span class="d">At an anvil: craft a weapon, then Iron Plate, then spend gems to enchant (★ +15% dmg)</span>
         <span class="k">PrtSc</span><span class="d">Save a screenshot</span>
         <span class="k">Esc</span><span class="d">Settings</span>
       </div>
@@ -682,8 +683,23 @@
             el('hud-seed').textContent = '🌱 ' + stats.seed;
             el('hud-biome').style.display = 'inline-block';
             el('hud-biome').textContent = '🌍 ' + stats.biome.replace(/([A-Z])/g, ' $1').trim();
-            el('hud-weapon').style.display = 'inline-block';
-            el('hud-weapon').textContent = '🗡 ' + (stats.weapon || 'Fists');
+             el('hud-weapon').style.display = 'inline-block';
+             el('hud-weapon').textContent = '🗡 ' + (stats.weapon || 'Fists') + (stats.enchant > 0 ? ' ' + '★'.repeat(stats.enchant) : '');
+
+             // Objective tracker: a short, stage-aware goal line.
+             const OBJECTIVES = [
+               'Survive: gather wood & stone, build a campfire + bed',
+               'Craft tools at an anvil (stand near it, press M)',
+               'Forage herbs and build a well for water',
+               'Fortify your base with walls',
+               'Hunt the land\'s creatures for a Crown Fragment',
+               'Build a Reforging Altar',
+               'Reforge the Star Crown — choose your ending',
+               'You reforged the Star Crown',
+             ];
+             const obj = OBJECTIVES[Math.min(stats.quest | 0, OBJECTIVES.length - 1)];
+             el('hud-objective').style.display = 'inline-block';
+             el('hud-objective').textContent = '🎯 ' + obj;
 
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
@@ -784,6 +800,7 @@
               kev: Number(get(/kev=(\d+)/) || 0),
               klast: get(/klast=(\S+)/) || '',
               weapon: get(/weapon=(\w+)/) || 'Fists',
+              enchant: Number(get(/enchant=(\d+)/) || 0),
             };
           };
 
