@@ -20,6 +20,9 @@ pub enum TileKind {
     Stone,
     Tundra,
     Desert,
+    /// Lush, humid lowland forest — hot but vegetated. A new, distinct biome
+    /// with its own palette, denser foliage, and its own critters.
+    Jungle,
 }
 
 impl TileKind {
@@ -36,6 +39,7 @@ impl TileKind {
             TileKind::Stone => [0.50, 0.50, 0.52],
             TileKind::Tundra => [0.66, 0.70, 0.62],
             TileKind::Desert => [0.91, 0.80, 0.50],
+            TileKind::Jungle => [0.16, 0.40, 0.18],
         }
     }
 
@@ -251,6 +255,8 @@ impl WorldGen {
             TileKind::Snow
         } else if temperature < -0.25 {
             TileKind::Tundra
+        } else if moisture > 0.55 && temperature > 0.15 {
+            TileKind::Jungle
         } else if moisture > 0.35 {
             if elevation < 0.15 {
                 TileKind::Swamp

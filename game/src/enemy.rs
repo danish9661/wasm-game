@@ -58,6 +58,10 @@ pub enum EnemyKind {
     /// Stormcaller: a flying storm-mage that drifts over walls and hurls
     /// lightning from range. Combines the flying and ranged behaviours.
     Stormcaller,
+    /// Wolf: a fast, fragile four-legged melee swarmer that hunts in packs.
+    Wolf,
+    /// Archer: a ranged humanoid that keeps its distance and looses arrows.
+    Archer,
 }
 
 impl EnemyKind {
@@ -69,7 +73,7 @@ impl EnemyKind {
 
     /// True for enemies that fire projectiles at the player from range.
     pub fn ranged(self) -> bool {
-        matches!(self, EnemyKind::Stoneslinger | EnemyKind::Stormcaller)
+        matches!(self, EnemyKind::Stoneslinger | EnemyKind::Stormcaller | EnemyKind::Archer)
     }
 
     /// Range (tiles) at which a ranged enemy will fire.
@@ -77,6 +81,7 @@ impl EnemyKind {
         match self {
             EnemyKind::Stoneslinger => 9.0,
             EnemyKind::Stormcaller => 10.0,
+            EnemyKind::Archer => 8.0,
             _ => 0.0,
         }
     }
@@ -97,6 +102,8 @@ impl EnemyKind {
             EnemyKind::Colossus => "Colossus",
             EnemyKind::Brute => "Brute",
             EnemyKind::Stormcaller => "Stormcaller",
+            EnemyKind::Wolf => "Wolf",
+            EnemyKind::Archer => "Archer",
         }
     }
 
@@ -116,6 +123,8 @@ impl EnemyKind {
             EnemyKind::Colossus => "Boss: towering stone golem; second Crown Fragment.",
             EnemyKind::Brute => "Tank that winds up and charges in a straight line.",
             EnemyKind::Stormcaller => "Flying storm-mage; drifts over walls and hurls lightning from afar.",
+            EnemyKind::Wolf => "Fast pack hunter; tears in and bites before you can react.",
+            EnemyKind::Archer => "Ranged marksman; kites and looses arrows from afar.",
         }
     }
 
@@ -140,6 +149,8 @@ impl EnemyKind {
             EnemyKind::Colossus => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Herb],
             EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food],
             EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb],
+            EnemyKind::Wolf => vec![ItemKind::Food, ItemKind::Herb],
+            EnemyKind::Archer => vec![ItemKind::Food, ItemKind::Wood],
         }
     }
 }
@@ -160,6 +171,8 @@ impl EnemyKind {
             EnemyKind::Colossus => 120.0,
             EnemyKind::Brute => 50.0,
             EnemyKind::Stormcaller => 24.0,
+            EnemyKind::Wolf => 14.0,
+            EnemyKind::Archer => 18.0,
         }
     }
 
@@ -179,6 +192,8 @@ impl EnemyKind {
             EnemyKind::Colossus => 16.0,
             EnemyKind::Brute => 14.0,
             EnemyKind::Stormcaller => 9.0,
+            EnemyKind::Wolf => 5.0,
+            EnemyKind::Archer => 6.0,
         }
     }
 
@@ -197,6 +212,8 @@ impl EnemyKind {
             EnemyKind::Colossus => [0.55, 0.52, 0.50],
             EnemyKind::Brute => [0.60, 0.30, 0.25],
             EnemyKind::Stormcaller => [0.42, 0.55, 0.86],
+            EnemyKind::Wolf => [0.55, 0.50, 0.48],
+            EnemyKind::Archer => [0.50, 0.45, 0.62],
         }
     }
 
@@ -218,6 +235,8 @@ impl EnemyKind {
             EnemyKind::Colossus => (26.0, 32.0),
             EnemyKind::Brute => (20.0, 22.0),
             EnemyKind::Stormcaller => (14.0, 18.0),
+            EnemyKind::Wolf => (16.0, 12.0),
+            EnemyKind::Archer => (14.0, 18.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
@@ -236,6 +255,8 @@ impl EnemyKind {
             EnemyKind::Colossus => SpriteStyle::Colossus,
             EnemyKind::Brute => SpriteStyle::Humanoid,
             EnemyKind::Stormcaller => SpriteStyle::Humanoid,
+            EnemyKind::Wolf => SpriteStyle::Wolf,
+            EnemyKind::Archer => SpriteStyle::Humanoid,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
@@ -359,6 +380,8 @@ impl Enemy {
             EnemyKind::Colossus => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
             EnemyKind::Brute => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.8, 1.0),
             EnemyKind::Stormcaller => (AGGRO_RANGE + 3.0, ATTACK_RANGE, ENEMY_SPEED * 1.2, 0.9),
+            EnemyKind::Wolf => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.9, 0.5),
+            EnemyKind::Archer => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.95, 1.1),
         };
         // Colossus enrage: below half health it speeds up and attacks faster,
         // telegraphing a second phase so the player knows to kite harder.
@@ -584,8 +607,12 @@ pub fn astar(
          TileKind::Grass if h.rem_euclid(97) == 0 => Some(EnemyKind::Goblin),
          TileKind::Forest if h.rem_euclid(109) == 0 => Some(EnemyKind::Spider),
          TileKind::Swamp if h.rem_euclid(103) == 0 => Some(EnemyKind::Imp),
-         TileKind::Forest if h.rem_euclid(113) == 0 => Some(EnemyKind::Imp),
-         TileKind::Stone if h.rem_euclid(149) == 0 => Some(EnemyKind::Ogre),
+          TileKind::Forest if h.rem_euclid(113) == 0 => Some(EnemyKind::Imp),
+          TileKind::Forest if h.rem_euclid(127) == 0 => Some(EnemyKind::Wolf),
+          TileKind::Forest if h.rem_euclid(149) == 0 => Some(EnemyKind::Archer),
+          TileKind::Grass if h.rem_euclid(131) == 0 => Some(EnemyKind::Archer),
+          TileKind::Tundra if h.rem_euclid(113) == 0 => Some(EnemyKind::Wolf),
+          TileKind::Stone if h.rem_euclid(149) == 0 => Some(EnemyKind::Ogre),
          TileKind::Stone if h.rem_euclid(167) == 0 => Some(EnemyKind::Wraith),
          TileKind::Stone if h.rem_euclid(191) == 0 => Some(EnemyKind::Stoneslinger),
          TileKind::Stone if h.rem_euclid(401) == 0 => Some(EnemyKind::Colossus),
@@ -593,9 +620,12 @@ pub fn astar(
          TileKind::Stone if h.rem_euclid(211) == 0 => Some(EnemyKind::Stormcaller),
          TileKind::Tundra if h.rem_euclid(103) == 0 => Some(EnemyKind::Wraith),
          TileKind::Tundra if h.rem_euclid(97) == 0 => Some(EnemyKind::Goblin),
-         TileKind::Desert if h.rem_euclid(109) == 0 => Some(EnemyKind::Skeleton),
-         TileKind::Desert if h.rem_euclid(149) == 0 => Some(EnemyKind::Spider),
-         TileKind::Swamp if h.rem_euclid(139) == 0 => Some(EnemyKind::Wraith),
+          TileKind::Desert if h.rem_euclid(109) == 0 => Some(EnemyKind::Skeleton),
+          TileKind::Desert if h.rem_euclid(149) == 0 => Some(EnemyKind::Spider),
+          TileKind::Jungle if h.rem_euclid(79) == 0 => Some(EnemyKind::Spider),
+          TileKind::Jungle if h.rem_euclid(97) == 0 => Some(EnemyKind::Bat),
+          TileKind::Jungle if h.rem_euclid(139) == 0 => Some(EnemyKind::Imp),
+          TileKind::Swamp if h.rem_euclid(139) == 0 => Some(EnemyKind::Wraith),
          _ => None,
      }
  }

@@ -23,6 +23,7 @@
     <div class="hud-row">
       <div class="bar"><span class="bar-label">HP</span><div class="bar-track"><div class="bar-fill" id="bar-hp"></div></div><span class="bar-num" id="num-hp">100</span></div>
       <div class="bar"><span class="bar-label">HUNGER</span><div class="bar-track"><div class="bar-fill" id="bar-hunger"></div></div><span class="bar-num" id="num-hunger">100</span></div>
+      <div class="bar"><span class="bar-label">THIRST</span><div class="bar-track"><div class="bar-fill" id="bar-thirst"></div></div><span class="bar-num" id="num-thirst">100</span></div>
       <div class="bar"><span class="bar-label">STAMINA</span><div class="bar-track"><div class="bar-fill" id="bar-stamina"></div></div><span class="bar-num" id="num-stamina">100</span></div>
     </div>
     <div class="hud-row boss-row" id="boss-row" style="display:none">
@@ -78,6 +79,9 @@
         <span class="k">J / K</span><span class="d">Attack with your equipped weapon (swing or loose an arrow)</span>
         <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Sword → Axe → Spear → Hammer → Bow)</span>
         <span class="k">C</span><span class="d">Eat food to restore hunger</span>
+        <span class="k">T</span><span class="d">Drink at a well / shoreline (restores thirst)</span>
+        <span class="k">Shift</span><span class="d">Hold to block (raises guard, cuts incoming damage)</span>
+        <span class="k">M</span><span class="d">Craft a weapon at an anvil</span>
         <span class="k">PrtSc</span><span class="d">Save a screenshot</span>
         <span class="k">Esc</span><span class="d">Settings</span>
       </div>
@@ -648,6 +652,7 @@
           const updateHud = (stats) => {
             setBar('bar-hp', 'num-hp', stats.hp);
             setBar('bar-hunger', 'num-hunger', stats.hunger);
+            setBar('bar-thirst', 'num-thirst', stats.thirst);
             setBar('bar-stamina', 'num-stamina', stats.stamina);
             el('inv-wood').textContent = `W ${stats.w}`;
             el('inv-stone').textContent = `S ${stats.s}`;
@@ -746,6 +751,7 @@
             return {
               hp: Number(get(/hp=([\d.]+)/) || 0),
               hunger: Number(get(/hunger=([\d.]+)/) || 0),
+              thirst: Number(get(/thirst=([\d.]+)/) || 0),
               stamina: Number(get(/stamina=([\d.]+)/) || 0),
               alive: Number(get(/alive=(\d)/) || 1),
               w: Number(get(/inv=\(w(\d+)/) || 0),

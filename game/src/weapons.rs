@@ -122,4 +122,35 @@ impl WeaponKind {
             _ => Some(WeaponKind::Bow),
         }
     }
+
+    /// Stable index for serialization (save files / network messages).
+    pub fn as_u8(self) -> u8 {
+        self as u8
+    }
+
+    /// Inverse of `as_u8`; returns Fists for any out-of-range value.
+    pub fn from_u8(v: u8) -> WeaponKind {
+        match v {
+            0 => WeaponKind::Fists,
+            1 => WeaponKind::Sword,
+            2 => WeaponKind::Axe,
+            3 => WeaponKind::Spear,
+            4 => WeaponKind::Hammer,
+            5 => WeaponKind::Bow,
+            _ => WeaponKind::Fists,
+        }
+    }
+
+    /// Resource cost to craft this weapon at an anvil. Fists can't be crafted.
+    pub fn craft_cost(self) -> Option<(u32, u32, u32)> {
+        // (wood, stone, herb)
+        match self {
+            WeaponKind::Fists => None,
+            WeaponKind::Sword => Some((5, 3, 0)),
+            WeaponKind::Axe => Some((6, 1, 0)),
+            WeaponKind::Spear => Some((4, 2, 0)),
+            WeaponKind::Hammer => Some((2, 8, 0)),
+            WeaponKind::Bow => Some((5, 0, 1)),
+        }
+    }
 }

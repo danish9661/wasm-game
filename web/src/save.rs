@@ -55,4 +55,10 @@ pub struct SaveState {
     pub craft_armor: f32,
     #[serde(default)]
     pub salves: u32,
+    /// Equipped weapon (WeaponKind index) so it survives a reload.
+    #[serde(default)]
+    pub weapon: u8,
+    /// Bitmask of owned weapons (mirrors `Player::unlocked`).
+    #[serde(default)]
+    pub weapon_unlocked: u8,
 }

@@ -82,6 +82,8 @@ pub enum SpriteStyle {
     Imp,
     Wraith,
     Colossus,
+    /// Lupine melee swarmer: a low, fast four-legged silhouette.
+    Wolf,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -632,6 +634,25 @@ fn tile_detail(out: &mut Vec<f32>, kind: TileKind, sx: f32, sy: f32, z: f32, tx:
                 parts.push(Part::diamond(cx + ox, cy + oy, 1.6, 1.0, 0.0, [sh, sh * 0.8, sh * 0.6], 1.0, false));
             }
         }
+        TileKind::Jungle => {
+            // Dense, layered foliage with the occasional bright flower.
+            let n = 4 + (h % 3);
+            for i in 0..n {
+                let r1 = (((h >> (i * 5)) & 31) as f32) / 31.0;
+                let r2 = (((h >> (i * 5 + 2)) & 31) as f32) / 31.0;
+                let ox = (r1 - 0.5) * (HALF_W * 1.3);
+                let oy = (r2 - 0.5) * (HALF_H * 1.0);
+                let s = sway(cx + ox, cy + oy, anim_time, 1.6);
+                let bh = 6.0 + r2 * 5.0;
+                let g = [0.10 + r1 * 0.06, 0.34 + r2 * 0.14, 0.14];
+                parts.push(Part::vquad(cx + ox + s - 0.8, cy + oy - bh, 1.6, bh, g, 1.0, false));
+            }
+            if (h & 31) == 0 {
+                let fx = cx + ((h % 19) as f32 - 9.0);
+                let fy = cy + ((h % 13) as f32 - 6.0);
+                parts.push(Part::diamond(fx, fy - 2.0, 1.8, 1.8, 0.0, [0.95, 0.85, 0.30], 1.0, false));
+            }
+        }
         TileKind::Sand | TileKind::Desert => {
             let n = 3 + (h % 3);
             for i in 0..n {
@@ -754,6 +775,17 @@ fn push_styled_sprite(
         SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Wraith => rasterize(&wraith::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Colossus => rasterize(&colossus::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Wolf => {
+            // Low, fast quadruped: body + head + four legs, tinted per kind.
+            let mut p = Vec::new();
+            p.push(Part::vquad(cx - 7.0, cy - 11.0, 14.0, 9.0, color, alpha, true));
+            p.push(Part::vquad(cx + 6.0, cy - 14.0, 7.0, 7.0, color, alpha, true));
+            p.push(Part::vquad(cx - 5.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
+            p.push(Part::vquad(cx - 1.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
+            p.push(Part::vquad(cx + 3.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
+            p.push(Part::vquad(cx + 7.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
+            rasterize(&p, out);
+        }
         // New decorative props
         SpriteStyle::Lantern => rasterize(&lantern::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Brazier => rasterize(&brazier::build(cx, cy, color, alpha, facing, anim_time), out),

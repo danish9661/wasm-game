@@ -12,6 +12,9 @@ pub const MAX_HP: f32 = 100.0;
 pub const MAX_HUNGER: f32 = 100.0;
 /// Stamina in [0,1]: attacks cost stamina, it regenerates while idle.
 pub const MAX_STAMINA: f32 = 100.0;
+/// Thirst in [0,1]: 1 = hydrated. Drains over time; 0 = dehydrated (lose hp).
+/// Drains faster in the heat (Desert) and when exposed to rain.
+pub const MAX_THIRST: f32 = 100.0;
 /// Respawn position for the player (the spawner finds the same tile).
 pub const SPAWN: (f32, f32) = (0.5, 0.5);
 /// Dodge roll: duration of the burst, cooldown, stamina cost, and the speed
@@ -28,6 +31,8 @@ pub struct Player {
     pub hp: f32,
     pub hunger: f32,
     pub stamina: f32,
+    /// Hydration in [0,1]; 0 = dehydrated and losing health.
+    pub thirst: f32,
     /// Last movement direction (also the attack facing).
     pub facing: (f32, f32),
     /// Seconds before the player can take damage again (hit immunity).
@@ -38,6 +43,9 @@ pub struct Player {
     /// Unit direction of the active dodge burst.
     pub dodge_dir: (f32, f32),
     pub alive: bool,
+    /// True while the player is holding a block (Shift). Reduces incoming damage
+    /// at a stamina cost. Set by the renderer each frame from the key state.
+    pub blocking: bool,
     /// Currently equipped weapon. Drives melee reach/damage/cadence and whether
     /// the attack fires a projectile (Bow).
     pub weapon: WeaponKind,
@@ -53,12 +61,14 @@ impl Player {
             hp: MAX_HP,
             hunger: MAX_HUNGER,
             stamina: MAX_STAMINA,
+            thirst: MAX_THIRST,
             facing: (1.0, 0.0),
             hurt_timer: 0.0,
             dodge_timer: 0.0,
             dodge_cd: 0.0,
             dodge_dir: (1.0, 0.0),
             alive: true,
+            blocking: false,
             weapon: WeaponKind::Fists,
             unlocked: 1, // Fists (bit 0) always available
         }
@@ -104,10 +114,22 @@ impl Player {
     }
 
     /// Applies damage; respects the hurt-timer (brief invulnerability after
-    /// each hit so enemies can't melt you in one frame).
+    /// each hit so enemies can't melt you in one frame). A raised block (Shift)
+    /// cuts the damage and costs stamina instead of health. Returns the actual
+    /// damage dealt (0 if it was ignored by i-frames).
     pub fn take_damage(&mut self, dmg: f32) -> bool {
         if !self.alive || self.hurt_timer > 0.0 {
             return false;
+        }
+        if self.blocking && self.stamina > 1.0 {
+            self.stamina = (self.stamina - 10.0).max(0.0);
+            let reduced = dmg * 0.35;
+            self.hurt_timer = 0.25;
+            self.hp = (self.hp - reduced).max(0.0);
+            if self.hp <= 0.0 {
+                self.alive = false;
+            }
+            return true;
         }
         self.hurt_timer = 0.6;
         self.hp = (self.hp - dmg).max(0.0);
@@ -117,6 +139,13 @@ impl Player {
         true
     }
 
+    /// Push the player away from a hit source by `force` tiles (knockback).
+    pub fn knockback(&mut self, dx: f32, dy: f32, force: f32) {
+        let len = (dx * dx + dy * dy).sqrt().max(1e-4);
+        self.x += dx / len * force;
+        self.y += dy / len * force;
+    }
+
     /// Death: respawn at the spawn point with full hp but half hunger.
     pub fn respawn(&mut self) {
         self.x = SPAWN.0;
@@ -124,6 +153,7 @@ impl Player {
         self.hp = MAX_HP;
         self.hunger = MAX_HUNGER / 2.0;
         self.stamina = MAX_STAMINA;
+        self.thirst = MAX_THIRST / 2.0;
         self.hurt_timer = 0.0;
         self.dodge_timer = 0.0;
         self.dodge_cd = 0.0;
@@ -147,6 +177,15 @@ impl Player {
         } else {
             false
         }
+    }
+
+    /// Drink from a water source (well or shoreline): restores 45 thirst.
+    pub fn drink_water(&mut self) -> bool {
+        if self.thirst >= MAX_THIRST {
+            return false;
+        }
+        self.thirst = (self.thirst + 45.0).min(MAX_THIRST);
+        true
     }
 
     /// Begin a dodge roll in `dir` (falls back to facing if stationary).
@@ -183,7 +222,7 @@ impl Player {
         self.dodge_timer = (self.dodge_timer - dt).max(0.0);
         self.dodge_cd = (self.dodge_cd - dt).max(0.0);
         let cold = ((temperature).min(0.0) / -10.0).max(0.0);
-        let harsh = matches!(biome, TileKind::Tundra | TileKind::Desert);
+        let harsh = matches!(biome, TileKind::Tundra | TileKind::Desert | TileKind::Jungle);
         let mut drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
         if wet {
             drain += 0.04;
@@ -194,6 +233,24 @@ impl Player {
         self.hunger = (self.hunger - dt * drain).max(0.0);
         if self.hunger <= 0.0 && !warm {
             self.hp = (self.hp - dt * 2.0).max(0.0);
+            if self.hp <= 0.0 {
+                self.alive = false;
+            }
+        }
+        // Thirst drains a little faster than hunger, and is punished hardest by
+        // heat (Desert/Jungle) and rain. Dehydration is deadlier than starvation.
+        let mut tdrain = if warm { 0.10 } else { 0.18 + 0.35 * cold };
+        if wet {
+            tdrain += 0.08;
+        }
+        if matches!(biome, TileKind::Desert | TileKind::Jungle) {
+            tdrain += 0.18;
+        } else if matches!(biome, TileKind::Tundra) {
+            tdrain += 0.04;
+        }
+        self.thirst = (self.thirst - dt * tdrain).max(0.0);
+        if self.thirst <= 0.0 {
+            self.hp = (self.hp - dt * 3.5).max(0.0);
             if self.hp <= 0.0 {
                 self.alive = false;
             }

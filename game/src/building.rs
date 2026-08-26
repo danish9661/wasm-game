@@ -34,6 +34,9 @@ pub enum StructureKind {
     // New buildables: defensive + support
     Turret,
     HealingTotem,
+    // New buildable: a spiked trap that damages enemies (and the player) that
+    // step on it — a cheap, proactive defense.
+    Trap,
     // Decorative (world-gen only)
     Sign,
     Barrel,
@@ -74,6 +77,7 @@ impl StructureKind {
             StructureKind::Lantern => &[(ItemKind::Wood, 1), (ItemKind::Stone, 1)],
             StructureKind::Turret => &[(ItemKind::Wood, 4), (ItemKind::Stone, 4), (ItemKind::Gem, 1)],
             StructureKind::HealingTotem => &[(ItemKind::Wood, 3), (ItemKind::Herb, 2)],
+            StructureKind::Trap => &[(ItemKind::Wood, 3), (ItemKind::Stone, 2)],
             _ => &[],
         }
     }
@@ -93,6 +97,7 @@ impl StructureKind {
             StructureKind::FarmPlot => [0.45, 0.55, 0.30],
             StructureKind::Turret => [0.50, 0.50, 0.55],
             StructureKind::HealingTotem => [0.50, 0.35, 0.20],
+            StructureKind::Trap => [0.55, 0.40, 0.42],
             StructureKind::Sign => [0.60, 0.42, 0.24],
             StructureKind::Barrel => [0.50, 0.34, 0.18],
             StructureKind::Totem => [0.50, 0.35, 0.20],
@@ -188,6 +193,7 @@ impl StructureKind {
             StructureKind::FarmPlot => (16.0, 8.0, 1.0),
             StructureKind::Turret => (11.0, 14.0, 1.0),
             StructureKind::HealingTotem => (8.0, 22.0, 1.0),
+            StructureKind::Trap => (16.0, 6.0, 1.0),
             StructureKind::Sign => (12.0, 14.0, 1.0),
             StructureKind::Barrel => (8.0, 16.0, 1.0),
             StructureKind::Totem => (8.0, 26.0, 1.0),
@@ -222,6 +228,7 @@ impl StructureKind {
             StructureKind::FarmPlot => SpriteStyle::FarmPlot,
             StructureKind::Turret => SpriteStyle::Turret,
             StructureKind::HealingTotem => SpriteStyle::HealingTotem,
+            StructureKind::Trap => SpriteStyle::Spike,
             StructureKind::Sign => SpriteStyle::Sign,
             StructureKind::Barrel => SpriteStyle::Barrel,
             StructureKind::Totem => SpriteStyle::Totem,
@@ -261,6 +268,7 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
     (StructureKind::Turret, "Y", "Turret"),
     (StructureKind::HealingTotem, "M", "Healing Totem"),
     (StructureKind::Lantern, "L", "Lantern"),
+    (StructureKind::Trap, "0", "Trap"),
 ];
 
 /// Stateless decorative-prop placement: a few flavor props sprinkled on biomes
@@ -299,6 +307,11 @@ pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
         TileKind::Tundra if h.rem_euclid(83) == 0 => Some(StructureKind::Pillar),
         TileKind::Desert if h.rem_euclid(61) == 0 => Some(StructureKind::Barrel),
         TileKind::Desert if h.rem_euclid(73) == 0 => Some(StructureKind::Cactus),
+        TileKind::Jungle if h.rem_euclid(67) == 0 => Some(StructureKind::Hut),
+        TileKind::Jungle if h.rem_euclid(131) == 0 => Some(StructureKind::House),
+        TileKind::Jungle if h.rem_euclid(113) == 0 => Some(StructureKind::Vines),
+        TileKind::Jungle if h.rem_euclid(149) == 0 => Some(StructureKind::Statue),
+        TileKind::Jungle if h.rem_euclid(89) == 0 => Some(StructureKind::RockPile),
         _ => None,
     }
 }

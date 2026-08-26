@@ -3,8 +3,9 @@ use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::building::{Structure, StructureKind, try_build};
-use crate::combat::{Arrow, ARROW_DAMAGE, SWING_DAMAGE, SWING_REACH};
+use crate::combat::Arrow;
 use crate::daynight::{temperature, DAY_LENGTH};
+use crate::weapons::WeaponKind;
 use crate::enemy::{AiState, EnemyKind, EnemyRegistry, spawner_on};
 use crate::items::{Inventory, ItemKind};
 use crate::player::{self, Player};
@@ -54,6 +55,11 @@ pub struct PlayerInput {
     pub eat: bool,
     pub shoot: bool,
     pub build: Option<(StructureKind, i32, i32)>,
+    /// Equipped weapon index (WeaponKind::as_u8) so the authoritative sim uses
+    /// the player's real damage/reach instead of flat constants.
+    pub weapon: u8,
+    /// Bitmask of owned weapons, so the sim can validate/permit weapon use.
+    pub weapon_unlocked: u8,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -391,6 +397,11 @@ fn step_player(
     np.dodge_cd = (np.dodge_cd - dt).max(0.0);
     np.shoot_cd = (np.shoot_cd - dt).max(0.0);
 
+    // Sync the equipped weapon from the client so the sim uses the player's real
+    // damage/reach rather than flat constants.
+    np.player.weapon = WeaponKind::from_u8(np.input.weapon);
+    np.player.unlocked = np.input.weapon_unlocked;
+
     if !np.player.alive {
         np.respawn_timer -= dt;
         if np.respawn_timer <= 0.0 {
@@ -428,16 +439,20 @@ fn step_player(
 
     if np.input.attack && np.attack_cd <= 0.0 {
         np.attack_cd = 0.4;
-        let mut hits = crate::combat::swing_hits(&np.player, enemies.enemies_mut(), SWING_REACH);
+        let w = np.player.weapon;
+        let mut hits = crate::combat::swing_hits(&np.player, enemies.enemies_mut(), w.reach());
         for e in hits.iter_mut() {
-            e.take_damage(SWING_DAMAGE);
+            e.take_damage(w.damage());
         }
     }
 
     if np.input.shoot && np.shoot_cd <= 0.0 {
+        let w = np.player.weapon;
         let (fx, fy) = np.player.facing;
-        if (fx * fx + fy * fy) > 1e-4 {
-            arrows.push(Arrow::new(np.player.x, np.player.y, fx, fy));
+        if w.ranged() && (fx * fx + fy * fy) > 1e-4 {
+            let mut a = Arrow::new(np.player.x, np.player.y, fx, fy);
+            a.damage = w.damage();
+            arrows.push(a);
             np.shoot_cd = 0.5;
         }
     }
@@ -550,7 +565,7 @@ fn step_player(
             if self
                 .structures
                 .iter()
-                .any(|s| s.tx == etx && s.ty == ety && s.kind == StructureKind::Spike)
+                .any(|s| s.tx == etx && s.ty == ety && (s.kind == StructureKind::Spike || s.kind == StructureKind::Trap))
             {
                 e.take_damage(SPIKE_DPS * dt);
             }
@@ -561,6 +576,10 @@ fn step_player(
                 if let Some(p) = self.players.get_mut(&id) {
                     if (p.player.x - ex).hypot(p.player.y - ey) < CONTACT_RANGE {
                         p.player.take_damage(dmg);
+                        // Knock the struck player back along the enemy→player vector.
+                        let dx = p.player.x - ex;
+                        let dy = p.player.y - ey;
+                        p.player.knockback(dx, dy, 0.45);
                     }
                 }
             }
@@ -607,7 +626,7 @@ fn step_player(
                 let mut loot: Vec<(f32, f32, Vec<ItemKind>)> = Vec::new();
                 for e in self.enemies.enemies_mut() {
                     if (e.x - a.x).hypot(e.y - a.y) < 0.8 {
-                        if e.take_damage(ARROW_DAMAGE) {
+                        if e.take_damage(a.damage) {
                             loot.push((e.x, e.y, e.drops()));
                         }
                         hit = true;
@@ -624,7 +643,7 @@ fn step_player(
                 let mut hit = false;
                 for p in self.players.values_mut() {
                     if (p.player.x - a.x).hypot(p.player.y - a.y) < 0.8 {
-                        p.player.take_damage(ARROW_DAMAGE);
+                        p.player.take_damage(a.damage);
                         hit = true;
                         break;
                     }

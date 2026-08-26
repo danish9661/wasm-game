@@ -9,6 +9,7 @@ use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, WINDUP,
 use game::items::{Inventory, ItemKind};
 use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls};
+use game::weapons::WeaponKind;
 use game::quest::QuestLog;
 use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
 use game::iso::{HALF_H, HALF_W};
@@ -132,6 +133,7 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::FarmPlot => "*",
         StructureKind::Turret => "Y",
         StructureKind::HealingTotem => "H",
+        StructureKind::Trap => "Tr",
         StructureKind::House => "Hh",
         StructureKind::Cabin => "Cb",
         StructureKind::Hut => "Hu",
@@ -153,6 +155,8 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Colossus => "Colossus",
         EnemyKind::Brute => "Brute",
         EnemyKind::Stormcaller => "Stormcaller",
+        EnemyKind::Wolf => "Wolf",
+        EnemyKind::Archer => "Archer",
     }
 }
 
@@ -1054,7 +1058,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={} weapon={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={} weapon={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -1062,6 +1066,7 @@ impl App {
             self.player.hp,
             self.player.hunger,
             self.player.stamina,
+            self.player.thirst,
             self.player.alive as u8,
             self.inventory.count(ItemKind::Wood),
             self.inventory.count(ItemKind::Stone),
@@ -1380,6 +1385,12 @@ impl App {
             self.keys[idx] = down;
             return;
         }
+        // Shift (hold) raises the player's guard — handled every frame from the
+        // key state, so both keydown and keyup must update it.
+        if code == "ShiftLeft" || code == "ShiftRight" {
+            self.player.blocking = down;
+            return;
+        }
         if down {
             match code {
                 "KeyE" => self.harvest(),
@@ -1409,11 +1420,22 @@ impl App {
                         play_sfx("eat");
                     }
                 }
+                "KeyT" => {
+                    if self.near_water() {
+                        if self.player.drink_water() {
+                            play_sfx("drink");
+                            toast("Drank water");
+                        }
+                    } else {
+                        toast("No water nearby");
+                    }
+                }
                 "KeyR" => {
                     if self.use_salve() {
                         play_sfx("salve");
                     }
                 }
+                "KeyM" => self.craft_weapon(),
                 "Space" => {
                     self.dodge();
                     play_sfx("dodge");
@@ -1489,6 +1511,63 @@ impl App {
                 && (s.tx as f32 + 0.5 - px).abs() <= 1.5
                 && (s.ty as f32 + 0.5 - py).abs() <= 1.5
         })
+    }
+
+    /// Craft the next uncrafted weapon at an anvil: spends its resource cost,
+    /// unlocks it, and equips it immediately. Cycles via the KeyM binding.
+    pub fn craft_weapon(&mut self) {
+        if !self.near_anvil() {
+            toast("Stand near an anvil to craft weapons");
+            return;
+        }
+        let order = [
+            WeaponKind::Sword,
+            WeaponKind::Axe,
+            WeaponKind::Spear,
+            WeaponKind::Hammer,
+            WeaponKind::Bow,
+        ];
+        let target = order.iter().find(|&&k| !self.player.has_weapon(k));
+        let k = match target {
+            Some(&k) => k,
+            None => {
+                toast("Every weapon already forged");
+                return;
+            }
+        };
+        let (w, s, h) = k.craft_cost().unwrap();
+        if self.inventory.count(ItemKind::Wood) < w
+            || self.inventory.count(ItemKind::Stone) < s
+            || self.inventory.count(ItemKind::Herb) < h
+        {
+            toast(&format!(
+                "Need {} wood, {} stone, {} herb for {}",
+                w, s, h, k.name()
+            ));
+            return;
+        }
+        self.inventory.remove(ItemKind::Wood, w);
+        self.inventory.remove(ItemKind::Stone, s);
+        self.inventory.remove(ItemKind::Herb, h);
+        self.player.equip_weapon(k);
+        play_sfx("craft");
+        toast(&format!("Forged a {}!", k.name()));
+    }
+
+    /// True when the player is next to a Well (or shoreline) to drink from.
+    pub fn near_water(&mut self) -> bool {
+        let (px, py) = (self.player.x, self.player.y);
+        if self.structures.iter().any(|s| {
+            s.kind == StructureKind::Well
+                && (s.tx as f32 + 0.5 - px).abs() <= 1.6
+                && (s.ty as f32 + 0.5 - py).abs() <= 1.6
+        }) {
+            return true;
+        }
+        // Standing on a shoreline (shallow/water edge) also lets you drink.
+        let tx = px.floor() as i32;
+        let ty = py.floor() as i32;
+        tile_at(&self.world, &mut self.chunks, tx, ty).wadable()
     }
 
     /// Craft recipe `idx` at an Anvil. Returns false if no anvil, unaffordable,
@@ -2078,6 +2157,8 @@ impl App {
             craft_harvest: self.craft_harvest,
             craft_armor: self.craft_armor,
             salves: self.salves,
+            weapon: self.player.weapon.as_u8(),
+            weapon_unlocked: self.player.unlocked,
         }
     }
 
@@ -2132,6 +2213,8 @@ impl App {
         self.craft_harvest = s.craft_harvest;
         self.craft_armor = s.craft_armor;
         self.salves = s.salves;
+        self.player.weapon = game::weapons::WeaponKind::from_u8(s.weapon);
+        self.player.unlocked = s.weapon_unlocked;
         self.respawn_timer = 0.0;
         self.arrows = Vec::new();
         self.nodes = NodeRegistry::new();
@@ -2278,6 +2361,20 @@ impl App {
                         dx * dx + dy * dy < 2.5 * 2.5
                     }
             });
+        // Shelter: standing in/next to a house (House/Cabin/Hut) is a safe zone —
+        // it counts as warm and slowly mends wounds, so homes are worth defending.
+        let sheltered = self.player.alive
+            && self.structures.iter().any(|s| {
+                matches!(
+                    s.kind,
+                    StructureKind::House | StructureKind::Cabin | StructureKind::Hut
+                ) && {
+                    let dx = s.tx as f32 + 0.5 - self.player.x;
+                    let dy = s.ty as f32 + 0.5 - self.player.y;
+                    dx * dx + dy * dy < 1.6 * 1.6
+                }
+            });
+        let warm = warm || sheltered;
         // Tile under the player drives biome-specific survival + movement.
         let ptx = self.player.x.floor() as i32;
         let pty = self.player.y.floor() as i32;
@@ -2287,9 +2384,12 @@ impl App {
             let wet = self.weather == 1;
             self.player
                 .tick(dt, temperature(self.time_of_day), warm, wet, biome);
-            // Resting by a fire slowly mends wounds.
+            // Resting by a fire (or inside a home) slowly mends wounds.
             if warm && self.player.hp < 100.0 {
                 self.player.hp = (self.player.hp + dt * 3.0).min(100.0);
+            }
+            if sheltered && self.player.hp < 100.0 {
+                self.player.hp = (self.player.hp + dt * 2.0).min(100.0);
             }
         } else {
             self.respawn_timer -= dt;
@@ -2310,7 +2410,7 @@ impl App {
         }
         let px = self.player.x;
         let py = self.player.y;
-        let mut contact: Option<f32> = None;
+        let mut contact: Option<(f32, f32, f32)> = None;
         for e in self.enemies.enemies_mut() {
             self.discovered.insert(e.kind);
             if let Some(dmg) = e.update((px, py), dt, |tx, ty| {
@@ -2323,7 +2423,7 @@ impl App {
                     || resource_on(tx, ty, tile).is_some_and(|k| k.blocks_movement())
                         && !self.nodes.is_depleted(tx, ty)
             }) {
-                contact = Some(dmg);
+                contact = Some((e.x, e.y, dmg));
             }
             // Ranged enemies fire: turn the pending shot into an enemy arrow.
             if let Some((dx, dy)) = e.pending_shot.take() {
@@ -2336,19 +2436,23 @@ impl App {
             if self
                 .structures
                 .iter()
-                .any(|s| s.tx == etx && s.ty == ety && s.kind == StructureKind::Spike)
+                .any(|s| s.tx == etx && s.ty == ety && (s.kind == StructureKind::Spike || s.kind == StructureKind::Trap))
             {
                 e.take_damage(12.0 * dt);
             }
         }
-        if let Some(dmg) = contact {
+        if let Some((ex, ey, dmg)) = contact {
             // Iron Plate (crafted at an Anvil) reduces incoming damage, and the
             // world bites harder at night.
             let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
             let dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
             self.player.take_damage(dmg);
+            // Knock the player back away from the attacker.
+            let dx = self.player.x - ex;
+            let dy = self.player.y - ey;
+            self.player.knockback(dx, dy, 0.4);
             play_sfx("hurt");
-                    self.shake = self.shake.max(1.0);
+            self.shake = self.shake.max(1.0);
             self.hurt_flash = 1.0;
             if !self.player.alive {
                 play_sfx("death");
@@ -2481,10 +2585,11 @@ impl App {
                 let dy = self.player.y - a.y;
                 if dx * dx + dy * dy <= 0.8 * 0.8 {
                     let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
-                    let dmg = ARROW_DAMAGE * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
+                    let dmg = a.damage * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
                     self.player.take_damage(dmg);
+                    self.player.knockback(dx, dy, 0.25);
                     play_sfx("hurt");
-            self.shake = self.shake.max(1.0);
+                    self.shake = self.shake.max(1.0);
                     self.hurt_flash = 1.0;
                     if !self.player.alive {
                         play_sfx("death");
@@ -2653,6 +2758,8 @@ impl App {
             eat: self.net_eat,
             shoot: self.net_shoot,
             build: self.net_build.take(),
+            weapon: self.player.weapon.as_u8(),
+            weapon_unlocked: self.player.unlocked,
         };
         self.net_dodge = false;
         self.net_atk = false;
@@ -2836,6 +2943,8 @@ impl App {
                 EnemyKind::Colossus => 64.0,
                 EnemyKind::Brute => 30.0,
                 EnemyKind::Stormcaller => 26.0,
+                EnemyKind::Wolf => 16.0,
+                EnemyKind::Archer => 24.0,
             };
             sprites.push(
                 Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)
