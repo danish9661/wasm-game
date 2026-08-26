@@ -7,6 +7,7 @@ use game::combat::{
 use game::daynight::{DAY_LENGTH, START_TIME, clock, daylight as daylight_at, temperature};
 use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, WINDUP, spawner_on};
 use game::items::{Inventory, ItemKind};
+use game::npc::{Npc, NpcKind};
 use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls, village_sites, village_name};
 use game::weapons::WeaponKind;
@@ -698,6 +699,21 @@ pub struct WeaponDrop {
     pub phase: f32,
 }
 
+/// A building interior the player has stepped into. The room is drawn centered on
+/// the player's world position (`bx,by`), so leaving restores the exact spot.
+/// `px,py` are the player's local position within the room (tiles from center).
+struct Interior {
+    kind: StructureKind,
+    floor: u8,
+    max_floors: u8,
+    rw: f32,
+    rh: f32,
+    px: f32,
+    py: f32,
+    bx: f32,
+    by: f32,
+}
+
 pub struct App {
     canvas: HtmlCanvasElement,
     surface: wgpu::Surface<'static>,
@@ -740,6 +756,12 @@ pub struct App {
     villages: Vec<(i32, i32, String)>,
     /// Village centers the player has already entered (so the welcome toast fires once).
     visited_villages: std::collections::HashSet<(i32, i32)>,
+    /// Villagers, guards and merchants wandering the hamlets. Cosmetic/local.
+    npcs: Vec<Npc>,
+    /// Active building interior (None = outside). Entering a house paints a
+    /// room centered on the player's world position; multi-floor buildings add a
+    /// stair tile that climbs to the next floor.
+    interior: Option<Interior>,
     opened_chests: std::collections::HashSet<(i32, i32)>,
     slimes_killed: u32,
     boss_killed: u32,
@@ -824,8 +846,6 @@ pub struct App {
     turret_cd: std::collections::HashMap<(i32, i32), f32>,
     /// True once the player has crafted Iron Plate (used by the quest log).
     crafted_iron: bool,
-    /// Screen-shake impulse (px), decays each frame; set on player damage.
-    shake: f32,
     /// Red damage-flash intensity (0..1), decays each frame; set to 1 on hit.
     hurt_flash: f32,
     /// Virtual-joystick vector for touch/mobile movement (None = no analog
@@ -1263,6 +1283,8 @@ impl App {
             ruins,
             villages: Vec::new(),
             visited_villages: std::collections::HashSet::new(),
+            npcs: Vec::new(),
+            interior: None,
             opened_chests: std::collections::HashSet::new(),
             slimes_killed: 0,
             boss_killed: 0,
@@ -1318,7 +1340,6 @@ impl App {
             farm_cd: std::collections::HashMap::new(),
             turret_cd: std::collections::HashMap::new(),
             crafted_iron: false,
-            shake: 0.0,
             hurt_flash: 0.0,
             analog: None,
             net: None,
@@ -1451,6 +1472,8 @@ impl App {
                     }
                 }
                 "KeyM" => self.craft_weapon(),
+                "KeyO" => self.talk_nearest_npc(),
+                "Enter" => self.toggle_interior(),
                 "Space" => {
                     self.dodge();
                     play_sfx("dodge");
@@ -1615,6 +1638,216 @@ impl App {
         self.player.equip_weapon(k);
         play_sfx("craft");
         toast(&format!("Forged a {}!", k.name()));
+    }
+
+    /// Talk to the nearest townsperson within range: shows their name and a short
+    /// line of dialogue (flavor + occasional hints).
+    pub fn talk_nearest_npc(&mut self) {
+        let mut best: Option<(f32, usize)> = None;
+        for (i, n) in self.npcs.iter().enumerate() {
+            let dx = n.x - self.player.x;
+            let dy = n.y - self.player.y;
+            let d2 = dx * dx + dy * dy;
+            if d2 < 12.0 {
+                if best.map_or(true, |(bd, _)| d2 < bd) {
+                    best = Some((d2, i));
+                }
+            }
+        }
+        match best {
+            Some((_, i)) => {
+                let n = &self.npcs[i];
+                let seed = ((n.x * 13.0 + n.y * 7.0) as u32) ^ (i as u32).wrapping_mul(2654435761);
+                toast(&format!("{}: \"{}\"", n.name.clone(), n.kind.line(seed)));
+                play_sfx("pickup");
+            }
+            None => toast("No one nearby to talk to"),
+        }
+    }
+
+    /// Enter the building the player is standing next to, or leave the current
+    /// interior. Bound to Enter.
+    pub fn toggle_interior(&mut self) {
+        if self.interior.is_some() {
+            self.interior = None;
+            toast("Left the building");
+            return;
+        }
+        let (px, py) = (self.player.x, self.player.y);
+        let mut best: Option<(f32, StructureKind)> = None;
+        for s in &self.structures {
+            if matches!(s.kind, StructureKind::House | StructureKind::Cabin | StructureKind::Hut) {
+                let dx = s.tx as f32 + 0.5 - px;
+                let dy = s.ty as f32 + 0.5 - py;
+                let d2 = dx * dx + dy * dy;
+                if d2 < 3.0 && best.map_or(true, |(bd, _)| d2 < bd) {
+                    best = Some((d2, s.kind));
+                }
+            }
+        }
+        match best {
+            Some((_, kind)) => {
+                let max_floors = if kind == StructureKind::House { 2 } else { 1 };
+                let name = match kind {
+                    StructureKind::House => "House",
+                    StructureKind::Cabin => "Cabin",
+                    _ => "Hut",
+                };
+                self.interior = Some(Interior {
+                    kind,
+                    floor: 1,
+                    max_floors,
+                    rw: 3.5,
+                    rh: 2.5,
+                    px: 0.0,
+                    py: 0.0,
+                    bx: self.player.x,
+                    by: self.player.y,
+                });
+                play_sfx("door");
+                toast(&format!(
+                    "Entered the {}{}",
+                    name,
+                    if max_floors > 1 { " — 2 floors (use the stairs)" } else { "" }
+                ));
+            }
+            None => toast("Stand next to a house to enter"),
+        }
+    }
+
+    /// Per-frame logic while inside a building: walk the player around the room,
+    /// exit via the door (right edge) and climb stairs (left edge) to the next floor.
+    fn update_interior(&mut self, dt: f32) {
+        let int = match self.interior.as_mut() {
+            Some(i) => i,
+            None => return,
+        };
+        let mut mx = 0.0f32;
+        let mut my = 0.0f32;
+        if self.keys[0] {
+            my -= 1.0;
+        }
+        if self.keys[1] {
+            my += 1.0;
+        }
+        if self.keys[2] {
+            mx -= 1.0;
+        }
+        if self.keys[3] {
+            mx += 1.0;
+        }
+        let len = (mx * mx + my * my).sqrt();
+        if len > 0.0 {
+            mx /= len;
+            my /= len;
+        }
+        let sp = player::PLAYER_SPEED * 0.5 * dt;
+        let mx2 = (int.rw - 0.5).max(0.5);
+        let my2 = (int.rh - 0.5).max(0.5);
+        int.px = (int.px + mx * sp).clamp(-mx2, mx2);
+        int.py = (int.py + my * sp).clamp(-my2, my2);
+        // Door on the right edge -> step out.
+        if (int.px - mx2).abs() < 0.35 && int.py.abs() < 0.5 {
+            self.interior = None;
+            toast("Left the building");
+            return;
+        }
+        // Stairs on the left edge -> climb to the next floor.
+        if int.floor < int.max_floors && (int.px + mx2).abs() < 0.35 && int.py.abs() < 0.5 {
+            int.floor += 1;
+            int.px = 0.0;
+            int.py = 0.0;
+            play_sfx("door");
+            toast(&format!("Climbed to floor {}", int.floor));
+        }
+    }
+
+    /// Build the sprite list for a building interior: a flat floor diamond, wall
+    /// segments around the edges (with a gap for the door and the stairs), plus
+    /// furniture and the player. Terrain is suppressed by passing an empty tile
+    /// list to `build_tile_mesh` while inside.
+    fn interior_sprites(&self, int: &Interior) -> Vec<Sprite> {
+        let bx = int.bx;
+        let by = int.by;
+        let mut v = Vec::new();
+        // Floor.
+        let fw = (int.rw + 0.7) * 32.0;
+        let fh = (int.rh + 0.7) * 16.0;
+        v.push(
+            Sprite::new_center(bx, by, [0.45, 0.33, 0.22], fw, fh, 0.0)
+                .with_style(SpriteStyle::Floor),
+        );
+        let wall_col = [0.55, 0.45, 0.34];
+        let n = 7;
+        // Top & bottom edges.
+        for i in 0..=n {
+            let t = i as f32 / n as f32;
+            let ox = int.rw * (2.0 * t - 1.0);
+            v.push(
+                Sprite::new_center(bx + ox, by - int.rh, wall_col, 18.0, 44.0, 0.0)
+                    .with_style(SpriteStyle::Wall),
+            );
+            v.push(
+                Sprite::new_center(bx + ox, by + int.rh, wall_col, 18.0, 44.0, 0.0)
+                    .with_style(SpriteStyle::Wall),
+            );
+        }
+        // Left & right edges (skip the middle tile: left=stairs, right=door).
+        for i in 1..n {
+            let t = i as f32 / n as f32;
+            let oy = int.rh * (2.0 * t - 1.0);
+            if (t - 0.5).abs() > 0.12 {
+                v.push(
+                    Sprite::new_center(bx - int.rw, by + oy, wall_col, 18.0, 44.0, 0.0)
+                        .with_style(SpriteStyle::Wall),
+                );
+            }
+            if (t - 0.5).abs() > 0.12 {
+                v.push(
+                    Sprite::new_center(bx + int.rw, by + oy, wall_col, 18.0, 44.0, 0.0)
+                        .with_style(SpriteStyle::Wall),
+                );
+            }
+        }
+        // Door opening (right middle): a dark floor diamond.
+        v.push(
+            Sprite::new_center(bx + int.rw, by, [0.22, 0.16, 0.11], 16.0, 36.0, 0.0)
+                .with_style(SpriteStyle::Floor),
+        );
+        // Stairs (left middle) if the building has more floors.
+        if int.floor < int.max_floors {
+            v.push(
+                Sprite::new_center(bx - int.rw, by, [0.55, 0.45, 0.28], 22.0, 24.0, 0.0)
+                    .with_style(SpriteStyle::Floor),
+            );
+            v.push(
+                Sprite::new_center(bx - int.rw, by, [0.7, 0.6, 0.4], 12.0, 18.0, 20.0)
+                    .with_style(SpriteStyle::Wall),
+            );
+        }
+        // Furniture.
+        v.push(
+            Sprite::new_center(bx - int.rw + 0.8, by - int.rh + 0.8, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0)
+                .with_style(SpriteStyle::Bed),
+        );
+        v.push(
+            Sprite::new_center(bx + int.rw - 0.8, by + int.rh - 0.8, [0.6, 0.45, 0.3], 16.0, 18.0, 0.0)
+                .with_style(SpriteStyle::Crate),
+        );
+        v.push(
+            Sprite::new_center(bx + int.rw - 0.8, by - int.rh + 0.8, [0.5, 0.4, 0.3], 14.0, 20.0, 0.0)
+                .with_style(SpriteStyle::Barrel),
+        );
+        v.push(
+            Sprite::new_center(bx - int.rw + 0.8, by + int.rh - 0.8, [0.9, 0.8, 0.4], 10.0, 22.0, 0.0)
+                .with_style(SpriteStyle::Lantern),
+        );
+        // Player (sits on the floor — no lift).
+        v.push(
+            Sprite::new_center(bx + int.px, by + int.py, [0.45, 0.55, 0.85], 16.0, 22.0, 0.0)
+                .with_style(SpriteStyle::Humanoid),
+        );
+        v
     }
 
     /// True when the player is next to a Well (or shoreline) to drink from.
@@ -2122,6 +2355,7 @@ impl App {
         // Villages: a few named hamlets of houses (which double as shelters) plus
         // a sign, an anvil and a well so each is a functional safe haven.
         self.villages.clear();
+        self.npcs.clear();
         let sites = village_sites(seed, 3, |tx, ty| {
             tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
         });
@@ -2140,9 +2374,13 @@ impl App {
             (1, -1),
             (-1, 1),
         ];
+        const FIRST_NAMES: &[&str] = &[
+            "Bryn", "Cael", "Dora", "Edda", "Finn", "Greta", "Hale", "Ivo", "Jora", "Kell",
+            "Lia", "Mira", "Nils", "Orin", "Petra", "Quill", "Rowan", "Sefa", "Tobias", "Ulla",
+        ];
         for (vx, vy) in sites {
             let name = village_name(vx, vy);
-            self.villages.push((vx, vy, name));
+            self.villages.push((vx, vy, name.clone()));
             structures.push(Structure { tx: vx, ty: vy, kind: StructureKind::Sign });
             for (i, (dx, dy)) in ring.iter().enumerate() {
                 let hx = vx + dx;
@@ -2160,6 +2398,29 @@ impl App {
             }
             if tile_at(&self.world, &mut self.chunks, vx - 2, vy).walkable() {
                 structures.push(Structure { tx: vx - 2, ty: vy, kind: StructureKind::Well });
+            }
+            // Populate the hamlet: a guard by the sign, a merchant by the well, and
+            // a few villagers among the houses.
+            let c = (vx as f32 + 0.5, vy as f32 + 0.5);
+            self.npcs.push(Npc::new(NpcKind::Guard, c.0, c.1, format!("Guard of {}", name), (vx as f32, vy as f32)));
+            self.npcs.push(Npc::new(
+                NpcKind::Merchant,
+                vx as f32 - 2.0 + 0.5,
+                vy as f32 + 0.5,
+                format!("{} the Merchant", FIRST_NAMES[(vx.wrapping_abs() as usize) % FIRST_NAMES.len()]),
+                (vx as f32 - 2.0, vy as f32),
+            ));
+            for k in 0..4 {
+                let hx = vx + ring[k].0;
+                let hy = vy + ring[k].1;
+                let nm = FIRST_NAMES[(vx.wrapping_abs() as usize + k as usize * 3) % FIRST_NAMES.len()].to_string();
+                self.npcs.push(Npc::new(
+                    NpcKind::Villager,
+                    hx as f32 + 0.5,
+                    hy as f32 + 0.5,
+                    nm,
+                    (hx as f32, hy as f32),
+                ));
             }
         }
         self.structures = structures;
@@ -2428,6 +2689,13 @@ impl App {
     }
 
     pub fn update(&mut self, dt: f32) {
+        // While inside a building we run a separate, lighter simulation: just the
+        // room walk + stairs. The world keeps ticking for remote players via the
+        // network step below, but local combat/survival is paused indoors.
+        if self.interior.is_some() {
+            self.update_interior(dt);
+            return;
+        }
         self.frames += 1;
         self.hurt_flash = (self.hurt_flash * 0.86).max(0.0);
         self.swing_cd = (self.swing_cd - dt).max(0.0);
@@ -2560,6 +2828,20 @@ impl App {
         let px = self.player.x;
         let py = self.player.y;
         let mut contact: Option<(f32, f32, f32)> = None;
+        // Townsfolk wander; they never interact with combat, just ambiance.
+        for n in self.npcs.iter_mut() {
+            n.update(dt, |tx, ty| {
+                let (tx, ty) = (tx as i32, ty as i32);
+                let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
+                !tile.walkable()
+                    || self
+                        .structures
+                        .iter()
+                        .any(|s| s.tx == tx && s.ty == ty && s.kind.blocks_movement())
+                    || resource_on(tx, ty, tile).is_some_and(|k| k.blocks_movement())
+                        && !self.nodes.is_depleted(tx, ty)
+            });
+        }
         for e in self.enemies.enemies_mut() {
             self.discovered.insert(e.kind);
             if let Some(dmg) = e.update((px, py), dt, |tx, ty| {
@@ -2607,7 +2889,6 @@ impl App {
             let dy = self.player.y - ey;
             self.player.knockback(dx, dy, 0.4);
             play_sfx("hurt");
-            self.shake = self.shake.max(1.0);
             self.hurt_flash = 1.0;
             if !self.player.alive {
                 play_sfx("death");
@@ -2751,7 +3032,6 @@ impl App {
                     }
                     self.player.knockback(dx, dy, 0.25);
                     play_sfx("hurt");
-                    self.shake = self.shake.max(1.0);
                     self.hurt_flash = 1.0;
                     if !self.player.alive {
                         play_sfx("death");
@@ -2853,30 +3133,32 @@ impl App {
         let ka = (dt * 3.0).min(1.0);
         self.cam_lead.0 += (lead_target.0 - self.cam_lead.0) * ka;
         self.cam_lead.1 += (lead_target.1 - self.cam_lead.1) * ka;
-        let focus = render::focus_target(&self.player, (self.viewport[0], self.viewport[1]));
-        let focus = (focus.0 + self.cam_lead.0, focus.1 + self.cam_lead.1);
+        let focus = if let Some(int) = &self.interior {
+            (int.bx + int.px, int.by + int.py)
+        } else {
+            let f = render::focus_target(&self.player, (self.viewport[0], self.viewport[1]));
+            (f.0 + self.cam_lead.0, f.1 + self.cam_lead.1)
+        };
         player::follow_camera(&mut self.camera, focus, dt);
-        // Screen shake: jitter the camera for this frame's render, then restore so
-        // the follow camera doesn't drift. Decays toward 0 over the next frames.
-        let cam_save = self.camera;
-        if self.shake > 0.15 {
-            let n = (self.frames as f32 * 0.7).sin() * 43758.5453;
-            let r1 = n.fract() * 2.0 - 1.0;
-            let r2 = ((self.frames as f32 * 1.3).sin() * 12543.13).fract() * 2.0 - 1.0;
-            self.camera.x += r1 * self.shake;
-            self.camera.y += r2 * self.shake;
-        }
         self.ensure_visible();
         // Multiplayer: send our input and overlay the authoritative server
         // world on top of this frame's local (predictive) simulation.
         self.net_sync();
-        if self.shake > 0.0 {
-            self.shake = (self.shake * 0.85).max(0.0);
-        }
         let sprites = self.sprites();
-        let tiles = &self.visible_cache.4;
+        // While inside a building we draw only the interior sprites (the room) and
+        // suppress terrain by passing an empty tile list.
+        let tiles: &[_] = if self.interior.is_some() {
+            &self.visible_cache.4[..0]
+        } else {
+            &self.visible_cache.4
+        };
         // Movement intensity drives the humanoid walk cycle (0 = standing, 1 = brisk walk).
         let player_walk = (self.speed / 8.0).clamp(0.0, 1.0);
+        let mesh_player = if self.interior.is_some() {
+            None
+        } else {
+            Some(&self.player)
+        };
         self.quad_count = render::build_tile_mesh(
             &self.world,
             &mut self.chunks,
@@ -2884,18 +3166,15 @@ impl App {
             (self.viewport[0], self.viewport[1]),
             tiles,
             &sprites,
-            Some(&self.player),
+            mesh_player,
             &mut self.vertices,
             self.anim_clock,
             player_walk,
         );
-        // The jittered camera was only for this frame's render; restore the real
-        // one so the follow camera doesn't accumulate the shake offset.
-        self.camera = cam_save;
         // The player quad is always emitted while `player` is Some (it is, in
         // the live loop), so scanning the whole vertex buffer every frame to
         // rediscover it is wasted work.
-        self.player_in_mesh = true;
+        self.player_in_mesh = mesh_player.is_some();
     }
 
     /// Synchronize with the multiplayer server: send this frame's input and
@@ -3037,6 +3316,9 @@ impl App {
     /// generation), so we iterate the few visible chunks instead of re-hashing
     /// ~2400 tiles every frame.
     fn sprites(&mut self) -> Vec<Sprite> {
+        if let Some(int) = &self.interior {
+            return self.interior_sprites(int);
+        }
         let mut sprites = Vec::new();
         // Visible chunk range (matches the tile range used by `visible_tiles`).
         let r = ((self.viewport[0] / HALF_W + self.viewport[1] / HALF_H) / 2.0).ceil() as i32 + 2;
@@ -3189,6 +3471,18 @@ impl App {
                 .with_style(SpriteStyle::Generic);
             ps.alpha = a;
             sprites.push(ps);
+        }
+        // Townsfolk: humanoid figures tinted by role, with a walk cycle driven by
+        // their wander state. Guards/merchants stand a touch taller.
+        for n in &self.npcs {
+            let tall = matches!(n.kind, NpcKind::Guard | NpcKind::Merchant);
+            let (hw, hh) = if tall { (8.0, 20.0) } else { (7.5, 17.0) };
+            sprites.push(
+                Sprite::new_center(n.x, n.y, n.kind.color(), hw, hh, 0.0)
+                    .with_style(SpriteStyle::Humanoid)
+                    .with_facing(n.facing)
+                    .with_walk((n.walk * 0.15).min(1.0)),
+            );
         }
         // build-mode ghost preview: a translucent tinted copy of the selected
         // structure on the tile under the cursor — green if it can be placed,

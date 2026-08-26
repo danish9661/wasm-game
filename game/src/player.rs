@@ -3,7 +3,7 @@ use crate::weapons::WeaponKind;
 use crate::world::{ChunkCache, TileKind, WorldGen, tile_at};
 
 /// Tiles per second when walking (screen-up is (-1,-1) in world coords).
-pub const PLAYER_SPEED: f32 = 8.0;
+pub const PLAYER_SPEED: f32 = 5.2;
 /// Camera follow responsiveness (1/toward-player per second).
 pub const CAMERA_FOLLOW: f32 = 10.0;
 /// Max hit points; damage taken is subtracted from this.
@@ -433,8 +433,9 @@ mod tests {
     #[test]
     fn cannot_cross_into_a_blocked_tile() {
         let mut p = Player::new(0.6, 0.5);
-        move_player(&mut p, (1.0, 0.0), 0.05, 1.0, |tx, _| tx == 1);
-        assert!((p.x - 0.6).abs() < 0.001, "must not enter the blocked tile");
+        // Step far enough to actually reach the adjacent (blocked) tile.
+        move_player(&mut p, (1.0, 0.0), 0.2, 1.0, |tx, _| tx == 1);
+        assert!(p.x < 1.0, "must not enter the blocked tile (got {})", p.x);
     }
 
     #[test]

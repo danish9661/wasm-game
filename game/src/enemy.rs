@@ -616,39 +616,40 @@ pub fn astar(
 /// Stateless enemy placement. Swamp tiles carry slimes (1/23); a few more
 /// critters are scattered on other biomes so the world feels alive. Enemies
 /// are session entities with persistent hp (EnemyRegistry).
- pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
-     let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663) ^ 0x51ab_ce0d;
-     // Densities are intentionally sparse: enemies should be a threat you meet
-     // occasionally, not a wall. Roughly one spawner per biome per ~120 tiles.
-     match tile {
-         TileKind::Swamp if h.rem_euclid(61) == 0 => Some(EnemyKind::Slime),
-         TileKind::Swamp if h.rem_euclid(71) == 0 => Some(EnemyKind::Bat),
-         TileKind::Stone if h.rem_euclid(101) == 0 => Some(EnemyKind::Skeleton),
-         TileKind::Grass if h.rem_euclid(97) == 0 => Some(EnemyKind::Goblin),
-         TileKind::Forest if h.rem_euclid(109) == 0 => Some(EnemyKind::Spider),
-         TileKind::Swamp if h.rem_euclid(103) == 0 => Some(EnemyKind::Imp),
-          TileKind::Forest if h.rem_euclid(113) == 0 => Some(EnemyKind::Imp),
-          TileKind::Forest if h.rem_euclid(127) == 0 => Some(EnemyKind::Wolf),
-          TileKind::Forest if h.rem_euclid(149) == 0 => Some(EnemyKind::Archer),
-          TileKind::Grass if h.rem_euclid(131) == 0 => Some(EnemyKind::Archer),
-          TileKind::Tundra if h.rem_euclid(113) == 0 => Some(EnemyKind::Wolf),
-          TileKind::Stone if h.rem_euclid(149) == 0 => Some(EnemyKind::Ogre),
-         TileKind::Stone if h.rem_euclid(167) == 0 => Some(EnemyKind::Wraith),
-         TileKind::Stone if h.rem_euclid(191) == 0 => Some(EnemyKind::Stoneslinger),
-         TileKind::Stone if h.rem_euclid(401) == 0 => Some(EnemyKind::Colossus),
-         TileKind::Stone if h.rem_euclid(307) == 0 => Some(EnemyKind::Brute),
-         TileKind::Stone if h.rem_euclid(211) == 0 => Some(EnemyKind::Stormcaller),
-         TileKind::Tundra if h.rem_euclid(103) == 0 => Some(EnemyKind::Wraith),
-         TileKind::Tundra if h.rem_euclid(97) == 0 => Some(EnemyKind::Goblin),
-          TileKind::Desert if h.rem_euclid(109) == 0 => Some(EnemyKind::Skeleton),
-          TileKind::Desert if h.rem_euclid(149) == 0 => Some(EnemyKind::Spider),
-          TileKind::Jungle if h.rem_euclid(79) == 0 => Some(EnemyKind::Spider),
-          TileKind::Jungle if h.rem_euclid(97) == 0 => Some(EnemyKind::Bat),
-           TileKind::Jungle if h.rem_euclid(139) == 0 => Some(EnemyKind::Imp),
-          TileKind::Swamp if h.rem_euclid(139) == 0 => Some(EnemyKind::Wraith),
-          TileKind::Volcanic if h.rem_euclid(113) == 0 => Some(EnemyKind::Stoneslinger),
-          TileKind::Volcanic if h.rem_euclid(151) == 0 => Some(EnemyKind::Ogre),
-          TileKind::Volcanic if h.rem_euclid(181) == 0 => Some(EnemyKind::Imp),
+  pub fn spawner_on(tx: i32, ty: i32, tile: TileKind) -> Option<EnemyKind> {
+      let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663) ^ 0x51ab_ce0d;
+      // Densities are intentionally sparse: enemies should be a threat you meet
+      // occasionally, not a wall. Moduli are large so spawns are rare (~one per
+      // few hundred tiles per biome).
+      match tile {
+          TileKind::Swamp if h.rem_euclid(113) == 0 => Some(EnemyKind::Slime),
+          TileKind::Swamp if h.rem_euclid(131) == 0 => Some(EnemyKind::Bat),
+          TileKind::Stone if h.rem_euclid(181) == 0 => Some(EnemyKind::Skeleton),
+          TileKind::Grass if h.rem_euclid(173) == 0 => Some(EnemyKind::Goblin),
+          TileKind::Forest if h.rem_euclid(199) == 0 => Some(EnemyKind::Spider),
+          TileKind::Swamp if h.rem_euclid(191) == 0 => Some(EnemyKind::Imp),
+           TileKind::Forest if h.rem_euclid(211) == 0 => Some(EnemyKind::Imp),
+           TileKind::Forest if h.rem_euclid(233) == 0 => Some(EnemyKind::Wolf),
+           TileKind::Forest if h.rem_euclid(277) == 0 => Some(EnemyKind::Archer),
+           TileKind::Grass if h.rem_euclid(241) == 0 => Some(EnemyKind::Archer),
+           TileKind::Tundra if h.rem_euclid(211) == 0 => Some(EnemyKind::Wolf),
+           TileKind::Stone if h.rem_euclid(277) == 0 => Some(EnemyKind::Ogre),
+          TileKind::Stone if h.rem_euclid(311) == 0 => Some(EnemyKind::Wraith),
+          TileKind::Stone if h.rem_euclid(349) == 0 => Some(EnemyKind::Stoneslinger),
+          TileKind::Stone if h.rem_euclid(733) == 0 => Some(EnemyKind::Colossus),
+          TileKind::Stone if h.rem_euclid(563) == 0 => Some(EnemyKind::Brute),
+          TileKind::Stone if h.rem_euclid(389) == 0 => Some(EnemyKind::Stormcaller),
+          TileKind::Tundra if h.rem_euclid(191) == 0 => Some(EnemyKind::Wraith),
+          TileKind::Tundra if h.rem_euclid(173) == 0 => Some(EnemyKind::Goblin),
+           TileKind::Desert if h.rem_euclid(199) == 0 => Some(EnemyKind::Skeleton),
+           TileKind::Desert if h.rem_euclid(277) == 0 => Some(EnemyKind::Spider),
+           TileKind::Jungle if h.rem_euclid(151) == 0 => Some(EnemyKind::Spider),
+           TileKind::Jungle if h.rem_euclid(181) == 0 => Some(EnemyKind::Bat),
+            TileKind::Jungle if h.rem_euclid(257) == 0 => Some(EnemyKind::Imp),
+           TileKind::Swamp if h.rem_euclid(257) == 0 => Some(EnemyKind::Wraith),
+           TileKind::Volcanic if h.rem_euclid(211) == 0 => Some(EnemyKind::Stoneslinger),
+           TileKind::Volcanic if h.rem_euclid(283) == 0 => Some(EnemyKind::Ogre),
+           TileKind::Volcanic if h.rem_euclid(337) == 0 => Some(EnemyKind::Imp),
           _ => None,
      }
  }

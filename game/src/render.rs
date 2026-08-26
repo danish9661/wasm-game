@@ -84,6 +84,9 @@ pub enum SpriteStyle {
     Colossus,
     /// Lupine melee swarmer: a low, fast four-legged silhouette.
     Wolf,
+    /// Flat ground diamond drawn at the sprite's base — used for building interiors
+    /// (floors) so a room reads as an enclosed space rather than open terrain.
+    Floor,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -813,6 +816,9 @@ fn push_styled_sprite(
         SpriteStyle::House => rasterize(&house::build(0, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Cabin => rasterize(&house::build(1, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Hut => rasterize(&house::build(2, cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Floor => {
+            rasterize(&[Part::diamond(cx, cy, hw.max(1.0), hh.max(1.0), 0.0, color, alpha, false)], out)
+        }
     }
 }
 
