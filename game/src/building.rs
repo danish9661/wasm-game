@@ -312,6 +312,9 @@ pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
         TileKind::Jungle if h.rem_euclid(113) == 0 => Some(StructureKind::Vines),
         TileKind::Jungle if h.rem_euclid(149) == 0 => Some(StructureKind::Statue),
         TileKind::Jungle if h.rem_euclid(89) == 0 => Some(StructureKind::RockPile),
+        TileKind::Volcanic if h.rem_euclid(103) == 0 => Some(StructureKind::Pillar),
+        TileKind::Volcanic if h.rem_euclid(127) == 0 => Some(StructureKind::Rubble),
+        TileKind::Volcanic if h.rem_euclid(151) == 0 => Some(StructureKind::RockPile),
         _ => None,
     }
 }

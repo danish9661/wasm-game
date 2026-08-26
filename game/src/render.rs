@@ -683,6 +683,18 @@ fn tile_detail(out: &mut Vec<f32>, kind: TileKind, sx: f32, sy: f32, z: f32, tx:
                 parts.push(Part::vquad(cx + ox, cy - 8.0, 0.8, 16.0, [0.12, 0.12, 0.14], 0.6, false));
             }
         }
+        TileKind::Volcanic => {
+            // Cracked basalt with a glowing lava seam that flickers.
+            let n = 2 + (h % 2);
+            for i in 0..n {
+                let r1 = (((h >> (i * 5)) & 31) as f32) / 31.0;
+                let ox = (r1 - 0.5) * (HALF_W * 1.1);
+                parts.push(Part::vquad(cx + ox, cy - 9.0, 0.7, 18.0, [0.10, 0.09, 0.10], 0.7, false));
+            }
+            let gx = cx + ((h % 21) as f32 - 10.0);
+            let flick = 0.6 + 0.4 * (anim_time * 3.0 + (h % 7) as f32).sin().max(0.0);
+            parts.push(Part::diamond(gx, cy - 2.0, 2.4, 1.4, 0.0, [1.0 * flick, 0.4 * flick, 0.08], 1.0, false));
+        }
         _ => {}
     }
     if !parts.is_empty() {

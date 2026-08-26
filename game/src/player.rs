@@ -222,7 +222,10 @@ impl Player {
         self.dodge_timer = (self.dodge_timer - dt).max(0.0);
         self.dodge_cd = (self.dodge_cd - dt).max(0.0);
         let cold = ((temperature).min(0.0) / -10.0).max(0.0);
-        let harsh = matches!(biome, TileKind::Tundra | TileKind::Desert | TileKind::Jungle);
+        let harsh = matches!(
+            biome,
+            TileKind::Tundra | TileKind::Desert | TileKind::Jungle | TileKind::Volcanic
+        );
         let mut drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
         if wet {
             drain += 0.04;
@@ -243,7 +246,7 @@ impl Player {
         if wet {
             tdrain += 0.08;
         }
-        if matches!(biome, TileKind::Desert | TileKind::Jungle) {
+        if matches!(biome, TileKind::Desert | TileKind::Jungle | TileKind::Volcanic) {
             tdrain += 0.18;
         } else if matches!(biome, TileKind::Tundra) {
             tdrain += 0.04;

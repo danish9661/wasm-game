@@ -20,6 +20,7 @@
   </div>
 
   <div id="hud">
+    <canvas id="minimap" width="132" height="132" style="position:fixed;right:10px;bottom:10px;border:2px solid #0009;border-radius:6px;background:#000a;image-rendering:pixelated;z-index:30;"></canvas>
     <div class="hud-row">
       <div class="bar"><span class="bar-label">HP</span><div class="bar-track"><div class="bar-fill" id="bar-hp"></div></div><span class="bar-num" id="num-hp">100</span></div>
       <div class="bar"><span class="bar-label">HUNGER</span><div class="bar-track"><div class="bar-fill" id="bar-hunger"></div></div><span class="bar-num" id="num-hunger">100</span></div>
@@ -359,6 +360,8 @@
         case 'dodge': tone(520, 0.12, 'sine', 0.10); noise(0.10, 0.06, 1800); break;
         case 'salve': tone(700, 0.10, 'sine', 0.12); tone(900, 0.12, 'sine', 0.10); break;
         case 'craft': tone(440, 0.08, 'square', 0.12); tone(660, 0.10, 'square', 0.12); tone(880, 0.12, 'square', 0.10); break;
+        case 'drink': tone(360, 0.07, 'sine', 0.12); tone(280, 0.08, 'sine', 0.12); tone(220, 0.07, 'sine', 0.10); break;
+        case 'block': tone(1200, 0.06, 'square', 0.16); noise(0.06, 0.12, 3000); break;
         case 'codex': tone(880, 0.08, 'sine', 0.12); tone(1175, 0.10, 'sine', 0.10); break;
         case 'step': noise(0.06, 0.05, 360); break;
         case 'plant': tone(330, 0.08, 'triangle', 0.10); noise(0.06, 0.08, 1200); break;

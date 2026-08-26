@@ -23,6 +23,9 @@ pub enum TileKind {
     /// Lush, humid lowland forest — hot but vegetated. A new, distinct biome
     /// with its own palette, denser foliage, and its own critters.
     Jungle,
+    /// Scorched volcanic highlands: cracked basalt and lava seams. A hostile
+    /// biome that slowly burns the player unless they keep moving or shelter.
+    Volcanic,
 }
 
 impl TileKind {
@@ -40,6 +43,7 @@ impl TileKind {
             TileKind::Tundra => [0.66, 0.70, 0.62],
             TileKind::Desert => [0.91, 0.80, 0.50],
             TileKind::Jungle => [0.16, 0.40, 0.18],
+            TileKind::Volcanic => [0.22, 0.10, 0.09],
         }
     }
 
@@ -250,7 +254,13 @@ impl WorldGen {
                 TileKind::Sand
             }
         } else if elevation > 0.45 {
-            TileKind::Stone
+            // Very hot, arid peaks become scorched volcanic highlands; temperate
+            // peaks stay as normal Stone.
+            if temperature > 0.45 && moisture < 0.10 {
+                TileKind::Volcanic
+            } else {
+                TileKind::Stone
+            }
         } else if temperature < -0.45 {
             TileKind::Snow
         } else if temperature < -0.25 {

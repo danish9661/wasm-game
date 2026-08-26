@@ -398,9 +398,14 @@ fn step_player(
     np.shoot_cd = (np.shoot_cd - dt).max(0.0);
 
     // Sync the equipped weapon from the client so the sim uses the player's real
-    // damage/reach rather than flat constants.
-    np.player.weapon = WeaponKind::from_u8(np.input.weapon);
-    np.player.unlocked = np.input.weapon_unlocked;
+    // damage/reach rather than flat constants. Only trust a weapon the client has
+    // actually unlocked (bitmask) — stops a tampered client from wielding gear
+    // it shouldn't have in co-op.
+    let w = WeaponKind::from_u8(np.input.weapon);
+    if (np.input.weapon_unlocked & (1u8 << (w as u8))) != 0 {
+        np.player.weapon = w;
+        np.player.unlocked = np.input.weapon_unlocked;
+    }
 
     if !np.player.alive {
         np.respawn_timer -= dt;

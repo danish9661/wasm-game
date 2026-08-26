@@ -757,6 +757,9 @@ pub struct App {
     /// Remaining cooldown on the attack action (driven by the equipped weapon's
     /// cadence), so heavier weapons swing slower.
     swing_cd: f32,
+    /// Brief hit-stop timer (seconds): while > 0 the simulation dt is scaled down
+    /// to a near-freeze so hits read with impact. Cosmetic only.
+    hitstop: f32,
     vertices: Vec<f32>,
     quad_count: u32,
     frames: u64,
@@ -973,6 +976,8 @@ impl App {
             TileKind::Stone,
             TileKind::Tundra,
             TileKind::Desert,
+            TileKind::Jungle,
+            TileKind::Volcanic,
         ]
         .iter()
         .map(|k| {
@@ -1268,6 +1273,7 @@ impl App {
             debug_attacks: 0,
             debug_shots: 0,
             swing_cd: 0.0,
+            hitstop: 0.0,
             vertices: Vec::with_capacity(64 * 1024 * 6),
             quad_count: 0,
             frames: 0,
@@ -1531,7 +1537,29 @@ impl App {
         let k = match target {
             Some(&k) => k,
             None => {
-                toast("Every weapon already forged");
+                // All weapons forged — the anvil now lets you forge Iron Plate,
+                // which permanently reduces incoming damage by 25%.
+                if self.craft_armor > 0.0 {
+                    toast("Everything is already forged");
+                    return;
+                }
+                let (w, s, h) = (2u32, 5u32, 3u32);
+                if self.inventory.count(ItemKind::Wood) < w
+                    || self.inventory.count(ItemKind::Stone) < s
+                    || self.inventory.count(ItemKind::Herb) < h
+                {
+                    toast(&format!(
+                        "Need {} wood, {} stone, {} herb for Iron Plate",
+                        w, s, h
+                    ));
+                    return;
+                }
+                self.inventory.remove(ItemKind::Wood, w);
+                self.inventory.remove(ItemKind::Stone, s);
+                self.inventory.remove(ItemKind::Herb, h);
+                self.craft_armor = 0.25;
+                play_sfx("craft");
+                toast("Forged Iron Plate! (-25% damage)");
                 return;
             }
         };
@@ -1694,17 +1722,20 @@ impl App {
             self.debug_swing_hits += hits.len() as u32;
             let mut sparks = Vec::new();
             for e in &mut hits {
-                e.take_damage(w.damage());
+                // Weak-point bonus: the Bestiary tells you which weapon a foe fears.
+                let dmg = w.damage() * e.kind.weakness_to(w);
+                e.take_damage(dmg);
                 // Knock the struck enemy back along the player->enemy vector.
                 let dx = e.x - self.player.x;
                 let dy = e.y - self.player.y;
                 let len = (dx * dx + dy * dy).sqrt().max(0.01);
-                e.x += dx / len * 0.2;
-                e.y += dy / len * 0.2;
+                e.x += dx / len * 0.35;
+                e.y += dy / len * 0.35;
                 sparks.push((e.x, e.y));
             }
             if !hits.is_empty() {
                 play_sfx("hit");
+                self.hitstop = 0.06;
             }
             drop(hits);
             for (x, y) in sparks {
@@ -2302,6 +2333,15 @@ impl App {
         self.frames += 1;
         self.hurt_flash = (self.hurt_flash * 0.86).max(0.0);
         self.swing_cd = (self.swing_cd - dt).max(0.0);
+        // Hit-stop: briefly scale the simulation dt toward zero so landed blows
+        // land with a satisfying snap. Rendering continues at full rate.
+        let real_dt = dt;
+        let dt = if self.hitstop > 0.0 {
+            self.hitstop = (self.hitstop - real_dt).max(0.0);
+            real_dt * 0.12
+        } else {
+            real_dt
+        };
 
         // Adaptive resolution: keep fps high on backends with a slow present /
         // readback path (e.g. default Linux Chrome without Vulkan). We measure
@@ -2447,6 +2487,12 @@ impl App {
             let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
             let dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
             self.player.take_damage(dmg);
+            if dmg > 0.5 {
+                self.hitstop = 0.06;
+                if self.player.blocking {
+                    play_sfx("block");
+                }
+            }
             // Knock the player back away from the attacker.
             let dx = self.player.x - ex;
             let dy = self.player.y - ey;
@@ -2576,6 +2622,7 @@ impl App {
                         e.take_damage(a.damage);
                         hit_pos.push((e.x, e.y));
                         play_sfx("hit");
+                        self.hitstop = 0.06;
                         return false;
                     }
                 }
@@ -2587,6 +2634,12 @@ impl App {
                     let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
                     let dmg = a.damage * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
                     self.player.take_damage(dmg);
+                    if dmg > 0.5 {
+                        self.hitstop = 0.06;
+                        if self.player.blocking {
+                            play_sfx("block");
+                        }
+                    }
                     self.player.knockback(dx, dy, 0.25);
                     play_sfx("hurt");
                     self.shake = self.shake.max(1.0);
@@ -2642,6 +2695,7 @@ impl App {
             TileKind::Snow => 0.7,
             TileKind::Swamp => 0.85,
             TileKind::Sand => 0.9,
+            TileKind::Volcanic => 0.82,
             _ => 1.0,
         };
         // During a dodge roll, move in the dodge direction at boosted speed.

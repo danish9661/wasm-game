@@ -1,5 +1,6 @@
 use crate::items::ItemKind;
 use crate::render::{Sprite, SpriteStyle};
+use crate::weapons::WeaponKind;
 use crate::world::TileKind;
 use serde::{Deserialize, Serialize};
 use std::collections::{BinaryHeap, HashMap};
@@ -131,6 +132,25 @@ impl EnemyKind {
     /// True for the two Crown Fragment guardians (never respawn).
     pub fn is_boss(self) -> bool {
         matches!(self, EnemyKind::Boss | EnemyKind::Colossus)
+    }
+
+    /// Damage multiplier for a given weapon — certain weapons are strong against
+    /// certain foes (the Bestiary calls these out). 1.0 means no bonus.
+    pub fn weakness_to(self, w: WeaponKind) -> f32 {
+        match (self, w) {
+            (EnemyKind::Wraith | EnemyKind::Stormcaller, WeaponKind::Bow) => 1.5,
+            (
+                EnemyKind::Skeleton
+                | EnemyKind::Stoneslinger
+                | EnemyKind::Ogre
+                | EnemyKind::Colossus,
+                WeaponKind::Hammer,
+            ) => 1.5,
+            (EnemyKind::Goblin, WeaponKind::Sword) => 1.5,
+            (EnemyKind::Wolf, WeaponKind::Spear) => 1.5,
+            (EnemyKind::Slime | EnemyKind::Spider | EnemyKind::Imp, WeaponKind::Axe) => 1.5,
+            _ => 1.0,
+        }
     }
 
     /// What this enemy drops on death (used by the Bestiary / Codex too).
@@ -624,9 +644,12 @@ pub fn astar(
           TileKind::Desert if h.rem_euclid(149) == 0 => Some(EnemyKind::Spider),
           TileKind::Jungle if h.rem_euclid(79) == 0 => Some(EnemyKind::Spider),
           TileKind::Jungle if h.rem_euclid(97) == 0 => Some(EnemyKind::Bat),
-          TileKind::Jungle if h.rem_euclid(139) == 0 => Some(EnemyKind::Imp),
+           TileKind::Jungle if h.rem_euclid(139) == 0 => Some(EnemyKind::Imp),
           TileKind::Swamp if h.rem_euclid(139) == 0 => Some(EnemyKind::Wraith),
-         _ => None,
+          TileKind::Volcanic if h.rem_euclid(113) == 0 => Some(EnemyKind::Stoneslinger),
+          TileKind::Volcanic if h.rem_euclid(151) == 0 => Some(EnemyKind::Ogre),
+          TileKind::Volcanic if h.rem_euclid(181) == 0 => Some(EnemyKind::Imp),
+          _ => None,
      }
  }
 
