@@ -130,6 +130,15 @@ pub fn get_coop_tags() -> String {
     })
 }
 
+/// Cheap per-frame portal-transition status (loading overlay + build state).
+#[wasm_bindgen]
+pub fn get_town_status() -> String {
+    APP.with(|cell| match cell.borrow().as_ref() {
+        Some(app) => app.town_status(),
+        None => String::from("{\"transition\":false,\"build\":false,\"name\":\"\",\"progress\":1.0}"),
+    })
+}
+
 /// Set the cursor position in internal canvas pixels (drives the build ghost).
 #[wasm_bindgen]
 pub fn set_mouse(x: f64, y: f64) {

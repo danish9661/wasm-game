@@ -77,6 +77,15 @@ impl EnemyKind {
         matches!(self, EnemyKind::Stoneslinger | EnemyKind::Stormcaller | EnemyKind::Archer)
     }
 
+    /// True for undead / creatures-of-the-night that shun the sun: they only
+    /// prowl after dark and take burning damage while exposed to daylight.
+    pub fn nocturnal(self) -> bool {
+        matches!(
+            self,
+            EnemyKind::Skeleton | EnemyKind::Wraith | EnemyKind::Bat | EnemyKind::Spider | EnemyKind::Imp
+        )
+    }
+
     /// Range (tiles) at which a ranged enemy will fire.
     pub fn shoot_range(self) -> f32 {
         match self {
@@ -349,6 +358,11 @@ pub struct Enemy {
     /// Elite multiplier: scales max HP, contact damage and XP reward. 1.0 for
     /// ordinary spawner enemies; >1 for roaming mini-bosses.
     pub elite: f32,
+    /// True for undead / night creatures. They avoid daylight and burn while
+    /// exposed to it (see `daylight_burn`). Derived from the kind at spawn.
+    pub nocturnal: bool,
+    /// Seconds remaining of the sunlight "burning" flash, for rendering tint.
+    pub burn: f32,
 }
 
 impl Enemy {
@@ -372,6 +386,8 @@ impl Enemy {
             pending_shot: None,
             enraged: false,
             elite: 1.0,
+            nocturnal: kind.nocturnal(),
+            burn: 0.0,
         }
     }
 
@@ -399,6 +415,27 @@ impl Enemy {
         true
     }
 
+    /// Sunlight damage for nocturnal enemies. `daylight` is the day/night
+    /// factor (0 = night, 1 = full noon). Above a threshold the enemy burns,
+    /// losing HP each second and flashing a scorch tint. No-op for day creatures
+    /// or at night.
+    pub fn daylight_burn(&mut self, dt: f32, daylight: f32) {
+        if !self.nocturnal || !self.alive() {
+            return;
+        }
+        const BURN_THRESHOLD: f32 = 0.55;
+        if daylight <= BURN_THRESHOLD {
+            return;
+        }
+        let intensity = (daylight - BURN_THRESHOLD) / (1.0 - BURN_THRESHOLD);
+        let dmg = 9.0 * intensity * dt;
+        self.hp -= dmg;
+        if self.hp <= 0.0 {
+            self.hp = 0.0;
+        }
+        self.burn = 1.0;
+    }
+
     /// Drops from a dead enemy.
     pub fn drops(&self) -> Vec<ItemKind> {
         self.kind.drops()
@@ -415,6 +452,7 @@ impl Enemy {
     ) -> Option<f32> {
         self.attack_timer = (self.attack_timer - dt).max(0.0);
         self.flash = (self.flash - dt * 5.0).max(0.0);
+        self.burn = (self.burn - dt * 2.5).max(0.0);
         self.shoot_timer = (self.shoot_timer - dt).max(0.0);
         self.charge_t = (self.charge_t - dt).max(0.0);
         self.charge_cd = (self.charge_cd - dt).max(0.0);

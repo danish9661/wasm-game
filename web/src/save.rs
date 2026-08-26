@@ -69,4 +69,12 @@ pub struct SaveState {
     /// Enchantment level of the equipped weapon (mirrors `Player::enchant`).
     #[serde(default)]
     pub enchant: u8,
+    /// Persisted town layout (tile + kind). Captured when first generated so the
+    /// city is rebuilt identically instead of re-rolled on every load.
+    #[serde(default)]
+    pub town: Option<Vec<(i32, i32, game::building::StructureKind)>>,
+    /// Whether the player has already visited the town (its creation animation
+    /// only plays on the very first arrival).
+    #[serde(default)]
+    pub town_visited: bool,
 }

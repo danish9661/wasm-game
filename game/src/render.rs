@@ -71,6 +71,8 @@ pub enum SpriteStyle {
     Reed,
     Rubble,
     RuinTower,
+    /// Arcane village portal that teleports the player to the walled town.
+    Portal,
     // ---- Default world buildings (decor, scattered by worldgen) -----------
     House,
     Cabin,
@@ -734,7 +736,7 @@ fn push_styled_sprite(
     use crate::elements::{
         altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
         crate_box, crystal, fence, fern, flower,         grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
-        lilypad, mushroom, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
+        lilypad, mushroom, ore, pillar, portal, reed, rock, rock_pile, rubble, ruin_tower, sign,
         slime, spider, statue, torch, totem, tree, turret, vines, wall, well, wraith,
         colossus, spike, farm_plot, house,
     };
@@ -863,6 +865,7 @@ fn push_styled_sprite(
         SpriteStyle::Reed => rasterize(&reed::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Rubble => rasterize(&rubble::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::RuinTower => rasterize(&ruin_tower::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Portal => rasterize(&portal::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::House => rasterize(&house::build(0, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Cabin => rasterize(&house::build(1, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Hut => rasterize(&house::build(2, cx, cy, color, alpha, facing, anim_time), out),

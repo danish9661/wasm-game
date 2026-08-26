@@ -61,6 +61,9 @@ pub enum StructureKind {
     // Dungeon entrance: a stone archway you can step into (Enter) to explore a
     // trapped vault. World-gen only; not buildable.
     Dungeon,
+    // Arcane portal: placed in villages, steps you through to the walled town.
+    // World-gen only; not buildable. Emits a soft glow.
+    Portal,
     // Old-world town decor: abandoned vehicles and a railway crossing.
     Car,
     Train,
@@ -128,6 +131,7 @@ impl StructureKind {
             StructureKind::Train => [0.32, 0.36, 0.44],
             StructureKind::Rail => [0.34, 0.32, 0.28],
             StructureKind::Dungeon => [0.55, 0.50, 0.46],
+            StructureKind::Portal => [0.55, 0.85, 1.0],
         }
     }
 
@@ -153,6 +157,7 @@ impl StructureKind {
                 | StructureKind::Lantern
                 | StructureKind::Brazier
                 | StructureKind::HealingTotem
+                | StructureKind::Portal
         )
     }
 
@@ -183,6 +188,7 @@ impl StructureKind {
                 | StructureKind::Car
                 | StructureKind::Train
                 | StructureKind::Rail
+                | StructureKind::Portal
         )
     }
 
@@ -233,6 +239,7 @@ impl StructureKind {
             StructureKind::Train => (20.0, 16.0, 4.0),
             StructureKind::Rail => (16.0, 6.0, 0.0),
             StructureKind::Dungeon => (14.0, 20.0, 2.0),
+            StructureKind::Portal => (13.0, 26.0, 2.0),
         };
         let style = match self {
             StructureKind::Campfire => SpriteStyle::Campfire,
@@ -272,6 +279,7 @@ impl StructureKind {
             StructureKind::Train => SpriteStyle::Train,
             StructureKind::Rail => SpriteStyle::Rail,
             StructureKind::Dungeon => SpriteStyle::RuinTower,
+            StructureKind::Portal => SpriteStyle::Portal,
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }

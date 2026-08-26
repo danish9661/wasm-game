@@ -88,6 +88,18 @@ fn toast(msg: &str) {
 /// Campfire point light slots (each = position/intensity vec4 + color vec4).
 const MAX_LIGHTS: usize = 8;
 const LIGHT_FLOATS: usize = MAX_LIGHTS * 8;
+/// Seconds the "the city is being built" loading overlay shows after using the
+/// village portal, before the player arrives in town.
+const TOWN_LOAD_TIME: f32 = 2.6;
+/// Seconds the in-world town build-in animation takes on first arrival.
+const TOWN_BUILD_TIME: f32 = 2.8;
+
+/// Deterministic 0..1 stagger for the town build-in: each tile reveals at a
+/// different moment so the city appears to rise into place.
+fn portal_reveal_at(tx: i32, ty: i32) -> f32 {
+    let h = ((tx as u32).wrapping_mul(73856093) ^ (ty as u32).wrapping_mul(19349663)) % 100;
+    (h as f32) / 100.0
+}
 
 fn kind_name(kind: ResourceKind) -> &'static str {
     match kind {
@@ -143,6 +155,7 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::Car => "Car",
         StructureKind::Train => "Train",
         StructureKind::Rail => "Rail",
+        StructureKind::Portal => "Portal",
     }
 }
 
@@ -801,6 +814,21 @@ pub struct App {
     /// The single city per world (walled, with a railway + old vehicles).
     towns: Vec<(i32, i32, String)>,
     visited_towns: std::collections::HashSet<(i32, i32)>,
+    /// Village portal position (world coords). Stepping through it travels to the
+    /// town. None until `reset_world` places it in the first village.
+    portal: Option<(f32, f32)>,
+    /// Loading-overlay timer (seconds) while the town is "being built" in the
+    /// background after using the portal. > 0 means the transition is playing.
+    town_transition: f32,
+    /// In-world reveal progress (0..1) for the town's buildings the first time the
+    /// player arrives. Ramps 0→1 so structures pop into place.
+    town_build_t: f32,
+    /// Town layout (tx, ty, kind) captured when first generated and persisted so
+    /// re-visiting never re-rolls a different city.
+    town_structures: Vec<(i32, i32, StructureKind)>,
+    /// True once the player has visited the town (so its creation animation only
+    /// plays on the very first arrival).
+    town_visited: bool,
     /// Villagers, guards and merchants wandering the hamlets. Cosmetic/local.
     npcs: Vec<Npc>,
     /// Active building interior (None = outside). Entering a house paints a
@@ -960,6 +988,22 @@ impl App {
         .to_string()
     }
 
+    /// Cheap per-frame portal-transition status for the HUD loading overlay
+    /// (driven every frame so the "city is being built" bar is smooth).
+    pub fn town_status(&self) -> String {
+        serde_json::json!({
+            "transition": self.town_transition > 0.0,
+            "build": self.town_build_t < 1.0,
+            "name": self.towns.first().map(|t| t.2.clone()).unwrap_or_default(),
+            "progress": if self.town_transition > 0.0 {
+                1.0 - self.town_transition / TOWN_LOAD_TIME
+            } else {
+                1.0
+            },
+        })
+        .to_string()
+    }
+
     pub fn ui_data(&self) -> String {
         let recipes: Vec<_> = BUILDABLE
             .iter()
@@ -1021,6 +1065,17 @@ impl App {
             "nearAnvil": self.near_anvil(),
             "salves": self.salves,
             "crafts": crafts,
+            // Portal transition: tells the HUD to show the "city is being built"
+            // loading overlay and (once arrived) that the build-in animation is
+            // still playing.
+            "townTransition": self.town_transition > 0.0,
+            "townBuild": self.town_build_t < 1.0,
+            "townName": self.towns.first().map(|t| t.2.clone()).unwrap_or_default(),
+            "townProgress": if self.town_transition > 0.0 {
+                1.0 - self.town_transition / TOWN_LOAD_TIME
+            } else {
+                1.0
+            },
         })
         .to_string()
     }
@@ -1410,6 +1465,11 @@ impl App {
             visited_villages: std::collections::HashSet::new(),
             towns: Vec::new(),
             visited_towns: std::collections::HashSet::new(),
+            portal: None,
+            town_transition: 0.0,
+            town_build_t: 1.0,
+            town_structures: Vec::new(),
+            town_visited: false,
             npcs: Vec::new(),
             interior: None,
             opened_chests: std::collections::HashSet::new(),
@@ -2414,8 +2474,39 @@ impl App {
         }
     }
 
+    /// Begin the portal trip to the town: start the loading overlay; actual
+    /// teleport + (first-time) build animation happen when the timer elapses.
+    fn use_portal(&mut self) {
+        if self.town_transition > 0.0 {
+            return;
+        }
+        if self.towns.is_empty() {
+            return;
+        }
+        self.town_transition = TOWN_LOAD_TIME;
+        play_sfx("door");
+        toast("The portal hums — travelling to the city…");
+    }
+
+    /// True if `(tx, ty)` lies within the walled town's footprint (so its
+    /// buildings can be gated by the build-in animation).
+    fn is_town_tile(&self, tx: i32, ty: i32) -> bool {
+        self.towns
+            .iter()
+            .any(|&(cx, cy, _)| (tx - cx).abs() <= 14 && (ty - cy).abs() <= 14)
+    }
+
     fn harvest(&mut self) {
         self.net_harvest = true;
+        // Village portal: standing on the gate and pressing E whisks you to the
+        // walled town, playing a "the city is being built" animation on arrival.
+        if let Some((px, py)) = self.portal {
+            let d = (self.player.x - px).hypot(self.player.y - py);
+            if d < 1.8 {
+                self.use_portal();
+                return;
+            }
+        }
         // Fast travel: standing on a settlement signpost cycles to the next
         // settlement (villages + towns together), so you can traverse the world
         // without walking the long distances.
@@ -2749,6 +2840,19 @@ impl App {
             }
         }
 
+        // Village portal: a glowing arcane gate in the first hamlet that travels
+        // to the walled town. Placed just south of the sign on walkable ground.
+        if let Some((fvx, fvy)) = first_village {
+            let spots = [(fvx, fvy - 2), (fvx, fvy + 2), (fvx + 2, fvy), (fvx - 2, fvy)];
+            if let Some(&(px, py)) = spots
+                .iter()
+                .find(|&&(x, y)| tile_at(&self.world, &mut self.chunks, x, y).walkable())
+            {
+                structures.push(Structure { tx: px, ty: py, kind: StructureKind::Portal });
+                self.portal = Some((px as f32 + 0.5, py as f32 + 0.5));
+            }
+        }
+
         // ---------------------------------------------------------------------
         // Town / city: a walled settlement far from spawn, crossed by an old
         // railway with a parked train and a few abandoned cars. Villages are left
@@ -2850,6 +2954,19 @@ impl App {
                 (hx as f32, hy as f32),
             ));
         }
+
+        // Record the town's generated layout so it can be persisted and revealed
+        // progressively (the "town is being built" animation) on first arrival.
+        let r = 14;
+        self.town_structures = structures
+            .iter()
+            .filter(|s| (s.tx - tx0).abs() <= r && (s.ty - ty0).abs() <= r)
+            .map(|s| (s.tx, s.ty, s.kind))
+            .collect();
+        // A freshly rolled world hasn't been visited yet, so the creation animation
+        // will play the first time the player steps through the portal.
+        self.town_visited = false;
+        self.town_build_t = 1.0;
 
         // Always start the player inside a settlement (a village first, else the town).
         let start = first_village.unwrap_or((tx0, ty0));
@@ -3012,6 +3129,12 @@ impl App {
             weapon: self.player.weapon.as_u8(),
             weapon_unlocked: self.player.unlocked,
             enchant: self.player.enchant,
+            town: if self.town_structures.is_empty() {
+                None
+            } else {
+                Some(self.town_structures.clone())
+            },
+            town_visited: self.town_visited,
         }
     }
 
@@ -3071,6 +3194,12 @@ impl App {
         self.player.weapon = game::weapons::WeaponKind::from_u8(s.weapon);
         self.player.unlocked = s.weapon_unlocked;
         self.player.enchant = s.enchant;
+        // Restore the persisted town so it cannot be re-rolled into something new:
+        // the captured layout (and the "already visited" flag) survive the reload.
+        self.town_visited = s.town_visited;
+        if let Some(town) = &s.town {
+            self.town_structures = town.clone();
+        }
         self.respawn_timer = 0.0;
         self.arrows = Vec::new();
         self.nodes = NodeRegistry::new();
@@ -3203,6 +3332,30 @@ impl App {
         self.ensure_visible();
         self.time_of_day = (self.time_of_day + dt / DAY_LENGTH).rem_euclid(1.0);
         self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
+
+        // Portal trip: count down the "city is being built" loading overlay, then
+        // arrive (teleport) and, on the first visit, begin the in-world build-in.
+        if self.town_transition > 0.0 {
+            self.town_transition = (self.town_transition - dt).max(0.0);
+            if self.town_transition == 0.0 {
+                if let Some(&(tx0, ty0, ref nm)) = self.towns.first() {
+                    self.player.x = tx0 as f32 + 0.5;
+                    self.player.y = ty0 as f32 + 0.5;
+                    self.spawn_point = (self.player.x, self.player.y);
+                    self.interior = None;
+                    if !self.town_visited {
+                        self.town_build_t = 0.0;
+                        self.town_visited = true;
+                    }
+                    play_sfx("door");
+                    toast(&format!("Arrived at {}", nm));
+                }
+            }
+        }
+        // In-world town build-in animation (first arrival only).
+        if self.town_build_t < 1.0 {
+            self.town_build_t = (self.town_build_t + dt / TOWN_BUILD_TIME).min(1.0);
+        }
 
         // Weather: periodically reconsider rain. Storms last ~20-40s; clear
         // spells ~25-45s. Cheap deterministic-ish roll from the clock.
@@ -3337,11 +3490,16 @@ impl App {
         for &(tx, ty) in &self.visible_cache.4 {
             let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
             if let Some(kind) = spawner_on(tx, ty, tile) {
+                // Nocturnal enemies only emerge after dark.
+                if kind.nocturnal() && daylight_at(self.time_of_day) > 0.5 {
+                    continue;
+                }
                 self.enemies.get(tx, ty, kind, dt);
             }
         }
         let px = self.player.x;
         let py = self.player.y;
+        let day = daylight_at(self.time_of_day);
         let mut contact: Option<(f32, f32, f32)> = None;
         // Townsfolk wander; they never interact with combat, just ambiance.
         for n in self.npcs.iter_mut() {
@@ -3371,6 +3529,8 @@ impl App {
             }) {
                 contact = Some((e.x, e.y, dmg));
             }
+            // Nocturnal undead burn in daylight and should not be prowling by day.
+            e.daylight_burn(dt, day);
             // Ranged enemies fire: turn the pending shot into an enemy arrow.
             if let Some((dx, dy)) = e.pending_shot.take() {
                 self.arrows.push(Arrow::enemy(e.x, e.y, dx, dy));
@@ -3855,6 +4015,15 @@ impl App {
             }
         }
         for s in &self.structures {
+            // Town build-in: while the in-world reveal is still ramping, hold back
+            // (tx,ty) buildings whose staggered threshold hasn't been reached, so the
+            // city appears to rise into place on first arrival.
+            if self.town_build_t < 1.0 && self.is_town_tile(s.tx, s.ty) {
+                let reveal = portal_reveal_at(s.tx, s.ty);
+                if self.town_build_t < reveal {
+                    continue;
+                }
+            }
             if s.kind == StructureKind::Chest && self.opened_chests.contains(&(s.tx, s.ty)) {
                 sprites.push(Sprite::new(s.tx, s.ty, [0.40, 0.26, 0.10], 16.0, 12.0, 6.0));
             } else {
@@ -3880,6 +4049,15 @@ impl App {
                     sp.color[0] + (1.0 - sp.color[0]) * 0.6 * t,
                     sp.color[1] * (1.0 - 0.45 * t),
                     sp.color[2] * (1.0 - 0.45 * t),
+                ];
+            }
+            // Daylight scorch: nocturnal undead caught in the sun flush ember-orange.
+            let b = e.burn.min(1.0);
+            if b > 0.0 {
+                sp.color = [
+                    sp.color[0] * (1.0 - b) + 1.0 * b,
+                    sp.color[1] * (1.0 - b) + 0.45 * b,
+                    sp.color[2] * (1.0 - b) + 0.15 * b,
                 ];
             }
             // Drive walk-cycle animation: idle enemies breathe; chasing/attacking

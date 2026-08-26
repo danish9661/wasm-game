@@ -71,7 +71,8 @@
       <h2>CONTROLS</h2>
       <div class="help-grid">
         <span class="k">W A S D / ↑ ↓ ← →</span><span class="d">Move (the world scrolls; your character travels in the pressed direction)</span>
-        <span class="k">E</span><span class="d">Harvest wood/stone · open chest · interact at altar</span>
+        <span class="k">E</span><span class="d">Harvest wood/stone · open chest · step through the village portal</span>
+        <span class="k">Portal</span><span class="d">Each village has a glowing gate — stand on it and press E to travel to the walled town (built as you arrive)</span>
         <span class="k">I</span><span class="d">Open inventory &amp; crafting (shows recipes + costs)</span>
         <span class="k">Q</span><span class="d">Toggle build mode — then move the cursor and click the ground (or press the structure's key) to place it</span>
         <span class="k">F</span><span class="d">Build a campfire</span>
@@ -218,6 +219,15 @@
 
   <div id="coop-tags"></div>
 
+  <div id="town-transition" class="hidden">
+    <div class="tt-card">
+      <div class="tt-spinner"></div>
+      <h2 id="tt-title">Building the city…</h2>
+      <div class="tt-bar"><div id="tt-fill"></div></div>
+      <p id="tt-sub">Raising walls, laying rails, lighting the lamps…</p>
+    </div>
+  </div>
+
   <div id="inventory" class="hidden">
     <h3>RESOURCES</h3>
     <div id="inv-resources"></div>
@@ -233,9 +243,12 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog, download_save_zip, upload_save_zip, get_coop_tags } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status } from './wasm_game.js';
 
     const coopTagsEl = document.getElementById('coop-tags');
+    const townTransitionEl = document.getElementById('town-transition');
+    const ttFill = document.getElementById('tt-fill');
+    const ttTitle = document.getElementById('tt-title');
 
     window.reforge = reforge;
     window.serialize_save = serialize_save;
@@ -1037,6 +1050,18 @@
                   html += `<div class="coop-tag" style="left:${sx}px;top:${sy}px">P${id}</div>`;
                 }
                 coopTagsEl.innerHTML = html;
+              } catch (_) {}
+              // Portal transition: show the "city is being built" loading overlay
+              // (with a smooth progress bar) while travelling to the town.
+              try {
+                const ts = JSON.parse(get_town_status());
+                if (ts.transition) {
+                  townTransitionEl.classList.remove('hidden');
+                  ttFill.style.width = (ts.progress * 100).toFixed(0) + '%';
+                  ttTitle.textContent = ts.name ? 'Building ' + ts.name + '…' : 'Building the city…';
+                } else {
+                  townTransitionEl.classList.add('hidden');
+                }
               } catch (_) {}
               // PERF PROBE: isolate WASM step() cost from frame scheduling.
               frame._acc = (frame._acc || 0) + stepMs;

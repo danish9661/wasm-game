@@ -57,6 +57,7 @@ pub(crate) mod lilypad;
 pub(crate) mod reed;
 pub(crate) mod rubble;
 pub(crate) mod ruin_tower;
+pub(crate) mod portal;
 
 // Enemies (humanoid foes share the `humanoid` rig; only creatures keep bespoke art)
 pub(crate) mod bat;

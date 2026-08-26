@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::building::{Structure, StructureKind, try_build};
 use crate::combat::Arrow;
-use crate::daynight::{temperature, DAY_LENGTH};
+use crate::daynight::{daylight, temperature, DAY_LENGTH};
 use crate::weapons::WeaponKind;
 use crate::enemy::{AiState, EnemyKind, EnemyRegistry, spawner_on};
 use crate::items::{Inventory, ItemKind};
@@ -137,6 +137,12 @@ pub struct SaveData {
     pub hp: f32,
     pub hunger: f32,
     pub stamina: f32,
+    /// Persisted town layout (tile + kind). Captured when first generated so the
+    /// city is rebuilt identically instead of re-rolled on every load.
+    pub town: Option<Vec<(i32, i32, StructureKind)>>,
+    /// Whether the player has already visited the town (so its creation animation
+    /// only plays once).
+    pub town_visited: bool,
 }
 
 struct NetPlayer {
@@ -235,6 +241,8 @@ impl Simulation {
             hp: p.player.hp,
             hunger: p.player.hunger,
             stamina: p.player.stamina,
+            town: None,
+            town_visited: false,
         })
     }
 
@@ -347,6 +355,10 @@ impl Simulation {
                     }
                     let tile = tile_at(&self.world, &mut self.cache, tx, ty);
                     if let Some(kind) = spawner_on(tx, ty, tile) {
+                        // Nocturnal enemies only emerge after dark.
+                        if kind.nocturnal() && daylight(self.time_of_day) > 0.5 {
+                            continue;
+                        }
                         self.enemies.get(tx, ty, kind, dt);
                     }
                 }
@@ -566,6 +578,8 @@ fn step_player(
             if let Some(dmg) = e.update(target, dt, &mut blocked) {
                 contacts.push((e.x, e.y, dmg));
             }
+            // Nocturnal undead burn in daylight.
+            e.daylight_burn(dt, daylight(self.time_of_day));
             if let Some((dx, dy)) = e.pending_shot.take() {
                 self.arrows.push(Arrow::enemy(e.x, e.y, dx, dy));
             }
