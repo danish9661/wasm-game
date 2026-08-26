@@ -16,6 +16,11 @@ pub struct PlayerSave {
     pub hunger: f32,
     pub stamina: f32,
     pub facing: (f32, f32),
+    /// Experience points and level, so progression survives a reload.
+    #[serde(default)]
+    pub xp: u32,
+    #[serde(default)]
+    pub level: u32,
 }
 
 /// Everything needed to resume a run exactly where the player left off.

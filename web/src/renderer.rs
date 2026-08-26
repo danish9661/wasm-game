@@ -1105,8 +1105,21 @@ impl App {
             Some(2) => "twin",
             Some(_) => "unknown",
         };
+        let near_str = {
+            let px = self.player.x;
+            let py = self.player.y;
+            let mut best: Option<(f32, String)> = None;
+            for (vx, vy, name) in self.villages.iter().chain(self.towns.iter()) {
+                let d = ((px - (*vx as f32 + 0.5)).powi(2) + (py - (*vy as f32 + 0.5)).powi(2)).sqrt();
+                if d < 8.0 && best.as_ref().map_or(true, |(bd, _)| d < *bd) {
+                    best = Some((d, name.clone()));
+                }
+            }
+            best.map(|(_, n)| n).unwrap_or_else(|| "wilderness".to_string())
+        };
+        let online = self.remote_players.len();
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={}",
 
             self.quad_count(),
             self.frames(),
@@ -1157,7 +1170,12 @@ impl App {
              self.key_dbg,
              self.player.weapon.name(),
              self.player.enchant,
-         )
+             self.player.level,
+             self.player.max_hp(),
+             self.player.xp,
+             near_str,
+             online,
+          )
     }
 
     /// Nearest alive enemy within aggro range, as "Kind@(tx,ty)" or "none".
@@ -2083,6 +2101,13 @@ impl App {
                 }
                 _ => {}
             }
+            // Experience + level-up for the player.
+            let lvl_before = self.player.level;
+            self.player.add_xp(kind.xp());
+            if self.player.level > lvl_before {
+                play_sfx("levelup");
+                toast(&format!("Level up! You are now level {}", self.player.level));
+            }
             // bosses never respawn; slimes return after 15s
             let respawn = if matches!(kind, EnemyKind::Boss | EnemyKind::Colossus) { f32::MAX } else { 15.0 };
             self.enemies.kill(tx, ty, respawn);
@@ -2152,6 +2177,27 @@ impl App {
 
     fn harvest(&mut self) {
         self.net_harvest = true;
+        // Fast travel: standing on a settlement signpost cycles to the next
+        // settlement (villages + towns together), so you can traverse the world
+        // without walking the long distances.
+        let ptx = self.player.x.floor() as i32;
+        let pty = self.player.y.floor() as i32;
+        let mut dests: Vec<(i32, i32, String)> = self
+            .villages
+            .iter()
+            .cloned()
+            .chain(self.towns.iter().cloned())
+            .collect();
+        if let Some(idx) = dests.iter().position(|(x, y, _)| *x == ptx && *y == pty) {
+            let nxt = dests[(idx + 1) % dests.len()].clone();
+            self.player.x = nxt.0 as f32 + 0.5;
+            self.player.y = nxt.1 as f32 + 0.5;
+            self.spawn_point = (self.player.x, self.player.y);
+            self.interior = None;
+            toast(&format!("Fast-travelled to {}", nxt.2));
+            play_sfx("door");
+            return;
+        }
         // Reforge at the altar when carrying the fragment: this arms the
         // choice; the HUD shows Reign/Shatter and forwards the pick to reforge().
         if self.ending.is_none() {
@@ -2308,19 +2354,36 @@ impl App {
     /// Sleep in a bed: skip the night and wake at dawn, restoring a little
     /// hunger and hp. Only works when standing next to a placed Bed.
     fn try_sleep(&mut self) {
-        let near_bed = self
-            .structures
-            .iter()
-            .any(|s| s.kind == StructureKind::Bed && {
-                let dx = s.tx as f32 + 0.5 - self.player.x;
-                let dy = s.ty as f32 + 0.5 - self.player.y;
-                dx * dx + dy * dy < 4.0
+        let mut rested = false;
+        // Inside a building: rest at the bed furniture (left-top of the room).
+        if let Some(int) = &self.interior {
+            let bedx = int.bx - int.rw + 0.8;
+            let bedy = int.by - int.rh + 0.8;
+            let dx = bedx - (int.bx + int.px);
+            let dy = bedy - (int.by + int.py);
+            if dx * dx + dy * dy < 1.2 {
+                rested = true;
+            }
+        }
+        // Outside: rest at a placed bed structure.
+        if !rested {
+            rested = self.structures.iter().any(|s| {
+                s.kind == StructureKind::Bed
+                    && {
+                        let dx = s.tx as f32 + 0.5 - self.player.x;
+                        let dy = s.ty as f32 + 0.5 - self.player.y;
+                        dx * dx + dy * dy < 4.0
+                    }
             });
-        if near_bed {
+        }
+        if rested {
             self.time_of_day = 0.32; // wake ~07:40 with daylight climbing
             self.player.hunger = (self.player.hunger + 30.0).min(100.0);
-            self.player.hp = (self.player.hp + 20.0).min(100.0);
+            self.player.thirst = (self.player.thirst + 30.0).min(100.0);
+            self.player.hp = (self.player.hp + 40.0).min(self.player.max_hp());
             play_sfx("sleep");
+        } else {
+            toast("No bed nearby to rest");
         }
     }
 
@@ -2655,6 +2718,8 @@ impl App {
                 hunger: self.player.hunger,
                 stamina: self.player.stamina,
                 facing: self.player.facing,
+                xp: self.player.xp,
+                level: self.player.level,
             },
             inv,
             structures: self.structures.clone(),
@@ -2694,6 +2759,8 @@ impl App {
         self.player.hunger = s.player.hunger;
         self.player.stamina = s.player.stamina;
         self.player.facing = s.player.facing;
+        self.player.xp = s.player.xp;
+        self.player.level = s.player.level;
 
         self.inventory = Inventory::new();
         for (k, n) in &s.inv {

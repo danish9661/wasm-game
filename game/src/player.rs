@@ -54,6 +54,10 @@ pub struct Player {
     /// Enchantment level of the equipped weapon (0 = none). Each level adds +15%
     /// damage and a faint glow. Gems spent at an Enchanting Table raise it.
     pub enchant: u8,
+    /// Experience points toward the next level. Killing enemies grants XP.
+    pub xp: u32,
+    /// Current level; each level raises max HP and partially heals on level-up.
+    pub level: u32,
 }
 
 impl Player {
@@ -75,11 +79,37 @@ impl Player {
             weapon: WeaponKind::Fists,
             unlocked: 1, // Fists (bit 0) always available
             enchant: 0,
+            xp: 0,
+            level: 1,
         }
     }
 
     pub fn dead(&self) -> bool {
         !self.alive
+    }
+
+    /// Effective max HP, scaling +10 per level above 1.
+    pub fn max_hp(&self) -> f32 {
+        MAX_HP + (self.level - 1) as f32 * 10.0
+    }
+
+    /// Grant experience and resolve any level-ups (multiple in one call). Each
+    /// level raises max HP and heals a chunk. Returns the number of levels gained.
+    pub fn add_xp(&mut self, amount: u32) -> u32 {
+        if !self.alive {
+            return 0;
+        }
+        self.xp += amount;
+        let mut gained = 0;
+        let need = |lv: u32| 50u32 + lv * 50;
+        while self.xp >= need(self.level) {
+            self.xp -= need(self.level);
+            self.level += 1;
+            let mh = self.max_hp();
+            self.hp = (self.hp + 25.0).min(mh);
+            gained += 1;
+        }
+        gained
     }
 
     /// Mark a weapon as owned (Fists is always owned via the initial bitmask).
@@ -169,6 +199,7 @@ impl Player {
         self.dodge_timer = 0.0;
         self.dodge_cd = 0.0;
         self.alive = true;
+        self.hp = self.max_hp();
     }
 
     /// Try to spend stamina; false if exhausted (attack whiffs).

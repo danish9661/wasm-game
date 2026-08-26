@@ -43,6 +43,9 @@
       <span class="inv-chip biome" id="hud-biome" style="display:none">🌍 Biome</span>
       <span class="inv-chip objective" id="hud-objective" style="display:none">🎯</span>
       <span class="inv-chip weapon" id="hud-weapon" style="display:none">🗡 Fists</span>
+      <span class="inv-chip level" id="hud-level" style="display:none">⭐ Lv 1</span>
+      <span class="inv-chip coop" id="hud-coop" style="display:none">👥 Co-op</span>
+      <span class="inv-chip near" id="hud-near" style="display:none">📍</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
     <div class="hud-row">
@@ -177,6 +180,16 @@
       <div class="menu-btns">
         <button id="btn-save" class="menu-btn">Save Game</button>
         <button id="btn-resume" class="menu-btn">Resume</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pause-overlay" class="overlay hidden">
+    <div id="overlay-box">
+      <h2>PAUSED</h2>
+      <p>Window lost focus — the world is frozen.</p>
+      <div class="menu-btns">
+        <button id="btn-resume-pause" class="menu-btn">Resume</button>
       </div>
     </div>
   </div>
@@ -357,6 +370,7 @@
         case 'sleep': tone(440, 0.6, 'sine', 0.13); tone(330, 0.6, 'sine', 0.11); tone(220, 0.7, 'sine', 0.09); break;
         case 'chest': tone(523, 0.10, 'sine', 0.16); tone(659, 0.10, 'sine', 0.16); tone(988, 0.18, 'sine', 0.14); break;
         case 'levelup': [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'triangle', 0.18), i * 100)); break;
+        case 'levelup2': [659, 784, 988, 1318].forEach((f, i) => setTimeout(() => tone(f, 0.16, 'triangle', 0.16), i * 90)); break;
         case 'enemydie': noise(0.22, 0.16, 420); tone(260, 0.22, 'square', 0.13); tone(130, 0.20, 'square', 0.12); break;
         case 'dodge': tone(520, 0.12, 'sine', 0.10); noise(0.10, 0.06, 1800); break;
         case 'salve': tone(700, 0.10, 'sine', 0.12); tone(900, 0.12, 'sine', 0.10); break;
@@ -684,8 +698,21 @@
             el('hud-seed').textContent = '🌱 ' + stats.seed;
             el('hud-biome').style.display = 'inline-block';
             el('hud-biome').textContent = '🌍 ' + stats.biome.replace(/([A-Z])/g, ' $1').trim();
-             el('hud-weapon').style.display = 'inline-block';
-             el('hud-weapon').textContent = '🗡 ' + (stats.weapon || 'Fists') + (stats.enchant > 0 ? ' ' + '★'.repeat(stats.enchant) : '');
+              el('hud-weapon').style.display = 'inline-block';
+              el('hud-weapon').textContent = '🗡 ' + (stats.weapon || 'Fists') + (stats.enchant > 0 ? ' ' + '★'.repeat(stats.enchant) : '');
+
+              el('hud-level').style.display = 'inline-block';
+              el('hud-level').textContent = `⭐ Lv ${stats.level} · ${stats.xp}xp`;
+
+              if (stats.online > 0) {
+                el('hud-coop').style.display = 'inline-block';
+                el('hud-coop').textContent = `👥 Co-op: ${stats.online + 1} online`;
+              } else {
+                el('hud-coop').style.display = 'none';
+              }
+
+              el('hud-near').style.display = 'inline-block';
+              el('hud-near').textContent = '📍 ' + stats.near;
 
              // Objective tracker: a short, stage-aware goal line.
              const OBJECTIVES = [
@@ -802,6 +829,10 @@
               klast: get(/klast=(\S+)/) || '',
               weapon: get(/weapon=(\w+)/) || 'Fists',
               enchant: Number(get(/enchant=(\d+)/) || 0),
+              level: Number(get(/level=(\d+)/) || 1),
+              xp: Number(get(/xp=(\d+)/) || 0),
+              online: Number(get(/online=(\d+)/) || 0),
+              near: get(/near2=(\S+)/) || 'wilderness',
             };
           };
 
@@ -1283,6 +1314,27 @@
           setInterval(() => { if (gameStarted && !paused && !bootOpen) doSave(); }, 8000);
           window.addEventListener('beforeunload', () => { if (!bootOpen) doSave(); });
           document.addEventListener('visibilitychange', () => { if (document.hidden && !bootOpen) doSave(); });
+          // Pause the simulation when the tab/window loses focus so the world
+          // (and any co-op session) does not run unmonitored in the background.
+          let blurPaused = false;
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+              if (gameStarted && !bootOpen) {
+                blurPaused = true;
+                paused = true;
+                el('pause-overlay').className = 'overlay';
+              }
+            } else if (blurPaused) {
+              blurPaused = false;
+              paused = false;
+              el('pause-overlay').className = 'hidden';
+            }
+          });
+          el('btn-resume-pause').onclick = () => {
+            blurPaused = false;
+            paused = false;
+            el('pause-overlay').className = 'hidden';
+          };
 
           setInterval(() => {
             const t0 = performance.now();

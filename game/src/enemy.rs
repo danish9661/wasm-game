@@ -173,6 +173,27 @@ impl EnemyKind {
             EnemyKind::Archer => vec![ItemKind::Food, ItemKind::Wood],
         }
     }
+
+    /// Experience granted to the player when this enemy is slain.
+    pub fn xp(self) -> u32 {
+        match self {
+            EnemyKind::Slime => 5,
+            EnemyKind::Boss => 500,
+            EnemyKind::Skeleton => 8,
+            EnemyKind::Goblin => 9,
+            EnemyKind::Bat => 4,
+            EnemyKind::Spider => 7,
+            EnemyKind::Imp => 4,
+            EnemyKind::Ogre => 30,
+            EnemyKind::Wraith => 6,
+            EnemyKind::Stoneslinger => 8,
+            EnemyKind::Colossus => 1000,
+            EnemyKind::Brute => 40,
+            EnemyKind::Stormcaller => 12,
+            EnemyKind::Wolf => 7,
+            EnemyKind::Archer => 8,
+        }
+    }
 }
 
 impl EnemyKind {
