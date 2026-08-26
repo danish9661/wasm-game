@@ -39,8 +39,9 @@ pub(crate) mod farm_plot;
 pub(crate) mod turret;
 pub(crate) mod healing_totem;
 
-// Decorative props
-pub(crate) mod sign;
+    // Decorative props
+    pub(crate) mod sign;
+    pub(crate) mod house;
 pub(crate) mod barrel;
 pub(crate) mod totem;
 pub(crate) mod rock_pile;
@@ -117,6 +118,9 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "reed", reed::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "rubble", rubble::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "ruin_tower", ruin_tower::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "house", house::build(0, 0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "cabin", house::build(1, 0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "hut", house::build(2, 0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "skeleton", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
     add(&mut out, "goblin", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
     add(&mut out, "bat", bat::build(0.0, 0.0, color, alpha, facing, t));

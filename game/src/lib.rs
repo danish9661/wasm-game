@@ -12,6 +12,7 @@ pub mod render;
 pub mod resources;
 pub mod sim;
 pub mod world;
+pub mod weapons;
 
 pub const TILE_WIDTH: f32 = 64.0;
 pub const TILE_HEIGHT: f32 = 32.0;

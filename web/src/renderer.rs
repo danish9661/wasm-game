@@ -1,7 +1,7 @@
 use game::building::{BUILDABLE, CHEST_RANGE, Structure, StructureKind, try_build};
 use game::iso::iso_to_world;
 use game::combat::{
-    ARROW_DAMAGE, SWING_DAMAGE, SWING_REACH, Arrow,
+    ARROW_DAMAGE, Arrow,
     arrow_hits, swing_hits,
 };
 use game::daynight::{DAY_LENGTH, START_TIME, clock, daylight as daylight_at, temperature};
@@ -71,6 +71,18 @@ fn play_sfx(name: &str) {
     }
 }
 
+/// Show a transient on-screen toast (the `toast` global in index.html). Used for
+/// pickup / equip feedback. No-op if the page didn't define one.
+fn toast(msg: &str) {
+    if let Some(win) = web_sys::window() {
+        if let Ok(f) = js_sys::Reflect::get(&win, &wasm_bindgen::JsValue::from_str("toast"))
+            .and_then(|v| v.dyn_into::<js_sys::Function>())
+        {
+            let _ = f.call1(&wasm_bindgen::JsValue::NULL, &wasm_bindgen::JsValue::from_str(msg));
+        }
+    }
+}
+
 /// Campfire point light slots (each = position/intensity vec4 + color vec4).
 const MAX_LIGHTS: usize = 8;
 const LIGHT_FLOATS: usize = MAX_LIGHTS * 8;
@@ -120,6 +132,9 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::FarmPlot => "*",
         StructureKind::Turret => "Y",
         StructureKind::HealingTotem => "H",
+        StructureKind::House => "Hh",
+        StructureKind::Cabin => "Cb",
+        StructureKind::Hut => "Hu",
     }
 }
 
@@ -668,6 +683,17 @@ pub struct LootDrop {
     pub phase: f32,
 }
 
+/// A weapon lying on the ground, collected by walking over it. Found in chests or
+/// dropped by enemies.
+#[derive(Clone, Copy)]
+pub struct WeaponDrop {
+    pub kind: game::weapons::WeaponKind,
+    pub x: f32,
+    pub y: f32,
+    pub ttl: f32,
+    pub phase: f32,
+}
+
 pub struct App {
     canvas: HtmlCanvasElement,
     surface: wgpu::Surface<'static>,
@@ -701,6 +727,8 @@ pub struct App {
     arrows: Vec<Arrow>,
     /// Ground loot dropped by enemies (and harvest), collected on proximity.
     loot: Vec<LootDrop>,
+    /// Weapons lying on the ground (from enemy drops or chests).
+    weapon_loot: Vec<WeaponDrop>,
     quest: QuestLog,
     ruins: (i32, i32),
     opened_chests: std::collections::HashSet<(i32, i32)>,
@@ -722,6 +750,9 @@ pub struct App {
     debug_swing_hits: u32,
     debug_attacks: u32,
     debug_shots: u32,
+    /// Remaining cooldown on the attack action (driven by the equipped weapon's
+    /// cadence), so heavier weapons swing slower.
+    swing_cd: f32,
     vertices: Vec<f32>,
     quad_count: u32,
     frames: u64,
@@ -1023,7 +1054,7 @@ impl App {
             Some(_) => "unknown",
         };
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2} kev={} klast={} weapon={}",
             self.quad_count(),
             self.frames(),
             self.player_x(),
@@ -1070,6 +1101,7 @@ impl App {
             self.speed,
             self.key_evt,
             self.key_dbg,
+            self.player.weapon.name(),
         )
     }
 
@@ -1209,6 +1241,7 @@ impl App {
             enemies: EnemyRegistry::new(),
             arrows: Vec::new(),
             loot: Vec::new(),
+            weapon_loot: Vec::new(),
             quest: QuestLog::new(),
             ruins,
             opened_chests: std::collections::HashSet::new(),
@@ -1229,6 +1262,7 @@ impl App {
             debug_swing_hits: 0,
             debug_attacks: 0,
             debug_shots: 0,
+            swing_cd: 0.0,
             vertices: Vec::with_capacity(64 * 1024 * 6),
             quad_count: 0,
             frames: 0,
@@ -1359,13 +1393,15 @@ impl App {
                 "KeyX" => self.build(StructureKind::Spike),
                 "KeyU" => self.build(StructureKind::FarmPlot),
                 "KeyZ" => self.try_sleep(),
+                "KeyP" => {
+                    self.player.cycle_weapon();
+                    toast(&format!("Equipped {}", self.player.weapon.name()));
+                }
                 "KeyJ" => {
-                    self.swing();
-                    play_sfx("swing");
+                    self.attack();
                 }
                 "KeyK" => {
-                    self.shoot_arrow();
-                    play_sfx("shoot");
+                    self.attack();
                 }
                 "KeyC" => {
                     self.net_eat = true;
@@ -1543,44 +1579,66 @@ impl App {
         }
     }
 
-    /// Melee swing in the facing direction: hits every enemy in the arc.
-    fn swing(&mut self) {
-        self.net_atk = true;
-        if !self.player.spend_stamina(6.0) {
+    /// Attack with the equipped weapon. Melee weapons swing (hits everything in
+    /// reach); ranged weapons (Bow) loose an arrow instead. Honors the weapon's
+    /// cooldown so heavier weapons swing slower.
+    fn attack(&mut self) {
+        if self.swing_cd > 0.0 {
             return;
         }
-        self.debug_attacks += 1;
-        let mut hits = swing_hits(
-            &self.player,
-            self.enemies.enemies_mut(),
-            SWING_REACH,
-        );
-        self.debug_swing_hits += hits.len() as u32;
-        let mut sparks = Vec::new();
-        for e in &mut hits {
-            e.take_damage(SWING_DAMAGE);
-            // Knock the struck enemy back along the player->enemy vector.
-            let dx = e.x - self.player.x;
-            let dy = e.y - self.player.y;
-            let len = (dx * dx + dy * dy).sqrt().max(0.01);
-            e.x += dx / len * 0.2;
-            e.y += dy / len * 0.2;
-            sparks.push((e.x, e.y));
+        let w = self.player.weapon;
+        self.swing_cd = w.cooldown();
+        if w.ranged() {
+            self.net_shoot = true;
+            if !self.player.spend_stamina(4.0) {
+                return;
+            }
+            self.debug_shots += 1;
+            let mut a = Arrow::new(self.player.x, self.player.y, self.player.facing.0, self.player.facing.1);
+            a.damage = w.damage();
+            self.arrows.push(a);
+            play_sfx("shoot");
+            // small recoil puff
+            let (fx, fy) = self.player.facing;
+            let flen = (fx * fx + fy * fy).sqrt().max(0.01);
+            let cx = self.player.x + fx / flen * 0.6;
+            let cy = self.player.y + fy / flen * 0.6;
+            self.spawn_particles(cx, cy, [1.0, 0.95, 0.6], 3, 26.0, 0.15, 2.0);
+        } else {
+            self.net_atk = true;
+            if !self.player.spend_stamina(6.0) {
+                return;
+            }
+            play_sfx("swing");
+            self.debug_attacks += 1;
+            let mut hits = swing_hits(&self.player, self.enemies.enemies_mut(), w.reach());
+            self.debug_swing_hits += hits.len() as u32;
+            let mut sparks = Vec::new();
+            for e in &mut hits {
+                e.take_damage(w.damage());
+                // Knock the struck enemy back along the player->enemy vector.
+                let dx = e.x - self.player.x;
+                let dy = e.y - self.player.y;
+                let len = (dx * dx + dy * dy).sqrt().max(0.01);
+                e.x += dx / len * 0.2;
+                e.y += dy / len * 0.2;
+                sparks.push((e.x, e.y));
+            }
+            if !hits.is_empty() {
+                play_sfx("hit");
+            }
+            drop(hits);
+            for (x, y) in sparks {
+                self.spawn_particles(x, y, [1.0, 0.92, 0.62], 7, 55.0, 0.35, 3.5);
+            }
+            // Swept slash: a short white arc of particles in front of the player.
+            let (fx, fy) = self.player.facing;
+            let flen = (fx * fx + fy * fy).sqrt().max(0.01);
+            let cx = self.player.x + fx / flen * w.reach() * 0.5;
+            let cy = self.player.y + fy / flen * w.reach() * 0.5;
+            self.spawn_particles(cx, cy, [1.0, 1.0, 0.95], 6, 40.0, 0.18, 2.5);
+            self.sweep_dead();
         }
-        if !hits.is_empty() {
-            play_sfx("hit");
-        }
-        drop(hits);
-        for (x, y) in sparks {
-            self.spawn_particles(x, y, [1.0, 0.92, 0.62], 7, 55.0, 0.35, 3.5);
-        }
-        // Swept slash: a short white arc of particles in front of the player.
-        let (fx, fy) = self.player.facing;
-        let flen = (fx * fx + fy * fy).sqrt().max(0.01);
-        let cx = self.player.x + fx / flen * SWING_REACH * 0.5;
-        let cy = self.player.y + fy / flen * SWING_REACH * 0.5;
-        self.spawn_particles(cx, cy, [1.0, 1.0, 0.95], 6, 40.0, 0.18, 2.5);
-        self.sweep_dead();
     }
 
     /// Resolve kills: drop loot and start respawn timers.
@@ -1623,6 +1681,18 @@ impl App {
             // bosses never respawn; slimes return after 15s
             let respawn = if matches!(kind, EnemyKind::Boss | EnemyKind::Colossus) { f32::MAX } else { 15.0 };
             self.enemies.kill(tx, ty, respawn);
+            // Occasional weapon drop: a findable weapon on the ground. Heavier
+            // weapons are rarer (handled in roll_drop_with).
+            let roll = (((ex * 53.0 + ey * 31.0 + self.debug_attacks as f32 * 7.0) as i32) as u32) % 100;
+            if let Some(wk) = game::weapons::WeaponKind::roll_drop_with(roll) {
+                self.weapon_loot.push(WeaponDrop {
+                    kind: wk,
+                    x: ex,
+                    y: ey,
+                    ttl: 90.0,
+                    phase: (ex + ey).fract().abs() * std::f32::consts::TAU,
+                });
+            }
         }
     }
 
@@ -1649,21 +1719,30 @@ impl App {
             }
             i += 1;
         }
-    }
-
-    /// Shoot an arrow in the facing direction (costs stamina).
-    fn shoot_arrow(&mut self) {
-        self.net_shoot = true;
-        if !self.player.spend_stamina(4.0) {
-            return;
+        // Weapons lying on the ground: bob, expire, and get equipped on contact.
+        let px = self.player.x;
+        let py = self.player.y;
+        let mut j = 0;
+        while j < self.weapon_loot.len() {
+            let w = &mut self.weapon_loot[j];
+            w.ttl -= dt;
+            w.phase += dt * 3.0;
+            if w.ttl <= 0.0 {
+                self.weapon_loot.remove(j);
+                continue;
+            }
+            let dx = w.x - px;
+            let dy = w.y - py;
+            if dx * dx + dy * dy < 1.1 * 1.1 {
+                let k = w.kind;
+                self.player.equip_weapon(k);
+                toast(&format!("Found {}!", k.name()));
+                play_sfx("pickup");
+                self.weapon_loot.remove(j);
+                continue;
+            }
+            j += 1;
         }
-        self.debug_shots += 1;
-        self.arrows.push(Arrow::new(
-            self.player.x,
-            self.player.y,
-            self.player.facing.0,
-            self.player.facing.1,
-        ));
     }
 
     fn harvest(&mut self) {
@@ -1742,6 +1821,12 @@ impl App {
             self.inventory.add(ItemKind::Food, 2);
             self.inventory.add(ItemKind::Wood, 2);
             self.inventory.add(ItemKind::Stone, 1);
+            // Chests often hide a weapon to find (and equip).
+            let roll = ((tx as u32 * 31 + ty as u32 * 17) % 100) as u32;
+            if let Some(wk) = game::weapons::WeaponKind::roll_drop_with(roll) {
+                self.player.equip_weapon(wk);
+                toast(&format!("Chest contained a {}!", wk.name()));
+            }
             true
         } else {
             false
@@ -1942,6 +2027,8 @@ impl App {
         self.farm_cd.clear();
         self.turret_cd.clear();
         self.crafted_iron = false;
+        self.loot.clear();
+        self.weapon_loot.clear();
     }
 
     // ---- Save / Load ------------------------------------------------------
@@ -2131,6 +2218,7 @@ impl App {
     pub fn update(&mut self, dt: f32) {
         self.frames += 1;
         self.hurt_flash = (self.hurt_flash * 0.86).max(0.0);
+        self.swing_cd = (self.swing_cd - dt).max(0.0);
 
         // Adaptive resolution: keep fps high on backends with a slow present /
         // readback path (e.g. default Linux Chrome without Vulkan). We measure
@@ -2381,7 +2469,7 @@ impl App {
             if a.from_player {
                 for (_key, e) in self.enemies.iter_mut_with_key() {
                     if arrow_hits(a, std::iter::once(&*e)).is_some() {
-                        e.take_damage(ARROW_DAMAGE);
+                        e.take_damage(a.damage);
                         hit_pos.push((e.x, e.y));
                         play_sfx("hit");
                         return false;
@@ -2627,6 +2715,7 @@ impl App {
                 dy: a.dy,
                 life: 3.0,
                 from_player: a.from_player,
+                damage: ARROW_DAMAGE,
             })
             .collect();
         self.time_of_day = snap.time_of_day;
@@ -2809,7 +2898,18 @@ impl App {
             core.alpha = 0.8;
             sprites.push(core);
         }
-        // particles (death puffs, hit sparks) — fading Generic quads
+        // weapon drops: bobbing diamonds tinted by weapon color
+        for w in &self.weapon_loot {
+            let bob = (w.phase.sin() * 2.0).max(0.0);
+            let mut sp = Sprite::new_center(w.x, w.y, w.kind.color(), 9.0, 9.0, 7.0 + bob)
+                .with_style(SpriteStyle::Generic);
+            sp.alpha = 1.0;
+            sprites.push(sp);
+            let mut core = Sprite::new_center(w.x, w.y, [1.0, 1.0, 1.0], 3.0, 3.0, 8.0 + bob)
+                .with_style(SpriteStyle::Generic);
+            core.alpha = 0.85;
+            sprites.push(core);
+        }
         for p in &self.particles {
             let a = (p.life / p.max_life).clamp(0.0, 1.0);
             let mut ps = Sprite::new_center(p.x, p.y, p.color, p.size, p.size, 4.0)

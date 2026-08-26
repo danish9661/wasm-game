@@ -17,6 +17,9 @@ pub struct Arrow {
     pub dx: f32,
     pub dy: f32,
     pub life: f32,
+    /// Damage applied on hit. Player arrows carry the equipped weapon's damage;
+    /// enemy arrows use the base `ARROW_DAMAGE`.
+    pub damage: f32,
     /// true = fired by the player (hits enemies); false = fired by an enemy
     /// (hits the player).
     pub from_player: bool,
@@ -32,6 +35,7 @@ impl Arrow {
             dx,
             dy,
             life: 3.0,
+            damage: ARROW_DAMAGE,
             from_player: true,
         }
     }

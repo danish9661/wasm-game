@@ -25,9 +25,9 @@ pub enum TileKind {
 impl TileKind {
     pub fn color(self) -> [f32; 3] {
         match self {
-            TileKind::DeepWater => [0.08, 0.20, 0.38],
-            TileKind::Water => [0.15, 0.35, 0.55],
-            TileKind::ShallowWater => [0.22, 0.48, 0.52],
+            TileKind::DeepWater => [0.04, 0.16, 0.34],
+            TileKind::Water => [0.09, 0.33, 0.52],
+            TileKind::ShallowWater => [0.17, 0.52, 0.60],
             TileKind::Sand => [0.86, 0.78, 0.55],
             TileKind::Grass => [0.35, 0.58, 0.27],
             TileKind::Forest => [0.22, 0.44, 0.19],
@@ -52,7 +52,16 @@ impl TileKind {
 #[derive(Clone, Copy)]
 pub struct Tile {
     pub kind: TileKind,
+    /// Integer terrain height level. 0 = sea-level baseline; positive = hills /
+    /// mountains; negative = basins (water sits below the land). Rendering
+    /// multiplies this by `HEIGHT_STEP` pixels to extrude each tile, giving the
+    /// world real up/down relief. Purely visual — movement ignores it for now.
+    pub height: i8,
 }
+
+/// Pixels of vertical screen offset per `Tile::height` level. Controls how
+/// dramatic the relief reads.
+pub const HEIGHT_STEP: f32 = 9.0;
 
 pub struct Chunk {
     pub cx: i32,
@@ -134,6 +143,13 @@ pub fn tile_at(world: &WorldGen, cache: &mut ChunkCache, tx: i32, ty: i32) -> Ti
     chunk.tiles[ty.rem_euclid(CHUNK_SIZE) as usize][tx.rem_euclid(CHUNK_SIZE) as usize].kind
 }
 
+/// Terrain height level at a world tile coordinate (generates the chunk on
+/// demand). Multiplied by `HEIGHT_STEP` by the renderer to extrude relief.
+pub fn tile_height(world: &WorldGen, cache: &mut ChunkCache, tx: i32, ty: i32) -> i8 {
+    let chunk = cache.get(world, tx, ty);
+    chunk.tiles[ty.rem_euclid(CHUNK_SIZE) as usize][tx.rem_euclid(CHUNK_SIZE) as usize].height
+}
+
 impl WorldGen {
     pub fn new(seed: u32) -> Self {
         let mut elevation = Fbm::<Perlin>::new(seed);
@@ -159,7 +175,7 @@ impl WorldGen {
     }
 
     pub fn generate_chunk(&self, cx: i32, cy: i32) -> Chunk {
-        let mut tiles = [[Tile { kind: TileKind::DeepWater }; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
+        let mut tiles = [[Tile { kind: TileKind::DeepWater, height: 0 }; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
         let mut resources = Vec::new();
         let mut decor = Vec::new();
         for ty in 0..CHUNK_SIZE {
@@ -188,6 +204,20 @@ impl WorldGen {
                     other => other,
                 };
                 tiles[ty as usize][tx as usize].kind = kind;
+                // Terrain relief: water sits in a basin below land; land rises
+                // with elevation so hills/peaks emerge from the plains. Gentle
+                // steps (integer levels) keep the extruded walls readable.
+                let height = if matches!(kind, TileKind::DeepWater) {
+                    -2
+                } else if matches!(kind, TileKind::Water) {
+                    -1
+                } else if matches!(kind, TileKind::ShallowWater) {
+                    0
+                } else {
+                    let h = ((e + 0.05) * 7.0).round().clamp(0.0, 16.0) as i8;
+                    h
+                };
+                tiles[ty as usize][tx as usize].height = height;
                 // Cache resource/decor placement for this tile (deterministic,
                 // so it only needs computing once, at generation time).
                 if let Some(rk) = resource_on(gx, gy, kind) {

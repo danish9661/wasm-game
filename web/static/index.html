@@ -40,6 +40,7 @@
               <span class="inv-chip seed" id="hud-seed" style="display:none">🌱 Seed</span>
               <span class="inv-chip seed" id="hud-room" style="display:none;cursor:pointer" title="Click to copy room code">🛡 Room</span>
       <span class="inv-chip biome" id="hud-biome" style="display:none">🌍 Biome</span>
+      <span class="inv-chip weapon" id="hud-weapon" style="display:none">🗡 Fists</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
     <div class="hud-row">
@@ -74,10 +75,10 @@
         <span class="k">B</span><span class="d">Build a bed</span>
         <span class="k">N</span><span class="d">Build an anvil</span>
         <span class="k">H</span><span class="d">Build a well (blocks movement)</span>
-        <span class="k">J</span><span class="d">Melee attack (swing)</span>
-        <span class="k">K</span><span class="d">Shoot an arrow</span>
+        <span class="k">J / K</span><span class="d">Attack with your equipped weapon (swing or loose an arrow)</span>
+        <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Sword → Axe → Spear → Hammer → Bow)</span>
         <span class="k">C</span><span class="d">Eat food to restore hunger</span>
-        <span class="k">P</span><span class="d">Save a screenshot</span>
+        <span class="k">PrtSc</span><span class="d">Save a screenshot</span>
         <span class="k">Esc</span><span class="d">Settings</span>
       </div>
       <p class="help-note">The <b>Speed</b> readout (top-left) shows your live movement in tiles/second — it should climb above 0 the moment you press a movement key. <b>FPS</b> is the real render rate.</p>
@@ -106,7 +107,7 @@
       <button class="tbtn act" data-key="KeyQ">🔨</button>
       <button class="tbtn act" data-key="KeyI">🎒</button>
       <button class="tbtn act" data-key="KeyL">📖</button>
-      <button class="tbtn act" data-key="KeyP">📷</button>
+      <button class="tbtn act" data-key="PrintScreen">📷</button>
     </div>
     <div id="touch-build" class="hidden">BUILD MODE — tap ground to place · 🔨 to exit</div>
   </div>
@@ -673,6 +674,8 @@
             el('hud-seed').textContent = '🌱 ' + stats.seed;
             el('hud-biome').style.display = 'inline-block';
             el('hud-biome').textContent = '🌍 ' + stats.biome.replace(/([A-Z])/g, ' $1').trim();
+            el('hud-weapon').style.display = 'inline-block';
+            el('hud-weapon').textContent = '🗡 ' + (stats.weapon || 'Fists');
 
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
@@ -771,6 +774,7 @@
               spd: Number(get(/spd=([\d.]+)/) || 0),
               kev: Number(get(/kev=(\d+)/) || 0),
               klast: get(/klast=(\S+)/) || '',
+              weapon: get(/weapon=(\w+)/) || 'Fists',
             };
           };
 
@@ -1182,7 +1186,7 @@
             }
             // Screenshot: dump the visible #blit canvas (the live display) to a
             // downloadable PNG (and POST it to /cap if a capture server listens).
-            if (e.code === 'KeyP') {
+            if (e.code === 'PrintScreen') {
               e.preventDefault();
               const c = displayCanvas();
               try {

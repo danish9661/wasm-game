@@ -69,6 +69,10 @@ pub enum SpriteStyle {
     Reed,
     Rubble,
     RuinTower,
+    // ---- Default world buildings (decor, scattered by worldgen) -----------
+    House,
+    Cabin,
+    Hut,
     // ---- Enemies ----------------------------------------------------------
     // Humanoid foes (Skeleton, Goblin, Ogre, Brute, Stormcaller, Stoneslinger,
     // Boss) all share SpriteStyle::Humanoid for a consistent cast; only the
@@ -262,7 +266,12 @@ pub fn build_tile_mesh(
     }
 
     for s in sprites {
-        let (cx, cy) = world_to_iso(s.x - camera.x, s.y - camera.y);
+        let (cx, cy0) = world_to_iso(s.x - camera.x, s.y - camera.y);
+        // Lift the sprite onto the terrain height under its tile so props,
+        // trees and characters stand on hills instead of floating at z=0.
+        let z = tile_height_at(world, cache, s.x.floor() as i32, s.y.floor() as i32) as f32
+            * crate::world::HEIGHT_STEP;
+        let cy = cy0 - z;
         if cx + s.half_w < 0.0
             || cx - s.half_w > vw
             || cy + s.half_h + s.lift < 0.0
@@ -292,7 +301,10 @@ pub fn build_tile_mesh(
     }
 
     if let Some(p) = player {
-        let (sx, sy) = world_to_iso(p.x - camera.x, p.y - camera.y);
+        let (sx, sy0) = world_to_iso(p.x - camera.x, p.y - camera.y);
+        let z = tile_height_at(world, cache, p.x.floor() as i32, p.y.floor() as i32) as f32
+            * crate::world::HEIGHT_STEP;
+        let sy = sy0 - z;
         draws.push(Draw {
             depth: f32::MAX,
             kind: DrawKind::Player,
@@ -327,6 +339,19 @@ pub fn build_tile_mesh(
                 }
                 for c in base.iter_mut() {
                     *c = (*c + v).clamp(0.0, 1.0);
+                }
+                // Deeper water (lower terrain height) reads darker / more teal, so
+                // ocean basins and shallow shelves are visually distinct.
+                if matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
+                    let depth = tile_height_at(world, cache, d.tx, d.ty);
+                    let f = match depth {
+                        -2 => 0.72,
+                        -1 => 0.88,
+                        _ => 1.0,
+                    };
+                    for c in base.iter_mut() {
+                        *c = (*c * f).clamp(0.0, 1.0);
+                    }
                 }
                 // Sample the 4 cardinal neighbours and blend each tile corner
                 // toward them so biome boundaries become smooth gradients.
@@ -397,11 +422,24 @@ pub fn build_tile_mesh(
                         }
                     }
                 }
-                // Emit the tile itself, then scatter a little procedural detail
-                // (grass blades, pebbles, sparkle) so flat ground reads as textured.
-                push_quad_blended(out, d.sx, d.sy, c_n, c_e, c_s, c_w);
+                // Emit the tile itself (lifted by its height), plus vertical
+                // "cliff" walls on the two front edges so raised terrain reads as
+                // solid blocks with real depth. Walls drop to the neighbour's
+                // height, so a hill shows its side and lower ground shows beneath.
+                let z = tile_height_at(world, cache, d.tx, d.ty) as f32 * crate::world::HEIGHT_STEP;
+                let zE = tile_height_at(world, cache, d.tx + 1, d.ty) as f32 * crate::world::HEIGHT_STEP;
+                let zS = tile_height_at(world, cache, d.tx, d.ty + 1) as f32 * crate::world::HEIGHT_STEP;
+                let mut wall_col = base;
+                for c in wall_col.iter_mut() { *c = (*c * 0.62).clamp(0.0, 1.0); }
+                if zE < z {
+                    push_wall(out, d.sx + HALF_W, d.sy + HALF_H, d.sx, d.sy + TILE_HEIGHT, z, zE, wall_col);
+                }
+                if zS < z {
+                    push_wall(out, d.sx, d.sy + TILE_HEIGHT, d.sx - HALF_W, d.sy + HALF_H, z, zS, wall_col);
+                }
+                push_quad_blended(out, d.sx, d.sy, z, c_n, c_e, c_s, c_w);
                 if !matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {
-                    tile_detail(out, kind, d.sx, d.sy, d.tx, d.ty, anim_time);
+                    tile_detail(out, kind, d.sx, d.sy, z, d.tx, d.ty, anim_time);
                 }
             }
             DrawKind::Sprite => {
@@ -447,23 +485,33 @@ fn tile_kind_at(world: &WorldGen, cache: &mut ChunkCache, tx: i32, ty: i32) -> c
         .kind
 }
 
+/// Terrain height level at a tile (mirrors `world::tile_height`).
+pub fn tile_height_at(world: &WorldGen, cache: &mut ChunkCache, tx: i32, ty: i32) -> i8 {
+    let chunk = cache.get(world, tx, ty);
+    chunk.tiles[ty.rem_euclid(crate::world::CHUNK_SIZE) as usize]
+        [tx.rem_euclid(crate::world::CHUNK_SIZE) as usize]
+        .height
+}
+
 /// Draw a tile diamond with per-corner colors. Each corner blends toward the
 /// neighbouring tile in that direction, so biome edges become smooth gradients
-/// instead of a hard checkerboard. Vertex order matches `push_quad` so the
-/// geometry tests (positions) stay valid.
+/// instead of a hard checkerboard. The whole diamond is lifted `z` pixels to
+/// sit on its terrain height. Vertex order matches `push_quad` so the geometry
+/// tests (positions) stay valid.
 fn push_quad_blended(
     out: &mut Vec<f32>,
     ox: f32,
     oy: f32,
+    z: f32,
     north: [f32; 3],
     east: [f32; 3],
     south: [f32; 3],
     west: [f32; 3],
 ) {
-    let top = (ox, oy);
-    let right = (ox + HALF_W, oy + HALF_H);
-    let bottom = (ox, oy + TILE_HEIGHT);
-    let left = (ox - HALF_W, oy + HALF_H);
+    let top = (ox, oy - z);
+    let right = (ox + HALF_W, oy + HALF_H - z);
+    let bottom = (ox, oy + TILE_HEIGHT - z);
+    let left = (ox - HALF_W, oy + HALF_H - z);
     // Matching vertex order: top, right, bottom, top, bottom, left.
     let verts: [(f32, f32); 6] = [top, right, bottom, top, bottom, left];
     // North/Top, East/Right, South/Bottom, West/Left — one color per corner.
@@ -473,6 +521,32 @@ fn push_quad_blended(
         out.push(vx);
         out.push(vy);
         out.extend_from_slice(&colors[i]);
+        out.push(1.0);
+    }
+}
+
+/// A vertical quad (a "cliff" wall) along the screen segment (x1,y1)->(x2,y2),
+/// extruded from height `z_top` (top edge) down to `z_bottom` (bottom edge).
+/// Used to connect a raised tile to its lower neighbour so terrain has depth.
+fn push_wall(
+    out: &mut Vec<f32>,
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32,
+    z_top: f32,
+    z_bottom: f32,
+    color: [f32; 3],
+) {
+    let tl = (x1, y1 - z_top);
+    let tr = (x2, y2 - z_top);
+    let bl = (x1, y1 - z_bottom);
+    let br = (x2, y2 - z_bottom);
+    // Two triangles: tl, tr, br  and  tl, br, bl.
+    for (vx, vy) in [tl, tr, br, tl, br, bl] {
+        out.push(vx);
+        out.push(vy);
+        out.extend_from_slice(&color);
         out.push(1.0);
     }
 }
@@ -523,9 +597,9 @@ fn tile_hash(tx: i32, ty: i32) -> u32 {
 /// Scatter small procedural detail onto a ground tile so it no longer reads as
 /// a flat colour sheet: grass blades (with a gentle sway), dirt/stone speckles,
 /// sand grains, snow sparkle. Detail is confined to the tile diamond.
-fn tile_detail(out: &mut Vec<f32>, kind: TileKind, sx: f32, sy: f32, tx: i32, ty: i32, anim_time: f32) {
+fn tile_detail(out: &mut Vec<f32>, kind: TileKind, sx: f32, sy: f32, z: f32, tx: i32, ty: i32, anim_time: f32) {
     let cx = sx;
-    let cy = sy + HALF_H; // tile center
+    let cy = sy + HALF_H - z; // tile center, lifted to terrain height
     let h = tile_hash(tx, ty);
     let mut parts: Vec<Part> = Vec::new();
     match kind {
@@ -617,10 +691,10 @@ fn push_styled_sprite(
 ) {
     use crate::elements::{
         altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
-        crate_box, crystal, fence, fern, flower, grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
+        crate_box, crystal, fence, fern, flower,         grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
         lilypad, mushroom, ore, pillar, reed, rock, rock_pile, rubble, ruin_tower, sign,
         slime, spider, statue, torch, totem, tree, turret, vines, wall, well, wraith,
-        colossus, spike, farm_plot,
+        colossus, spike, farm_plot, house,
     };
     match style {
         SpriteStyle::Generic => {
@@ -692,6 +766,9 @@ fn push_styled_sprite(
         SpriteStyle::Reed => rasterize(&reed::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Rubble => rasterize(&rubble::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::RuinTower => rasterize(&ruin_tower::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::House => rasterize(&house::build(0, cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Cabin => rasterize(&house::build(1, cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Hut => rasterize(&house::build(2, cx, cy, color, alpha, facing, anim_time), out),
     }
 }
 
@@ -747,11 +824,13 @@ mod tests {
         let mut mesh = Vec::new();
         let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0, 0.0);
         assert!(quads > 0);
-        // find the quad whose top corner sits at world (0,0) (tile 0,0)
+        // Tile (0,0) is lifted by its terrain height.
+        let z0 = tile_height_at(&world, &mut cache, 0, 0) as f32 * crate::world::HEIGHT_STEP;
+        // find the quad whose top corner sits at world (0, -z0) (tile 0,0)
         let mut found = None;
         for i in 0..quads as usize {
             let v = quad_vertices(&mesh, i);
-            if v[0] == 0.0 && v[1] == 0.0 {
+            if v[0] == 0.0 && (v[1] + z0).abs() < 0.001 {
                 found = Some(v);
                 break;
             }
@@ -760,11 +839,11 @@ mod tests {
         // vertex layout per vertex: [x, y, r, g, b, a]
         // v0=top, v1=right, v2=bottom, v3=top, v4=bottom, v5=left
         assert!((v[6] - HALF_W).abs() < 0.001, "right corner x");
-        assert!((v[7] - HALF_H).abs() < 0.001, "right corner y");
+        assert!((v[7] - (HALF_H - z0)).abs() < 0.001, "right corner y");
         assert!((v[12] - 0.0).abs() < 0.001, "bottom corner x");
-        assert!((v[13] - TILE_HEIGHT).abs() < 0.001, "bottom corner y");
+        assert!((v[13] - (TILE_HEIGHT - z0)).abs() < 0.001, "bottom corner y");
         assert!((v[30] + HALF_W).abs() < 0.001, "left corner x");
-        assert!((v[31] - HALF_H).abs() < 0.001, "left corner y");
+        assert!((v[31] - (HALF_H - z0)).abs() < 0.001, "left corner y");
     }
 
     #[test]
@@ -859,13 +938,14 @@ mod tests {
         }
         let v = player_quad.expect("player quad must be in the mesh");
         let (ox, oy) = world_to_iso(0.5, 0.5);
+        let z0 = tile_height_at(&world, &mut cache, 0, 0) as f32 * crate::world::HEIGHT_STEP;
         // The torso (PLAYER_COLOR) is centered on the player's screen x (ox).
         let cx_avg = (0..6).map(|k| v[k * 6]).sum::<f32>() / 6.0;
         assert!((cx_avg - ox).abs() < 0.001, "player center x");
-        // and it stands on the tile center (gy = oy + HALF_H), so its bottom
-        // edge sits at roughly the tile center, not the tile's top corner.
+        // and it stands on the tile center (gy = oy + HALF_H), lifted by terrain
+        // height, so its bottom edge sits below the lifted tile top corner.
         let cy_max = (0..6).map(|k| v[k * 6 + 1]).fold(f32::MIN, f32::max);
-        assert!(cy_max > oy, "player torso must be below the tile top corner");
+        assert!(cy_max > oy - z0, "player torso must be below the lifted tile top corner");
 
         // depth ordering: tile (0,0) (depth 0) must come before the player (depth 1)
         let mut idx = 0;
@@ -876,11 +956,11 @@ mod tests {
                 break;
             }
         }
-        // tile (0,0)'s top corner sits at screen (0,0) when camera is at origin
+        // tile (0,0)'s top corner sits at screen (0, -z0) when camera is at origin
         let mut tile_zero_seen = false;
         for i in 0..idx {
             let q = quad_vertices(&mesh, i);
-            if q[0] == 0.0 && q[1] == 0.0 {
+            if q[0] == 0.0 && (q[1] + z0).abs() < 0.001 {
                 tile_zero_seen = true;
                 break;
             }
@@ -911,24 +991,26 @@ mod tests {
             .find(|&i| quad_vertices(&mesh, i)[2] == 0.06)
             .expect("tree sprite must be in the mesh");
 
+        let z0 = tile_height_at(&world, &mut cache, 0, 0) as f32 * crate::world::HEIGHT_STEP;
         // its center sits at the tile center: iso(0.5, 0.5) = (0, 16)
         let v = quad_vertices(&mesh, tree_idx);
         assert!((v[0] - 0.0).abs() < 0.001, "tree top x (center column)");
-        assert!((v[1] - (16.0 - 20.0 + 8.0)).abs() < 0.001, "tree top y (lifted)");
+        assert!((v[1] - (16.0 - 20.0 + 8.0 - z0)).abs() < 0.001, "tree top y (lifted)");
 
         // tile (0,0) must render before the tree
         assert!(
             (0..tree_idx).any(|i| {
                 let q = quad_vertices(&mesh, i);
-                q[0] == 0.0 && q[1] == 0.0
+                q[0] == 0.0 && (q[1] + z0).abs() < 0.001
             }),
             "tile (0,0) must render before the tree on it"
         );
         // and the tree must render before tiles of depth 1 (e.g. tile (1,0))
+        let z1 = tile_height_at(&world, &mut cache, 1, 0) as f32 * crate::world::HEIGHT_STEP;
         assert!(
             (tree_idx + 1..quads as usize).any(|i| {
                 let q = quad_vertices(&mesh, i);
-                (q[0] - 32.0).abs() < 0.001 && (q[1] - 16.0).abs() < 0.001
+                (q[0] - 32.0).abs() < 0.001 && (q[1] - (16.0 - z1)).abs() < 0.001
             }),
             "tile (1,0) must render after the tree"
         );

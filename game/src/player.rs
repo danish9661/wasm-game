@@ -1,4 +1,5 @@
 use crate::items::{Inventory, ItemKind};
+use crate::weapons::WeaponKind;
 use crate::world::{ChunkCache, TileKind, WorldGen, tile_at};
 
 /// Tiles per second when walking (screen-up is (-1,-1) in world coords).
@@ -37,6 +38,11 @@ pub struct Player {
     /// Unit direction of the active dodge burst.
     pub dodge_dir: (f32, f32),
     pub alive: bool,
+    /// Currently equipped weapon. Drives melee reach/damage/cadence and whether
+    /// the attack fires a projectile (Bow).
+    pub weapon: WeaponKind,
+    /// Bitmask of weapons the player owns (bit `k as usize`; Fists is always set).
+    pub unlocked: u8,
 }
 
 impl Player {
@@ -53,11 +59,48 @@ impl Player {
             dodge_cd: 0.0,
             dodge_dir: (1.0, 0.0),
             alive: true,
+            weapon: WeaponKind::Fists,
+            unlocked: 1, // Fists (bit 0) always available
         }
     }
 
     pub fn dead(&self) -> bool {
         !self.alive
+    }
+
+    /// Mark a weapon as owned (Fists is always owned via the initial bitmask).
+    pub fn unlock_weapon(&mut self, k: WeaponKind) {
+        self.unlocked |= 1u8 << (k as usize);
+    }
+
+    /// Whether the player owns a given weapon.
+    pub fn has_weapon(&self, k: WeaponKind) -> bool {
+        (self.unlocked & (1u8 << (k as usize))) != 0
+    }
+
+    /// Cycle to the next owned weapon (wraps around). No-op if only Fists owned.
+    pub fn cycle_weapon(&mut self) {
+        let order = [
+            WeaponKind::Fists,
+            WeaponKind::Sword,
+            WeaponKind::Axe,
+            WeaponKind::Spear,
+            WeaponKind::Hammer,
+            WeaponKind::Bow,
+        ];
+        for i in 1..order.len() {
+            let idx = (self.weapon as usize + i) % order.len();
+            if self.has_weapon(order[idx]) {
+                self.weapon = order[idx];
+                return;
+            }
+        }
+    }
+
+    /// Pick up a weapon: own it and equip it immediately.
+    pub fn equip_weapon(&mut self, k: WeaponKind) {
+        self.unlock_weapon(k);
+        self.weapon = k;
     }
 
     /// Applies damage; respects the hurt-timer (brief invulnerability after

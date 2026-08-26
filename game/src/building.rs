@@ -51,6 +51,10 @@ pub enum StructureKind {
     Reed,
     Rubble,
     RuinTower,
+    // Default world buildings (non-interactive decor, scattered by worldgen).
+    House,
+    Cabin,
+    Hut,
 }
 
 impl StructureKind {
@@ -105,6 +109,9 @@ impl StructureKind {
             StructureKind::Reed => [0.45, 0.55, 0.30],
             StructureKind::Rubble => [0.50, 0.50, 0.55],
             StructureKind::RuinTower => [0.62, 0.60, 0.58],
+            StructureKind::House => [0.74, 0.72, 0.66],
+            StructureKind::Cabin => [0.52, 0.34, 0.20],
+            StructureKind::Hut => [0.66, 0.52, 0.30],
         }
     }
 
@@ -152,6 +159,9 @@ impl StructureKind {
                 | StructureKind::Reed
                 | StructureKind::Rubble
                 | StructureKind::RuinTower
+                | StructureKind::House
+                | StructureKind::Cabin
+                | StructureKind::Hut
         )
     }
 
@@ -194,6 +204,9 @@ impl StructureKind {
             StructureKind::Reed => (10.0, 20.0, 1.0),
             StructureKind::Rubble => (12.0, 8.0, 1.0),
             StructureKind::RuinTower => (13.0, 34.0, 1.0),
+            StructureKind::House => (13.0, 22.0, 1.0),
+            StructureKind::Cabin => (11.0, 18.0, 1.0),
+            StructureKind::Hut => (9.0, 14.0, 1.0),
         };
         let style = match self {
             StructureKind::Campfire => SpriteStyle::Campfire,
@@ -225,6 +238,9 @@ impl StructureKind {
             StructureKind::Reed => SpriteStyle::Reed,
             StructureKind::Rubble => SpriteStyle::Rubble,
             StructureKind::RuinTower => SpriteStyle::RuinTower,
+            StructureKind::House => SpriteStyle::House,
+            StructureKind::Cabin => SpriteStyle::Cabin,
+            StructureKind::Hut => SpriteStyle::Hut,
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }
@@ -259,6 +275,11 @@ pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
         TileKind::Grass if h.rem_euclid(211) == 0 => Some(StructureKind::Crate),
         TileKind::Grass if h.rem_euclid(167) == 0 => Some(StructureKind::Pillar),
         TileKind::Grass if h.rem_euclid(223) == 0 => Some(StructureKind::Rubble),
+        // Default settlements: scattered homes so the grasslands feel inhabited.
+        TileKind::Grass if h.rem_euclid(83) == 0 => Some(StructureKind::House),
+        TileKind::Grass if h.rem_euclid(127) == 0 => Some(StructureKind::Cabin),
+        TileKind::Forest if h.rem_euclid(139) == 0 => Some(StructureKind::Hut),
+        TileKind::Tundra if h.rem_euclid(97) == 0 => Some(StructureKind::Cabin),
         TileKind::Forest if h.rem_euclid(67) == 0 => Some(StructureKind::Totem),
         TileKind::Forest if h.rem_euclid(71) == 0 => Some(StructureKind::BonePile),
         TileKind::Forest if h.rem_euclid(173) == 0 => Some(StructureKind::Vines),
