@@ -45,6 +45,7 @@
       <span class="inv-chip weapon" id="hud-weapon" style="display:none">🗡 Fists</span>
       <span class="inv-chip level" id="hud-level" style="display:none">⭐ Lv 1</span>
       <span class="inv-chip coop" id="hud-coop" style="display:none">👥 Co-op</span>
+      <span class="inv-chip map" id="hud-map" style="display:none">🗺 Map</span>
       <span class="inv-chip near" id="hud-near" style="display:none">📍</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
@@ -77,6 +78,7 @@
         <span class="k">V</span><span class="d">Build a wall (blocks movement)</span>
         <span class="k">O</span><span class="d">Talk to a nearby villager, guard or merchant — hand in or take a fetch quest</span>
         <span class="k">L</span><span class="d">Cook a hot meal at a campfire (2 food → +25 HP, +hunger)</span>
+        <span class="k">🗺</span><span class="d">Carry a treasure map to reveal buried caches (X) on the minimap; dig them with E</span>
         <span class="k">G</span><span class="d">Build a fence (blocks movement)</span>
         <span class="k">B</span><span class="d">Build a bed</span>
         <span class="k">N</span><span class="d">Build an anvil</span>
@@ -214,6 +216,8 @@
 
   <div id="log"></div>
 
+  <div id="coop-tags"></div>
+
   <div id="inventory" class="hidden">
     <h3>RESOURCES</h3>
     <div id="inv-resources"></div>
@@ -229,7 +233,10 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog, download_save_zip, upload_save_zip } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog, download_save_zip, upload_save_zip, get_coop_tags } from './wasm_game.js';
+
+    const coopTagsEl = document.getElementById('coop-tags');
+
     window.reforge = reforge;
     window.serialize_save = serialize_save;
     window.deserialize_save = deserialize_save;
@@ -693,8 +700,8 @@
             } else {
               el('boss-row').style.display = 'none';
             }
-            el('hud-weather').style.display = stats.weather !== 0 ? 'inline-block' : 'none';
-            el('hud-weather').textContent = stats.weather === 2 ? '❄ Snow' : '🌧 Rain';
+             el('hud-weather').style.display = stats.weather !== 0 ? 'inline-block' : 'none';
+             el('hud-weather').textContent = stats.weather === 4 ? '🔥 Heat' : stats.weather === 3 ? '⛈ Storm' : stats.weather === 2 ? '❄ Snow' : '🌧 Rain';
             el('hud-seed').style.display = 'inline-block';
             el('hud-seed').textContent = '🌱 ' + stats.seed;
             el('hud-biome').style.display = 'inline-block';
@@ -712,6 +719,8 @@
               } else {
                 el('hud-coop').style.display = 'none';
               }
+
+              el('hud-map').style.display = stats.maps > 0 ? 'inline-block' : 'none';
 
               el('hud-near').style.display = 'inline-block';
               el('hud-near').textContent = '📍 ' + stats.near;
@@ -835,6 +844,7 @@
               xp: Number(get(/xp=(\d+)/) || 0),
               online: Number(get(/online=(\d+)/) || 0),
               coopids: get(/coopids=([^\s]*)/) || '',
+              maps: Number(get(/maps=(\d+)/) || 0),
               near: get(/near2=(\S+)/) || 'wilderness',
             };
           };
@@ -1018,6 +1028,16 @@
               const stepMs = performance.now() - ts;
               last = t;
               window.__frames++;
+              // Co-op name tags: float a label above each remote player's head.
+              try {
+                const tags = JSON.parse(get_coop_tags());
+                let html = '';
+                for (const tg of tags) {
+                  const id = tg[0], sx = tg[1], sy = tg[2];
+                  html += `<div class="coop-tag" style="left:${sx}px;top:${sy}px">P${id}</div>`;
+                }
+                coopTagsEl.innerHTML = html;
+              } catch (_) {}
               // PERF PROBE: isolate WASM step() cost from frame scheduling.
               frame._acc = (frame._acc || 0) + stepMs;
               frame._n = (frame._n || 0) + 1;
@@ -1424,6 +1444,16 @@
               const py = cy + (ty - Math.floor(d.player[1])) * cell;
               mmCtx.fillStyle = '#ffd76b';
               mmCtx.fillRect(px - 3, py - 3, 6, 6);
+            });
+            (d.treasure || []).forEach(([tx, ty]) => {
+              const px = cx + (tx - ptx) * cell;
+              const py = cy + (ty - Math.floor(d.player[1])) * cell;
+              mmCtx.fillStyle = '#ffe27a';
+              // small "X" marker for a buried cache
+              mmCtx.fillRect(px - 2, py - 2, 4, 1);
+              mmCtx.fillRect(px - 2, py + 1, 4, 1);
+              mmCtx.fillRect(px - 2, py - 0.5, 1, 3);
+              mmCtx.fillRect(px + 1, py - 0.5, 1, 3);
             });
             // Player marker: a triangle pointing in the facing direction.
             const fa = Math.atan2(d.facing ? d.facing[1] : 0, d.facing ? d.facing[0] : 1);

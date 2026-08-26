@@ -121,6 +121,15 @@ pub fn get_ui_data() -> String {
     })
 }
 
+/// Cheap per-frame co-op name-tag positions (id + screen x/y) for the HUD.
+#[wasm_bindgen]
+pub fn get_coop_tags() -> String {
+    APP.with(|cell| match cell.borrow().as_ref() {
+        Some(app) => app.coop_tags(),
+        None => String::from("[]"),
+    })
+}
+
 /// Set the cursor position in internal canvas pixels (drives the build ghost).
 #[wasm_bindgen]
 pub fn set_mouse(x: f64, y: f64) {

@@ -18,6 +18,28 @@ html, body {
   z-index: 0;
 }
 
+/* Co-op name tags: floating labels above remote players' heads. The JS layer
+   positions each child absolutely in canvas/logical pixels every frame. */
+#coop-tags {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+.coop-tag {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(20, 30, 48, 0.72);
+  border: 1px solid rgba(242, 215, 122, 0.55);
+  color: #f2e3b3;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
 /* Visible display surface: WebGPU canvas content is blitted here via 2D
    putImageData because the WebGPU canvas itself can't be composited in some
    headed/software-GPU setups (e.g. SwiftShader-Vulkan). */

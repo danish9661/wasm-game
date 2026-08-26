@@ -18,6 +18,9 @@ pub enum ResourceKind {
     GrassTuft,
     Fern,
     Ore,
+    /// Buried treasure cache: a walk-through dig spot that yields a random
+    /// bundle of loot (or, rarely, a treasure map) when harvested.
+    Treasure,
 }
 
 impl ResourceKind {
@@ -32,6 +35,7 @@ impl ResourceKind {
             ResourceKind::GrassTuft => 1,
             ResourceKind::Fern => 1,
             ResourceKind::Ore => 5,
+            ResourceKind::Treasure => 1,
         }
     }
 
@@ -46,6 +50,7 @@ impl ResourceKind {
             ResourceKind::GrassTuft => ItemKind::Herb,
             ResourceKind::Fern => ItemKind::Herb,
             ResourceKind::Ore => ItemKind::Gem,
+            ResourceKind::Treasure => ItemKind::Gem,
         }
     }
 
@@ -70,6 +75,7 @@ impl ResourceKind {
             ResourceKind::GrassTuft => [0.45, 0.62, 0.30],
             ResourceKind::Fern => [0.20, 0.45, 0.22],
             ResourceKind::Ore => [0.45, 0.40, 0.46],
+            ResourceKind::Treasure => [0.55, 0.42, 0.25],
         }
     }
 
@@ -98,6 +104,7 @@ impl ResourceKind {
             ResourceKind::GrassTuft => (12.0, 11.0, 1.0),
             ResourceKind::Fern => (14.0, 12.0, 1.0),
             ResourceKind::Ore => (13.0, 11.0, 2.0),
+            ResourceKind::Treasure => (13.0, 7.0, 0.0),
         };
         let style = match self {
             ResourceKind::Tree => SpriteStyle::Tree,
@@ -109,6 +116,7 @@ impl ResourceKind {
             ResourceKind::GrassTuft => SpriteStyle::GrassTuft,
             ResourceKind::Fern => SpriteStyle::Fern,
             ResourceKind::Ore => SpriteStyle::Ore,
+            ResourceKind::Treasure => SpriteStyle::Treasure,
         };
         Sprite::new(tx, ty, color, hw, hh, lift).with_style(style)
     }
@@ -142,6 +150,10 @@ pub fn resource_on(tx: i32, ty: i32, tile: TileKind) -> Option<ResourceKind> {
         TileKind::Volcanic if h.rem_euclid(7) == 0 => Some(ResourceKind::Rock),
         TileKind::Volcanic if h.rem_euclid(41) == 0 => Some(ResourceKind::Ore),
         TileKind::Volcanic if h.rem_euclid(29) == 0 => Some(ResourceKind::Crystal),
+        // Buried treasure caches: very rare, scattered on open ground and shores.
+        TileKind::Grass if h.rem_euclid(257) == 0 => Some(ResourceKind::Treasure),
+        TileKind::Sand if h.rem_euclid(211) == 0 => Some(ResourceKind::Treasure),
+        TileKind::Sand if h.rem_euclid(193) == 0 => Some(ResourceKind::Treasure),
         _ => None,
     }
 }
@@ -175,6 +187,19 @@ impl ResourceNode {
             return None;
         }
         self.hp -= 1;
+        if self.kind == ResourceKind::Treasure {
+            // Deterministic-by-tile loot: usually supplies, sometimes a map.
+            let r = (self.tx.wrapping_mul(73856093) ^ self.ty.wrapping_mul(19349663)) % 100;
+            if r < 22 {
+                return Some(ItemKind::Map);
+            }
+            return Some(match r % 4 {
+                0 => ItemKind::Food,
+                1 => ItemKind::Gem,
+                2 => ItemKind::Herb,
+                _ => ItemKind::Wood,
+            });
+        }
         Some(self.kind.drops())
     }
 }

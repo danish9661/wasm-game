@@ -13,6 +13,8 @@ pub enum ItemKind {
     Herb,
     /// Gathered from crystal nodes — a shiny crafting material.
     Gem,
+    /// A treasure map: while carried, buried caches are revealed on the minimap.
+    Map,
 }
 
 impl ItemKind {
@@ -24,6 +26,7 @@ impl ItemKind {
             ItemKind::Fragment => "crown fragment",
             ItemKind::Herb => "herb",
             ItemKind::Gem => "gem",
+            ItemKind::Map => "treasure map",
         }
     }
 
@@ -36,11 +39,12 @@ impl ItemKind {
             ItemKind::Fragment => [1.00, 0.84, 0.30],
             ItemKind::Herb => [0.45, 0.80, 0.40],
             ItemKind::Gem => [0.45, 0.85, 0.95],
+            ItemKind::Map => [0.86, 0.74, 0.42],
         }
     }
 }
 
-const SLOTS: usize = 6;
+const SLOTS: usize = 7;
 
 /// Simple stack inventory: one count per item kind.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -61,6 +65,7 @@ impl Inventory {
             ItemKind::Fragment => 3,
             ItemKind::Herb => 4,
             ItemKind::Gem => 5,
+            ItemKind::Map => 6,
         }
     }
 

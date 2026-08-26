@@ -346,6 +346,9 @@ pub struct Enemy {
     /// Boss only: latches true once it drops below 40% HP, entering an enraged
     /// second phase (faster, shorter wind-ups). Purely an AI flag.
     pub enraged: bool,
+    /// Elite multiplier: scales max HP, contact damage and XP reward. 1.0 for
+    /// ordinary spawner enemies; >1 for roaming mini-bosses.
+    pub elite: f32,
 }
 
 impl Enemy {
@@ -368,7 +371,16 @@ impl Enemy {
             charge_cd: 0.0,
             pending_shot: None,
             enraged: false,
+            elite: 1.0,
         }
+    }
+
+    /// Returns a copy of this enemy promoted to an elite: boosted max HP (and
+    /// current HP) by `elite`, used for roaming mini-bosses.
+    pub fn with_elite(mut self, elite: f32) -> Self {
+        self.elite = elite;
+        self.hp = self.kind.max_hp() * elite;
+        self
     }
 
     pub fn alive(&self) -> bool {
@@ -460,7 +472,7 @@ impl Enemy {
                 self.windup -= dt;
                 if self.windup <= 0.0 {
                     self.attack_timer = cooldown;
-                    return Some(self.kind.damage());
+                    return Some(self.kind.damage() * self.elite);
                 }
                 return None;
             }
@@ -717,6 +729,14 @@ pub fn get(&mut self, tx: i32, ty: i32, kind: EnemyKind, dt: f32) -> Option<&mut
     /// Mutable enemies with their spawn-tile keys (needed to resolve kills).
     pub fn iter_mut_with_key(&mut self) -> impl Iterator<Item = ((i32, i32), &mut Enemy)> {
         self.enemies.iter_mut().map(|(&k, e)| (k, e))
+    }
+
+    /// Spawn a roaming elite (mini-boss) at a free world position. Keyed by its
+    /// current tile so it integrates with the normal update/kill pipeline; it
+    /// wanders from there under its own AI. `elite` scales HP, damage and XP.
+    pub fn spawn_elite(&mut self, kind: EnemyKind, x: f32, y: f32, elite: f32) {
+        let key = (x.floor() as i32, y.floor() as i32);
+        self.enemies.insert(key, Enemy::new(x, y, kind).with_elite(elite));
     }
 
     pub fn enemies(&self) -> impl Iterator<Item = &Enemy> {

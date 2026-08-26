@@ -100,12 +100,14 @@ fn kind_name(kind: ResourceKind) -> &'static str {
         ResourceKind::GrassTuft => "Grass",
         ResourceKind::Fern => "Fern",
         ResourceKind::Ore => "Ore",
+        ResourceKind::Treasure => "Treasure",
     }
 }
 
 fn struct_name(kind: StructureKind) -> &'static str {
     match kind {
         StructureKind::Campfire => "F",
+        StructureKind::Dungeon => "D",
         StructureKind::Wall => "W",
         StructureKind::Chest => "C",
         StructureKind::Altar => "A",
@@ -497,13 +499,45 @@ fn draw_atmosphere(
         let _ = ctx.arc(x, y, radius, 0.0, std::f64::consts::TAU);
         let _ = ctx.fill();
     }
-    // weather: snow (2) or rain (1) — drifting particles + a faint veil
+    // weather: snow (2), rain (1), storm (3), or heat wave (4)
     if weather != 0 {
         let snow = weather == 2;
-        let fall = (aclock as f64 * (if snow { 90.0 } else { 380.0 })) % h;
-        if snow {
+        let storm = weather == 3;
+        let heat = weather == 4;
+        if storm {
+            // Storm: heavy, near-vertical rain driven on the wind + a dark veil.
+            ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(150,175,205,0.5)"));
+            ctx.set_line_width(1.5);
+            let cols = 150u32;
+            let fall = (aclock as f64 * 520.0) % h;
+            for i in 0..cols {
+                let fi = i as f64;
+                let x = (((fi * 53.7 + aclock as f64 * 200.0) % w) + w) % w;
+                let y = (((fi * 29.3 + fall) % h) + h) % h;
+                ctx.begin_path();
+                ctx.move_to(x, y);
+                ctx.line_to(x - 7.0, y + 22.0);
+                ctx.stroke();
+            }
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(70,85,110,0.22)"));
+            ctx.fill_rect(0.0, 0.0, w, h);
+        } else if heat {
+            // Heat wave: a warm, shimmering veil that tints the world amber.
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,170,70,0.12)"));
+            ctx.fill_rect(0.0, 0.0, w, h);
+            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,210,120,0.06)"));
+            for i in 0..40u32 {
+                let fi = i as f64;
+                let x = (((fi * 91.3 + aclock as f64 * 18.0) % w) + w) % w;
+                let y = (((fi * 47.1 - aclock as f64 * 12.0) % h) + h) % h;
+                ctx.begin_path();
+                ctx.arc(x, y, 2.0 + (fi * 3.0).fract() * 2.0, 0.0, std::f64::consts::TAU);
+                ctx.fill();
+            }
+        } else if snow {
             ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,255,255,0.85)"));
             let cols = 110u32;
+            let fall = (aclock as f64 * 90.0) % h;
             for i in 0..cols {
                 let fi = i as f64;
                 let x = (((fi * 37.3 + aclock as f64 * 30.0) % w) + w) % w;
@@ -519,6 +553,7 @@ fn draw_atmosphere(
             ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(170,200,230,0.35)"));
             ctx.set_line_width(1.0);
             let cols = 90u32;
+            let fall = (aclock as f64 * 380.0) % h;
             for i in 0..cols {
                 let fi = i as f64;
                 let x = (((fi * 53.7 + aclock as f64 * 120.0) % w) + w) % w;
@@ -715,6 +750,10 @@ struct Interior {
     py: f32,
     bx: f32,
     by: f32,
+    /// Spike hazard tiles (room-relative, integer) that damage the player.
+    hazards: Vec<(i32, i32)>,
+    /// True once the dungeon's vault loot has been claimed (one-time reward).
+    loot_taken: bool,
 }
 
 pub struct App {
@@ -845,6 +884,8 @@ pub struct App {
     weather: u8,
     /// Seconds until the weather may change again.
     weather_timer: f32,
+    /// Seconds until the next roaming elite (mini-boss) spawns into the world.
+    elite_timer: f32,
     /// Farm plots: seconds remaining until each planted plot is ready to
     /// harvest again (keyed by tile). Plots not present are grown (0).
     farm_cd: std::collections::HashMap<(i32, i32), f32>,
@@ -901,6 +942,24 @@ impl App {
     /// JSON payload for the Inventory & Crafting / Build panel:
     /// resource counts, every buildable recipe (with cost + affordability),
     /// and the current build-mode selection.
+    /// Lightweight per-frame accessor for co-op name-tag screen positions
+    /// (id + projected x/y). Cheaper than `ui_data` so the HUD can poll it every
+    /// frame to float labels over remote players' heads.
+    pub fn coop_tags(&self) -> String {
+        serde_json::json!(
+            self.remote_players
+                .iter()
+                .filter(|(_, rp)| rp.alive)
+                .map(|(id, rp)| {
+                    let (sx, sy) =
+                        game::iso::world_to_iso(rp.x - self.camera.x, rp.y - self.camera.y);
+                    serde_json::json!([*id, sx, sy - 26.0])
+                })
+                .collect::<Vec<_>>()
+        )
+        .to_string()
+    }
+
     pub fn ui_data(&self) -> String {
         let recipes: Vec<_> = BUILDABLE
             .iter()
@@ -1027,6 +1086,27 @@ impl App {
             .iter()
             .map(|(x, y, n)| (*x, *y, n.clone()))
             .collect();
+        // Buried caches are only revealed on the minimap while a treasure map is
+        // in the player's pack.
+        let has_map = self.inventory.count(ItemKind::Map) > 0;
+        let treasure: Vec<(i32, i32)> = if has_map {
+            let mut v = Vec::new();
+            for dy in -R..=R {
+                for dx in -R..=R {
+                    let tx = ptx + dx;
+                    let ty = pty + dy;
+                    let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
+                    if let Some(ResourceKind::Treasure) = resource_on(tx, ty, tile) {
+                        if !self.nodes.is_depleted(tx, ty) {
+                            v.push((tx, ty));
+                        }
+                    }
+                }
+            }
+            v
+        } else {
+            Vec::new()
+        };
         serde_json::json!({
             "n": N,
             "cells": cells,
@@ -1036,6 +1116,7 @@ impl App {
             "structs": structs,
             "villages": village_markers,
             "towns": town_markers,
+            "treasure": treasure,
             "legend": legend,
         })
         .to_string()
@@ -1125,7 +1206,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={}",
 
             self.quad_count(),
             self.frames(),
@@ -1182,6 +1263,7 @@ impl App {
              near_str,
              online,
              coopids,
+             self.inventory.count(ItemKind::Map),
           )
     }
 
@@ -1335,6 +1417,7 @@ impl App {
             boss_killed: 0,
             colossus_killed: 0,
             boss_spawned: false,
+            elite_timer: 180.0,
             altar_placed: false,
             altar_tile: None,
             near_altar: false,
@@ -1809,7 +1892,10 @@ impl App {
         let (px, py) = (self.player.x, self.player.y);
         let mut best: Option<(f32, StructureKind)> = None;
         for s in &self.structures {
-            if matches!(s.kind, StructureKind::House | StructureKind::Cabin | StructureKind::Hut) {
+            if matches!(
+                s.kind,
+                StructureKind::House | StructureKind::Cabin | StructureKind::Hut | StructureKind::Dungeon
+            ) {
                 let dx = s.tx as f32 + 0.5 - px;
                 let dy = s.ty as f32 + 0.5 - py;
                 let d2 = dx * dx + dy * dy;
@@ -1820,11 +1906,20 @@ impl App {
         }
         match best {
             Some((_, kind)) => {
+                let is_dungeon = kind == StructureKind::Dungeon;
                 let max_floors = if kind == StructureKind::House { 2 } else { 1 };
                 let name = match kind {
                     StructureKind::House => "House",
                     StructureKind::Cabin => "Cabin",
-                    _ => "Hut",
+                    StructureKind::Hut => "Hut",
+                    _ => "Dungeon",
+                };
+                // Dungeons seed a few spike traps on the floor; the vault loot is
+                // claimed once when the player reaches the back wall.
+                let hazards = if is_dungeon {
+                    vec![(-1, -1), (1, 0), (0, 1), (-2, 1), (2, -1)]
+                } else {
+                    Vec::new()
                 };
                 self.interior = Some(Interior {
                     kind,
@@ -1836,15 +1931,18 @@ impl App {
                     py: 0.0,
                     bx: self.player.x,
                     by: self.player.y,
+                    hazards,
+                    loot_taken: false,
                 });
                 play_sfx("door");
                 toast(&format!(
-                    "Entered the {}{}",
+                    "Entered the {}{}{}",
                     name,
-                    if max_floors > 1 { " — 2 floors (use the stairs)" } else { "" }
+                    if max_floors > 1 { " — 2 floors (use the stairs)" } else { "" },
+                    if is_dungeon { " — beware the traps!" } else { "" }
                 ));
             }
-            None => toast("Stand next to a house to enter"),
+            None => toast("Stand next to a house or dungeon to enter"),
         }
     }
 
@@ -1892,6 +1990,38 @@ impl App {
             int.py = 0.0;
             play_sfx("door");
             toast(&format!("Climbed to floor {}", int.floor));
+        }
+        // Dungeon hazards: standing on a spike tile deals contact damage, and
+        // reaching the back (left) wall center once cracks the vault for loot.
+        if !int.hazards.is_empty() {
+            let tx = int.px.round() as i32;
+            let ty = int.py.round() as i32;
+            if int.hazards.iter().any(|&(hx, hy)| hx == tx && hy == ty) {
+                self.player.hp = (self.player.hp - 12.0 * dt).max(0.0);
+                self.player.hurt_timer = 0.3;
+                if self.player.hp <= 0.0 {
+                    self.player.alive = false;
+                }
+            }
+            if !int.loot_taken && (int.px + mx2).abs() < 0.5 && int.py.abs() < 0.5 {
+                int.loot_taken = true;
+                let r = ((int.bx as u32) ^ (int.by as u32).wrapping_mul(2654435761)) % 5;
+                let reward: (ItemKind, u32) = match r {
+                    0 => (ItemKind::Gem, 2),
+                    1 => (ItemKind::Food, 4),
+                    2 => (ItemKind::Herb, 3),
+                    3 => (ItemKind::Wood, 6),
+                    _ => (ItemKind::Stone, 6),
+                };
+                self.inventory.add(reward.0, reward.1);
+                self.player.add_xp(25);
+                play_sfx("pickup");
+                toast(&format!(
+                    "You cracked the vault! +{} {} and +25xp",
+                    reward.1,
+                    reward.0.name()
+                ));
+            }
         }
     }
 
@@ -1975,6 +2105,20 @@ impl App {
             Sprite::new_center(bx - int.rw + 0.8, by + int.rh - 0.8, [0.9, 0.8, 0.4], 10.0, 22.0, 0.0)
                 .with_style(SpriteStyle::Lantern),
         );
+        // Dungeon spike traps (room-relative tiles) and the sealed vault chest
+        // at the back wall until it has been looted.
+        for &(hx, hy) in &int.hazards {
+            v.push(
+                Sprite::new_center(bx + hx as f32, by + hy as f32, [0.72, 0.72, 0.78], 12.0, 14.0, 0.0)
+                    .with_style(SpriteStyle::Spike),
+            );
+        }
+        if int.kind == StructureKind::Dungeon && !int.loot_taken {
+            v.push(
+                Sprite::new_center(bx - int.rw + 0.8, by, [0.95, 0.8, 0.3], 16.0, 18.0, 0.0)
+                    .with_style(SpriteStyle::Chest),
+            );
+        }
         // Player (sits on the floor — no lift).
         v.push(
             Sprite::new_center(bx + int.px, by + int.py, [0.45, 0.55, 0.85], 16.0, 22.0, 0.0)
@@ -2161,13 +2305,13 @@ impl App {
 
     /// Resolve kills: drop loot and start respawn timers.
     fn sweep_dead(&mut self) {
-        let drops: Vec<((i32, i32), f32, f32, EnemyKind, Vec<ItemKind>)> = self
+        let drops: Vec<((i32, i32), f32, f32, EnemyKind, Vec<ItemKind>, f32)> = self
             .enemies
             .iter_mut_with_key()
             .filter(|(_, e)| !e.alive())
-            .map(|((tx, ty), e)| ((tx, ty), e.x, e.y, e.kind, e.drops()))
+            .map(|((tx, ty), e)| ((tx, ty), e.x, e.y, e.kind, e.drops(), e.elite))
             .collect();
-        for ((tx, ty), ex, ey, kind, items) in drops {
+        for ((tx, ty), ex, ey, kind, items, elite) in drops {
             play_sfx("enemydie");
             // Drop loot on the ground at the enemy's position; the player walks
             // over it to collect (see collect_loot). Spread multiple drops in a
@@ -2196,9 +2340,9 @@ impl App {
                 }
                 _ => {}
             }
-            // Experience + level-up for the player.
+            // Experience + level-up for the player (elite enemies pay out more).
             let lvl_before = self.player.level;
-            self.player.add_xp(kind.xp());
+            self.player.add_xp((kind.xp() as f32 * elite) as u32);
             if self.player.level > lvl_before {
                 play_sfx("levelup");
                 toast(&format!("Level up! You are now level {}", self.player.level));
@@ -2714,12 +2858,40 @@ impl App {
         self.player = Player::new(spx, spy);
 
         self.structures = structures;
+        // Scatter a few dungeon entrances across the world, away from the spawn
+        // village and the ruins, so exploration has a deadly payoff.
+        {
+            let sp = (self.spawn_point.0 as i32, self.spawn_point.1 as i32);
+            let mut h = (seed ^ 0x9e37_79b9).wrapping_mul(2654435761);
+            let mut placed = 0;
+            for _ in 0..240 {
+                h = h.wrapping_mul(1664525).wrapping_add(1013904223);
+                let tx = sp.0 + ((h as i32) % 160) - 80;
+                let ty = sp.1 + (((h >> 11) as i32) % 160) - 80;
+                if (tx - sp.0).abs() < 30 && (ty - sp.1).abs() < 30 {
+                    continue;
+                }
+                if (tx - self.ruins.0).abs() < 12 && (ty - self.ruins.1).abs() < 12 {
+                    continue;
+                }
+                if tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
+                    && !self.structures.iter().any(|s| s.tx == tx && s.ty == ty)
+                {
+                    self.structures.push(Structure { tx, ty, kind: StructureKind::Dungeon });
+                    placed += 1;
+                    if placed >= 5 {
+                        break;
+                    }
+                }
+            }
+        }
         self.quest = QuestLog::new();
         self.boss_killed = 0;
         self.colossus_killed = 0;
         self.discovered.clear();
         self.weather = 0;
         self.weather_timer = 25.0;
+        self.elite_timer = 180.0;
         self.boss_spawned = false;
         self.altar_placed = false;
         self.altar_tile = None;
@@ -3037,15 +3209,53 @@ impl App {
         self.weather_timer -= dt;
         if self.weather_timer <= 0.0 {
             let r = (self.anim_clock * 7.0 + self.time_of_day * 311.0).fract();
-            // Clear weather ends; otherwise roll a new storm (rain or snow).
+            // Clear weather ends; otherwise roll a new condition: rain, snow,
+            // a fierce storm, or a heat wave.
             if self.weather != 0 {
                 self.weather = 0;
                 self.weather_timer = 25.0 + r * 20.0;
-            } else if r < 0.30 {
-                self.weather = if r < 0.15 { 1 } else { 2 };
+            } else if r < 0.20 {
+                self.weather = 1; // rain
                 self.weather_timer = 20.0 + r * 20.0;
+            } else if r < 0.30 {
+                self.weather = 2; // snow
+                self.weather_timer = 20.0 + r * 20.0;
+            } else if r < 0.38 {
+                self.weather = 3; // storm
+                self.weather_timer = 16.0 + r * 12.0;
+            } else if r < 0.46 {
+                self.weather = 4; // heat wave
+                self.weather_timer = 28.0 + r * 18.0;
             } else {
                 self.weather_timer = 25.0 + r * 20.0;
+            }
+        }
+
+        // Roaming elite (mini-boss): every few minutes a tougher-than-average
+        // foe materializes in the wilds near the player and hunts them. A telegraphed
+        // threat that scales with the world's danger.
+        self.elite_timer -= dt;
+        if self.elite_timer <= 0.0 && self.player.alive {
+            self.elite_timer = 150.0 + (self.anim_clock * 13.0).fract() * 120.0;
+            // Pick a tile 14-20 tiles away from the player on walkable ground.
+            let ang = (self.anim_clock * 2.3 + self.player.x * 0.7).fract() * std::f32::consts::TAU;
+            let dist = 14.0 + (self.anim_clock * 5.1).fract() * 6.0;
+            let tx = (self.player.x + ang.cos() * dist).floor() as i32;
+            let ty = (self.player.y + ang.sin() * dist).floor() as i32;
+            if tile_at(&self.world, &mut self.chunks, tx, ty).walkable() {
+                let kind = if (self.anim_clock as i32) % 2 == 0 {
+                    EnemyKind::Brute
+                } else {
+                    EnemyKind::Ogre
+                };
+                let elite = 2.5 + (self.anim_clock * 3.0).fract() * 1.5;
+                self.enemies.spawn_elite(kind, tx as f32 + 0.5, ty as f32 + 0.5, elite);
+                toast(&format!(
+                    "A roaming {} (elite x{:.1}) has appeared nearby!",
+                    kind.name(),
+                    elite
+                ));
+                play_sfx("levelup");
             }
         }
 
@@ -3105,7 +3315,7 @@ impl App {
         if self.player.alive {
             let wet = self.weather == 1;
             self.player
-                .tick(dt, temperature(self.time_of_day), warm, wet, biome);
+                .tick(dt, temperature(self.time_of_day), warm, wet, biome, self.weather);
             // Resting by a fire (or inside a home) slowly mends wounds.
             if warm && self.player.hp < 100.0 {
                 self.player.hp = (self.player.hp + dt * 3.0).min(100.0);

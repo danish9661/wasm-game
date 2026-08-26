@@ -259,7 +259,15 @@ impl Player {
     /// Base drain ≈ 9 hunger/minute, so a full bar lasts ~11 minutes.
     /// `biome` is the tile under the player; the harsh Tundra/Desert biomes
     /// drain hunger faster and regenerate stamina slower (exposure).
-    pub fn tick(&mut self, dt: f32, temperature: f32, warm: bool, wet: bool, biome: TileKind) {
+    pub fn tick(
+        &mut self,
+        dt: f32,
+        temperature: f32,
+        warm: bool,
+        wet: bool,
+        biome: TileKind,
+        weather: u8,
+    ) {
         self.hurt_timer = (self.hurt_timer - dt).max(0.0);
         self.dodge_timer = (self.dodge_timer - dt).max(0.0);
         self.dodge_cd = (self.dodge_cd - dt).max(0.0);
@@ -268,9 +276,17 @@ impl Player {
             biome,
             TileKind::Tundra | TileKind::Desert | TileKind::Jungle | TileKind::Volcanic
         );
+        let storm = weather == 3;
+        let heat = weather == 4;
         let mut drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
         if wet {
             drain += 0.04;
+        }
+        if storm {
+            drain += 0.05;
+        }
+        if heat {
+            drain += 0.05;
         }
         if harsh {
             drain += 0.12;
@@ -288,6 +304,12 @@ impl Player {
         if wet {
             tdrain += 0.08;
         }
+        if storm {
+            tdrain += 0.05;
+        }
+        if heat {
+            tdrain += 0.22;
+        }
         if matches!(biome, TileKind::Desert | TileKind::Jungle | TileKind::Volcanic) {
             tdrain += 0.18;
         } else if matches!(biome, TileKind::Tundra) {
@@ -302,8 +324,9 @@ impl Player {
         }
         // Harsh biomes (Tundra/Desert) sap health from exposure when you're
         // not sheltered by a light source — warmth is the only real defense.
-        if harsh && !warm {
-            self.hp = (self.hp - dt * 1.0).max(0.0);
+        // A storm also bites if you're caught out in the open.
+        if (harsh || storm) && !warm {
+            self.hp = (self.hp - dt * if storm { 0.6 } else { 1.0 }).max(0.0);
             if self.hp <= 0.0 {
                 self.alive = false;
             }
@@ -311,6 +334,9 @@ impl Player {
         let mut regen = if wet { 6.0 } else { 12.0 };
         if harsh {
             regen *= 0.6;
+        }
+        if storm {
+            regen *= 0.7;
         }
         self.stamina = (self.stamina + dt * regen).min(MAX_STAMINA);
     }

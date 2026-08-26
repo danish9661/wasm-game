@@ -42,6 +42,8 @@ pub enum SpriteStyle {
     GrassTuft,
     Fern,
     Ore,
+    /// Buried treasure cache: rendered as a small chest so it reads as loot.
+    Treasure,
     // ---- Buildable structures --------------------------------------------
     Fence,
     Torch,
@@ -768,6 +770,7 @@ fn push_styled_sprite(
         }
         SpriteStyle::Fern => rasterize(&fern::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Ore => rasterize(&ore::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Treasure => rasterize(&chest::build(cx, cy, color, alpha, facing, anim_time), out),
         // Buildable structures
         SpriteStyle::Fence => rasterize(&fence::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Torch => rasterize(&torch::build(cx, cy, color, alpha, facing, anim_time), out),
