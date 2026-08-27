@@ -283,46 +283,46 @@ impl Player {
         );
         let storm = weather == 3;
         let heat = weather == 4;
-        let mut drain = if warm { 0.08 } else { 0.15 + 0.30 * cold };
+        let mut drain = if warm { 0.05 } else { 0.09 + 0.18 * cold };
         if wet {
-            drain += 0.04;
+            drain += 0.02;
         }
         if storm {
-            drain += 0.05;
+            drain += 0.03;
         }
         if heat {
-            drain += 0.05;
+            drain += 0.03;
         }
         if harsh {
-            drain += 0.12;
+            drain += 0.07;
         }
         self.hunger = (self.hunger - dt * drain).max(0.0);
         if self.hunger <= 0.0 && !warm {
-            self.hp = (self.hp - dt * 2.0).max(0.0);
+            self.hp = (self.hp - dt * 1.0).max(0.0);
             if self.hp <= 0.0 {
                 self.alive = false;
             }
         }
         // Thirst drains a little faster than hunger, and is punished hardest by
         // heat (Desert/Jungle) and rain. Dehydration is deadlier than starvation.
-        let mut tdrain = if warm { 0.10 } else { 0.18 + 0.35 * cold };
+        let mut tdrain = if warm { 0.06 } else { 0.11 + 0.20 * cold };
         if wet {
-            tdrain += 0.08;
+            tdrain += 0.04;
         }
         if storm {
-            tdrain += 0.05;
+            tdrain += 0.03;
         }
         if heat {
-            tdrain += 0.22;
+            tdrain += 0.12;
         }
         if matches!(biome, TileKind::Desert | TileKind::Jungle | TileKind::Volcanic) {
-            tdrain += 0.18;
+            tdrain += 0.10;
         } else if matches!(biome, TileKind::Tundra) {
-            tdrain += 0.04;
+            tdrain += 0.02;
         }
         self.thirst = (self.thirst - dt * tdrain).max(0.0);
         if self.thirst <= 0.0 {
-            self.hp = (self.hp - dt * 3.5).max(0.0);
+            self.hp = (self.hp - dt * 2.0).max(0.0);
             if self.hp <= 0.0 {
                 self.alive = false;
             }
@@ -331,7 +331,7 @@ impl Player {
         // not sheltered by a light source — warmth is the only real defense.
         // A storm also bites if you're caught out in the open.
         if (harsh || storm) && !warm {
-            self.hp = (self.hp - dt * if storm { 0.6 } else { 1.0 }).max(0.0);
+            self.hp = (self.hp - dt * if storm { 0.4 } else { 0.6 }).max(0.0);
             if self.hp <= 0.0 {
                 self.alive = false;
             }

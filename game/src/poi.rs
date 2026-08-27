@@ -78,6 +78,28 @@ pub fn village_sites(seed: u32, count: usize, mut is_walkable: impl FnMut(i32, i
         }
         i += 1;
     }
+    // Fallback: if the fixed candidates all landed in water/mountain for this
+    // seed, spiral out from the origin and grab the first walkable tiles so a
+    // world ALWAYS has at least one village to spawn into (otherwise the player
+    // would be dropped into the wild).
+    let mut r: i32 = 1;
+    while out.len() < count && r < 240 {
+        for dy in -r..=r {
+            for dx in -r..=r {
+                if dx.abs() != r && dy.abs() != r {
+                    continue; // ring only
+                }
+                let (tx, ty) = (dx, dy);
+                if is_walkable(tx, ty) && !out.contains(&(tx, ty)) {
+                    out.push((tx, ty));
+                    if out.len() >= count {
+                        return out;
+                    }
+                }
+            }
+        }
+        r += 1;
+    }
     out
 }
 
