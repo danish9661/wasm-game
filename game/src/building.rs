@@ -556,6 +556,7 @@ mod size_tests {
     use crate::elements::humanoid;
     use crate::elements::house;
     use crate::elements::prim::Part;
+    use crate::enemy::EnemyKind;
     use super::StructureKind;
 
     /// Axis-aligned bounding box (width, height) of a list of drawn parts, in the
@@ -643,5 +644,91 @@ mod size_tests {
         assert!(StructureKind::Inn.blocks_movement());
         assert!(StructureKind::Barn.blocks_movement());
         assert!(StructureKind::Watchtower.blocks_movement());
+    }
+
+    /// Audit: every structure's drawn sprite must have a finite, positive size.
+    /// A zero/NaN footprint is invisible or broken art ("looks wrong").
+    #[test]
+    fn all_structure_sprites_have_valid_size() {
+        let kinds = [
+            StructureKind::Campfire, StructureKind::Wall, StructureKind::Chest,
+            StructureKind::Altar, StructureKind::Fence, StructureKind::Torch,
+            StructureKind::Anvil, StructureKind::Bed, StructureKind::Well,
+            StructureKind::Spike, StructureKind::FarmPlot, StructureKind::Turret,
+            StructureKind::HealingTotem, StructureKind::Trap, StructureKind::Sign,
+            StructureKind::Barrel, StructureKind::Totem, StructureKind::RockPile,
+            StructureKind::Statue, StructureKind::Lantern, StructureKind::Brazier,
+            StructureKind::Crate, StructureKind::Pillar, StructureKind::BonePile,
+            StructureKind::Cactus, StructureKind::Vines, StructureKind::Lilypad,
+            StructureKind::Reed, StructureKind::Rubble, StructureKind::RuinTower,
+            StructureKind::House, StructureKind::Cabin, StructureKind::Hut,
+            StructureKind::Inn, StructureKind::Barn, StructureKind::Watchtower,
+            StructureKind::Dungeon, StructureKind::Portal, StructureKind::Car,
+            StructureKind::Train, StructureKind::Rail, StructureKind::Banner,
+        ];
+        for k in kinds {
+            let s = k.sprite(3, 7);
+            assert!(s.half_w.is_finite() && s.half_w > 0.0, "{k:?} has bad half_w {}", s.half_w);
+            assert!(s.half_h.is_finite() && s.half_h > 0.0, "{k:?} has bad half_h {}", s.half_h);
+            for c in s.color {
+                assert!(c.is_finite() && c >= 0.0 && c <= 1.0, "{k:?} has bad color {c}");
+            }
+        }
+    }
+
+    /// Audit: every enemy renders a finite, positive-sized figure (no invisible
+    /// or degenerate monsters).
+    #[test]
+    fn all_enemy_sprites_have_valid_size() {
+        let kinds = [
+            EnemyKind::Slime, EnemyKind::Boss, EnemyKind::Skeleton, EnemyKind::Goblin,
+            EnemyKind::Bat, EnemyKind::Spider, EnemyKind::Imp, EnemyKind::Ogre,
+            EnemyKind::Wraith, EnemyKind::Stoneslinger, EnemyKind::Colossus,
+            EnemyKind::ScorpionQueen, EnemyKind::FrostGolem, EnemyKind::ToadKing,
+            EnemyKind::OceanLeviathan, EnemyKind::Brute, EnemyKind::Stormcaller,
+            EnemyKind::Wolf,
+        ];
+        for k in kinds {
+            let s = k.sprite(0.0, 0.0, 1.0, (1.0, 0.0));
+            assert!(s.half_w.is_finite() && s.half_w > 0.0, "{k:?} has bad half_w {}", s.half_w);
+            assert!(s.half_h.is_finite() && s.half_h > 0.0, "{k:?} has bad half_h {}", s.half_h);
+        }
+    }
+
+    /// Audit: the humanoid walk cycle must actually move the figure, otherwise
+    /// characters look frozen while moving.
+    #[test]
+    fn humanoid_walk_cycle_animates() {
+        let still = humanoid::build(0.0, 0.0, [0.8, 0.66, 0.48], 1.0, (1.0, 0.0), 0.0, 1.3, 0.0);
+        let moving = humanoid::build(0.0, 0.0, [0.8, 0.66, 0.48], 1.0, (1.0, 0.0), 1.0, 1.3, 0.0);
+        let diffs = still
+            .iter()
+            .zip(moving.iter())
+            .filter(|(a, b)| (a.cx - b.cx).abs() > 0.01 || (a.cy - b.cy).abs() > 0.01)
+            .count();
+        assert!(diffs > 0, "walk=1 must change at least one part vs walk=0");
+    }
+
+    /// Audit: the attack lunge must change the figure's pose (arms/torso extend).
+    #[test]
+    fn humanoid_attack_pose_extends() {
+        let idle = humanoid::build(0.0, 0.0, [0.8, 0.66, 0.48], 1.0, (1.0, 0.0), 0.0, 0.0, 0.0);
+        let swing = humanoid::build(0.0, 0.0, [0.8, 0.66, 0.48], 1.0, (1.0, 0.0), 0.0, 0.0, 1.0);
+        let diffs = idle
+            .iter()
+            .zip(swing.iter())
+            .filter(|(a, b)| (a.cx - b.cx).abs() > 0.01 || (a.cy - b.cy).abs() > 0.01)
+            .count();
+        assert!(diffs > 0, "attack=1 must change the pose vs attack=0");
+    }
+
+    /// Audit: the hit-flash must actually brighten the figure toward white.
+    #[test]
+    fn flash_brightens_figure() {
+        let parts = humanoid::build(0.0, 0.0, [0.8, 0.66, 0.48], 1.0, (1.0, 0.0), 0.0, 0.0, 0.0);
+        let flashed_parts = crate::elements::prim::flashed(&parts, 1.0);
+        let max_base = parts.iter().map(|p| p.color[0].max(p.color[1]).max(p.color[2])).fold(0.0f32, f32::max);
+        let max_flash = flashed_parts.iter().map(|p| p.color[0].max(p.color[1]).max(p.color[2])).fold(0.0f32, f32::max);
+        assert!(max_flash > max_base, "flash should brighten the figure");
     }
 }

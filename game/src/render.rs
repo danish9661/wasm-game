@@ -109,7 +109,7 @@ pub enum SpriteStyle {
 pub fn style_label(s: SpriteStyle) -> &'static str {
     match s {
         SpriteStyle::Generic => "?",
-        SpriteStyle::Tree => "T",
+        SpriteStyle::Tree => "t",
         SpriteStyle::Rock => "R",
         SpriteStyle::Bush => "b",
         SpriteStyle::Wall => "#",
@@ -121,7 +121,7 @@ pub fn style_label(s: SpriteStyle) -> &'static str {
         SpriteStyle::Guard => "G",
         SpriteStyle::Golem => "O",
         SpriteStyle::HpBack => "_",
-        SpriteStyle::HpFill => "=",
+        SpriteStyle::HpFill => "+",
         SpriteStyle::Arrow => "/",
         SpriteStyle::Mushroom => "m",
         SpriteStyle::Crystal => "c",
@@ -147,7 +147,7 @@ pub fn style_label(s: SpriteStyle) -> &'static str {
         SpriteStyle::Lantern => "l",
         SpriteStyle::Brazier => "z",
         SpriteStyle::Crate => "[]",
-        SpriteStyle::Pillar => "I",
+        SpriteStyle::Pillar => "|",
         SpriteStyle::BonePile => "X",
         SpriteStyle::Cactus => "K",
         SpriteStyle::Vines => "N",

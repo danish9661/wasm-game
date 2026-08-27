@@ -109,15 +109,19 @@ function pngToAscii(png, cols = 100, rows = 38) {
 function dumpToAscii(dump, cols = 110, rows = 44) {
   const sprites = dump.sprites || [];
   if (!sprites.length) return '(no sprites)';
-  const px = sprites.map(s => s.sx), py = sprites.map(s => s.sy);
-  const maxX = Math.max(1, ...px.map(Math.abs));
-  const maxY = Math.max(1, ...py.map(Math.abs));
-  const scale = Math.min((cols / 2 - 2) / maxX, (rows / 2 - 2) / maxY);
+  // Zoom into the player's neighbourhood so nearby buildings are readable
+  // instead of being shrunk to a blob by far-away sprites. 1 tile ~ 32px (x)
+  // and ~16px (y) in iso; cap the view at ~14 tiles from the player.
+  const EXT_X = 14 * 32;
+  const EXT_Y = 14 * 16;
+  const visible = sprites.filter(s =>
+    Math.abs(s.sx) <= EXT_X && Math.abs(s.sy) <= EXT_Y);
+  const scale = Math.min((cols / 2 - 2) / EXT_X, (rows / 2 - 2) / EXT_Y);
   const grid = Array.from({ length: rows }, () => Array(cols).fill(' '));
   // depth-sort so nearer (larger sy) sprites draw on top
-  const order = sprites.map((s, i) => i).sort((a, b) => sprites[a].sy - sprites[b].sy);
+  const order = visible.map((s, i) => i).sort((a, b) => visible[a].sy - visible[b].sy);
   for (const i of order) {
-    const s = sprites[i];
+    const s = visible[i];
     const cx = Math.round(cols / 2 + s.sx * scale);
     const cy = Math.round(rows / 2 + s.sy * scale);
     const hw = Math.max(0.4, s.hw * scale);
@@ -259,12 +263,51 @@ function runChecks(dump, dump2, dump3) {
     dump3 = d;
   }
 
+  // interior: walk up to the nearest house (it blocks movement, so we stop
+  // adjacent) and press Enter to go inside; verify the interior scene loads.
+  const houses = dump1.sprites.filter(s => ['H', 'C', 'U'].includes(s.label));
+  let interiorDump = null;
+  if (houses.length && dump1.player) {
+    const target = houses
+      .map(s => ({ s, d: Math.hypot(s.x - dump1.player.x, s.y - dump1.player.y) }))
+      .sort((a, b) => a.d - b.d)[0].s;
+    const dx = target.x - dump1.player.x, dy = target.y - dump1.player.y;
+    const len = Math.hypot(dx, dy) || 1;
+    await page.evaluate(([x, y]) => window.set_analog(x, y), [dx / len, dy / len]);
+    await stepN(180, 0.03);
+    await page.evaluate(() => window.set_analog(0, 0));
+    await page.keyboard.press('Enter');
+    await stepN(12, 0.03);
+    interiorDump = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+  }
+
   const checks = runChecks(dump1, dump2, dump3);
+
+  // style histogram: what's actually in the scene (catches missing/duplicate art)
+  const hist = {};
+  for (const s of dump1.sprites) hist[s.label] = (hist[s.label] || 0) + 1;
+  const histStr = Object.entries(hist).sort((a, b) => b[1] - a[1])
+    .map(([k, v]) => `${k}:${v}`).join('  ');
+
+  // interior check
+  if (interiorDump) {
+    const floor = interiorDump.sprites.some(s => s.label === '.');
+    checks.push({
+      name: 'entering a house loads interior',
+      pass: interiorDump.interior === true && floor,
+      detail: `interior=${interiorDump.interior} floorTiles=${floor}`,
+    });
+  } else {
+    checks.push({ name: 'entering a house loads interior', pass: false, detail: 'no house found' });
+  }
 
   console.log('\n===== FRAME DUMP (intended scene, ASCII) =====');
   console.log(dumpToAscii(dump1));
   console.log('\n===== SCREENSHOT (real pixels, ASCII) =====');
   console.log(pngToAscii(decodePNG(Buffer.from(shot1)), 100, 38));
+
+  console.log('\n===== STYLE HISTOGRAM =====');
+  console.log(histStr);
 
   console.log('\n===== CHECKS =====');
   let allPass = true;

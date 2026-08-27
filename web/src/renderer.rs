@@ -1138,6 +1138,7 @@ impl App {
         );
         let dump = serde_json::json!({
             "cam": { "x": cam.x, "y": cam.y },
+            "interior": self.interior.is_some(),
             "player": {
                 "x": self.player.x,
                 "y": self.player.y,
