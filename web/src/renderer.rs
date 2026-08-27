@@ -152,6 +152,9 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::House => "Hh",
         StructureKind::Cabin => "Cb",
         StructureKind::Hut => "Hu",
+        StructureKind::Inn => "Inn",
+        StructureKind::Barn => "Barn",
+        StructureKind::Watchtower => "Twr",
         StructureKind::Car => "Car",
         StructureKind::Train => "Train",
         StructureKind::Rail => "Rail",
@@ -2041,7 +2044,11 @@ impl App {
         for s in &self.structures {
             if matches!(
                 s.kind,
-                StructureKind::House | StructureKind::Cabin | StructureKind::Hut | StructureKind::Dungeon
+                StructureKind::House
+                    | StructureKind::Cabin
+                    | StructureKind::Hut
+                    | StructureKind::Inn
+                    | StructureKind::Dungeon
             ) {
                 let dx = s.tx as f32 + 0.5 - px;
                 let dy = s.ty as f32 + 0.5 - py;
@@ -2059,6 +2066,7 @@ impl App {
                     StructureKind::House => "House",
                     StructureKind::Cabin => "Cabin",
                     StructureKind::Hut => "Hut",
+                    StructureKind::Inn => "Inn",
                     _ => "Dungeon",
                 };
                 // Dungeons seed a few spike traps on the floor; the vault loot is
@@ -2979,6 +2987,9 @@ impl App {
             StructureKind::House,
             StructureKind::Cabin,
             StructureKind::Hut,
+            StructureKind::Inn,
+            StructureKind::Barn,
+            StructureKind::Watchtower,
         ];
         let ring: [(i32, i32); 8] = [
             (1, 0),
@@ -3015,10 +3026,17 @@ impl App {
             if tile_at(&self.world, &mut self.chunks, vx - 2, vy).walkable() {
                 structures.push(Structure { tx: vx - 2, ty: vy, kind: StructureKind::Well });
             }
-            // Populate the hamlet: a guard by the sign, a merchant by the well, and
-            // a few villagers among the houses.
+            // Populate the hamlet: a guard by the sign, a stone golem defender,
+            // a merchant by the well, and a few villagers among the houses.
             let c = (vx as f32 + 0.5, vy as f32 + 0.5);
             self.npcs.push(Npc::new(NpcKind::Guard, c.0, c.1, format!("Guard of {}", name), (vx as f32, vy as f32)));
+            self.npcs.push(Npc::new(
+                NpcKind::Golem,
+                c.0 + 1.2,
+                c.1 + 0.4,
+                format!("{} the Golem", name),
+                (vx as f32, vy as f32),
+            ));
             self.npcs.push(Npc::new(
                 NpcKind::Merchant,
                 vx as f32 - 2.0 + 0.5,
@@ -3090,8 +3108,16 @@ impl App {
             }
         }
         structures.push(Structure { tx: tx0, ty: rail_y, kind: StructureKind::Train });
-        // Buildings on a grid, skipping the plaza and the rail row.
-        let bkinds = [StructureKind::House, StructureKind::Cabin, StructureKind::Hut];
+        // Buildings on a grid, skipping the plaza and the rail row. Mix in inns,
+        // barns and a watchtower so the town reads as a real settlement.
+        let bkinds = [
+            StructureKind::House,
+            StructureKind::Cabin,
+            StructureKind::Hut,
+            StructureKind::Inn,
+            StructureKind::Barn,
+            StructureKind::Watchtower,
+        ];
         let mut bi = 0usize;
         for gx in (tx0 - 10..=tx0 + 10).step_by(4) {
             for gy in (ty0 - 10..=ty0 + 10).step_by(4) {
@@ -3102,7 +3128,7 @@ impl App {
                     continue;
                 }
                 if tile_at(&self.world, &mut self.chunks, gx, gy).walkable() {
-                    let k = bkinds[bi % 3];
+                    let k = bkinds[bi % bkinds.len()];
                     bi += 1;
                     structures.push(Structure { tx: gx, ty: gy, kind: k });
                 }
@@ -3789,7 +3815,7 @@ impl App {
                     && !self.nodes.is_depleted(tx, ty)
         };
         for n in self.npcs.iter_mut() {
-            if n.kind == NpcKind::Guard {
+            if n.kind == NpcKind::Guard || n.kind == NpcKind::Golem {
                 // Engage the nearest hostile enemy within the hamlet's perimeter,
                 // but stay close to home so the watch doesn't wander off.
                 let home_d = (n.home.0 - n.x).hypot(n.home.1 - n.y);
@@ -3845,13 +3871,14 @@ impl App {
             // Village guards defend: any hostile enemy within a guard's reach takes
             // steady damage, so mobs that wander into a hamlet get driven off.
             let guarded = self.npcs.iter().any(|n| {
-                n.kind == NpcKind::Guard && (n.x - e.x).hypot(n.y - e.y) < 7.0
+                (n.kind == NpcKind::Guard || n.kind == NpcKind::Golem)
+                    && (n.x - e.x).hypot(n.y - e.y) < 7.0
             });
             if guarded {
                 // A War Banner within 6 tiles of the guarding NPC empowers it,
                 // reinforcing base defense (the Banner's reason for existing).
                 let buffed = self.npcs.iter().any(|n| {
-                    n.kind == NpcKind::Guard
+                    (n.kind == NpcKind::Guard || n.kind == NpcKind::Golem)
                         && (n.x - e.x).hypot(n.y - e.y) < 7.0
                         && self
                             .structures
@@ -4514,13 +4541,17 @@ impl App {
             sprites.push(ps);
         }
         // Townsfolk: humanoid figures tinted by role, with a walk cycle driven by
-        // their wander state. Guards/merchants stand a touch taller.
+        // their wander state. Guards wear helmet + sword + shield; golems are
+        // bulky stone sentinels with a club — both clearly distinct from villagers.
         for n in &self.npcs {
-            let tall = matches!(n.kind, NpcKind::Guard | NpcKind::Merchant);
-            let (hw, hh) = if tall { (8.0, 20.0) } else { (7.5, 17.0) };
+            let (style, hw, hh) = match n.kind {
+                NpcKind::Guard => (SpriteStyle::Guard, 9.0, 22.0),
+                NpcKind::Golem => (SpriteStyle::Golem, 11.0, 28.0),
+                _ => (SpriteStyle::Humanoid, 7.5, 17.0),
+            };
             sprites.push(
                 Sprite::new_center(n.x, n.y, n.kind.color(), hw, hh, 0.0)
-                    .with_style(SpriteStyle::Humanoid)
+                    .with_style(style)
                     .with_facing(n.facing)
                     .with_walk((n.walk * 0.15).min(1.0)),
             );

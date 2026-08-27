@@ -18,6 +18,8 @@ pub(crate) mod altar;
 pub(crate) mod arrow;
 pub(crate) mod slime;
 pub(crate) mod humanoid;
+pub(crate) mod guard;
+pub(crate) mod golem;
 pub(crate) mod hpbar;
 
 // Harvestable resources

@@ -10,6 +10,7 @@ pub enum NpcKind {
     Villager,
     Guard,
     Merchant,
+    Golem,
 }
 
 impl NpcKind {
@@ -18,6 +19,7 @@ impl NpcKind {
             NpcKind::Villager => "Villager",
             NpcKind::Guard => "Guard",
             NpcKind::Merchant => "Merchant",
+            NpcKind::Golem => "Golem",
         }
     }
 
@@ -27,6 +29,7 @@ impl NpcKind {
             NpcKind::Villager => [0.80, 0.66, 0.48],
             NpcKind::Guard => [0.55, 0.58, 0.66],
             NpcKind::Merchant => [0.80, 0.62, 0.78],
+            NpcKind::Golem => [0.60, 0.62, 0.66],
         }
     }
 
@@ -56,6 +59,7 @@ impl NpcKind {
             NpcKind::Villager => lines[0],
             NpcKind::Guard => lines[1],
             NpcKind::Merchant => lines[2],
+            NpcKind::Golem => &["I guard this place with stone and silence."],
         };
         pool[(seed as usize) % pool.len()]
     }

@@ -58,6 +58,11 @@ pub enum StructureKind {
     House,
     Cabin,
     Hut,
+    // Additional village building types for variety: a tavern, a barn and a
+    // stone watchtower (with a beacon). All decor; not player-buildable.
+    Inn,
+    Barn,
+    Watchtower,
     // Dungeon entrance: a stone archway you can step into (Enter) to explore a
     // trapped vault. World-gen only; not buildable.
     Dungeon,
@@ -136,6 +141,9 @@ impl StructureKind {
             StructureKind::Rail => [0.34, 0.32, 0.28],
             StructureKind::Dungeon => [0.55, 0.50, 0.46],
             StructureKind::Portal => [0.55, 0.85, 1.0],
+            StructureKind::Inn => [0.80, 0.64, 0.48],
+            StructureKind::Barn => [0.62, 0.24, 0.20],
+            StructureKind::Watchtower => [0.66, 0.64, 0.60],
         }
     }
 
@@ -149,6 +157,9 @@ impl StructureKind {
                 | StructureKind::HealingTotem
                 | StructureKind::Car
                 | StructureKind::Train
+                | StructureKind::Inn
+                | StructureKind::Barn
+                | StructureKind::Watchtower
         )
     }
 
@@ -162,6 +173,8 @@ impl StructureKind {
                 | StructureKind::Brazier
                 | StructureKind::HealingTotem
                 | StructureKind::Portal
+                | StructureKind::Watchtower
+                | StructureKind::Inn
         )
     }
 
@@ -193,6 +206,9 @@ impl StructureKind {
                 | StructureKind::Train
                 | StructureKind::Rail
                 | StructureKind::Portal
+                | StructureKind::Inn
+                | StructureKind::Barn
+                | StructureKind::Watchtower
         )
     }
 
@@ -237,9 +253,12 @@ impl StructureKind {
             StructureKind::Reed => (10.0, 20.0, 1.0),
             StructureKind::Rubble => (12.0, 8.0, 1.0),
             StructureKind::RuinTower => (13.0, 34.0, 1.0),
-            StructureKind::House => (13.0, 22.0, 1.0),
-            StructureKind::Cabin => (11.0, 18.0, 1.0),
-            StructureKind::Hut => (9.0, 14.0, 1.0),
+            StructureKind::House => (28.0, 100.0, 0.0),
+            StructureKind::Cabin => (23.0, 80.0, 0.0),
+            StructureKind::Hut => (18.0, 60.0, 0.0),
+            StructureKind::Inn => (30.0, 96.0, 0.0),
+            StructureKind::Barn => (34.0, 78.0, 0.0),
+            StructureKind::Watchtower => (20.0, 150.0, 0.0),
             StructureKind::Car => (16.0, 12.0, 2.0),
             StructureKind::Train => (20.0, 16.0, 4.0),
             StructureKind::Rail => (16.0, 6.0, 0.0),
@@ -286,6 +305,9 @@ impl StructureKind {
             StructureKind::Rail => SpriteStyle::Rail,
             StructureKind::Dungeon => SpriteStyle::RuinTower,
             StructureKind::Portal => SpriteStyle::Portal,
+            StructureKind::Inn => SpriteStyle::Inn,
+            StructureKind::Barn => SpriteStyle::Barn,
+            StructureKind::Watchtower => SpriteStyle::Watchtower,
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }

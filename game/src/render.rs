@@ -29,6 +29,10 @@ pub enum SpriteStyle {
     Altar,
     Slime,
     Humanoid,
+    /// Villager guard: armored figure with helmet, sword and shield.
+    Guard,
+    /// Stone golem protector: bulky, glowing eyes, heavy club.
+    Golem,
     /// HP bar backing plate (dark frame), drawn just above an enemy.
     HpBack,
     /// HP bar fill (colored, width encodes hp fraction).
@@ -77,6 +81,9 @@ pub enum SpriteStyle {
     House,
     Cabin,
     Hut,
+    Inn,
+    Barn,
+    Watchtower,
     // ---- Enemies ----------------------------------------------------------
     // Humanoid foes (Skeleton, Goblin, Ogre, Brute, Stormcaller, Stoneslinger,
     // Boss) all share SpriteStyle::Humanoid for a consistent cast; only the
@@ -781,7 +788,7 @@ fn push_styled_sprite(
         crate_box, crystal, fence, fern, flower,         grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
         lilypad, mushroom, ore, pillar, portal, reed, rock, rock_pile, rubble, ruin_tower, sign,
         slime, spider, statue, torch, totem, tree, turret, vines, wall, well, wraith,
-        colossus, spike, farm_plot, house,
+        colossus, spike, farm_plot, house, guard, golem,
     };
     match style {
         SpriteStyle::Generic => {
@@ -804,6 +811,14 @@ fn push_styled_sprite(
         }
         SpriteStyle::Humanoid => {
             let parts = humanoid::build(cx, cy, color, alpha, facing, walk, anim_time, attack);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Guard => {
+            let parts = guard::build(cx, cy, color, alpha, facing, walk, anim_time, attack);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Golem => {
+            let parts = golem::build(cx, cy, color, alpha, facing, walk, anim_time, attack);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::HpBack => rasterize(&hpbar::back(cx, cy, hw, hh, lift, color, alpha), out),
@@ -916,6 +931,9 @@ fn push_styled_sprite(
         SpriteStyle::House => rasterize(&house::build(0, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Cabin => rasterize(&house::build(1, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Hut => rasterize(&house::build(2, cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Inn => rasterize(&house::build(3, cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Barn => rasterize(&house::build(4, cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Watchtower => rasterize(&house::build(5, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Floor => {
             rasterize(&[Part::diamond(cx, cy, hw.max(1.0), hh.max(1.0), 0.0, color, alpha, false)], out)
         }
