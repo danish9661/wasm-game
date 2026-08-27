@@ -6,7 +6,7 @@ use crate::building::{Structure, StructureKind, try_build};
 use crate::combat::Arrow;
 use crate::daynight::{daylight, temperature, DAY_LENGTH};
 use crate::weapons::WeaponKind;
-use crate::enemy::{AiState, EnemyKind, EnemyRegistry, spawner_on};
+use crate::enemy::{AiState, Enemy, EnemyKind, EnemyRegistry, spawner_on};
 use crate::items::{Inventory, ItemKind};
 use crate::player::{self, Player};
 use crate::quest::QuestLog;
@@ -567,7 +567,12 @@ fn step_player(
         };
 
         let mut contacts: Vec<(f32, f32, f32)> = Vec::new();
+        // Enemies keep pace with the strongest player's progression so a high-level
+        // group isn't trivially outrun.
+        let lvl = self.players.values().map(|p| p.player.level).max().unwrap_or(0);
+        let enemy_speed = Enemy::speed_scale_for_level(lvl);
         for e in self.enemies.enemies_mut() {
+            e.speed_mult = enemy_speed;
             let target = targets
                 .iter()
                 .min_by(|a, b| {

@@ -358,6 +358,9 @@ pub struct Enemy {
     /// Elite multiplier: scales max HP, contact damage and XP reward. 1.0 for
     /// ordinary spawner enemies; >1 for roaming mini-bosses.
     pub elite: f32,
+    /// Speed scaling relative to the player's progression: set each tick from the
+    /// player's level so enemies keep pace as you grow stronger (see `set_speed_mult`).
+    pub speed_mult: f32,
     /// True for undead / night creatures. They avoid daylight and burn while
     /// exposed to it (see `daylight_burn`). Derived from the kind at spawn.
     pub nocturnal: bool,
@@ -386,6 +389,7 @@ impl Enemy {
             pending_shot: None,
             enraged: false,
             elite: 1.0,
+            speed_mult: 1.0,
             nocturnal: kind.nocturnal(),
             burn: 0.0,
         }
@@ -434,6 +438,13 @@ impl Enemy {
             self.hp = 0.0;
         }
         self.burn = 1.0;
+    }
+
+    /// Speed multiplier for enemies relative to the player's progression. As the
+    /// player levels up, enemies speed up (capped) so they keep pace instead of
+    /// becoming trivial to outrun. 1.0 at level 0, ramping to ~2.2 by high level.
+    pub fn speed_scale_for_level(level: u32) -> f32 {
+        (1.0 + 0.05 * level as f32).min(2.2)
     }
 
     /// Drops from a dead enemy.
@@ -493,6 +504,9 @@ impl Enemy {
         } else {
             (speed, cooldown)
         };
+        // Scale movement to the player's progression so enemies stay a credible
+        // threat as the player levels up (set each tick via `set_speed_mult`).
+        let speed = speed * self.speed_mult;
         let windup_time = if self.enraged { WINDUP * 0.6 } else { WINDUP };
         let d = (player.0 - self.x)
             .abs()

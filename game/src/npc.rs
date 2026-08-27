@@ -74,7 +74,7 @@ pub struct Npc {
     target: (f32, f32),
     retarget: f32,
     /// Home anchor so they don't drift too far from the village.
-    home: (f32, f32),
+    pub home: (f32, f32),
     /// An optional fetch quest this townsperson has given the player:
     /// (need item, need count, reward xp, reward item, reward count). When the
     /// player fulfills it (via talk), the reward is granted and this clears.

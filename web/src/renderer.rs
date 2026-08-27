@@ -3501,22 +3501,60 @@ impl App {
         let py = self.player.y;
         let day = daylight_at(self.time_of_day);
         let mut contact: Option<(f32, f32, f32)> = None;
-        // Townsfolk wander; they never interact with combat, just ambiance.
+        // Townsfolk wander; village guards actively defend the hamlet by chasing
+        // and striking any hostile enemy that comes near, then return to strolling.
+        let enemy_spots: Vec<(f32, f32)> = self.enemies.enemies().map(|e| (e.x, e.y)).collect();
+        let mut blocked = |tx: f32, ty: f32| -> bool {
+            let (tx, ty) = (tx as i32, ty as i32);
+            let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
+            !tile.walkable()
+                || self
+                    .structures
+                    .iter()
+                    .any(|s| s.tx == tx && s.ty == ty && s.kind.blocks_movement())
+                || resource_on(tx, ty, tile).is_some_and(|k| k.blocks_movement())
+                    && !self.nodes.is_depleted(tx, ty)
+        };
         for n in self.npcs.iter_mut() {
-            n.update(dt, |tx, ty| {
-                let (tx, ty) = (tx as i32, ty as i32);
-                let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
-                !tile.walkable()
-                    || self
-                        .structures
-                        .iter()
-                        .any(|s| s.tx == tx && s.ty == ty && s.kind.blocks_movement())
-                    || resource_on(tx, ty, tile).is_some_and(|k| k.blocks_movement())
-                        && !self.nodes.is_depleted(tx, ty)
-            });
+            if n.kind == NpcKind::Guard {
+                // Engage the nearest hostile enemy within the hamlet's perimeter,
+                // but stay close to home so the watch doesn't wander off.
+                let home_d = (n.home.0 - n.x).hypot(n.home.1 - n.y);
+                let mut best: Option<(f32, (f32, f32))> = None;
+                for &(ex, ey) in &enemy_spots {
+                    let d = (ex - n.x).hypot(ey - n.y);
+                    if d < 8.0 && best.map_or(true, |(bd, _)| d < bd) {
+                        best = Some((d, (ex, ey)));
+                    }
+                }
+                if let Some((d, (ex, ey))) = best.filter(|_| home_d < 11.0) {
+                    let dx = ex - n.x;
+                    let dy = ey - n.y;
+                    let len = d.max(1e-3);
+                    n.facing = (dx / len, dy / len);
+                    let sp = 2.6 * dt; // guards move briskly when giving chase
+                    if d > 1.2 {
+                        let nx = n.x + dx / len * sp;
+                        let ny = n.y + dy / len * sp;
+                        if !blocked(nx, ny) {
+                            n.x = nx;
+                            n.y = ny;
+                        }
+                    }
+                    n.walk = (n.walk + dt * 6.0) % 1000.0;
+                } else {
+                    n.update(dt, &mut blocked);
+                }
+            } else {
+                n.update(dt, &mut blocked);
+            }
         }
+        let enemy_speed = game::enemy::Enemy::speed_scale_for_level(self.player.level);
         for e in self.enemies.enemies_mut() {
             self.discovered.insert(e.kind);
+            // Keep enemy pace in step with the player's progression so they don't
+            // become trivial to outrun as you level up.
+            e.speed_mult = enemy_speed;
             if let Some(dmg) = e.update((px, py), dt, |tx, ty| {
                 let tile = tile_at(&self.world, &mut self.chunks, tx, ty);
                 !tile.walkable()
@@ -3531,6 +3569,14 @@ impl App {
             }
             // Nocturnal undead burn in daylight and should not be prowling by day.
             e.daylight_burn(dt, day);
+            // Village guards defend: any hostile enemy within a guard's reach takes
+            // steady damage, so mobs that wander into a hamlet get driven off.
+            let guarded = self.npcs.iter().any(|n| {
+                n.kind == NpcKind::Guard && (n.x - e.x).hypot(n.y - e.y) < 7.0
+            });
+            if guarded {
+                e.take_damage(20.0 * dt);
+            }
             // Ranged enemies fire: turn the pending shot into an enemy arrow.
             if let Some((dx, dy)) = e.pending_shot.take() {
                 self.arrows.push(Arrow::enemy(e.x, e.y, dx, dy));
