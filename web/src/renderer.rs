@@ -3184,6 +3184,7 @@ impl App {
         self.near_altar = false;
         self.altar_hinted = false;
         self.ending_pending = false;
+        self.ending = None;
         self.time_of_day = START_TIME;
         self.respawn_timer = 0.0;
         self.build_mode = None;

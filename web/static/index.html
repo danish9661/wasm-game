@@ -58,7 +58,11 @@
   </div>
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
-  <div id="altar-prompt" class="hidden">The Crown hums in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
+  <div id="altar-prompt" class="hidden">All five Crown Fragments blaze in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
+  <div id="compass" class="hidden" title="Points to the next Crown Fragment / altar">
+    <div id="compass-needle"></div>
+    <span id="compass-label">Objective</span>
+  </div>
   <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — open <b>Inventory (I)</b> to craft upgrades</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
@@ -665,12 +669,13 @@
           const QUEST_TEXT = [
             'Gather 5 wood and 1 stone',
             'Build a wall and a campfire',
+            'Craft Iron Plate at an Anvil',
             'A slime blocks the ruins - defeat it',
             'Find the ancient ruins',
             'Open the ruins chest',
-             'The Forest Warden guards a Crown Fragment - also hunt the Colossus',
-             'Carry the fragment to the altar where you woke',
-            'Press E at the altar to reforge the Crown',
+            'Hunt the Crown Fragment guardians (X/5 recovered)',
+            'Carry all 5 fragments to the altar where you woke',
+            'Press E at the altar to reforge the Star Crown',
             'The Star Crown blazes - the world is healed',
           ];
           const el = (id) => document.getElementById(id);
@@ -681,6 +686,7 @@
           let lastInv = { w: -1, s: -1, f: -1 };
           let lastAlive = 1;
           let lastQuest = -1;
+          let lastFrag = -1;
           let diedAt = 0;
           const toast = (msg) => {
             const t = document.createElement('div');
@@ -740,22 +746,35 @@
 
              // Objective tracker: a short, stage-aware goal line.
              const OBJECTIVES = [
-               'Survive: gather wood & stone, build a campfire + bed',
-               'Craft tools at an anvil (stand near it, press M)',
-               'Forage herbs and build a well for water',
-               'Fortify your base with walls',
-               'Hunt the land\'s creatures for a Crown Fragment',
-               'Build a Reforging Altar',
-               'Reforge the Star Crown — choose your ending',
-               'You reforged the Star Crown',
+               'Survive: gather wood & stone',
+               'Build a wall and a campfire',
+               'Craft Iron Plate at an Anvil',
+               'Clear the ruins of its guardian slime',
+               'Find the ancient ruins',
+               'Open the ruins chest',
+               'Hunt the five Crown Fragment guardians',
+               'Carry all five fragments to the altar',
+               'Reforge the Star Crown at the altar',
+               'The Star Crown is reforged',
              ];
              const obj = OBJECTIVES[Math.min(stats.quest | 0, OBJECTIVES.length - 1)];
              el('hud-objective').style.display = 'inline-block';
              el('hud-objective').textContent = '🎯 ' + obj;
 
+             // Compass needle points from the player toward the current objective
+             // (nearest unrecovered fragment guardian, or the altar once complete).
+             const compass = el('compass');
+             if ((stats.objdx !== 0 || stats.objdy !== 0) && stats.ending < 0) {
+               compass.className = '';
+               const ang = Math.atan2(stats.objdy, stats.objdx) * 180 / Math.PI + 90;
+               el('compass-needle').style.transform = `rotate(${ang}deg)`;
+             } else {
+               compass.className = 'hidden';
+             }
+
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
-              el('inv-frag').textContent = `🩱 ${stats.frag}`;
+              el('inv-frag').textContent = `🩱 ${stats.frag}/5`;
             } else {
               el('inv-frag').style.display = 'none';
             }
@@ -768,7 +787,7 @@
             }
             lastInv = inv;
 
-            const atAltar = stats.altar === 1 && stats.frag > 0 && stats.ending < 0 && stats.nearaltar === 1;
+            const atAltar = stats.altar === 1 && stats.frag >= 5 && stats.ending < 0 && stats.nearaltar === 1;
             el('altar-prompt').style.display = atAltar ? 'block' : 'none';
             el('anvil-prompt').style.display = (stats.nearAnvil === 1 && stats.alive === 1) ? 'block' : 'none';
 
@@ -792,11 +811,13 @@
             }
 
             const q = stats.quest;
-            if (q >= 0 && q < QUEST_TEXT.length && q !== lastQuest) {
+            if (q >= 0 && q < QUEST_TEXT.length && (q !== lastQuest || (q === 6 && stats.frag !== lastFrag))) {
               let txt = QUEST_TEXT[q];
-              if (q === 8 && stats.colossus >= 1) txt = 'The Twin Star Crowns blaze - the world is whole (true ending)';
+              if (q === 6) txt = QUEST_TEXT[6].replace('X/5', stats.frag + '/5');
+              else if (q === 8 && stats.colossus >= 1) txt = 'The Twin Star Crowns blaze - the world is whole (true ending)';
               el('quest').textContent = `📜 ${txt}`;
               lastQuest = q;
+              lastFrag = stats.frag;
             }
 
             const ov = el('overlay');
@@ -858,6 +879,8 @@
               online: Number(get(/online=(\d+)/) || 0),
               coopids: get(/coopids=([^\s]*)/) || '',
               maps: Number(get(/maps=(\d+)/) || 0),
+              objdx: Number(get(/objdx=([-\d.]+)/) || 0),
+              objdy: Number(get(/objdy=([-\d.]+)/) || 0),
               near: get(/near2=(\S+)/) || 'wilderness',
             };
           };
