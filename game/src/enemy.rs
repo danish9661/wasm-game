@@ -50,9 +50,21 @@ pub enum EnemyKind {
     Wraith,
     /// Stoneslinger: a stone-biome caster that hurls rocks from range.
     Stoneslinger,
-    /// Colossus: a second Crown Fragment guardian — a towering stone golem
-    /// that awakens in the Stone peaks.
+    /// Colossus: an optional bonus elite — a towering stone golem that awakens in
+    /// the Stone peaks. Drops treasures but NOT a Crown Fragment.
     Colossus,
+    /// Scorpion Queen: the Desert Crown Fragment guardian. A fast, venomous
+    /// charger that strikes from range with poison stings.
+    ScorpionQueen,
+    /// Frost Golem: the Tundra Crown Fragment guardian. A slow, towering wall of
+    /// ice that hits like a truck and never stops chasing.
+    FrostGolem,
+    /// Toad King: the Swamp Crown Fragment guardian. A bloated amphibian that
+    /// spits toxic globs from range and lashes out with its tongue.
+    ToadKing,
+    /// Ocean Leviathan: the Deep Ocean Crown Fragment guardian. A swift tidal
+    /// terror that hurls water from afar and surges across the waves.
+    OceanLeviathan,
     /// Brute: a hulking melee tank that winds up and charges in a straight
     /// line, dealing heavy contact damage if it connects.
     Brute,
@@ -74,7 +86,15 @@ impl EnemyKind {
 
     /// True for enemies that fire projectiles at the player from range.
     pub fn ranged(self) -> bool {
-        matches!(self, EnemyKind::Stoneslinger | EnemyKind::Stormcaller | EnemyKind::Archer)
+        matches!(
+            self,
+            EnemyKind::Stoneslinger
+                | EnemyKind::Stormcaller
+                | EnemyKind::Archer
+                | EnemyKind::Boss
+                | EnemyKind::ToadKing
+                | EnemyKind::OceanLeviathan
+        )
     }
 
     /// True for undead / creatures-of-the-night that shun the sun: they only
@@ -92,6 +112,9 @@ impl EnemyKind {
             EnemyKind::Stoneslinger => 9.0,
             EnemyKind::Stormcaller => 10.0,
             EnemyKind::Archer => 8.0,
+            EnemyKind::Boss => 8.0,
+            EnemyKind::ToadKing => 9.0,
+            EnemyKind::OceanLeviathan => 10.0,
             _ => 0.0,
         }
     }
@@ -114,6 +137,10 @@ impl EnemyKind {
             EnemyKind::Stormcaller => "Stormcaller",
             EnemyKind::Wolf => "Wolf",
             EnemyKind::Archer => "Archer",
+            EnemyKind::ScorpionQueen => "Scorpion Queen",
+            EnemyKind::FrostGolem => "Frost Golem",
+            EnemyKind::ToadKing => "Toad King",
+            EnemyKind::OceanLeviathan => "Ocean Leviathan",
         }
     }
 
@@ -121,7 +148,7 @@ impl EnemyKind {
     pub fn behavior(self) -> &'static str {
         match self {
             EnemyKind::Slime => "Slow melee; the first thing between you and the ruins.",
-            EnemyKind::Boss => "Boss: wide reach, high hp. Guards the first Crown Fragment.",
+            EnemyKind::Boss => "Boss: Forest Warden. Wide reach, high hp, hurls vines. First Crown Fragment.",
             EnemyKind::Skeleton => "Steady melee undead of forest and ruins.",
             EnemyKind::Goblin => "Quick melee ambusher.",
             EnemyKind::Bat => "Fast flyer; weak but hard to pin down.",
@@ -130,17 +157,44 @@ impl EnemyKind {
             EnemyKind::Ogre => "Slow, heavily-armored bruiser with big hits.",
             EnemyKind::Wraith => "Flying spirit that drifts straight through walls.",
             EnemyKind::Stoneslinger => "Ranged caster; hurls rocks from afar.",
-            EnemyKind::Colossus => "Boss: towering stone golem; second Crown Fragment.",
+            EnemyKind::Colossus => "Bonus elite: towering stone golem of the peaks. Drops treasure, not a fragment.",
             EnemyKind::Brute => "Tank that winds up and charges in a straight line.",
             EnemyKind::Stormcaller => "Flying storm-mage; drifts over walls and hurls lightning from afar.",
             EnemyKind::Wolf => "Fast pack hunter; tears in and bites before you can react.",
             EnemyKind::Archer => "Ranged marksman; kites and looses arrows from afar.",
+            EnemyKind::ScorpionQueen => "Boss: Desert. Fast venomous charger that stings from range. Crown Fragment.",
+            EnemyKind::FrostGolem => "Boss: Tundra. Slow, towering ice wall with crushing blows. Crown Fragment.",
+            EnemyKind::ToadKing => "Boss: Swamp. Bloated amphibian that spits toxic globs from range. Crown Fragment.",
+            EnemyKind::OceanLeviathan => "Boss: Ocean. Swift tidal terror hurling water from afar. Crown Fragment.",
         }
     }
 
-    /// True for the two Crown Fragment guardians (never respawn).
+    /// True for the Crown Fragment guardian bosses (never respawn). Includes the
+    /// optional Colossus elite so it also uses boss-grade stats and behaviour.
     pub fn is_boss(self) -> bool {
-        matches!(self, EnemyKind::Boss | EnemyKind::Colossus)
+        matches!(
+            self,
+            EnemyKind::Boss
+                | EnemyKind::Colossus
+                | EnemyKind::ScorpionQueen
+                | EnemyKind::FrostGolem
+                | EnemyKind::ToadKing
+                | EnemyKind::OceanLeviathan
+        )
+    }
+
+    /// Bit index (0..5) of the Crown Fragment this boss guards, or None for
+    /// non-fragment elites (e.g. the bonus Colossus). Used to track which of the
+    /// five fragments the player has recovered.
+    pub fn fragment_bit(self) -> Option<u8> {
+        match self {
+            EnemyKind::Boss => Some(0),
+            EnemyKind::ScorpionQueen => Some(1),
+            EnemyKind::FrostGolem => Some(2),
+            EnemyKind::ToadKing => Some(3),
+            EnemyKind::OceanLeviathan => Some(4),
+            _ => None,
+        }
     }
 
     /// Damage multiplier for a given weapon — certain weapons are strong against
@@ -158,6 +212,10 @@ impl EnemyKind {
             (EnemyKind::Goblin, WeaponKind::Sword) => 1.5,
             (EnemyKind::Wolf, WeaponKind::Spear) => 1.5,
             (EnemyKind::Slime | EnemyKind::Spider | EnemyKind::Imp, WeaponKind::Axe) => 1.5,
+            (EnemyKind::ScorpionQueen, WeaponKind::Bow) => 1.5,
+            (EnemyKind::FrostGolem | EnemyKind::Colossus, WeaponKind::Hammer) => 1.5,
+            (EnemyKind::ToadKing, WeaponKind::Axe) => 1.5,
+            (EnemyKind::OceanLeviathan, WeaponKind::Spear) => 1.5,
             _ => 1.0,
         }
     }
@@ -175,7 +233,11 @@ impl EnemyKind {
             EnemyKind::Ogre => vec![ItemKind::Gem],
             EnemyKind::Wraith => vec![ItemKind::Herb],
             EnemyKind::Stoneslinger => vec![ItemKind::Gem],
-            EnemyKind::Colossus => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Herb],
+            EnemyKind::Colossus => vec![ItemKind::Gem, ItemKind::Herb],
+            EnemyKind::ScorpionQueen => vec![ItemKind::Fragment],
+            EnemyKind::FrostGolem => vec![ItemKind::Fragment, ItemKind::Gem],
+            EnemyKind::ToadKing => vec![ItemKind::Fragment, ItemKind::Herb],
+            EnemyKind::OceanLeviathan => vec![ItemKind::Fragment],
             EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food],
             EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb],
             EnemyKind::Wolf => vec![ItemKind::Food, ItemKind::Herb],
@@ -197,6 +259,10 @@ impl EnemyKind {
             EnemyKind::Wraith => 6,
             EnemyKind::Stoneslinger => 8,
             EnemyKind::Colossus => 1000,
+            EnemyKind::ScorpionQueen => 520,
+            EnemyKind::FrostGolem => 560,
+            EnemyKind::ToadKing => 540,
+            EnemyKind::OceanLeviathan => 600,
             EnemyKind::Brute => 40,
             EnemyKind::Stormcaller => 12,
             EnemyKind::Wolf => 7,
@@ -219,6 +285,10 @@ impl EnemyKind {
             EnemyKind::Wraith => 10.0,
             EnemyKind::Stoneslinger => 16.0,
             EnemyKind::Colossus => 120.0,
+            EnemyKind::ScorpionQueen => 70.0,
+            EnemyKind::FrostGolem => 90.0,
+            EnemyKind::ToadKing => 75.0,
+            EnemyKind::OceanLeviathan => 85.0,
             EnemyKind::Brute => 50.0,
             EnemyKind::Stormcaller => 24.0,
             EnemyKind::Wolf => 14.0,
@@ -240,6 +310,10 @@ impl EnemyKind {
             EnemyKind::Wraith => 5.0,
             EnemyKind::Stoneslinger => 6.0,
             EnemyKind::Colossus => 16.0,
+            EnemyKind::ScorpionQueen => 16.0,
+            EnemyKind::FrostGolem => 20.0,
+            EnemyKind::ToadKing => 15.0,
+            EnemyKind::OceanLeviathan => 17.0,
             EnemyKind::Brute => 14.0,
             EnemyKind::Stormcaller => 9.0,
             EnemyKind::Wolf => 5.0,
@@ -260,6 +334,10 @@ impl EnemyKind {
             EnemyKind::Wraith => [0.62, 0.45, 0.86],
             EnemyKind::Stoneslinger => [0.45, 0.40, 0.52],
             EnemyKind::Colossus => [0.55, 0.52, 0.50],
+            EnemyKind::ScorpionQueen => [0.85, 0.55, 0.20],
+            EnemyKind::FrostGolem => [0.62, 0.82, 0.95],
+            EnemyKind::ToadKing => [0.45, 0.70, 0.30],
+            EnemyKind::OceanLeviathan => [0.20, 0.55, 0.80],
             EnemyKind::Brute => [0.60, 0.30, 0.25],
             EnemyKind::Stormcaller => [0.42, 0.55, 0.86],
             EnemyKind::Wolf => [0.55, 0.50, 0.48],
@@ -283,6 +361,10 @@ impl EnemyKind {
             EnemyKind::Wraith => (12.0, 17.0),
             EnemyKind::Stoneslinger => (12.0, 18.0),
             EnemyKind::Colossus => (26.0, 32.0),
+            EnemyKind::ScorpionQueen => (20.0, 20.0),
+            EnemyKind::FrostGolem => (28.0, 34.0),
+            EnemyKind::ToadKing => (24.0, 20.0),
+            EnemyKind::OceanLeviathan => (22.0, 18.0),
             EnemyKind::Brute => (20.0, 22.0),
             EnemyKind::Stormcaller => (14.0, 18.0),
             EnemyKind::Wolf => (16.0, 12.0),
@@ -303,6 +385,10 @@ impl EnemyKind {
             EnemyKind::Wraith => SpriteStyle::Wraith,
             EnemyKind::Stoneslinger => SpriteStyle::Humanoid,
             EnemyKind::Colossus => SpriteStyle::Colossus,
+            EnemyKind::ScorpionQueen => SpriteStyle::Humanoid,
+            EnemyKind::FrostGolem => SpriteStyle::Colossus,
+            EnemyKind::ToadKing => SpriteStyle::Humanoid,
+            EnemyKind::OceanLeviathan => SpriteStyle::Wolf,
             EnemyKind::Brute => SpriteStyle::Humanoid,
             EnemyKind::Stormcaller => SpriteStyle::Humanoid,
             EnemyKind::Wolf => SpriteStyle::Wolf,
@@ -480,27 +566,22 @@ impl Enemy {
             EnemyKind::Wraith => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.3, 0.7),
             EnemyKind::Stoneslinger => (AGGRO_RANGE, ATTACK_RANGE, ENEMY_SPEED * 0.9, 1.0),
             EnemyKind::Colossus => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
+            EnemyKind::ScorpionQueen => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED * 1.25, BOSS_ATTACK_COOLDOWN),
+            EnemyKind::FrostGolem => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE * 1.2, BOSS_SPEED * 0.85, BOSS_ATTACK_COOLDOWN * 1.2),
+            EnemyKind::ToadKing => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED, BOSS_ATTACK_COOLDOWN),
+            EnemyKind::OceanLeviathan => (BOSS_AGGRO_RANGE, BOSS_ATTACK_RANGE, BOSS_SPEED * 1.15, BOSS_ATTACK_COOLDOWN * 0.9),
             EnemyKind::Brute => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.8, 1.0),
             EnemyKind::Stormcaller => (AGGRO_RANGE + 3.0, ATTACK_RANGE, ENEMY_SPEED * 1.2, 0.9),
             EnemyKind::Wolf => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.9, 0.5),
             EnemyKind::Archer => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.95, 1.1),
         };
-        // Colossus enrage: below half health it speeds up and attacks faster,
-        // telegraphing a second phase so the player knows to kite harder.
-        let (speed, cooldown) = if self.kind == EnemyKind::Colossus
-            && self.hp < self.kind.max_hp() * 0.5
-        {
-            (BOSS_SPEED * 1.7, BOSS_ATTACK_COOLDOWN * 0.55)
-        } else {
-            (speed, cooldown)
-        };
-        // Boss second phase: below 40% HP it enrages (latches on) — faster,
-        // shorter wind-ups — so a drawn-out fight turns frantic at the end.
-        let (speed, cooldown) = if self.kind == EnemyKind::Boss
-            && self.hp < self.kind.max_hp() * 0.4
+        // Boss second phase: below 45% HP every Crown Fragment guardian enrages —
+        // faster, shorter wind-ups — so a drawn-out fight turns frantic at the end.
+        let (speed, cooldown) = if self.kind.is_boss()
+            && self.hp < self.kind.max_hp() * 0.45
         {
             self.enraged = true;
-            (BOSS_SPEED * 1.5, BOSS_ATTACK_COOLDOWN * 0.6)
+            (BOSS_SPEED * 1.6, BOSS_ATTACK_COOLDOWN * 0.6)
         } else {
             (speed, cooldown)
         };
@@ -1059,13 +1140,28 @@ mod tests {
     }
 
     #[test]
-    fn colossus_is_a_second_boss_that_drops_a_fragment() {
+    fn colossus_is_a_heavy_bonus_elite_that_does_not_drop_a_fragment() {
         let e = Enemy::new(0.5, 0.5, EnemyKind::Colossus);
         assert!(
-            e.drops().contains(&ItemKind::Fragment),
-            "colossus must drop a crown fragment"
+            !e.drops().contains(&ItemKind::Fragment),
+            "colossus is a bonus elite and must NOT drop a crown fragment"
         );
         assert!(EnemyKind::Colossus.max_hp() > 100.0, "colossus is a heavy boss");
+    }
+
+    #[test]
+    fn each_fragment_boss_drops_a_fragment() {
+        for k in [
+            EnemyKind::Boss,
+            EnemyKind::ScorpionQueen,
+            EnemyKind::FrostGolem,
+            EnemyKind::ToadKing,
+            EnemyKind::OceanLeviathan,
+        ] {
+            let e = Enemy::new(0.5, 0.5, k);
+            assert!(e.drops().contains(&ItemKind::Fragment), "{k:?} must drop a fragment");
+            assert_eq!(k.fragment_bit().is_some(), true, "{k:?} must map to a fragment bit");
+        }
     }
 
     #[test]

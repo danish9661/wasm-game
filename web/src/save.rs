@@ -42,6 +42,10 @@ pub struct SaveState {
     pub slimes_killed: u32,
     pub boss_killed: u32,
     pub colossus_killed: u32,
+    /// Bitmask (bits 0..5) of the five Crown Fragments recovered from the biome
+    /// bosses. 0b11111 means all five are in hand and the Crown can be reforged.
+    #[serde(default)]
+    pub fragments: u8,
     /// Enemy kinds seen (Bestiary / Codex), persisted so the codex survives reloads.
     #[serde(default)]
     pub discovered: Vec<game::enemy::EnemyKind>,

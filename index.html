@@ -24,9 +24,14 @@
       <span class="inv-chip inv-wood" id="inv-wood">W 0</span>
       <span class="inv-chip inv-stone" id="inv-stone">S 0</span>
       <span class="inv-chip inv-food" id="inv-food">F 0</span>
+      <span class="inv-chip inv-frag" id="inv-frag">✦ 0/5</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
     <div class="hud-row hud-hint">WASD move · E harvest/open · F campfire · V wall · J attack · K shoot · C eat</div>
+  </div>
+  <div id="compass" title="Points to the next Crown Fragment / altar">
+    <div id="compass-needle"></div>
+    <span id="compass-label">Objective</span>
   </div>
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
@@ -34,6 +39,10 @@
     <div id="overlay-box">
       <h2 id="overlay-title"></h2>
       <p id="overlay-sub"></p>
+      <div id="overlay-choices" style="display:none">
+        <button id="btn-reign" class="choice-btn">Reign — heal the world</button>
+        <button id="btn-shatter" class="choice-btn">Shatter — New Game+</button>
+      </div>
     </div>
   </div>
   <div id="log"></div>
@@ -44,7 +53,7 @@
     window.addEventListener('unhandledrejection', (ev) => {
       document.getElementById('log').textContent = 'UNHANDLED: ' + ev.reason;
     });
-    import init, { step, get_stats } from './wasm_game.js';
+      import init, { step, get_stats, reforge } from './wasm_game.js';
     init().then(() => {
       document.getElementById('log').textContent = 'wasm loaded';
       window.__frames = 0;
@@ -56,10 +65,14 @@
       const QUEST_TEXT = [
         'Gather 5 wood and 1 stone',
         'Build a wall and a campfire',
+        'Craft Iron Plate at an Anvil',
         'A slime blocks the ruins - defeat it',
         'Find the ancient ruins',
         'Open the ruins chest',
-        'The crown shard glows - Chapter 2 awaits',
+        'Hunt the Crown Fragment guardians (0/5 recovered)',
+        'Carry all 5 fragments to the altar where you woke',
+        'Press E at the altar to reforge the Star Crown',
+        'The Star Crown blazes - the world is healed',
       ];
       const el = (id) => document.getElementById(id);
       const setBar = (id, numId, pct) => {
@@ -69,6 +82,7 @@
       let lastInv = { w: -1, s: -1, f: -1 };
       let lastAlive = 1;
       let lastQuest = -1;
+      let lastFrag = -1;
       let diedAt = 0;
       const toast = (msg) => {
         const t = document.createElement('div');
@@ -84,6 +98,7 @@
         el('inv-wood').textContent = `W ${stats.w}`;
         el('inv-stone').textContent = `S ${stats.s}`;
         el('inv-food').textContent = `F ${stats.f}`;
+        el('inv-frag').textContent = `✦ ${stats.frag}/5`;
         el('hud-clock').textContent = stats.time;
 
         // loot toasts from inventory deltas
@@ -95,11 +110,22 @@
         }
         lastInv = inv;
 
-        // quest banner
+        // quest banner (stage 6 shows the live fragment count)
         const q = stats.quest;
-        if (q >= 0 && q < QUEST_TEXT.length && q !== lastQuest) {
-          el('quest').textContent = `📜 ${QUEST_TEXT[q]}`;
+        if (q >= 0 && q < QUEST_TEXT.length && (q !== lastQuest || (q === 6 && stats.frag !== lastFrag))) {
+          el('quest').textContent = `📜 ${q === 6 ? QUEST_TEXT[6].replace('0/5', stats.frag + '/5') : QUEST_TEXT[q]}`;
           lastQuest = q;
+          lastFrag = stats.frag;
+        }
+
+        // compass needle points from the player toward the objective
+        const compass = el('compass');
+        if (stats.objdx !== 0 || stats.objdy !== 0) {
+          compass.style.display = 'block';
+          const ang = Math.atan2(stats.objdy, stats.objdx) * 180 / Math.PI + 90;
+          el('compass-needle').style.transform = `rotate(${ang}deg)`;
+        } else {
+          compass.style.display = 'none';
         }
 
         // overlays
@@ -118,11 +144,21 @@
         }
         lastAlive = stats.alive;
 
-        if (stats.quest === 5 && lastQuest === 5 && !window.__won) {
+        if (stats.win === 1 && !window.__won) {
           window.__won = true;
           ov.className = 'win';
-          el('overlay-title').textContent = 'CHAPTER 1 COMPLETE';
-          el('overlay-sub').textContent = 'The crown shard glows in your pack. Chapter 2 awaits.';
+          el('overlay-title').textContent = 'THE STAR CROWN IS REFORGED';
+          el('overlay-sub').textContent = 'The world is healed. A new, harder world stirs (New Game+).';
+        }
+
+        // Crown Reforging choice: Reign (victory) or Shatter (New Game+).
+        if (stats.endpend === 1) {
+          ov.className = 'ending';
+          el('overlay-title').textContent = 'Reforge the Star Crown?';
+          el('overlay-sub').textContent = 'Five fragments blaze in your pack. Choose the world’s fate.';
+          el('overlay-choices').style.display = 'flex';
+        } else if (stats.endpend === 0) {
+          el('overlay-choices').style.display = 'none';
         }
       };
       const parseStats = (raw) => {
@@ -137,7 +173,23 @@
           f: Number(get(/f(\d+)\)/) || 0),
           quest: Number(get(/quest=S(\d)/) || -1),
           time: get(/time=(\d{2}:\d{2})/),
+          frag: Number(get(/frag=(\d)/) || 0),
+          objdx: Number(get(/objdx=([-\d.]+)/) || 0),
+          objdy: Number(get(/objdy=([-\d.]+)/) || 0),
+          win: Number(get(/win=(\d)/) || 0),
+          endpend: Number(get(/endpend=(\d)/) || 0),
         };
+      };
+
+      el('btn-reign').onclick = () => {
+        reforge(0);
+        el('overlay-choices').style.display = 'none';
+        el('overlay').className = 'hidden';
+      };
+      el('btn-shatter').onclick = () => {
+        reforge(1);
+        el('overlay-choices').style.display = 'none';
+        el('overlay').className = 'hidden';
       };
 
       function frame(t) {

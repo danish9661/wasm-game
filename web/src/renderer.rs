@@ -172,6 +172,10 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Wraith => "Wraith",
         EnemyKind::Stoneslinger => "Stoneslinger",
         EnemyKind::Colossus => "Colossus",
+        EnemyKind::ScorpionQueen => "Scorpion Queen",
+        EnemyKind::FrostGolem => "Frost Golem",
+        EnemyKind::ToadKing => "Toad King",
+        EnemyKind::OceanLeviathan => "Ocean Leviathan",
         EnemyKind::Brute => "Brute",
         EnemyKind::Stormcaller => "Stormcaller",
         EnemyKind::Wolf => "Wolf",
@@ -769,6 +773,48 @@ struct Interior {
     loot_taken: bool,
 }
 
+/// A line of lore tied to each recovered Crown Fragment (Chapter 3 beats).
+fn fragment_lore(bit: u8) -> &'static str {
+    match bit {
+        0 => "The Forest Warden's fragment hums with the grove's last breath.",
+        1 => "The Scorpion Queen's fragment burns with desert sun.",
+        2 => "The Frost Golem's fragment aches with tundra cold.",
+        3 => "The Toad King's fragment drips with swamp venom.",
+        4 => "The Ocean Leviathan's fragment tastes of distant tides.",
+        _ => "A shard of the shattered Star Crown.",
+    }
+}
+
+/// Which Crown Fragment guardian rules a given biome tile (None for neutral
+/// ground). Used to spawn the right boss when the player explores a biome.
+fn boss_for_biome(t: TileKind) -> Option<EnemyKind> {
+    Some(match t {
+        TileKind::Forest => EnemyKind::Boss,
+        TileKind::Desert => EnemyKind::ScorpionQueen,
+        TileKind::Snow | TileKind::Tundra => EnemyKind::FrostGolem,
+        TileKind::Swamp => EnemyKind::ToadKing,
+        TileKind::Water | TileKind::ShallowWater | TileKind::DeepWater => EnemyKind::OceanLeviathan,
+        _ => return None,
+    })
+}
+
+/// The next Crown Fragment still unrecovered, so the elite spawner can drive the
+/// player toward collecting all five (cycling if they avoid a specific biome).
+fn next_fragment_boss(fragments: u8) -> Option<EnemyKind> {
+    for (bit, k) in [
+        (0u8, EnemyKind::Boss),
+        (1, EnemyKind::ScorpionQueen),
+        (2, EnemyKind::FrostGolem),
+        (3, EnemyKind::ToadKing),
+        (4, EnemyKind::OceanLeviathan),
+    ] {
+        if fragments & (1 << bit) == 0 {
+            return Some(k);
+        }
+    }
+    None
+}
+
 pub struct App {
     canvas: HtmlCanvasElement,
     surface: wgpu::Surface<'static>,
@@ -839,10 +885,15 @@ pub struct App {
     slimes_killed: u32,
     boss_killed: u32,
     colossus_killed: u32,
+    /// Bitmask (bits 0..5) of the five Crown Fragments recovered from the biome
+    /// bosses. 0b11111 = all five collected; gates the reforge finale.
+    fragments: u8,
     boss_spawned: bool,
     altar_placed: bool,
     altar_tile: Option<(i32, i32)>,
     near_altar: bool,
+    /// Debounce so the "altar is cold" hint only toasts once per altar visit.
+    altar_hinted: bool,
     ending_pending: bool,
     /// 0 = Reign, 1 = Shatter, None = campaign not finished.
     ending: Option<u8>,
@@ -887,6 +938,11 @@ pub struct App {
     speed: f32,
     prev_px: f32,
     prev_py: f32,
+    /// World position the HUD compass should point at (nearest unrecovered
+    /// fragment's guardian, or the altar once all five are in hand). None hides
+    /// the compass. Recomputed periodically, not every frame.
+    objective: Option<(f32, f32)>,
+    obj_timer: f32,
     /// True while the persistent readback buffer is mapped/in-flight; lets us
     /// skip a frame's readback instead of allocating a fresh buffer.
     readback_busy: std::sync::Arc<std::sync::atomic::AtomicBool>,
@@ -1261,7 +1317,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={}",
 
             self.quad_count(),
             self.frames(),
@@ -1318,8 +1374,12 @@ impl App {
              near_str,
              online,
              coopids,
-             self.inventory.count(ItemKind::Map),
-          )
+              self.inventory.count(ItemKind::Map),
+              self.objective.map_or(0.0, |(ox, _)| ox - self.player.x),
+              self.objective.map_or(0.0, |(_, oy)| oy - self.player.y),
+              self.ending.is_some() as u8,
+              self.ending_pending as u8,
+           )
     }
 
     /// Nearest alive enemy within aggro range, as "Kind@(tx,ty)" or "none".
@@ -1481,9 +1541,11 @@ impl App {
             altar_placed: false,
             altar_tile: None,
             near_altar: false,
+            altar_hinted: false,
             ending_pending: false,
             ending: None,
             ng_plus: 0,
+            fragments: 0,
             spawn_point: (px, py),
             time_of_day: START_TIME,
             anim_clock: 0.0,
@@ -1512,6 +1574,8 @@ impl App {
             speed: 0.0,
             prev_px: 0.0,
             prev_py: 0.0,
+            objective: None,
+            obj_timer: 0.0,
             readback_busy: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
             key_evt: 0,
             key_dbg: String::new(),
@@ -2363,6 +2427,85 @@ impl App {
         }
     }
 
+    /// Recompute the HUD compass target: the nearest still-hostile Crown
+    /// Fragment guardian, else the altar once all five are in hand, else the
+    /// general direction of the next fragment's biome. Throttled to ~1 Hz.
+    fn update_objective(&mut self, dt: f32) {
+        if self.ending.is_some() {
+            self.objective = None;
+            return;
+        }
+        self.obj_timer -= dt;
+        if self.obj_timer > 0.0 {
+            return;
+        }
+        self.obj_timer = 1.0;
+
+        // 1) a fragment guardian that is currently alive takes priority
+        let mut best: Option<(f32, (f32, f32))> = None;
+        for e in self.enemies.enemies() {
+            if e.kind.fragment_bit().is_some() && e.alive() {
+                let d = (e.x - self.player.x).hypot(e.y - self.player.y);
+                if best.map_or(true, |(bd, _)| d < bd) {
+                    best = Some((d, (e.x, e.y)));
+                }
+            }
+        }
+        if let Some((_, p)) = best {
+            self.objective = Some(p);
+            return;
+        }
+        // 2) once all five are recovered, point home to the reforging altar
+        if self.fragments == 0b11111 {
+            if let Some((ax, ay)) = self.altar_tile {
+                self.objective = Some((ax as f32 + 0.5, ay as f32 + 0.5));
+            }
+            return;
+        }
+        // 3) otherwise aim toward the next fragment's biome (sampled ring scan)
+        if let Some(k) = next_fragment_boss(self.fragments) {
+            if let Some(t) = self.biome_center(k.fragment_bit().unwrap()) {
+                self.objective = Some(t);
+                return;
+            }
+        }
+        self.objective = None;
+    }
+
+    /// Find a tile of the given fragment's home biome by sampling outward rings
+    /// from the player (cheap: a handful of probes per ring, capped radius).
+    fn biome_center(&mut self, bit: u8) -> Option<(f32, f32)> {
+        let tk = match bit {
+            0 => TileKind::Forest,
+            1 => TileKind::Desert,
+            2 => TileKind::Snow,
+            3 => TileKind::Swamp,
+            4 => TileKind::Water,
+            _ => return None,
+        };
+        let px = self.player.x;
+        let py = self.player.y;
+        for r in (8..400).step_by(4) {
+            for (dx, dy) in [
+                (r, 0),
+                (-r, 0),
+                (0, r),
+                (0, -r),
+                (r, r),
+                (r, -r),
+                (-r, r),
+                (-r, -r),
+            ] {
+                let x = px + dx as f32;
+                let y = py + dy as f32;
+                if tile_at(&self.world, &mut self.chunks, x.floor() as i32, y.floor() as i32) == tk {
+                    return Some((x, y));
+                }
+            }
+        }
+        None
+    }
+
     /// Resolve kills: drop loot and start respawn timers.
     fn sweep_dead(&mut self) {
         let drops: Vec<((i32, i32), f32, f32, EnemyKind, Vec<ItemKind>, f32)> = self
@@ -2399,6 +2542,21 @@ impl App {
                     play_sfx("victory");
                 }
                 _ => {}
+            }
+            // Crown Fragment guardians each guard one of the five fragments. On
+            // defeat, record which fragment was recovered (idempotent) and surface
+            // a line of the lost empire's lore.
+            if let Some(bit) = kind.fragment_bit() {
+                if self.fragments & (1 << bit) == 0 {
+                    self.fragments |= 1 << bit;
+                    let got = self.fragments.count_ones();
+                    play_sfx("victory");
+                    toast(&format!(
+                        "Crown Fragment recovered! ({}/5) — {}",
+                        got,
+                        fragment_lore(bit)
+                    ));
+                }
             }
             // Experience + level-up for the player (elite enemies pay out more).
             let lvl_before = self.player.level;
@@ -2528,16 +2686,26 @@ impl App {
             play_sfx("door");
             return;
         }
-        // Reforge at the altar when carrying the fragment: this arms the
-        // choice; the HUD shows Reign/Shatter and forwards the pick to reforge().
+        // Reforge at the altar when all five Crown Fragments are in hand: this
+        // arms the choice; the HUD shows Reign/Shatter and forwards the pick to
+        // reforge().
         if self.ending.is_none() {
             if let Some((ax, ay)) = self.altar_tile {
                 let d = (self.player.x - (ax as f32 + 0.5))
                     .abs()
                     .max((self.player.y - (ay as f32 + 0.5)).abs());
-                if d <= CHEST_RANGE && self.inventory.count(ItemKind::Fragment) > 0 {
-                    self.ending_pending = true;
-                    return;
+                if d <= CHEST_RANGE {
+                    if self.fragments == 0b11111 {
+                        self.ending_pending = true;
+                        return;
+                    } else if !self.altar_hinted {
+                        let left = 5 - self.fragments.count_ones();
+                        toast(&format!(
+                            "The altar is cold. {left} Crown Fragment{} still lost to the world.",
+                            if left == 1 { "" } else { "s" }
+                        ));
+                        self.altar_hinted = true;
+                    }
                 }
             }
         }
@@ -3005,6 +3173,7 @@ impl App {
         self.quest = QuestLog::new();
         self.boss_killed = 0;
         self.colossus_killed = 0;
+        self.fragments = 0;
         self.discovered.clear();
         self.weather = 0;
         self.weather_timer = 25.0;
@@ -3013,6 +3182,7 @@ impl App {
         self.altar_placed = false;
         self.altar_tile = None;
         self.near_altar = false;
+        self.altar_hinted = false;
         self.ending_pending = false;
         self.time_of_day = START_TIME;
         self.respawn_timer = 0.0;
@@ -3027,7 +3197,7 @@ impl App {
     /// (code 2, the Twin Star Crowns) — that is the hard gate on the second
     /// ending. Both start a fresh run with `ng_plus` incremented.
     pub fn reforge(&mut self, choice: u8) {
-        if self.ending.is_some() || self.inventory.count(ItemKind::Fragment) == 0 {
+        if self.ending.is_some() || self.fragments != 0b11111 {
             return;
         }
         let ending = if choice % 2 == 1 {
@@ -3114,6 +3284,7 @@ impl App {
             slimes_killed: self.slimes_killed,
             boss_killed: self.boss_killed,
             colossus_killed: self.colossus_killed,
+            fragments: self.fragments,
             discovered: self.discovered.iter().cloned().collect(),
             boss_spawned: self.boss_spawned,
             altar_placed: self.altar_placed,
@@ -3178,6 +3349,7 @@ impl App {
         self.slimes_killed = s.slimes_killed;
         self.boss_killed = s.boss_killed;
         self.colossus_killed = s.colossus_killed;
+        self.fragments = s.fragments;
         self.discovered = s.discovered.iter().copied().collect();
         self.boss_spawned = s.boss_spawned;
         self.altar_placed = s.altar_placed;
@@ -3396,19 +3568,33 @@ impl App {
             let tx = (self.player.x + ang.cos() * dist).floor() as i32;
             let ty = (self.player.y + ang.sin() * dist).floor() as i32;
             if tile_at(&self.world, &mut self.chunks, tx, ty).walkable() {
-                let kind = if (self.anim_clock as i32) % 2 == 0 {
-                    EnemyKind::Brute
+                // Campaign: if a Crown Fragment guardian still roams, hunt it down.
+                // Prefer the boss of the biome the player is currently in; failing
+                // that, send the next unrecovered fragment's guardian so all five
+                // are reachable no matter where the player wanders.
+                let here = tile_at(&self.world, &mut self.chunks, self.player.x.floor() as i32, self.player.y.floor() as i32);
+                let boss = boss_for_biome(here)
+                    .filter(|k| k.fragment_bit().map_or(false, |b| self.fragments & (1 << b) == 0))
+                    .or_else(|| next_fragment_boss(self.fragments));
+                if let Some(kind) = boss {
+                    self.enemies.spawn_elite(kind, tx as f32 + 0.5, ty as f32 + 0.5, 1.0);
+                    toast(&format!("The {} emerges — a Crown Fragment is at stake!", kind.name()));
+                    play_sfx("roar");
                 } else {
-                    EnemyKind::Ogre
-                };
-                let elite = 2.5 + (self.anim_clock * 3.0).fract() * 1.5;
-                self.enemies.spawn_elite(kind, tx as f32 + 0.5, ty as f32 + 0.5, elite);
-                toast(&format!(
-                    "A roaming {} (elite x{:.1}) has appeared nearby!",
-                    kind.name(),
-                    elite
-                ));
-                play_sfx("levelup");
+                    let kind = if (self.anim_clock as i32) % 2 == 0 {
+                        EnemyKind::Brute
+                    } else {
+                        EnemyKind::Ogre
+                    };
+                    let elite = 2.5 + (self.anim_clock * 3.0).fract() * 1.5;
+                    self.enemies.spawn_elite(kind, tx as f32 + 0.5, ty as f32 + 0.5, elite);
+                    toast(&format!(
+                        "A roaming {} (elite x{:.1}) has appeared nearby!",
+                        kind.name(),
+                        elite
+                    ));
+                    play_sfx("levelup");
+                }
             }
         }
 
@@ -3701,6 +3887,9 @@ impl App {
                     <= CHEST_RANGE
             });
 
+        // Recompute the HUD compass objective (throttled internally).
+        self.update_objective(dt);
+
         self.quest.update(
             self.inventory.count(ItemKind::Wood),
             self.inventory.count(ItemKind::Stone),
@@ -3715,8 +3904,7 @@ impl App {
             self.slimes_killed,
             near_ruins,
             self.opened_chests.contains(&self.ruins),
-            self.boss_killed >= 1,
-            self.inventory.count(ItemKind::Fragment) > 0,
+            self.fragments,
             self.ending.is_some(),
             self.colossus_killed >= 1,
         );
@@ -4126,6 +4314,10 @@ impl App {
                 EnemyKind::Wraith => 24.0,
                 EnemyKind::Stoneslinger => 24.0,
                 EnemyKind::Colossus => 64.0,
+                EnemyKind::ScorpionQueen => 42.0,
+                EnemyKind::FrostGolem => 58.0,
+                EnemyKind::ToadKing => 46.0,
+                EnemyKind::OceanLeviathan => 44.0,
                 EnemyKind::Brute => 30.0,
                 EnemyKind::Stormcaller => 26.0,
                 EnemyKind::Wolf => 16.0,
