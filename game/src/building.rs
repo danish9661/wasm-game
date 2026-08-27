@@ -152,6 +152,9 @@ impl StructureKind {
             self,
             StructureKind::Wall
                 | StructureKind::Fence
+                | StructureKind::House
+                | StructureKind::Cabin
+                | StructureKind::Hut
                 | StructureKind::Well
                 | StructureKind::Turret
                 | StructureKind::HealingTotem
@@ -488,5 +491,99 @@ mod tests {
             .iter()
             .any(|(k, _, _)| *k == StructureKind::Turret || *k == StructureKind::HealingTotem
                 || *k == StructureKind::Lantern));
+    }
+}
+#[cfg(test)]
+mod size_tests {
+    use crate::elements::humanoid;
+    use crate::elements::house;
+    use crate::elements::prim::Part;
+    use super::StructureKind;
+
+    /// Axis-aligned bounding box (width, height) of a list of drawn parts, in the
+    /// same screen-pixel space the renderer uses. This is what we compare to make
+    /// sure a house reads as a building and not a character-sized prop.
+    fn bbox(parts: &[Part]) -> (f32, f32) {
+        let mut minx = f32::MAX;
+        let mut maxx = f32::MIN;
+        let mut miny = f32::MAX;
+        let mut maxy = f32::MIN;
+        for p in parts {
+            let x0 = p.cx - p.hw;
+            let x1 = p.cx + p.hw;
+            let y0 = p.cy - p.hh + p.lift;
+            let y1 = p.cy + p.hh + p.lift;
+            minx = minx.min(x0);
+            maxx = maxx.max(x1);
+            miny = miny.min(y0);
+            maxy = maxy.max(y1);
+        }
+        (maxx - minx, maxy - miny)
+    }
+
+    #[test]
+    fn character_bbox_is_sane() {
+        let (w, h) = bbox(&humanoid::build(
+            0.0,
+            0.0,
+            [0.8, 0.66, 0.48],
+            1.0,
+            (1.0, 0.0),
+            0.0,
+            0.0,
+            0.0,
+        ));
+        // A humanoid should be roughly a person: taller than wide.
+        assert!(w > 6.0 && w < 40.0, "character width implausible: {w}");
+        assert!(h > 30.0 && h < 80.0, "character height implausible: {h}");
+    }
+
+    #[test]
+    fn houses_are_bigger_than_the_character() {
+        let (cw, ch) = bbox(&humanoid::build(
+            0.0,
+            0.0,
+            [0.8, 0.66, 0.48],
+            1.0,
+            (1.0, 0.0),
+            0.0,
+            0.0,
+            0.0,
+        ));
+        for kind in 0u8..=2u8 {
+            let (hw, hh) = bbox(&house::build(
+                kind,
+                0.0,
+                0.0,
+                [0.74, 0.72, 0.66],
+                1.0,
+                (0.0, 0.0),
+                0.0,
+            ));
+            assert!(
+                hw > cw,
+                "house kind {kind} width {hw:.1} must exceed character width {cw:.1}"
+            );
+            assert!(
+                hh > ch,
+                "house kind {kind} height {hh:.1} must exceed character height {ch:.1}"
+            );
+            // And clearly so, not a marginal sliver.
+            assert!(
+                hw > cw * 1.5,
+                "house kind {kind} should be substantially wider (got {hw:.1} vs {cw:.1})"
+            );
+        }
+    }
+
+    #[test]
+    fn houses_block_movement() {
+        assert!(StructureKind::House.blocks_movement(), "House must be an obstacle");
+        assert!(StructureKind::Cabin.blocks_movement(), "Cabin must be an obstacle");
+        assert!(StructureKind::Hut.blocks_movement(), "Hut must be an obstacle");
+        // The interior is reached via the Enter prompt, not by walking through.
+        assert!(StructureKind::Inn.blocks_movement());
+        assert!(StructureKind::Barn.blocks_movement());
+        assert!(StructureKind::Watchtower.blocks_movement());
     }
 }

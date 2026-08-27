@@ -2991,15 +2991,19 @@ impl App {
             StructureKind::Barn,
             StructureKind::Watchtower,
         ];
-        let ring: [(i32, i32); 8] = [
-            (1, 0),
-            (-1, 0),
-            (0, 1),
-            (0, -1),
-            (1, 1),
-            (-1, -1),
-            (1, -1),
-            (-1, 1),
+        let ring: [(i32, i32); 12] = [
+            (3, 0),
+            (-3, 0),
+            (0, 3),
+            (0, -3),
+            (3, 3),
+            (-3, -3),
+            (3, -3),
+            (-3, 3),
+            (5, 0),
+            (-5, 0),
+            (0, 5),
+            (0, -5),
         ];
         const FIRST_NAMES: &[&str] = &[
             "Bryn", "Cael", "Dora", "Edda", "Finn", "Greta", "Hale", "Ivo", "Jora", "Kell",
@@ -3039,14 +3043,17 @@ impl App {
             ));
             self.npcs.push(Npc::new(
                 NpcKind::Merchant,
-                vx as f32 - 2.0 + 0.5,
-                vy as f32 + 0.5,
+                vx as f32 + 0.5,
+                vy as f32 + 2.0 + 0.5,
                 format!("{} the Merchant", FIRST_NAMES[(vx.wrapping_abs() as usize) % FIRST_NAMES.len()]),
-                (vx as f32 - 2.0, vy as f32),
+                (vx as f32, vy as f32 + 2.0),
             ));
             for k in 0..4 {
-                let hx = vx + ring[k].0;
-                let hy = vy + ring[k].1;
+                // Villagers mingle on the inner tiles (between the houses), not on
+                // the house tiles themselves.
+                let offs = [(1, 1), (-1, 1), (1, -1), (-1, -1)];
+                let hx = vx + offs[k].0;
+                let hy = vy + offs[k].1;
                 let nm = FIRST_NAMES[(vx.wrapping_abs() as usize + k as usize * 3) % FIRST_NAMES.len()].to_string();
                 self.npcs.push(Npc::new(
                     NpcKind::Villager,
@@ -3119,8 +3126,8 @@ impl App {
             StructureKind::Watchtower,
         ];
         let mut bi = 0usize;
-        for gx in (tx0 - 10..=tx0 + 10).step_by(4) {
-            for gy in (ty0 - 10..=ty0 + 10).step_by(4) {
+        for gx in (tx0 - 10..=tx0 + 10).step_by(5) {
+            for gy in (ty0 - 10..=ty0 + 10).step_by(5) {
                 if (gx - tx0).abs() <= 2 && (gy - ty0).abs() <= 2 {
                     continue;
                 }
