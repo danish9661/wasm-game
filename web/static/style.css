@@ -809,3 +809,19 @@ span.weather { background: rgba(40, 70, 110, 0.85); color: #cfe2f5; border-color
   color: #9fb3c8;
   letter-spacing: 0.5px;
 }
+
+/* ---- Low-HP vignette ---- */
+#vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  box-shadow: inset 0 0 140px 40px rgba(170, 0, 0, 0.55);
+  background: radial-gradient(ellipse at center, rgba(170, 0, 0, 0) 55%, rgba(170, 0, 0, 0.28) 100%);
+  animation: vignette-pulse 1.1s ease-in-out infinite;
+}
+#vignette.hidden { display: none; }
+@keyframes vignette-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1.0; }
+}

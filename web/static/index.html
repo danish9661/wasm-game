@@ -63,6 +63,7 @@
     <div id="compass-needle"></div>
     <span id="compass-label">Objective</span>
   </div>
+  <div id="vignette" class="hidden"></div>
   <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — open <b>Inventory (I)</b> to craft upgrades</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
@@ -687,6 +688,7 @@
           let lastAlive = 1;
           let lastQuest = -1;
           let lastFrag = -1;
+          let prevCoop = 0;
           let diedAt = 0;
           const toast = (msg) => {
             const t = document.createElement('div');
@@ -735,9 +737,16 @@
                 el('hud-coop').style.display = 'inline-block';
                 const ids = stats.coopids ? stats.coopids.split(',').map(s => 'P' + s).join(', ') : '';
                 el('hud-coop').textContent = `👥 Co-op: ${stats.online + 1} online${ids ? ' (' + ids + ')' : ''}`;
+                if (prevCoop === 0) toast('A co-op partner joined the world');
               } else {
                 el('hud-coop').style.display = 'none';
+                if (prevCoop > 0) toast('Co-op partner disconnected');
               }
+              prevCoop = stats.online;
+
+              // Low-HP vignette: a soft red pulse when the player is badly hurt.
+              const hpFrac = stats.maxhp > 0 ? stats.hp / stats.maxhp : 1;
+              el('vignette').className = (stats.alive && hpFrac < 0.25) ? '' : 'hidden';
 
               el('hud-map').style.display = stats.maps > 0 ? 'inline-block' : 'none';
 

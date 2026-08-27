@@ -156,6 +156,7 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::Train => "Train",
         StructureKind::Rail => "Rail",
         StructureKind::Portal => "Portal",
+        StructureKind::Banner => "Bn",
     }
 }
 
@@ -1284,11 +1285,22 @@ impl App {
             .map(|s| format!("{}{}@({},{})", struct_name(s.kind), s.kind.blocks_movement() as u8, s.tx, s.ty))
             .collect::<Vec<_>>()
             .join(";");
+        let px = self.player.x;
+        let py = self.player.y;
+        let boss_alive = self
+            .enemies
+            .enemies()
+            .any(|e| e.kind.is_boss()) as u8;
         let boss_hp = self
             .enemies
             .enemies()
-            .find(|e| e.kind == EnemyKind::Boss)
-            .map(|e| (e.hp / e.kind.max_hp() * 100.0) as u32)
+            .filter(|e| e.kind.is_boss())
+            .map(|e| {
+                let d = (e.x - px).powi(2) + (e.y - py).powi(2);
+                (d, e)
+            })
+            .min_by(|a, b| a.0.partial_cmp(&b.0).unwrap())
+            .map(|(_, e)| (e.hp / e.kind.max_hp() * 100.0) as u32)
             .unwrap_or(0);
         let ending_str = match self.ending {
             None => "none",
@@ -1347,7 +1359,7 @@ impl App {
             self.opened_chests.contains(&self.ruins) as u8,
             clock(self.time_of_day),
             near,
-            self.boss_spawned as u8,
+            boss_alive,
             self.colossus_killed,
             self.inventory.count(ItemKind::Fragment),
             self.altar_placed as u8,
@@ -1537,7 +1549,7 @@ impl App {
             boss_killed: 0,
             colossus_killed: 0,
             boss_spawned: false,
-            elite_timer: 180.0,
+            elite_timer: 60.0,
             altar_placed: false,
             altar_tile: None,
             near_altar: false,
@@ -3177,7 +3189,7 @@ impl App {
         self.discovered.clear();
         self.weather = 0;
         self.weather_timer = 25.0;
-        self.elite_timer = 180.0;
+        self.elite_timer = 60.0;
         self.boss_spawned = false;
         self.altar_placed = false;
         self.altar_tile = None;
@@ -3562,7 +3574,7 @@ impl App {
         // threat that scales with the world's danger.
         self.elite_timer -= dt;
         if self.elite_timer <= 0.0 && self.player.alive {
-            self.elite_timer = 150.0 + (self.anim_clock * 13.0).fract() * 120.0;
+            self.elite_timer = 70.0 + (self.anim_clock * 13.0).fract() * 70.0;
             // Pick a tile 14-20 tiles away from the player on walkable ground.
             let ang = (self.anim_clock * 2.3 + self.player.x * 0.7).fract() * std::f32::consts::TAU;
             let dist = 14.0 + (self.anim_clock * 5.1).fract() * 6.0;
@@ -3762,7 +3774,20 @@ impl App {
                 n.kind == NpcKind::Guard && (n.x - e.x).hypot(n.y - e.y) < 7.0
             });
             if guarded {
-                e.take_damage(20.0 * dt);
+                // A War Banner within 6 tiles of the guarding NPC empowers it,
+                // reinforcing base defense (the Banner's reason for existing).
+                let buffed = self.npcs.iter().any(|n| {
+                    n.kind == NpcKind::Guard
+                        && (n.x - e.x).hypot(n.y - e.y) < 7.0
+                        && self
+                            .structures
+                            .iter()
+                            .any(|s| {
+                                s.kind == StructureKind::Banner
+                                    && ((s.tx as f32 + 0.5) - n.x).hypot((s.ty as f32 + 0.5) - n.y) < 6.0
+                            })
+                });
+                e.take_damage(20.0 * dt * if buffed { 1.8 } else { 1.0 });
             }
             // Ranged enemies fire: turn the pending shot into an enemy arrow.
             if let Some((dx, dy)) = e.pending_shot.take() {

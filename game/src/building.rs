@@ -68,6 +68,8 @@ pub enum StructureKind {
     Car,
     Train,
     Rail,
+    // War Banner: buildable; empowers nearby guards, reinforcing base defense.
+    Banner,
 }
 
 impl StructureKind {
@@ -88,6 +90,7 @@ impl StructureKind {
             StructureKind::Turret => &[(ItemKind::Wood, 4), (ItemKind::Stone, 4), (ItemKind::Gem, 1)],
             StructureKind::HealingTotem => &[(ItemKind::Wood, 3), (ItemKind::Herb, 2)],
             StructureKind::Trap => &[(ItemKind::Wood, 3), (ItemKind::Stone, 2)],
+            StructureKind::Banner => &[(ItemKind::Wood, 2), (ItemKind::Gem, 1)],
             _ => &[],
         }
     }
@@ -108,6 +111,7 @@ impl StructureKind {
             StructureKind::Turret => [0.50, 0.50, 0.55],
             StructureKind::HealingTotem => [0.50, 0.35, 0.20],
             StructureKind::Trap => [0.55, 0.40, 0.42],
+            StructureKind::Banner => [0.85, 0.20, 0.20],
             StructureKind::Sign => [0.60, 0.42, 0.24],
             StructureKind::Barrel => [0.50, 0.34, 0.18],
             StructureKind::Totem => [0.50, 0.35, 0.20],
@@ -216,6 +220,7 @@ impl StructureKind {
             StructureKind::Turret => (11.0, 14.0, 1.0),
             StructureKind::HealingTotem => (8.0, 22.0, 1.0),
             StructureKind::Trap => (16.0, 6.0, 1.0),
+            StructureKind::Banner => (10.0, 26.0, 1.0),
             StructureKind::Sign => (12.0, 14.0, 1.0),
             StructureKind::Barrel => (8.0, 16.0, 1.0),
             StructureKind::Totem => (8.0, 26.0, 1.0),
@@ -256,6 +261,7 @@ impl StructureKind {
             StructureKind::Turret => SpriteStyle::Turret,
             StructureKind::HealingTotem => SpriteStyle::HealingTotem,
             StructureKind::Trap => SpriteStyle::Spike,
+            StructureKind::Banner => SpriteStyle::Totem,
             StructureKind::Sign => SpriteStyle::Sign,
             StructureKind::Barrel => SpriteStyle::Barrel,
             StructureKind::Totem => SpriteStyle::Totem,
@@ -301,6 +307,7 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
     (StructureKind::HealingTotem, "M", "Healing Totem"),
     (StructureKind::Lantern, "L", "Lantern"),
     (StructureKind::Trap, "0", "Trap"),
+    (StructureKind::Banner, "1", "War Banner"),
 ];
 
 /// Stateless decorative-prop placement: a few flavor props sprinkled on biomes
