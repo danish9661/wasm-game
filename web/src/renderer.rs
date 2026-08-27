@@ -903,6 +903,11 @@ pub struct App {
     spawn_point: (f32, f32),
     time_of_day: f32,
     anim_clock: f32,
+    /// Screen-shake amplitude (world units). Minimal: only nudged when a boss
+    /// lands a hit, and decays quickly each frame.
+    shake: f32,
+    /// Previous frame's player.hurt_timer, for detecting the rising edge of a hit.
+    prev_hurt: f32,
     respawn_timer: f32,
     debug_swing_hits: u32,
     debug_attacks: u32,
@@ -1565,6 +1570,8 @@ impl App {
             spawn_point: (px, py),
             time_of_day: START_TIME,
             anim_clock: 0.0,
+            shake: 0.0,
+            prev_hurt: 0.0,
             respawn_timer: 0.0,
             debug_swing_hits: 0,
             debug_attacks: 0,
@@ -2532,6 +2539,15 @@ impl App {
             .collect();
         for ((tx, ty), ex, ey, kind, items, elite) in drops {
             play_sfx("enemydie");
+            // Death puff: a quick scatter of loot-colored sparks so kills read
+            // clearly. Raiders (the nocturnal raiders) burst red, with a second
+            // gold "loot scatter" ring to suggest items flying out of a fallen foe.
+            if matches!(kind, EnemyKind::Raider) {
+                self.spawn_particles(ex, ey, [0.85, 0.2, 0.18], 10, 44.0, 0.32, 3.2);
+            } else {
+                self.spawn_particles(ex, ey, [1.0, 0.85, 0.4], 6, 38.0, 0.28, 3.0);
+            }
+            self.spawn_particles(ex, ey, [1.0, 0.9, 0.55], 5, 22.0, 0.45, 2.5);
             // Drop loot on the ground at the enemy's position; the player walks
             // over it to collect (see collect_loot). Spread multiple drops in a
             // small ring so they don't perfectly overlap.
@@ -3484,6 +3500,35 @@ impl App {
         self.frames += 1;
         self.hurt_flash = (self.hurt_flash * 0.86).max(0.0);
         self.swing_cd = (self.swing_cd - dt).max(0.0);
+        // Expose swing progress (0..1 over the weapon's cooldown) so the world
+        // renderer can lunge the player's torso/arms on a strike.
+        let cd = self.player.weapon.cooldown().max(0.05);
+        self.player.swing_t = if self.swing_cd > 0.0 {
+            1.0 - self.swing_cd / cd
+        } else {
+            0.0
+        };
+        // Decay any active screen-shake (set when a boss lands a hit).
+        self.shake = (self.shake * 0.82).max(0.0);
+        // Minimal screen-shake: when a boss lands a blow on the player, nudge the
+        // camera a touch. Re-armed only on the frame the hit lands (hurt_timer
+        // rising edge) and only if a boss is actually in melee range.
+        let hurt_now = self.player.hurt_timer;
+        if hurt_now > 0.0 && self.prev_hurt <= 0.0 {
+            let px = self.player.x;
+            let py = self.player.y;
+            let boss_near = self
+                .enemies
+                .iter_mut_with_key()
+                .any(|(_, e)| {
+                    (e.kind == EnemyKind::Boss || e.kind == EnemyKind::Colossus)
+                        && ((e.x - px).powi(2) + (e.y - py).powi(2)).sqrt() < 2.2
+                });
+            if boss_near {
+                self.shake = (self.shake + 0.35).min(0.5);
+            }
+        }
+        self.prev_hurt = hurt_now;
         // Hit-stop: briefly scale the simulation dt toward zero so landed blows
         // land with a satisfying snap. Rendering continues at full rate.
         let real_dt = dt;
@@ -4592,6 +4637,19 @@ impl App {
     }
 
     pub fn render(&mut self) {
+        // Minimal screen-shake: offset the camera by a tiny, fast-flickering
+        // amount while `shake` is active, then restore it before returning so the
+        // next frame's follow-camera logic starts from a clean position.
+        let (shake_x, shake_y) = if self.shake > 0.001 {
+            (
+                (self.anim_clock * 47.0).sin() * self.shake * 0.5,
+                (self.anim_clock * 53.0 + 1.3).sin() * self.shake * 0.5,
+            )
+        } else {
+            (0.0, 0.0)
+        };
+        self.camera.x += shake_x;
+        self.camera.y += shake_y;
         self.write_uniforms();
         if self.quad_count > 0 {
             self.vertex_buffer.upload(&self.queue, &self.vertices);
@@ -4787,6 +4845,10 @@ impl App {
                 if self.using_blit { "blit" } else { "gpu" }
             ));
         }
+
+        // Restore the camera so the shake offset doesn't leak into next frame.
+        self.camera.x -= shake_x;
+        self.camera.y -= shake_y;
     }
 
     /// Request a one-off readback + #blit (used by the screenshot key).

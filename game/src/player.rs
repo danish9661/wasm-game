@@ -58,6 +58,10 @@ pub struct Player {
     pub xp: u32,
     /// Current level; each level raises max HP and partially heals on level-up.
     pub level: u32,
+    /// Attack animation progress in [0,1] driven by the renderer from the swing
+    /// cooldown. 0 = idle, ramps to 1 as a melee swing lands; the world renderer
+    /// uses it to lunge the player's torso/arms forward on a strike.
+    pub swing_t: f32,
 }
 
 impl Player {
@@ -81,6 +85,7 @@ impl Player {
             enchant: 0,
             xp: 0,
             level: 1,
+            swing_t: 0.0,
         }
     }
 

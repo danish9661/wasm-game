@@ -363,7 +363,9 @@ pub fn build_tile_mesh(
             } else {
                 0.0
             },
-            attack: 0.0,
+            // Lunge out and back over the swing: peaks mid-swing where the hit
+            // lands, then recovers — reads as a committed strike.
+            attack: (p.swing_t * (1.0 - p.swing_t) * 4.0).clamp(0.0, 1.0),
         });
     }
 
