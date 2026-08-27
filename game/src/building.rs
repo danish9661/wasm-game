@@ -339,6 +339,31 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
 /// so the world isn't just trees/rocks. Decorative props never block movement,
 /// emit light, or appear in the build menu. Same seed → same layout forever.
 pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
+    let base = raw_decor(tx, ty, tile);
+    // Space default homes out: skip a home if any of the 8 neighbouring tiles
+    // is also a home, so scattered settlements don't clump into a wall of houses.
+    if matches!(
+        base,
+        Some(StructureKind::House) | Some(StructureKind::Cabin) | Some(StructureKind::Hut)
+    ) {
+        for dx in -1..=1i32 {
+            for dy in -1..=1i32 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                if matches!(
+                    raw_decor(tx + dx, ty + dy, tile),
+                    Some(StructureKind::House) | Some(StructureKind::Cabin) | Some(StructureKind::Hut)
+                ) {
+                    return None;
+                }
+            }
+        }
+    }
+    base
+}
+
+fn raw_decor(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
     let h = tx.wrapping_mul(73856093) ^ ty.wrapping_mul(19349663) ^ 0x0bad_c0de;
     match tile {
         TileKind::Grass if h.rem_euclid(53) == 0 => Some(StructureKind::Sign),
@@ -348,10 +373,12 @@ pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
         TileKind::Grass if h.rem_euclid(167) == 0 => Some(StructureKind::Pillar),
         TileKind::Grass if h.rem_euclid(223) == 0 => Some(StructureKind::Rubble),
         // Default settlements: scattered homes so the grasslands feel inhabited.
-        TileKind::Grass if h.rem_euclid(83) == 0 => Some(StructureKind::House),
-        TileKind::Grass if h.rem_euclid(127) == 0 => Some(StructureKind::Cabin),
-        TileKind::Forest if h.rem_euclid(139) == 0 => Some(StructureKind::Hut),
-        TileKind::Tundra if h.rem_euclid(97) == 0 => Some(StructureKind::Cabin),
+        // The `tx % 3 == 0 && ty % 3 == 0` gate forces homes onto a 3-tile
+        // sub-grid, so no two default homes can ever land on adjacent tiles.
+        TileKind::Grass if h.rem_euclid(83) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::House),
+        TileKind::Grass if h.rem_euclid(127) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::Cabin),
+        TileKind::Forest if h.rem_euclid(139) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::Hut),
+        TileKind::Tundra if h.rem_euclid(97) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::Cabin),
         TileKind::Forest if h.rem_euclid(67) == 0 => Some(StructureKind::Totem),
         TileKind::Forest if h.rem_euclid(71) == 0 => Some(StructureKind::BonePile),
         TileKind::Forest if h.rem_euclid(173) == 0 => Some(StructureKind::Vines),
@@ -491,6 +518,37 @@ mod tests {
             .iter()
             .any(|(k, _, _)| *k == StructureKind::Turret || *k == StructureKind::HealingTotem
                 || *k == StructureKind::Lantern));
+    }
+
+    #[test]
+    fn scattered_homes_are_spaced() {
+        for &tile in &[TileKind::Grass, TileKind::Forest, TileKind::Tundra, TileKind::Jungle] {
+            let is_home = |tx: i32, ty: i32| {
+                matches!(
+                    decor_on(tx, ty, tile),
+                    Some(StructureKind::House) | Some(StructureKind::Cabin) | Some(StructureKind::Hut)
+                )
+            };
+            for tx in -200..200 {
+                for ty in -200..200 {
+                    if is_home(tx, ty) {
+                        for dx in -1..=1i32 {
+                            for dy in -1..=1i32 {
+                                if dx == 0 && dy == 0 {
+                                    continue;
+                                }
+                                assert!(
+                                    !is_home(tx + dx, ty + dy),
+                                    "adjacent default homes at ({tx},{ty}) and ({},{}), tile {tile:?}",
+                                    tx + dx,
+                                    ty + dy
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 #[cfg(test)]

@@ -248,7 +248,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status } from './wasm_game.js';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack } from './wasm_game.js';
 
     const coopTagsEl = document.getElementById('coop-tags');
     const townTransitionEl = document.getElementById('town-transition');
@@ -262,6 +262,10 @@
     window.new_game_with_seed = new_game_with_seed;
     window.download_save_zip = download_save_zip;
     window.upload_save_zip = upload_save_zip;
+    window.get_frame_dump = get_frame_dump;
+    window.do_attack = do_attack;
+    window.step = step;
+    window.set_analog = set_analog;
 
     // Parse a world-seed string into a u32: a non-empty numeric string is used
     // directly; otherwise the string's characters are hashed so players can use

@@ -5,7 +5,7 @@
 
 use crate::elements::prim::{anim_seed, facing_offset, Part};
 
-pub(crate) fn build(
+pub fn build(
     cx: f32,
     cy: f32,
     color: [f32; 3],

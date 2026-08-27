@@ -8,7 +8,7 @@ use std::f32::consts::TAU;
 
 /// One drawn piece of an element.
 #[derive(Clone, Copy)]
-pub(crate) struct Part {
+pub struct Part {
     pub cx: f32,
     /// Vertical center (screen px). For a `VQuad` this is `top_y + height/2`.
     pub cy: f32,

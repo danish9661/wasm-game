@@ -6,7 +6,7 @@
 //! When we later add a texture atlas (option B), only `prim` changes: a `Part`
 //! already carries an optional `uv` rect, so element files don't need edits.
 
-pub(crate) mod prim;
+pub mod prim;
 
 pub(crate) mod tree;
 pub(crate) mod rock;
@@ -17,7 +17,7 @@ pub(crate) mod campfire;
 pub(crate) mod altar;
 pub(crate) mod arrow;
 pub(crate) mod slime;
-pub(crate) mod humanoid;
+pub mod humanoid;
 pub(crate) mod guard;
 pub(crate) mod golem;
 pub(crate) mod hpbar;

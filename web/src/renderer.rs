@@ -12,6 +12,7 @@ use game::player::{self, Player};
 use game::poi::{ruins_at, ruins_walls, town_name, town_site, village_sites, village_name};
 use game::weapons::WeaponKind;
 use game::quest::QuestLog;
+use game::elements::humanoid;
 use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
 use game::iso::{HALF_H, HALF_W};
 use game::resources::{NodeRegistry, ResourceKind, resource_on, HARVEST_RANGE};
@@ -1070,6 +1071,83 @@ impl App {
             },
         })
         .to_string()
+    }
+
+    /// Headless "visual engine" frame dump: every sprite in screen space plus the
+    /// player, so a non-multimodal agent can render the scene as ASCII and assert
+    /// on layout/animation. Coordinates `sx, sy` are iso-screen pixels relative to
+    /// the viewport center (same mapping the lights use), in world units of px.
+    pub fn frame_dump(&mut self) -> String {
+        let cam = self.camera;
+        let mut sprites = Vec::new();
+        for s in self.sprites() {
+            let (sx, sy) = game::iso::world_to_iso(s.x - cam.x, s.y - cam.y);
+            sprites.push(serde_json::json!({
+                "label": game::render::style_label(s.style),
+                "style": format!("{:?}", s.style),
+                "x": s.x,
+                "y": s.y,
+                "sx": sx,
+                "sy": sy,
+                "hw": s.half_w,
+                "hh": s.half_h,
+                "r": s.color[0],
+                "g": s.color[1],
+                "b": s.color[2],
+                "walk": s.walk,
+                "attack": s.attack,
+                "flash": s.flash,
+            }));
+        }
+        let (psx, psy) = game::iso::world_to_iso(self.player.x - cam.x, self.player.y - cam.y);
+        // Include the player as a sprite (with its real drawn size) so the
+        // headless visualizer can compare the character to the buildings.
+        let parts = humanoid::build(
+            self.player.x,
+            self.player.y,
+            [0.82, 0.66, 0.5],
+            1.0,
+            self.player.facing,
+            0.0,
+            0.0,
+            self.player.swing_t,
+        );
+        let (mut minx, mut maxx, mut miny, mut maxy) = (f32::MAX, f32::MIN, f32::MAX, f32::MIN);
+        for p in &parts {
+            minx = minx.min(p.cx - p.hw);
+            maxx = maxx.max(p.cx + p.hw);
+            miny = miny.min(p.cy - p.hh + p.lift);
+            maxy = maxy.max(p.cy + p.hh + p.lift);
+        }
+        sprites.insert(
+            0,
+            serde_json::json!({
+                "label": "P",
+                "style": "Humanoid",
+                "x": self.player.x,
+                "y": self.player.y,
+                "sx": psx,
+                "sy": psy,
+                "hw": (maxx - minx) / 2.0,
+                "hh": (maxy - miny) / 2.0,
+                "r": 0.82, "g": 0.66, "b": 0.5,
+                "walk": 0.0,
+                "attack": self.player.swing_t,
+                "flash": 0.0,
+            }),
+        );
+        let dump = serde_json::json!({
+            "cam": { "x": cam.x, "y": cam.y },
+            "player": {
+                "x": self.player.x,
+                "y": self.player.y,
+                "sx": psx,
+                "sy": psy,
+                "attack": self.player.swing_t,
+            },
+            "sprites": sprites,
+        });
+        dump.to_string()
     }
 
     pub fn ui_data(&self) -> String {
@@ -2389,7 +2467,7 @@ impl App {
     /// Attack with the equipped weapon. Melee weapons swing (hits everything in
     /// reach); ranged weapons (Bow) loose an arrow instead. Honors the weapon's
     /// cooldown so heavier weapons swing slower.
-    fn attack(&mut self) {
+    pub fn attack(&mut self) {
         if self.swing_cd > 0.0 {
             return;
         }

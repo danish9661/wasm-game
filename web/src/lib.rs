@@ -112,6 +112,26 @@ pub fn get_stats() -> String {
     })
 }
 
+/// Headless "visual engine" frame dump (JSON). Lets a non-multimodal agent
+/// render the scene as ASCII and assert on layout/animation without a screenshot.
+#[wasm_bindgen]
+pub fn get_frame_dump() -> String {
+    APP.with(|cell| match cell.borrow_mut().as_mut() {
+        Some(app) => app.frame_dump(),
+        None => String::from("{}"),
+    })
+}
+
+/// Trigger a melee swing (drives the player attack-lunge animation) for tests.
+#[wasm_bindgen]
+pub fn do_attack() {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.attack();
+        }
+    });
+}
+
 /// JSON UI data for the Inventory & Crafting / Build panel.
 #[wasm_bindgen]
 pub fn get_ui_data() -> String {
