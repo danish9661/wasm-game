@@ -166,6 +166,31 @@ pub(crate) fn anim_seed(cx: f32, cy: f32) -> f32 {
     ((cx * 0.31 + cy * 0.17).fract().abs()) * TAU
 }
 
+/// Return a copy of `parts` with each part's color lerped toward white by `f`
+/// (0..1) — used for the hit-flash that telegraphs damage on any figure.
+pub(crate) fn flashed(parts: &[Part], f: f32) -> Vec<Part> {
+    let f = f.clamp(0.0, 1.0);
+    if f <= 0.0 {
+        return parts.to_vec();
+    }
+    parts
+        .iter()
+        .map(|p| Part {
+            color: [
+                p.color[0] + (1.0 - p.color[0]) * f,
+                p.color[1] + (1.0 - p.color[1]) * f,
+                p.color[2] + (1.0 - p.color[2]) * f,
+            ],
+            ..*p
+        })
+        .collect()
+}
+
+/// Rasterize `parts` after applying a hit-flash (see `flashed`).
+pub(crate) fn rasterize_flash(parts: &[Part], out: &mut Vec<f32>, f: f32) {
+    rasterize(&flashed(parts, f), out);
+}
+
 /// Horizontal wind-sway offset (px) for foliage, phased per-instance so a
 /// whole field doesn't lean in unison.
 pub(crate) fn sway(cx: f32, cy: f32, anim_time: f32, amp: f32) -> f32 {

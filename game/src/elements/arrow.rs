@@ -20,6 +20,23 @@ pub(crate) fn draw(
     let nx = -uy;
     let ny = ux;
     let hw = 2.0;
+    // Motion trail: a faint streak trailing behind the arrow so shots read as
+    // fast-moving even in a still frame.
+    let trail_tail = (cx - ux * (shaft + 12.0), cy - uy * (shaft + 12.0));
+    let tverts = [
+        (trail_tail.0 - nx * (hw * 0.5), trail_tail.1 - ny * (hw * 0.5)),
+        (trail_tail.0 + nx * (hw * 0.5), trail_tail.1 + ny * (hw * 0.5)),
+        (tail.0 + nx * hw, tail.1 + ny * hw),
+        (trail_tail.0 - nx * (hw * 0.5), trail_tail.1 - ny * (hw * 0.5)),
+        (tail.0 + nx * hw, tail.1 + ny * hw),
+        (tail.0 - nx * hw, tail.1 - ny * hw),
+    ];
+    for (vx, vy) in tverts {
+        out.push(vx);
+        out.push(vy);
+        out.extend_from_slice(&color);
+        out.push(alpha * 0.22);
+    }
     // shaft as a thin quad (two triangles)
     let verts = [
         (tail.0 - nx * hw, tail.1 - ny * hw),

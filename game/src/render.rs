@@ -1,4 +1,4 @@
-use crate::elements::prim::{rasterize, sway, Part};
+use crate::elements::prim::{flashed, rasterize, rasterize_flash, sway, Part};
 use crate::iso::{depth_order, iso_to_world, world_to_iso, HALF_H, HALF_W};
 use crate::player::Player;
 use crate::world::{ChunkCache, TileKind, WorldGen};
@@ -112,6 +112,10 @@ pub struct Sprite {
     pub facing: (f32, f32),
     /// Movement intensity 0..1 for walk-cycle animation (humanoid figures).
     pub walk: f32,
+    /// Hit-flash 0..1: lerps the figure toward white for a few frames on damage.
+    pub flash: f32,
+    /// Attack lunge 0..1: humanoid figures lean/extend toward the facing on strike.
+    pub attack: f32,
 }
 
 impl Sprite {
@@ -133,6 +137,8 @@ impl Sprite {
             style: SpriteStyle::Generic,
             facing: (1.0, 0.0),
             walk: 0.0,
+            flash: 0.0,
+            attack: 0.0,
         }
     }
 
@@ -151,6 +157,18 @@ impl Sprite {
     /// Set the movement intensity (0..1) driving the walk-cycle animation.
     pub fn with_walk(mut self, walk: f32) -> Self {
         self.walk = walk;
+        self
+    }
+
+    /// Set the hit-flash intensity (0..1) for damage telegraph.
+    pub fn with_flash(mut self, flash: f32) -> Self {
+        self.flash = flash;
+        self
+    }
+
+    /// Set the attack-lunge intensity (0..1) for the strike animation.
+    pub fn with_attack(mut self, attack: f32) -> Self {
+        self.attack = attack;
         self
     }
 }
@@ -179,6 +197,8 @@ struct Draw {
     facing: (f32, f32),
     hurt: bool,
     walk: f32,
+    flash: f32,
+    attack: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -275,6 +295,8 @@ pub fn build_tile_mesh(
             facing: (1.0, 0.0),
             hurt: false,
             walk: 0.0,
+            flash: 0.0,
+            attack: 0.0,
         });
     }
 
@@ -310,6 +332,8 @@ pub fn build_tile_mesh(
             facing: s.facing,
             hurt: false,
             walk: s.walk,
+            flash: s.flash,
+            attack: s.attack,
         });
     }
 
@@ -334,6 +358,12 @@ pub fn build_tile_mesh(
             facing: p.facing,
             hurt: p.hurt_timer > 0.0,
             walk: player_walk,
+            flash: if p.hurt_timer > 0.0 {
+                (p.hurt_timer / 0.6).clamp(0.0, 1.0)
+            } else {
+                0.0
+            },
+            attack: 0.0,
         });
     }
 
@@ -468,7 +498,7 @@ pub fn build_tile_mesh(
                     }
                     other => push_styled_sprite(
                         out, d.sx, d.sy, other, d.color, d.half_w, d.half_h, d.lift, d.alpha,
-                        d.facing, d.walk, anim_time,
+                        d.facing, d.walk, anim_time, d.flash, d.attack,
                     ),
                 }
             }
@@ -483,8 +513,17 @@ pub fn build_tile_mesh(
                     PLAYER_COLOR
                 };
                 push_shadow(out, d.sx, gy, HALF_W * 0.7, HALF_H * 0.7);
-                let parts = crate::elements::humanoid::build(d.sx, gy, tunic, 1.0, d.facing, d.walk, anim_time);
-                rasterize(&parts, out);
+                let parts = crate::elements::humanoid::build(
+                    d.sx,
+                    gy,
+                    tunic,
+                    1.0,
+                    d.facing,
+                    d.walk,
+                    anim_time,
+                    d.attack,
+                );
+                rasterize(&crate::elements::prim::flashed(&parts, d.flash), out);
             }
         }
     }
@@ -732,6 +771,8 @@ fn push_styled_sprite(
     facing: (f32, f32),
     walk: f32,
     anim_time: f32,
+    flash: f32,
+    attack: f32,
 ) {
     use crate::elements::{
         altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
@@ -755,9 +796,13 @@ fn push_styled_sprite(
         }
         SpriteStyle::Altar => rasterize(&altar::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Arrow => arrow::draw(out, cx, cy, color, alpha, facing),
-        SpriteStyle::Slime => rasterize(&slime::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Slime => {
+            let parts = slime::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
         SpriteStyle::Humanoid => {
-            rasterize(&humanoid::build(cx, cy, color, alpha, facing, walk, anim_time), out)
+            let parts = humanoid::build(cx, cy, color, alpha, facing, walk, anim_time, attack);
+            rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::HpBack => rasterize(&hpbar::back(cx, cy, hw, hh, lift, color, alpha), out),
         SpriteStyle::HpFill => rasterize(&hpbar::fill(cx, cy, hw, hh, lift, color, alpha), out),

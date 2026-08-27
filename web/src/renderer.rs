@@ -181,6 +181,7 @@ fn enemy_name(kind: EnemyKind) -> &'static str {
         EnemyKind::Stormcaller => "Stormcaller",
         EnemyKind::Wolf => "Wolf",
         EnemyKind::Archer => "Archer",
+        EnemyKind::Raider => "Raider",
     }
 }
 
@@ -971,6 +972,8 @@ pub struct App {
     weather_timer: f32,
     /// Seconds until the next roaming elite (mini-boss) spawns into the world.
     elite_timer: f32,
+    /// Seconds until the next night-raider band sweeps the player's base.
+    raider_timer: f32,
     /// Farm plots: seconds remaining until each planted plot is ready to
     /// harvest again (keyed by tile). Plots not present are grown (0).
     farm_cd: std::collections::HashMap<(i32, i32), f32>,
@@ -1550,6 +1553,7 @@ impl App {
             colossus_killed: 0,
             boss_spawned: false,
             elite_timer: 60.0,
+            raider_timer: 75.0,
             altar_placed: false,
             altar_tile: None,
             near_altar: false,
@@ -3190,6 +3194,7 @@ impl App {
         self.weather = 0;
         self.weather_timer = 25.0;
         self.elite_timer = 60.0;
+        self.raider_timer = 75.0;
         self.boss_spawned = false;
         self.altar_placed = false;
         self.altar_tile = None;
@@ -3608,6 +3613,30 @@ impl App {
                     ));
                     play_sfx("levelup");
                 }
+            }
+        }
+
+        // Night raiders: after dark, bands of Raiders sweep in toward the player's
+        // base to test the guards/Banners. They only appear once the player has
+        // actually built something worth raiding.
+        self.raider_timer -= dt;
+        if self.raider_timer <= 0.0 && self.player.alive {
+            self.raider_timer = 55.0 + (self.anim_clock * 7.0).fract() * 45.0;
+            let night = daylight_at(self.time_of_day) < 0.3;
+            if night && !self.structures.is_empty() {
+                let idx = (self.anim_clock as usize) % self.structures.len();
+                let s = self.structures[idx];
+                for i in 0..2 {
+                    let ang = (self.anim_clock * 1.7 + 3.1 * i as f32).fract() * std::f32::consts::TAU;
+                    let tx = s.tx + (ang.cos() * 4.0) as i32;
+                    let ty = s.ty + (ang.sin() * 4.0) as i32;
+                    if tile_at(&self.world, &mut self.chunks, tx, ty).walkable() {
+                        self.enemies
+                            .spawn_elite(EnemyKind::Raider, tx as f32 + 0.5, ty as f32 + 0.5, 1.0);
+                    }
+                }
+                toast("⚔ Raiders are attacking your base!");
+                play_sfx("roar");
             }
         }
 
@@ -4326,6 +4355,15 @@ impl App {
                 AiState::Idle => 0.15,
                 _ => 0.9,
             };
+            // Attack lunge: ramps up as the wind-up completes (the strike lands
+            // when windup reaches 0), so melee foes visibly lunge on contact.
+            sp.attack = if e.windup > 0.0 {
+                (1.0 - (e.windup / WINDUP).clamp(0.0, 1.0))
+            } else {
+                0.0
+            };
+            // Flash is already baked into sp.color above; keep the generic path idle.
+            sp.flash = 0.0;
             sprites.push(sp);
             // hp bar: dark framed plate + colored fill, floating above the figure
             let bar_lift = match e.kind {
@@ -4348,6 +4386,7 @@ impl App {
                 EnemyKind::Stormcaller => 26.0,
                 EnemyKind::Wolf => 16.0,
                 EnemyKind::Archer => 24.0,
+                EnemyKind::Raider => 24.0,
             };
             sprites.push(
                 Sprite::new_center(e.x, e.y, [0.0, 0.0, 0.0], 11.0, 2.5, bar_lift)
@@ -4473,7 +4512,8 @@ impl App {
                 self.player.x - self.camera.x,
                 self.player.y - self.camera.y,
             );
-            data[0..4].copy_from_slice(&[sx, sy, 0.32, 66.0]);
+            let pflick = 0.9 + 0.1 * (self.anim_clock * 6.0).sin();
+            data[0..4].copy_from_slice(&[sx, sy, 0.32 * pflick, 66.0]);
             data[4..8].copy_from_slice(&[0.85, 0.78, 0.55, 0.0]);
             n = 1;
         }
@@ -4489,11 +4529,20 @@ impl App {
                 s.tx as f32 + 0.5 - self.camera.x,
                 s.ty as f32 + 0.5 - self.camera.y,
             );
-            let (intensity, radius, rgb) = match s.kind {
+            let (mut intensity, radius, rgb) = match s.kind {
                 StructureKind::Lantern => (0.40, 70.0, [1.0, 0.80, 0.40]),
                 StructureKind::Brazier => (0.70, 120.0, [1.0, 0.50, 0.20]),
                 _ => (0.55, 90.0, [1.0, 0.62, 0.28]),
             };
+            // Warm, irregular candle flicker: two detuned sines per fixture so the
+            // whole lit scene gently breathes instead of sitting at a flat brightness.
+            let seed = s.tx as f32 * 0.7 + s.ty as f32 * 1.3;
+            let flick = 0.82
+                + 0.18
+                    * ((self.anim_clock * 9.0 + seed).sin() * 0.6
+                        + (self.anim_clock * 17.0 + seed * 2.1).sin() * 0.4)
+                    .clamp(-1.0, 1.0);
+            intensity *= flick;
             let slot = n * 8;
             data[slot..slot + 4].copy_from_slice(&[sx, sy, intensity, radius]);
             data[slot + 4..slot + 8].copy_from_slice(&[rgb[0], rgb[1], rgb[2], 0.0]);

@@ -15,11 +15,14 @@ pub(crate) fn build(
     let ph = anim_time * 5.0 + seed;
     let hop = (ph.sin() * 0.5 + 0.5).clamp(0.0, 1.0); // 0 grounded .. 1 peak
     let lift_y = -hop * 7.0; // rise up to 7px
-    let wx = 16.0 * (1.0 + 0.18 * (1.0 - hop)); // wider when grounded
-    let wy = 12.0 * (1.0 - 0.12 * (1.0 - hop)); // shorter when grounded
+    // Side-to-side jiggle so the blob feels like jelly, not a bouncing ball.
+    let wob = (anim_time * 9.0 + seed).sin() * 1.8;
+    let wx = 16.0 * (1.0 + 0.24 * (1.0 - hop)) + wob.abs() * 0.25; // wider when grounded
+    let wy = 12.0 * (1.0 - 0.18 * (1.0 - hop)); // shorter when grounded
+    let jx = cx + wob;
     let center_y = cy - wy + lift_y;
     vec![
-        Part::diamond(cx, center_y, wx, wy, 0.0, body, alpha, true),
-        Part::diamond(cx - 4.0, center_y - wy * 0.5, 5.0, 4.0, 0.0, shade(body, 1.4), alpha, true),
+        Part::diamond(jx, center_y, wx, wy, 0.0, body, alpha, true),
+        Part::diamond(jx - 4.0, center_y - wy * 0.5, 5.0, 4.0, 0.0, shade(body, 1.4), alpha, true),
     ]
 }

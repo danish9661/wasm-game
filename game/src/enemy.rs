@@ -75,6 +75,10 @@ pub enum EnemyKind {
     Wolf,
     /// Archer: a ranged humanoid that keeps its distance and looses arrows.
     Archer,
+    /// Raider: a night-stalking humanoid bandit that harries your base after
+    /// dark. Tough enough to threaten an undefended homestead, so village guards
+    /// and War Banners are what keep them at bay.
+    Raider,
 }
 
 impl EnemyKind {
@@ -102,7 +106,7 @@ impl EnemyKind {
     pub fn nocturnal(self) -> bool {
         matches!(
             self,
-            EnemyKind::Skeleton | EnemyKind::Wraith | EnemyKind::Bat | EnemyKind::Spider | EnemyKind::Imp
+            EnemyKind::Skeleton |             EnemyKind::Wraith | EnemyKind::Bat | EnemyKind::Spider | EnemyKind::Imp | EnemyKind::Raider
         )
     }
 
@@ -137,6 +141,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => "Stormcaller",
             EnemyKind::Wolf => "Wolf",
             EnemyKind::Archer => "Archer",
+            EnemyKind::Raider => "Raider",
             EnemyKind::ScorpionQueen => "Scorpion Queen",
             EnemyKind::FrostGolem => "Frost Golem",
             EnemyKind::ToadKing => "Toad King",
@@ -162,6 +167,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => "Flying storm-mage; drifts over walls and hurls lightning from afar.",
             EnemyKind::Wolf => "Fast pack hunter; tears in and bites before you can react.",
             EnemyKind::Archer => "Ranged marksman; kites and looses arrows from afar.",
+            EnemyKind::Raider => "Night raider: harries your base after dark; village guards and War Banners drive them off.",
             EnemyKind::ScorpionQueen => "Boss: Desert. Fast venomous charger that stings from range. Crown Fragment.",
             EnemyKind::FrostGolem => "Boss: Tundra. Slow, towering ice wall with crushing blows. Crown Fragment.",
             EnemyKind::ToadKing => "Boss: Swamp. Bloated amphibian that spits toxic globs from range. Crown Fragment.",
@@ -206,7 +212,8 @@ impl EnemyKind {
                 EnemyKind::Skeleton
                 | EnemyKind::Stoneslinger
                 | EnemyKind::Ogre
-                | EnemyKind::Colossus,
+                | EnemyKind::Colossus
+                | EnemyKind::Raider,
                 WeaponKind::Hammer,
             ) => 1.5,
             (EnemyKind::Goblin, WeaponKind::Sword) => 1.5,
@@ -242,6 +249,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb],
             EnemyKind::Wolf => vec![ItemKind::Food, ItemKind::Herb],
             EnemyKind::Archer => vec![ItemKind::Food, ItemKind::Wood],
+            EnemyKind::Raider => vec![ItemKind::Food, ItemKind::Gem],
         }
     }
 
@@ -267,6 +275,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => 12,
             EnemyKind::Wolf => 7,
             EnemyKind::Archer => 8,
+            EnemyKind::Raider => 18,
         }
     }
 }
@@ -293,6 +302,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => 24.0,
             EnemyKind::Wolf => 14.0,
             EnemyKind::Archer => 18.0,
+            EnemyKind::Raider => 35.0,
         }
     }
 
@@ -318,6 +328,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => 9.0,
             EnemyKind::Wolf => 5.0,
             EnemyKind::Archer => 6.0,
+            EnemyKind::Raider => 9.0,
         }
     }
 
@@ -342,6 +353,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => [0.42, 0.55, 0.86],
             EnemyKind::Wolf => [0.55, 0.50, 0.48],
             EnemyKind::Archer => [0.50, 0.45, 0.62],
+            EnemyKind::Raider => [0.45, 0.18, 0.18],
         }
     }
 
@@ -369,6 +381,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => (14.0, 18.0),
             EnemyKind::Wolf => (16.0, 12.0),
             EnemyKind::Archer => (14.0, 18.0),
+            EnemyKind::Raider => (14.0, 18.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
@@ -393,6 +406,7 @@ impl EnemyKind {
             EnemyKind::Stormcaller => SpriteStyle::Humanoid,
             EnemyKind::Wolf => SpriteStyle::Wolf,
             EnemyKind::Archer => SpriteStyle::Humanoid,
+            EnemyKind::Raider => SpriteStyle::Humanoid,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)
@@ -574,6 +588,9 @@ impl Enemy {
             EnemyKind::Stormcaller => (AGGRO_RANGE + 3.0, ATTACK_RANGE, ENEMY_SPEED * 1.2, 0.9),
             EnemyKind::Wolf => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.9, 0.5),
             EnemyKind::Archer => (AGGRO_RANGE + 1.0, ATTACK_RANGE, ENEMY_SPEED * 0.95, 1.1),
+            // Raiders are quick, aggressive night skirmishers: a touch faster than
+            // a Goblin, with a shorter cooldown so they keep pressure on a base.
+            EnemyKind::Raider => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.15, 0.7),
         };
         // Boss second phase: below 45% HP every Crown Fragment guardian enrages —
         // faster, shorter wind-ups — so a drawn-out fight turns frantic at the end.

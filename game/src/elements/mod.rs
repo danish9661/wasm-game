@@ -91,7 +91,7 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "campfire", campfire::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "altar", altar::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "slime", slime::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "humanoid", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
+    add(&mut out, "humanoid", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     add(&mut out, "mushroom", mushroom::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "crystal", crystal::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "flower", flower::build(0.0, 0.0, color, alpha, facing, t));
@@ -122,14 +122,14 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "house", house::build(0, 0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "cabin", house::build(1, 0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "hut", house::build(2, 0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "skeleton", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "goblin", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
+    add(&mut out, "skeleton", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
+    add(&mut out, "goblin", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     add(&mut out, "bat", bat::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "spider", spider::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "imp", imp::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "ogre", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
+    add(&mut out, "ogre", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     add(&mut out, "wraith", wraith::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "stoneslinger", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t));
+    add(&mut out, "stoneslinger", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     add(&mut out, "colossus", colossus::build(0.0, 0.0, color, alpha, facing, t));
     out
 }
