@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust (wasm target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: cargo test (game logic)
+        run: cargo test -p game
+      - name: cargo build (all crates)
+        run: |
+          cargo build -p game
+          cargo build -p starfall-server
+          cargo build -p wasm_game --target wasm32-unknown-unknown
+
+  visual-audit:
+    runs-on: ubuntu-latest
+    # Browser visual audit is best-effort in CI: only runs when Chrome is available.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - name: Install wasm-pack + puppeteer-core
+        run: |
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+          npm install -g puppeteer-core
+      - name: Run full gate (tests + visual audit)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: bash tools/audit.sh

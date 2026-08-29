@@ -148,4 +148,31 @@ mod tests {
         }
         assert!(hit, "arrow should intersect the enemy");
     }
+
+    // Full round-trip of the core combat loop, in pure Rust (no GPU needed):
+    // player swing damages an in-reach enemy, and enemy contact damages the
+    // player while respecting the hurt-timer i-frames.
+    #[test]
+    fn player_swing_damages_enemy() {
+        let mut p = Player::new(0.0, 0.0);
+        let mut e = Enemy::new(0.8, 0.0, EnemyKind::Skeleton);
+        let max = e.hp;
+        let dmg = p.weapon_damage();
+        for hit in swing_hits(&p, std::iter::once(&mut e), SWING_REACH) {
+            hit.take_damage(dmg);
+        }
+        assert!(e.hp < max, "enemy must lose hp from the swing");
+    }
+
+    #[test]
+    fn enemy_contact_respects_iframes() {
+        let mut p = Player::new(0.0, 0.0);
+        let start = p.hp;
+        assert!(p.take_damage(12.0), "first hit should land");
+        assert!(!p.take_damage(12.0), "i-frames must block the immediate second hit");
+        assert!((start - p.hp - 12.0).abs() < 1e-3, "only one hit's damage applied");
+        // Once the hurt-timer expires, damage resumes.
+        p.hurt_timer = 0.0;
+        assert!(p.take_damage(12.0), "damage resumes after i-frames");
+    }
 }

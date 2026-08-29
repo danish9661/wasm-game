@@ -203,7 +203,7 @@ function runChecks(dump, dump2, dump3) {
   await new Promise(r => setTimeout(r, 800));
 
   const browser = await puppeteer.launch({
-    executablePath: '/usr/bin/google-chrome',
+    executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
     headless: 'new',
     args: ['--no-sandbox', '--enable-unsafe-webgpu', '--use-gl=angle',
       '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--window-size=1000,700',
