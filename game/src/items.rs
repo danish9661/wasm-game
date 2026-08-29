@@ -15,6 +15,11 @@ pub enum ItemKind {
     Gem,
     /// A treasure map: while carried, buried caches are revealed on the minimap.
     Map,
+    /// Smelted iron ingot, gathered from ore nodes — a crafting material.
+    Iron,
+    /// Iron Plate: forged at an Anvil from iron + stone. A campaign milestone
+    /// (the "craft iron plate" story beat) and a defensive material.
+    IronPlate,
 }
 
 impl ItemKind {
@@ -27,6 +32,29 @@ impl ItemKind {
             ItemKind::Herb => "herb",
             ItemKind::Gem => "gem",
             ItemKind::Map => "treasure map",
+            ItemKind::Iron => "iron",
+            ItemKind::IronPlate => "iron plate",
+        }
+    }
+
+    /// Stable index used to send a crafted item over the network input.
+    pub fn as_u8(self) -> u8 {
+        self as u8
+    }
+
+    /// Inverse of `as_u8`; returns None for out-of-range values.
+    pub fn from_u8(v: u8) -> Option<ItemKind> {
+        match v {
+            0 => Some(ItemKind::Wood),
+            1 => Some(ItemKind::Stone),
+            2 => Some(ItemKind::Food),
+            3 => Some(ItemKind::Fragment),
+            4 => Some(ItemKind::Herb),
+            5 => Some(ItemKind::Gem),
+            6 => Some(ItemKind::Map),
+            7 => Some(ItemKind::Iron),
+            8 => Some(ItemKind::IronPlate),
+            _ => None,
         }
     }
 
@@ -40,11 +68,13 @@ impl ItemKind {
             ItemKind::Herb => [0.45, 0.80, 0.40],
             ItemKind::Gem => [0.45, 0.85, 0.95],
             ItemKind::Map => [0.86, 0.74, 0.42],
+            ItemKind::Iron => [0.70, 0.72, 0.78],
+            ItemKind::IronPlate => [0.78, 0.80, 0.86],
         }
     }
 }
 
-const SLOTS: usize = 7;
+const SLOTS: usize = 9;
 
 /// Simple stack inventory: one count per item kind.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -66,6 +96,8 @@ impl Inventory {
             ItemKind::Herb => 4,
             ItemKind::Gem => 5,
             ItemKind::Map => 6,
+            ItemKind::Iron => 7,
+            ItemKind::IronPlate => 8,
         }
     }
 

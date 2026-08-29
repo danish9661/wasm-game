@@ -9,6 +9,7 @@ use crate::weapons::WeaponKind;
 use crate::enemy::{AiState, Enemy, EnemyKind, EnemyRegistry, spawner_on};
 use crate::items::{Inventory, ItemKind};
 use crate::player::{self, Player};
+use crate::poi::ruins_at;
 use crate::quest::QuestLog;
 use crate::resources::{resource_on, NodeRegistry, ResourceKind};
 use crate::world::{tile_at, ChunkCache, WorldGen, TileKind};
@@ -63,6 +64,9 @@ pub struct PlayerInput {
     /// Enchantment level of the equipped weapon (raises its damage). Sent by the
     /// client; the server trusts it (co-op is collaborative, not competitive).
     pub enchant: u8,
+    /// Craft request: an `ItemKind::as_u8` value to craft at a nearby Anvil this
+    /// tick, or `None`. Consumed (taken) by the sim so it fires once per press.
+    pub craft: Option<u8>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -178,6 +182,13 @@ pub struct Simulation {
     quest: QuestLog,
     turret_cd: HashMap<(i32, i32), f32>,
     seed: u32,
+    /// Campaign-progress counters fed into `QuestLog::update` each step.
+    slimes_killed: u32,
+    iron_crafted: bool,
+    chests_opened: u32,
+    fragments_recovered: u8,
+    altar_used: bool,
+    colossus_defeated: bool,
 }
 
 impl Simulation {
@@ -202,6 +213,12 @@ impl Simulation {
             quest: QuestLog::new(),
             turret_cd: HashMap::new(),
             seed,
+            slimes_killed: 0,
+            iron_crafted: false,
+            chests_opened: 0,
+            fragments_recovered: 0,
+            altar_used: false,
+            colossus_defeated: false,
         }
     }
 
@@ -321,7 +338,7 @@ impl Simulation {
 
         let spawn = self.spawn_point;
         for p in self.players.values_mut() {
-            Self::step_player(
+            let crafted = Self::step_player(
                 p,
                 &self.world,
                 &mut self.cache,
@@ -334,6 +351,9 @@ impl Simulation {
                 temp,
                 wet,
             );
+            if crafted == Some(ItemKind::IronPlate) {
+                self.iron_crafted = true;
+            }
         }
 
         self.step_enemies(dt);
@@ -405,7 +425,7 @@ fn step_player(
     dt: f32,
     temp: f32,
     wet: bool,
-) {
+) -> Option<ItemKind> {
     np.attack_cd = (np.attack_cd - dt).max(0.0);
     np.eat_cd = (np.eat_cd - dt).max(0.0);
     np.harvest_cd = (np.harvest_cd - dt).max(0.0);
@@ -430,7 +450,7 @@ fn step_player(
             np.player.x = spawn_point.0;
             np.player.y = spawn_point.1;
         }
-        return;
+        return None;
     }
 
     let (mx, my) = (np.input.move_x, np.input.move_y);
@@ -502,6 +522,24 @@ fn step_player(
         }
     }
 
+    // Crafting: forge an item at a nearby Anvil.
+    let mut crafted: Option<ItemKind> = None;
+    if let Some(kind_u8) = np.input.craft.take() {
+        if let Some(kind) = ItemKind::from_u8(kind_u8) {
+            if let Some(recipe) = crate::craft::recipe_for(kind) {
+                let near_anvil = structures.iter().any(|s| {
+                    s.kind == StructureKind::Anvil
+                        && (s.tx as f32 + 0.5 - np.player.x)
+                            .hypot(s.ty as f32 + 0.5 - np.player.y)
+                            < BUILD_RANGE
+                });
+                if near_anvil && crate::craft::craft(&mut np.inv, recipe) {
+                    crafted = Some(kind);
+                }
+            }
+        }
+    }
+
     let ptx = np.player.x.floor() as i32;
     let pty = np.player.y.floor() as i32;
     let biome = tile_at(world, cache, ptx, pty);
@@ -513,6 +551,7 @@ fn step_player(
     if warm && np.player.hp < player::MAX_HP {
         np.player.hp = (np.player.hp + dt * 3.0).min(player::MAX_HP);
     }
+    crafted
 }
 
     fn node_in_range(
@@ -615,6 +654,7 @@ fn step_player(
 
         let mut dead = Vec::new();
         let mut loot: Vec<(f32, f32, Vec<ItemKind>)> = Vec::new();
+        let mut xp_grants: Vec<(u32, u32)> = Vec::new();
         for (k, e) in self.enemies.iter_mut_with_key() {
             if !e.alive() {
                 let mut best: Option<(u32, f32)> = None;
@@ -627,8 +667,12 @@ fn step_player(
                         best = Some((pl.id, d));
                     }
                 }
-                if best.is_some() {
+                if let Some((pid, _)) = best {
                     loot.push((e.x, e.y, e.drops()));
+                    xp_grants.push((pid, e.kind.xp()));
+                    if e.kind == EnemyKind::Slime {
+                        self.slimes_killed += 1;
+                    }
                 }
                 dead.push(k);
             }
@@ -639,7 +683,62 @@ fn step_player(
         for (x, y, items) in loot {
             self.give_loot(x, y, items);
         }
-        let _ = &self.quest;
+        for (pid, xp) in xp_grants {
+            if let Some(p) = self.players.get_mut(&pid) {
+                p.player.add_xp(xp);
+            }
+        }
+        self.step_quests();
+    }
+
+    /// Feed real world facts into the story `QuestLog` so the campaign advances
+    /// as the player actually gathers, builds, crafts, fights and explores.
+    fn step_quests(&mut self) {
+        // Facts are taken from the first living player (co-op uses the host's
+        // progression for the shared story line).
+        let facts = self
+            .players
+            .values()
+            .find(|p| p.player.alive)
+            .map(|p| {
+                let inv = &p.inv;
+                let has_wall = self
+                    .structures
+                    .iter()
+                    .any(|s| s.kind == StructureKind::Wall);
+                let has_campfire = self
+                    .structures
+                    .iter()
+                    .any(|s| s.kind == StructureKind::Campfire);
+                let has_anvil = self
+                    .structures
+                    .iter()
+                    .any(|s| s.kind == StructureKind::Anvil);
+                let ruins = ruins_at(self.seed, |tx, ty| {
+                    crate::world::tile_at(&self.world, &mut self.cache, tx, ty).walkable()
+                });
+                let near_ruins =
+                    (ruins.0 as f32 - p.player.x).hypot(ruins.1 as f32 - p.player.y) < 6.0;
+                (
+                    inv.count(ItemKind::Wood),
+                    inv.count(ItemKind::Stone),
+                    has_wall,
+                    has_campfire,
+                    has_anvil,
+                    self.iron_crafted,
+                    self.slimes_killed,
+                    near_ruins,
+                    self.chests_opened > 0,
+                    self.fragments_recovered,
+                    self.altar_used,
+                    self.colossus_defeated,
+                )
+            });
+        if let Some((wood, stone, hw, hc, ha, ci, sk, nr, co, fr, au, cd)) = facts {
+            self.quest.update(
+                wood, stone, hw, hc, ha, ci, sk, nr, co, fr, au, cd,
+            );
+        }
     }
 
     fn step_arrows(&mut self, dt: f32) {
@@ -824,4 +923,107 @@ fn find_spawn(world: &WorldGen, cache: &mut ChunkCache) -> (f32, f32) {
         }
     }
     (0.0, 0.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::building::StructureKind;
+    use crate::enemy::EnemyKind;
+    use crate::items::ItemKind;
+    use crate::weapons::WeaponKind;
+
+    fn input() -> PlayerInput {
+        PlayerInput {
+            move_x: 0.0,
+            move_y: 0.0,
+            dodge: false,
+            attack: false,
+            harvest: false,
+            eat: false,
+            shoot: false,
+            build: None,
+            weapon: WeaponKind::Fists.as_u8(),
+            weapon_unlocked: 1, // Fists
+            enchant: 0,
+            craft: None,
+        }
+    }
+
+    #[test]
+    fn killing_an_enemy_grants_xp_and_may_level() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        let (px, py) = {
+            let p = &sim.players[&id].player;
+            (p.x, p.y)
+        };
+        // Drop a slime right next to the hero.
+        sim.enemies
+            .get(px as i32 + 1, py as i32, EnemyKind::Slime, 0.0);
+
+        let start_xp = sim.players[&id].player.xp;
+        for _ in 0..60 {
+            let mut i = input();
+            i.attack = true;
+            sim.set_input(id, i);
+            sim.step(1.0 / 30.0);
+        }
+        let p = &sim.players[&id].player;
+        assert!(p.xp > start_xp, "slaying the slime should grant XP");
+    }
+
+    #[test]
+    fn quest_advances_when_resources_gathered() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        assert_eq!(sim.quest.stage, 0);
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Wood, 5);
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Stone, 1);
+        sim.step(1.0 / 30.0);
+        assert_eq!(sim.quest.stage, 1, "5 wood + 1 stone unlocks the shelter beat");
+    }
+
+    #[test]
+    fn crafting_iron_plate_at_anvil_sets_milestone() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("smith".into(), None);
+        let (px, py) = {
+            let p = &sim.players[&id].player;
+            (p.x, p.y)
+        };
+        // Place an anvil right next to the player.
+        sim.structures.push(Structure {
+            tx: px as i32 + 1,
+            ty: py as i32,
+            kind: StructureKind::Anvil,
+        });
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Iron, 2);
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Stone, 4);
+
+        let mut i = input();
+        i.craft = Some(ItemKind::IronPlate.as_u8());
+        sim.set_input(id, i);
+        sim.step(1.0 / 30.0);
+
+        assert!(sim.iron_crafted, "crafting iron plate should set the milestone");
+        assert_eq!(sim.players[&id].inv.count(ItemKind::IronPlate), 1);
+        assert_eq!(sim.players[&id].inv.count(ItemKind::Iron), 0);
+        assert_eq!(sim.players[&id].inv.count(ItemKind::Stone), 0);
+    }
+
+    #[test]
+    fn coop_two_players_share_one_snapshot() {
+        let mut sim = Simulation::new(1337);
+        let a = sim.add_player("alice".into(), None);
+        let b = sim.add_player("bob".into(), None);
+        assert_ne!(a, b);
+        sim.set_input(a, input());
+        sim.set_input(b, input());
+        sim.step(1.0 / 30.0);
+        let snap = sim.snapshot();
+        assert_eq!(snap.players.len(), 2, "both co-op players appear in the snapshot");
+        let ids: Vec<u32> = snap.players.iter().map(|p| p.id).collect();
+        assert!(ids.contains(&a) && ids.contains(&b));
+    }
 }

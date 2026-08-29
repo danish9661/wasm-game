@@ -4325,6 +4325,7 @@ impl App {
             weapon: self.player.weapon.as_u8(),
             weapon_unlocked: self.player.unlocked,
             enchant: self.player.enchant,
+            craft: None,
         };
         self.net_dodge = false;
         self.net_atk = false;

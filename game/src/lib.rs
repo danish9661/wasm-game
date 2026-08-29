@@ -1,5 +1,6 @@
 pub mod building;
 pub mod combat;
+pub mod craft;
 pub mod daynight;
 pub mod elements;
 pub mod enemy;
