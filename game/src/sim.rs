@@ -128,6 +128,10 @@ pub struct SimSnapshot {
     pub structures: Vec<StructureSnapshot>,
     pub resources: Vec<ResourceSnapshot>,
     pub arrows: Vec<ArrowSnapshot>,
+    /// Authoritative campaign progress, broadcast so every co-op client can
+    /// render the same quest objective / crafting milestone in its HUD.
+    pub quest_stage: u8,
+    pub iron_crafted: bool,
 }
 
 /// Persisted player state for cross-device saves (keyed by an account
@@ -905,6 +909,8 @@ fn step_player(
             structures,
             resources,
             arrows,
+            quest_stage: self.quest.stage,
+            iron_crafted: self.iron_crafted,
         }
     }
 }
@@ -1025,5 +1031,37 @@ mod tests {
         assert_eq!(snap.players.len(), 2, "both co-op players appear in the snapshot");
         let ids: Vec<u32> = snap.players.iter().map(|p| p.id).collect();
         assert!(ids.contains(&a) && ids.contains(&b));
+    }
+
+    #[test]
+    fn snapshot_carries_authoritative_quest_and_craft() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        // Advance the campaign to stage 1 via gathered resources...
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Wood, 5);
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Stone, 1);
+        sim.step(1.0 / 30.0);
+        // ...and forge Iron Plate at an anvil so the craft milestone is set.
+        let (px, py) = {
+            let p = &sim.players[&id].player;
+            (p.x, p.y)
+        };
+        sim.structures.push(Structure {
+            tx: px as i32 + 1,
+            ty: py as i32,
+            kind: StructureKind::Anvil,
+        });
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Iron, 2);
+        sim.players.get_mut(&id).unwrap().inv.add(ItemKind::Stone, 4);
+        let mut ci = input();
+        ci.craft = Some(ItemKind::IronPlate.as_u8());
+        sim.set_input(id, ci);
+        sim.step(1.0 / 30.0);
+
+        let snap = sim.snapshot();
+        assert_eq!(snap.quest_stage, sim.quest.stage, "snapshot must mirror the authoritative quest stage");
+        assert!(snap.quest_stage >= 1, "quest should have advanced past stage 0");
+        assert_eq!(snap.iron_crafted, sim.iron_crafted, "snapshot must mirror the craft milestone");
+        assert!(snap.iron_crafted, "iron plate should be marked crafted");
     }
 }

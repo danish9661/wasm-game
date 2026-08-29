@@ -4113,6 +4113,9 @@ impl App {
         // Recompute the HUD compass objective (throttled internally).
         self.update_objective(dt);
 
+        // In co-op the room's server advances the campaign; the synced stage is
+        // authoritative (see net_sync). Only drive it locally in single-player.
+        if self.net.is_none() {
         self.quest.update(
             self.inventory.count(ItemKind::Wood),
             self.inventory.count(ItemKind::Stone),
@@ -4131,6 +4134,7 @@ impl App {
             self.ending.is_some(),
             self.colossus_killed >= 1,
         );
+        }
 
         // arrows fly, hit, and expire (a hit removes the arrow)
         let mut hit_pos = Vec::new();
@@ -4370,6 +4374,11 @@ impl App {
             self.player.facing = lp.facing;
             self.player.alive = lp.alive;
         }
+
+        // Adopt the room's authoritative campaign progress so every co-op player
+        // sees the same quest objective and crafting milestone in the HUD.
+        self.quest.stage = snap.quest_stage;
+        self.crafted_iron = snap.iron_crafted;
 
         let mut enemies = Vec::with_capacity(snap.enemies.len());
         for es in &snap.enemies {
