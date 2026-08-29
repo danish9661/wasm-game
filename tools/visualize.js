@@ -193,6 +193,11 @@ function runChecks(dump, dump2, dump3) {
     ok('attack drives swing_t', dump3.player.attack > 0.01,
       `swing_t=${dump3.player.attack.toFixed(2)}`);
   }
+  // quest + crafting HUD data must be wired (the web HUD renders these)
+  ok('quest objective is shown', !!(dump.quest_text && dump.quest_text.length),
+    `quest="${dump.quest_text || ''}"`);
+  ok('crafting hint is shown', !!(dump.craft_hint && dump.craft_hint.length),
+    `craft="${dump.craft_hint || ''}"`);
   return results;
 }
 

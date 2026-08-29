@@ -1136,9 +1136,19 @@ impl App {
                 "flash": 0.0,
             }),
         );
+        let craft_hint = if self.near_anvil() {
+            let (label, cost) = CRAFT_RECIPES[0];
+            let ready = cost.iter().all(|(it, n)| self.inventory.count(*it) >= *n);
+            format!("Anvil ready: craft {label} ({})", if ready { "materials OK" } else { "need materials" })
+        } else {
+            "No anvil nearby — build one (N) to craft".to_string()
+        };
         let dump = serde_json::json!({
             "cam": { "x": cam.x, "y": cam.y },
             "interior": self.interior.is_some(),
+            "quest_text": self.quest.quest_text(self.fragments),
+            "craft_hint": craft_hint,
+            "quest_stage": self.quest.stage,
             "player": {
                 "x": self.player.x,
                 "y": self.player.y,

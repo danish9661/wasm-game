@@ -228,28 +228,30 @@ impl EnemyKind {
     }
 
     /// What this enemy drops on death (used by the Bestiary / Codex too).
+    /// Combat now yields a spread of crafting materials (Iron scrap, Gems, Wood,
+    /// Herbs) so the forge economy isn't gated entirely on node farming.
     pub fn drops(self) -> Vec<ItemKind> {
         match self {
-            EnemyKind::Slime => vec![ItemKind::Food],
+            EnemyKind::Slime => vec![ItemKind::Food, ItemKind::Herb],
             EnemyKind::Boss => vec![ItemKind::Fragment],
-            EnemyKind::Skeleton => vec![ItemKind::Food],
-            EnemyKind::Goblin => vec![ItemKind::Food],
-            EnemyKind::Bat => vec![ItemKind::Food],
-            EnemyKind::Spider => vec![ItemKind::Herb],
-            EnemyKind::Imp => vec![ItemKind::Food],
-            EnemyKind::Ogre => vec![ItemKind::Gem],
-            EnemyKind::Wraith => vec![ItemKind::Herb],
-            EnemyKind::Stoneslinger => vec![ItemKind::Gem],
-            EnemyKind::Colossus => vec![ItemKind::Gem, ItemKind::Herb],
+            EnemyKind::Skeleton => vec![ItemKind::Food, ItemKind::Iron],
+            EnemyKind::Goblin => vec![ItemKind::Food, ItemKind::Wood, ItemKind::Iron],
+            EnemyKind::Bat => vec![ItemKind::Food, ItemKind::Herb],
+            EnemyKind::Spider => vec![ItemKind::Herb, ItemKind::Iron],
+            EnemyKind::Imp => vec![ItemKind::Food, ItemKind::Herb],
+            EnemyKind::Ogre => vec![ItemKind::Gem, ItemKind::Iron],
+            EnemyKind::Wraith => vec![ItemKind::Herb, ItemKind::Iron],
+            EnemyKind::Stoneslinger => vec![ItemKind::Gem, ItemKind::Iron],
+            EnemyKind::Colossus => vec![ItemKind::Gem, ItemKind::Herb, ItemKind::Iron],
             EnemyKind::ScorpionQueen => vec![ItemKind::Fragment],
-            EnemyKind::FrostGolem => vec![ItemKind::Fragment, ItemKind::Gem],
+            EnemyKind::FrostGolem => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Iron],
             EnemyKind::ToadKing => vec![ItemKind::Fragment, ItemKind::Herb],
-            EnemyKind::OceanLeviathan => vec![ItemKind::Fragment],
-            EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food],
-            EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb],
-            EnemyKind::Wolf => vec![ItemKind::Food, ItemKind::Herb],
-            EnemyKind::Archer => vec![ItemKind::Food, ItemKind::Wood],
-            EnemyKind::Raider => vec![ItemKind::Food, ItemKind::Gem],
+            EnemyKind::OceanLeviathan => vec![ItemKind::Fragment, ItemKind::Gem],
+            EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food, ItemKind::Iron],
+            EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb, ItemKind::Iron],
+            EnemyKind::Wolf => vec![ItemKind::Food, ItemKind::Herb, ItemKind::Wood],
+            EnemyKind::Archer => vec![ItemKind::Food, ItemKind::Wood, ItemKind::Iron],
+            EnemyKind::Raider => vec![ItemKind::Food, ItemKind::Gem, ItemKind::Iron, ItemKind::Wood],
         }
     }
 
@@ -1016,7 +1018,7 @@ mod tests {
             taken += 1.0;
         }
         assert!(taken >= 3.0, "12 hp / 4 dmg = 3 hits");
-        assert_eq!(e.drops(), vec![ItemKind::Food]);
+        assert_eq!(e.drops(), vec![ItemKind::Food, ItemKind::Herb]);
     }
 
     #[test]
@@ -1223,5 +1225,67 @@ mod tests {
         assert!(EnemyKind::Colossus.is_boss());
         assert!(!EnemyKind::Slime.is_boss());
         assert!(!EnemyKind::Brute.behavior().is_empty());
+    }
+
+    #[test]
+    fn every_combat_enemy_drops_loot() {
+        let kinds = [
+            EnemyKind::Slime,
+            EnemyKind::Skeleton,
+            EnemyKind::Goblin,
+            EnemyKind::Bat,
+            EnemyKind::Spider,
+            EnemyKind::Imp,
+            EnemyKind::Ogre,
+            EnemyKind::Wraith,
+            EnemyKind::Stoneslinger,
+            EnemyKind::Colossus,
+            EnemyKind::ScorpionQueen,
+            EnemyKind::FrostGolem,
+            EnemyKind::ToadKing,
+            EnemyKind::OceanLeviathan,
+            EnemyKind::Brute,
+            EnemyKind::Stormcaller,
+            EnemyKind::Wolf,
+            EnemyKind::Archer,
+            EnemyKind::Raider,
+        ];
+        for k in kinds {
+            assert!(!k.drops().is_empty(), "{k:?} must drop at least one item");
+        }
+    }
+
+    #[test]
+    fn loot_spread_supports_the_forge() {
+        // After tuning, iron scrap and gems come from many enemy types so the
+        // crafting economy isn't gated on node farming alone.
+        let iron_sources = [
+            EnemyKind::Skeleton,
+            EnemyKind::Goblin,
+            EnemyKind::Spider,
+            EnemyKind::Ogre,
+            EnemyKind::Brute,
+            EnemyKind::Raider,
+        ];
+        for k in iron_sources {
+            assert!(
+                k.drops().contains(&ItemKind::Iron),
+                "{k:?} should drop iron scrap"
+            );
+        }
+        let gem_sources = [
+            EnemyKind::Ogre,
+            EnemyKind::Stoneslinger,
+            EnemyKind::Colossus,
+            EnemyKind::Brute,
+            EnemyKind::Stormcaller,
+            EnemyKind::Raider,
+        ];
+        for k in gem_sources {
+            assert!(
+                k.drops().contains(&ItemKind::Gem),
+                "{k:?} should drop gems"
+            );
+        }
     }
 }
