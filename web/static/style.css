@@ -18,6 +18,16 @@ html, body {
   z-index: 0;
 }
 
+/* Debug stats line — hidden off-screen (read by visual audit, not by humans). */
+#log {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+}
+
 /* Co-op name tags: floating labels above remote players' heads. The JS layer
    positions each child absolutely in canvas/logical pixels every frame. */
 #coop-tags {
@@ -163,6 +173,7 @@ html, body {
 
 #bar-hp { background: linear-gradient(90deg, #d43b3b, #f06a4a); }
 #bar-hunger { background: linear-gradient(90deg, #c9972e, #e8c14f); }
+#bar-thirst { background: linear-gradient(90deg, #2a6fc9, #4da6f0); }
 #bar-stamina { background: linear-gradient(90deg, #2e8f4a, #54c26e); }
 
 .bar-num {
@@ -187,6 +198,7 @@ html, body {
 .inv-wood { color: #d9a15c; }
 .inv-stone { color: #aab6c4; }
 .inv-food { color: #e88f6a; }
+.inv-gold { color: #ffc83d; border-color: rgba(255, 200, 61, 0.4); }
 
 .inv-clock {
   margin-left: auto;

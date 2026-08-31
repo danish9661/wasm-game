@@ -65,7 +65,7 @@
     <span id="compass-label">Objective</span>
   </div>
   <div id="vignette" class="hidden"></div>
-  <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — open <b>Inventory (I)</b> to craft upgrades · <b>M</b> to forge/enchant</div>
+  <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — press <b>M</b> to forge weapons · <b>O</b> near merchants to sell for gold</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
   <button id="codexbtn" title="Bestiary / Codex (L)">📖</button>
@@ -83,7 +83,7 @@
         <span class="k">Q</span><span class="d">Toggle build mode — then move the cursor and click the ground (or press the structure's key) to place it</span>
         <span class="k">F</span><span class="d">Build a campfire</span>
         <span class="k">V</span><span class="d">Build a wall (blocks movement)</span>
-        <span class="k">O</span><span class="d">Talk to a nearby villager, guard or merchant — hand in or take a fetch quest</span>
+        <span class="k">O</span><span class="d">Talk to a nearby villager, guard or merchant — hand in quests or sell resources for gold</span>
         <span class="k">L</span><span class="d">Cook a hot meal at a campfire (2 food → +25 HP, +hunger)</span>
         <span class="k">🗺</span><span class="d">Carry a treasure map to reveal buried caches (X) on the minimap; dig them with E</span>
         <span class="k">G</span><span class="d">Build a fence (blocks movement)</span>
@@ -95,7 +95,7 @@
         <span class="k">C</span><span class="d">Eat food to restore hunger</span>
         <span class="k">T</span><span class="d">Drink at a well / shoreline (restores thirst)</span>
         <span class="k">Shift</span><span class="d">Hold to block (raises guard, cuts incoming damage)</span>
-        <span class="k">M</span><span class="d">At an anvil: craft a weapon, then Iron Plate, then spend gems to enchant (★ +15% dmg)</span>
+        <span class="k">M</span><span class="d">Forge weapons at an anvil · Enchant at an Enchanting Table (★ +15% dmg per level, cap 5)</span>
         <span class="k">Enter</span><span class="d">Enter/leave a house when standing next to one (walk to the door to exit, the stairs to climb to the next floor)</span>
         <span class="k">PrtSc</span><span class="d">Save a screenshot</span>
         <span class="k">Esc</span><span class="d">Settings</span>
@@ -1182,7 +1182,9 @@
             const s = await idbGet();
             const ok = s ? deserialize_save(s) : false;
             bootmenu.className = 'hidden';
+            el('help-panel').className = 'hidden';
             bootOpen = false;
+            paused = false;
             gameStarted = true;
             if (!ok) new_game();
           };
@@ -1191,7 +1193,9 @@
             const seed = parseSeed(el('boot-seed').value);
             if (seed === null) new_game(); else new_game_with_seed(seed);
             bootmenu.className = 'hidden';
+            el('help-panel').className = 'hidden';
             bootOpen = false;
+            paused = false;
             gameStarted = true;
           };
           // Options opens the existing settings overlay; Help opens the
@@ -1281,10 +1285,12 @@
           const closeHelp = () => { helpEl.className = 'hidden'; paused = false; };
           el('help').onclick = openHelp;
           el('btn-help-close').onclick = closeHelp;
-          // Auto-open the controls/help panel on a player's first ever visit.
+          // On a player's first ever visit, show a brief toast nudging them to
+          // open help (? button) instead of auto-opening the full help panel
+          // (which pauses the game and covers the view).
           try {
             if (!localStorage.getItem('sf_help_seen')) {
-              openHelp();
+              setTimeout(() => toast('Press ? for controls & goals'), 2000);
               localStorage.setItem('sf_help_seen', '1');
             }
           } catch (_) {}
