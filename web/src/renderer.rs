@@ -161,6 +161,7 @@ fn struct_name(kind: StructureKind) -> &'static str {
         StructureKind::Rail => "Rail",
         StructureKind::Portal => "Portal",
         StructureKind::Banner => "Bn",
+        StructureKind::EnchantingTable => "Eq",
     }
 }
 
@@ -1140,15 +1141,19 @@ impl App {
             let (label, cost) = CRAFT_RECIPES[0];
             let ready = cost.iter().all(|(it, n)| self.inventory.count(*it) >= *n);
             format!("Anvil ready: craft {label} ({})", if ready { "materials OK" } else { "need materials" })
+        } else if self.near_enchanting_table() {
+            format!("Enchanting Table ready: spend gems to enchant weapon")
         } else {
             "No anvil nearby — build one (N) to craft".to_string()
         };
+        let gold = self.inventory.count(ItemKind::Gold);
         let dump = serde_json::json!({
             "cam": { "x": cam.x, "y": cam.y },
             "interior": self.interior.is_some(),
             "quest_text": self.quest.quest_text(self.fragments),
             "craft_hint": craft_hint,
             "quest_stage": self.quest.stage,
+            "gold": gold,
             "player": {
                 "x": self.player.x,
                 "y": self.player.y,
@@ -1429,7 +1434,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={}",
 
             self.quad_count(),
             self.frames(),
@@ -1445,6 +1450,7 @@ impl App {
             self.inventory.count(ItemKind::Food),
             self.inventory.count(ItemKind::Herb),
             self.inventory.count(ItemKind::Gem),
+            self.inventory.count(ItemKind::Gold),
             self.structures.len(),
             structs,
             self.enemies.count(),
@@ -1465,6 +1471,7 @@ impl App {
             self.altar_placed as u8,
             self.near_altar as u8,
             self.near_anvil() as u8,
+            self.near_enchanting_table() as u8,
             ending_str,
             self.weather,
             self.ng_plus,
@@ -1919,6 +1926,16 @@ impl App {
         })
     }
 
+    /// True when the player is near an Enchanting Table (gem → enchant).
+    pub fn near_enchanting_table(&self) -> bool {
+        let (px, py) = (self.player.x, self.player.y);
+        self.structures.iter().any(|s| {
+            s.kind == StructureKind::EnchantingTable
+                && (s.tx as f32 + 0.5 - px).abs() <= 1.5
+                && (s.ty as f32 + 0.5 - py).abs() <= 1.5
+        })
+    }
+
     /// True when the player is standing within ~1.5 tiles of a lit Campfire,
     /// which lets them cook raw food into a hot meal (see `cook`).
     pub fn near_campfire(&self) -> bool {
@@ -1950,10 +1967,42 @@ impl App {
     }
 
     /// Craft the next uncrafted weapon at an anvil: spends its resource cost,
-    /// unlocks it, and equips it immediately. Cycles via the KeyM binding.
+    /// unlocks it, and equips it immediately. Enchanting happens at an
+    /// Enchanting Table (spend Gems, +15% dmg per level, cap 5).
     pub fn craft_weapon(&mut self) {
+        // --- Enchanting Table path: spend Gems to enchant the equipped weapon ---
+        if self.near_enchanting_table() {
+            if self.player.weapon == game::weapons::WeaponKind::Fists {
+                toast("Equip a weapon first to enchant it");
+                return;
+            }
+            if self.player.enchant >= 5 {
+                toast("Weapon is already maximally enchanted (★★★★★)");
+                return;
+            }
+            let cost = 1 + self.player.enchant as u32;
+            if self.inventory.count(ItemKind::Gem) < cost {
+                toast(&format!(
+                    "Need {} gems to enchant (have {})",
+                    cost,
+                    self.inventory.count(ItemKind::Gem)
+                ));
+                return;
+            }
+            self.inventory.remove(ItemKind::Gem, cost);
+            self.player.enchant += 1;
+            play_sfx("craft");
+            toast(&format!(
+                "Enchanted {}! ({}★) +{}% damage",
+                self.player.weapon.name(),
+                self.player.enchant,
+                self.player.enchant * 15
+            ));
+            return;
+        }
+        // --- Anvil path: forge weapons + Iron Plate ---
         if !self.near_anvil() {
-            toast("Stand near an anvil to craft weapons");
+            toast("Stand near an anvil (forge) or enchanting table (enchant)");
             return;
         }
         let order = [
@@ -1967,38 +2016,7 @@ impl App {
         let k = match target {
             Some(&k) => k,
             None => {
-                // All weapons forged. If Iron Plate isn't yet forged, do that
-                // first; once everything is forged, spend Gems to enchant the
-                // equipped weapon (+15% damage per level, capped at 5).
-                if self.craft_armor > 0.0 {
-                    if self.player.weapon == game::weapons::WeaponKind::Fists {
-                        toast("Equip a weapon first to enchant it");
-                        return;
-                    }
-                    if self.player.enchant >= 5 {
-                        toast("Weapon is already maximally enchanted (★★★★★)");
-                        return;
-                    }
-                    let cost = 1 + self.player.enchant as u32; // 1,2,3,4,5 gems per level
-                    if self.inventory.count(ItemKind::Gem) < cost {
-                        toast(&format!(
-                            "Need {} gems to enchant (have {})",
-                            cost,
-                            self.inventory.count(ItemKind::Gem)
-                        ));
-                        return;
-                    }
-                    self.inventory.remove(ItemKind::Gem, cost);
-                    self.player.enchant += 1;
-                    play_sfx("craft");
-                    toast(&format!(
-                        "Enchanted {}! ({}★) +{}% damage",
-                        self.player.weapon.name(),
-                        self.player.enchant,
-                        self.player.enchant * 15
-                    ));
-                    return;
-                }
+                // All weapons forged. Forging Iron Plate next.
                 let (w, s, h) = (2u32, 5u32, 3u32);
                 if self.inventory.count(ItemKind::Wood) < w
                     || self.inventory.count(ItemKind::Stone) < s
@@ -2097,6 +2115,12 @@ impl App {
             return;
         }
 
+        // Merchant trade: offer buy/sell instead of fetch quests.
+        if npc.kind == game::npc::NpcKind::Merchant {
+            self.buy_from_merchant();
+            return;
+        }
+
         // Otherwise hand the player a fresh fetch quest (seeded so it's stable
         // for this NPC until fulfilled).
         let pool: &[(ItemKind, u32, u32, ItemKind, u32)] = &[
@@ -2118,6 +2142,37 @@ impl App {
             q.3.name()
         ));
         play_sfx("pickup");
+    }
+
+    /// Merchant trade: try to sell the player's most valuable sellable item for
+    /// Gold. Each press sells one item. When nothing is left to sell, the
+    /// merchant refuses.
+    pub fn buy_from_merchant(&mut self) {
+        // Sell order: most valuable first so the player earns Gold fastest.
+        let sell_order = [
+            ItemKind::IronPlate,
+            ItemKind::Gem,
+            ItemKind::Iron,
+            ItemKind::Herb,
+            ItemKind::Food,
+            ItemKind::Wood,
+            ItemKind::Stone,
+        ];
+        for &item in &sell_order {
+            let price = game::trade::sell_price(item);
+            if price > 0 && self.inventory.count(item) > 0 {
+                self.inventory.remove(item, 1);
+                self.inventory.add(ItemKind::Gold, price);
+                play_sfx("pickup");
+                toast(&format!(
+                    "Sold {} for {} gold",
+                    item.name(),
+                    price
+                ));
+                return;
+            }
+        }
+        toast("Merchant: \"Nothing to buy — bring me resources!\"");
     }
 
     /// Enter the building the player is standing next to, or leave the current

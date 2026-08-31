@@ -20,6 +20,8 @@ pub enum ItemKind {
     /// Iron Plate: forged at an Anvil from iron + stone. A campaign milestone
     /// (the "craft iron plate" story beat) and a defensive material.
     IronPlate,
+    /// Gold coin: earned from kills and sold to merchants for supplies.
+    Gold,
 }
 
 impl ItemKind {
@@ -34,6 +36,7 @@ impl ItemKind {
             ItemKind::Map => "treasure map",
             ItemKind::Iron => "iron",
             ItemKind::IronPlate => "iron plate",
+            ItemKind::Gold => "gold",
         }
     }
 
@@ -54,6 +57,7 @@ impl ItemKind {
             6 => Some(ItemKind::Map),
             7 => Some(ItemKind::Iron),
             8 => Some(ItemKind::IronPlate),
+            9 => Some(ItemKind::Gold),
             _ => None,
         }
     }
@@ -70,11 +74,12 @@ impl ItemKind {
             ItemKind::Map => [0.86, 0.74, 0.42],
             ItemKind::Iron => [0.70, 0.72, 0.78],
             ItemKind::IronPlate => [0.78, 0.80, 0.86],
+            ItemKind::Gold => [1.00, 0.84, 0.00],
         }
     }
 }
 
-const SLOTS: usize = 9;
+const SLOTS: usize = 10;
 
 /// Simple stack inventory: one count per item kind.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -98,6 +103,7 @@ impl Inventory {
             ItemKind::Map => 6,
             ItemKind::Iron => 7,
             ItemKind::IronPlate => 8,
+            ItemKind::Gold => 9,
         }
     }
 

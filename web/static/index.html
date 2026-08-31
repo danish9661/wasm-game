@@ -46,6 +46,7 @@
       <span class="inv-chip level" id="hud-level" style="display:none">⭐ Lv 1</span>
       <span class="inv-chip coop" id="hud-coop" style="display:none">👥 Co-op</span>
       <span class="inv-chip map" id="hud-map" style="display:none">🗺 Map</span>
+      <span class="inv-chip gold" id="hud-gold" style="display:none">💰 0</span>
       <span class="inv-chip near" id="hud-near" style="display:none">📍</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
@@ -64,7 +65,7 @@
     <span id="compass-label">Objective</span>
   </div>
   <div id="vignette" class="hidden"></div>
-  <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — open <b>Inventory (I)</b> to craft upgrades</div>
+  <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — open <b>Inventory (I)</b> to craft upgrades · <b>M</b> to forge/enchant</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
   <button id="codexbtn" title="Bestiary / Codex (L)">📖</button>
@@ -753,6 +754,15 @@
               el('vignette').className = (stats.alive && hpFrac < 0.25) ? '' : 'hidden';
 
               el('hud-map').style.display = stats.maps > 0 ? 'inline-block' : 'none';
+
+              // Gold display
+              const gold = stats.gold || 0;
+              if (gold > 0) {
+                el('hud-gold').style.display = 'inline-block';
+                el('hud-gold').textContent = '💰 ' + gold;
+              } else {
+                el('hud-gold').style.display = 'none';
+              }
 
               el('hud-near').style.display = 'inline-block';
               el('hud-near').textContent = '📍 ' + stats.near;

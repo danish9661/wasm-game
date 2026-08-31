@@ -232,26 +232,26 @@ impl EnemyKind {
     /// Herbs) so the forge economy isn't gated entirely on node farming.
     pub fn drops(self) -> Vec<ItemKind> {
         match self {
-            EnemyKind::Slime => vec![ItemKind::Food, ItemKind::Herb],
-            EnemyKind::Boss => vec![ItemKind::Fragment],
-            EnemyKind::Skeleton => vec![ItemKind::Food, ItemKind::Iron],
-            EnemyKind::Goblin => vec![ItemKind::Food, ItemKind::Wood, ItemKind::Iron],
-            EnemyKind::Bat => vec![ItemKind::Food, ItemKind::Herb],
-            EnemyKind::Spider => vec![ItemKind::Herb, ItemKind::Iron],
-            EnemyKind::Imp => vec![ItemKind::Food, ItemKind::Herb],
-            EnemyKind::Ogre => vec![ItemKind::Gem, ItemKind::Iron],
-            EnemyKind::Wraith => vec![ItemKind::Herb, ItemKind::Iron],
-            EnemyKind::Stoneslinger => vec![ItemKind::Gem, ItemKind::Iron],
-            EnemyKind::Colossus => vec![ItemKind::Gem, ItemKind::Herb, ItemKind::Iron],
-            EnemyKind::ScorpionQueen => vec![ItemKind::Fragment],
-            EnemyKind::FrostGolem => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Iron],
-            EnemyKind::ToadKing => vec![ItemKind::Fragment, ItemKind::Herb],
-            EnemyKind::OceanLeviathan => vec![ItemKind::Fragment, ItemKind::Gem],
-            EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food, ItemKind::Iron],
-            EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb, ItemKind::Iron],
-            EnemyKind::Wolf => vec![ItemKind::Food, ItemKind::Herb, ItemKind::Wood],
-            EnemyKind::Archer => vec![ItemKind::Food, ItemKind::Wood, ItemKind::Iron],
-            EnemyKind::Raider => vec![ItemKind::Food, ItemKind::Gem, ItemKind::Iron, ItemKind::Wood],
+            EnemyKind::Slime => vec![ItemKind::Food, ItemKind::Herb, ItemKind::Gold],
+            EnemyKind::Boss => vec![ItemKind::Fragment, ItemKind::Gold],
+            EnemyKind::Skeleton => vec![ItemKind::Food, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Goblin => vec![ItemKind::Food, ItemKind::Wood, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Bat => vec![ItemKind::Food, ItemKind::Herb, ItemKind::Gold],
+            EnemyKind::Spider => vec![ItemKind::Herb, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Imp => vec![ItemKind::Food, ItemKind::Herb, ItemKind::Gold],
+            EnemyKind::Ogre => vec![ItemKind::Gem, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Wraith => vec![ItemKind::Herb, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Stoneslinger => vec![ItemKind::Gem, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Colossus => vec![ItemKind::Gem, ItemKind::Herb, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::ScorpionQueen => vec![ItemKind::Fragment, ItemKind::Gold],
+            EnemyKind::FrostGolem => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::ToadKing => vec![ItemKind::Fragment, ItemKind::Herb, ItemKind::Gold],
+            EnemyKind::OceanLeviathan => vec![ItemKind::Fragment, ItemKind::Gem, ItemKind::Gold],
+            EnemyKind::Brute => vec![ItemKind::Gem, ItemKind::Food, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Stormcaller => vec![ItemKind::Gem, ItemKind::Herb, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Wolf => vec![ItemKind::Food, ItemKind::Herb, ItemKind::Wood, ItemKind::Gold],
+            EnemyKind::Archer => vec![ItemKind::Food, ItemKind::Wood, ItemKind::Iron, ItemKind::Gold],
+            EnemyKind::Raider => vec![ItemKind::Food, ItemKind::Gem, ItemKind::Iron, ItemKind::Wood, ItemKind::Gold],
         }
     }
 
@@ -1018,7 +1018,7 @@ mod tests {
             taken += 1.0;
         }
         assert!(taken >= 3.0, "12 hp / 4 dmg = 3 hits");
-        assert_eq!(e.drops(), vec![ItemKind::Food, ItemKind::Herb]);
+        assert_eq!(e.drops(), vec![ItemKind::Food, ItemKind::Herb, ItemKind::Gold]);
     }
 
     #[test]
@@ -1066,7 +1066,7 @@ mod tests {
     fn boss_stats_are_scaled_up() {
         assert!(EnemyKind::Boss.max_hp() > EnemyKind::Slime.max_hp() * 4.0);
         assert!(EnemyKind::Boss.damage() > EnemyKind::Slime.damage() * 2.0);
-        assert_eq!(Enemy::new(0.5, 0.5, EnemyKind::Boss).drops(), vec![ItemKind::Fragment]);
+        assert_eq!(Enemy::new(0.5, 0.5, EnemyKind::Boss).drops(), vec![ItemKind::Fragment, ItemKind::Gold]);
     }
 
     #[test]
@@ -1147,7 +1147,7 @@ mod tests {
             taken += 1.0;
         }
         assert!(taken >= 12.0, "60 hp / 5 dmg = 12 hits");
-        assert_eq!(e.drops(), vec![ItemKind::Fragment]);
+        assert_eq!(e.drops(), vec![ItemKind::Fragment, ItemKind::Gold]);
     }
     #[test]
     fn swamp_has_some_spawners_in_a_window() {

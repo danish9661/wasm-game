@@ -75,6 +75,8 @@ pub enum StructureKind {
     Rail,
     // War Banner: buildable; empowers nearby guards, reinforcing base defense.
     Banner,
+    // Enchanting Table: spend Gems to enchant weapons (+15% dmg per level, cap 5).
+    EnchantingTable,
 }
 
 impl StructureKind {
@@ -96,6 +98,7 @@ impl StructureKind {
             StructureKind::HealingTotem => &[(ItemKind::Wood, 3), (ItemKind::Herb, 2)],
             StructureKind::Trap => &[(ItemKind::Wood, 3), (ItemKind::Stone, 2)],
             StructureKind::Banner => &[(ItemKind::Wood, 2), (ItemKind::Gem, 1)],
+            StructureKind::EnchantingTable => &[(ItemKind::Stone, 8), (ItemKind::Gem, 4)],
             _ => &[],
         }
     }
@@ -144,6 +147,7 @@ impl StructureKind {
             StructureKind::Inn => [0.80, 0.64, 0.48],
             StructureKind::Barn => [0.62, 0.24, 0.20],
             StructureKind::Watchtower => [0.66, 0.64, 0.60],
+            StructureKind::EnchantingTable => [0.40, 0.25, 0.70],
         }
     }
 
@@ -178,6 +182,7 @@ impl StructureKind {
                 | StructureKind::Portal
                 | StructureKind::Watchtower
                 | StructureKind::Inn
+                | StructureKind::EnchantingTable
         )
     }
 
@@ -240,6 +245,7 @@ impl StructureKind {
             StructureKind::HealingTotem => (8.0, 22.0, 1.0),
             StructureKind::Trap => (16.0, 6.0, 1.0),
             StructureKind::Banner => (10.0, 26.0, 1.0),
+            StructureKind::EnchantingTable => (14.0, 18.0, 2.0),
             StructureKind::Sign => (12.0, 14.0, 1.0),
             StructureKind::Barrel => (8.0, 16.0, 1.0),
             StructureKind::Totem => (8.0, 26.0, 1.0),
@@ -311,6 +317,7 @@ impl StructureKind {
             StructureKind::Inn => SpriteStyle::Inn,
             StructureKind::Barn => SpriteStyle::Barn,
             StructureKind::Watchtower => SpriteStyle::Watchtower,
+            StructureKind::EnchantingTable => SpriteStyle::Altar,
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }
@@ -333,6 +340,7 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
     (StructureKind::Lantern, "L", "Lantern"),
     (StructureKind::Trap, "0", "Trap"),
     (StructureKind::Banner, "1", "War Banner"),
+    (StructureKind::EnchantingTable, "2", "Enchanting Table"),
 ];
 
 /// Stateless decorative-prop placement: a few flavor props sprinkled on biomes
