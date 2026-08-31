@@ -2200,7 +2200,7 @@ impl App {
                 let dx = s.tx as f32 + 0.5 - px;
                 let dy = s.ty as f32 + 0.5 - py;
                 let d2 = dx * dx + dy * dy;
-                if d2 < 3.0 && best.map_or(true, |(bd, _)| d2 < bd) {
+                if d2 < 9.0 && best.map_or(true, |(bd, _)| d2 < bd) {
                     best = Some((d2, s.kind));
                 }
             }
