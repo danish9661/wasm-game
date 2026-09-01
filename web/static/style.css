@@ -472,10 +472,11 @@ html, body {
 #overlay-box h2 {
   margin: 0 0 8px;
   letter-spacing: 2px;
+  text-shadow: 0 0 12px rgba(242, 215, 122, 0.4);
 }
 
-#overlay.dead #overlay-box h2 { color: #f06a4a; }
-#overlay.win #overlay-box h2 { color: #54c26e; }
+#overlay.dead #overlay-box h2 { color: #f06a4a; text-shadow: 0 0 16px rgba(240, 106, 74, 0.5); }
+#overlay.win #overlay-box h2 { color: #54c26e; text-shadow: 0 0 16px rgba(84, 194, 110, 0.5); }
 
 #overlay-sub {
   margin: 0;
@@ -836,4 +837,418 @@ span.weather { background: rgba(40, 70, 110, 0.85); color: #cfe2f5; border-color
 @keyframes vignette-pulse {
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1.0; }
+}
+
+/* ============================================================
+   UI / HUD REDESIGN — visual improvements
+   ============================================================ */
+
+/* ---- Boot menu title glow + animation ---- */
+#bootmenu h2 {
+  font-size: 32px;
+  letter-spacing: 6px;
+  text-shadow:
+    0 0 8px rgba(242, 215, 122, 0.6),
+    0 0 24px rgba(242, 215, 122, 0.3),
+    0 0 48px rgba(242, 215, 122, 0.15);
+  animation: title-glow 3s ease-in-out infinite alternate;
+}
+@keyframes title-glow {
+  from { text-shadow: 0 0 8px rgba(242, 215, 122, 0.5), 0 0 20px rgba(242, 215, 122, 0.2); }
+  to   { text-shadow: 0 0 12px rgba(242, 215, 122, 0.8), 0 0 36px rgba(242, 215, 122, 0.4), 0 0 60px rgba(242, 215, 122, 0.2); }
+}
+
+#bootmenu #boot-sub {
+  font-size: 14px;
+  color: #9fb3c8;
+  letter-spacing: 0.5px;
+  animation: fade-in-up 0.8s ease-out;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Button states: disabled, small, transitions ---- */
+.menu-btn {
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+.menu-btn:active { transform: scale(0.97); }
+.menu-btn:hover {
+  box-shadow: 0 0 12px rgba(242, 215, 122, 0.2);
+}
+
+.menu-btn.disabled,
+.menu-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.5);
+}
+
+.menu-btn.small {
+  font-size: 12px;
+  padding: 6px 12px;
+  letter-spacing: 0.5px;
+}
+
+/* ---- Settings panel: styled inputs + grouped sections ---- */
+#settings .set-row {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(160, 180, 205, 0.12);
+}
+#settings .set-row:last-of-type { border-bottom: none; }
+
+#settings input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 140px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(160, 180, 205, 0.2);
+  outline: none;
+  cursor: pointer;
+}
+#settings input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f2d77a;
+  border: 2px solid rgba(10, 16, 28, 0.8);
+  box-shadow: 0 0 6px rgba(242, 215, 122, 0.4);
+}
+#settings input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f2d77a;
+  border: 2px solid rgba(10, 16, 28, 0.8);
+  box-shadow: 0 0 6px rgba(242, 215, 122, 0.4);
+}
+
+#settings select {
+  background: rgba(20, 30, 48, 0.9);
+  border: 1px solid rgba(160, 180, 205, 0.4);
+  border-radius: 4px;
+  color: #e8edf3;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+#settings select:focus {
+  border-color: #f2d77a;
+  outline: none;
+}
+
+#settings input[type="checkbox"] {
+  accent-color: #f2d77a;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ---- HUD bar redesign: compact labels + critical-low pulse ---- */
+#hud {
+  gap: 5px;
+  min-width: 260px;
+}
+
+.bar-label {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  width: 28px;
+  text-align: right;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.bar-track {
+  height: 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(160, 180, 205, 0.25);
+  background: rgba(10, 16, 28, 0.8);
+}
+
+.bar-fill {
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+#bar-hp {
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+  box-shadow: 0 0 4px rgba(231, 76, 60, 0.3);
+}
+#bar-hunger {
+  background: linear-gradient(90deg, #d4a017, #f1c40f);
+  box-shadow: 0 0 4px rgba(241, 196, 15, 0.3);
+}
+#bar-thirst {
+  background: linear-gradient(90deg, #2980b9, #3498db);
+  box-shadow: 0 0 4px rgba(52, 152, 219, 0.3);
+}
+#bar-stamina {
+  background: linear-gradient(90deg, #27ae60, #2ecc71);
+  box-shadow: 0 0 4px rgba(46, 204, 113, 0.3);
+}
+
+/* Critical-low HP pulse (applied via JS by removing 'hidden' from class) */
+.bar-track.critical-low {
+  animation: bar-pulse-danger 0.6s ease-in-out infinite;
+  border-color: rgba(231, 76, 60, 0.6);
+}
+@keyframes bar-pulse-danger {
+  0%, 100% { box-shadow: 0 0 4px rgba(231, 76, 60, 0.3); }
+  50%      { box-shadow: 0 0 12px rgba(231, 76, 60, 0.7); }
+}
+
+.bar-num {
+  font-size: 10px;
+  width: 26px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Boss bar: pulsing glow + name label */
+.boss-row {
+  gap: 6px;
+  padding: 2px 0;
+}
+.boss-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #c79be0;
+  width: 48px;
+  font-weight: 700;
+}
+.boss-track {
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(10, 16, 28, 0.8);
+  border: 1px solid rgba(199, 155, 224, 0.35);
+}
+.boss-fill {
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(194, 106, 216, 0.4);
+  animation: boss-pulse 1.5s ease-in-out infinite;
+}
+@keyframes boss-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(194, 106, 216, 0.3); }
+  50%      { box-shadow: 0 0 16px rgba(194, 106, 216, 0.6); }
+}
+
+/* ---- Inventory panel redesign ---- */
+#inventory {
+  border-radius: 10px;
+  border: 1px solid rgba(160, 180, 205, 0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  padding: 14px 16px;
+}
+#inventory h3 {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #7f8ea3;
+  border-bottom: 1px solid rgba(160, 180, 205, 0.15);
+  padding-bottom: 5px;
+  margin-bottom: 8px;
+}
+#inventory h3:not(:first-child) { margin-top: 16px; }
+
+.inv-item {
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.inv-item:hover {
+  background: rgba(160, 180, 205, 0.08);
+}
+.inv-item .nm {
+  font-size: 13px;
+  color: #cdd6e2;
+}
+.inv-item .ct {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.inv-item .ct.zero { color: #4a5568; font-weight: 400; }
+
+.recipe {
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  border-radius: 6px;
+}
+.recipe:hover {
+  border-color: rgba(242, 215, 122, 0.6);
+  background: rgba(242, 215, 122, 0.06);
+  box-shadow: 0 0 8px rgba(242, 215, 122, 0.1);
+}
+.recipe.selected {
+  border-color: rgba(84, 194, 110, 0.7);
+  background: rgba(84, 194, 110, 0.1);
+  box-shadow: 0 0 8px rgba(84, 194, 110, 0.15);
+}
+.recipe.locked {
+  opacity: 0.4;
+  filter: grayscale(0.3);
+}
+.recipe .rk {
+  background: rgba(160, 180, 205, 0.15);
+  color: #cdd6e2;
+  border: 1px solid rgba(160, 180, 205, 0.3);
+}
+
+/* ---- Help panel: scrollable + section headers ---- */
+#help-panel #overlay-box {
+  max-height: 80vh;
+  overflow-y: auto;
+  text-align: left;
+  padding: 24px 32px;
+}
+#help-panel h2 {
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #f2d77a;
+  border-bottom: 1px solid rgba(242, 215, 122, 0.2);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 8px rgba(242, 215, 122, 0.3);
+}
+#help-panel .help-grid {
+  gap: 5px 14px;
+  font-size: 13px;
+}
+#help-panel .help-grid .k {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #f2d77a;
+  font-weight: 600;
+  font-size: 12px;
+}
+#help-panel .help-grid .k::before {
+  content: '';
+}
+#help-panel .help-grid .d {
+  color: #b0bec5;
+  font-size: 12px;
+  line-height: 1.4;
+}
+#help-panel .help-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #78909c;
+  line-height: 1.5;
+}
+
+/* ---- Toast notifications: color-coded ---- */
+.toast {
+  max-width: 320px;
+  word-wrap: break-word;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+.toast.toast-wood  { border-left: 3px solid #d9a15c; }
+.toast.toast-stone { border-left: 3px solid #aab6c4; }
+.toast.toast-food  { border-left: 3px solid #e88f6a; }
+.toast.toast-gold  { border-left: 3px solid #ffc83d; }
+.toast.toast-dmg   { border-left: 3px solid #e74c3c; }
+.toast.toast-info  { border-left: 3px solid #3498db; }
+
+/* ---- Compass: bottom-right to avoid toolbar overlap ---- */
+#compass {
+  top: auto;
+  right: 14px;
+  bottom: 14px;
+  width: 72px;
+  height: 72px;
+  z-index: 18;
+}
+#compass-needle {
+  height: 28px;
+  top: 6px;
+}
+#compass::after {
+  font-size: 8px;
+  top: 2px;
+}
+#compass-label {
+  font-size: 8px;
+  bottom: 5px;
+}
+
+/* ---- Minimap/legend: tighter integration ---- */
+#minimap {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(160, 180, 205, 0.15);
+}
+.mm-legend {
+  border-radius: 6px;
+  background: rgba(8, 12, 22, 0.65);
+  border: 1px solid rgba(160, 180, 205, 0.2);
+  font-size: 8px;
+  padding: 4px 5px;
+  gap: 1px 5px;
+}
+
+/* ---- Codex card hover effects ---- */
+.codex-card {
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.codex-card:hover {
+  border-color: rgba(160, 180, 205, 0.5);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+.codex-card.boss:hover {
+  border-color: rgba(220, 120, 90, 0.7);
+  box-shadow: 0 2px 16px rgba(220, 120, 90, 0.25);
+}
+
+/* ---- Quest bar polish ---- */
+#quest {
+  border-radius: 6px;
+  background: rgba(10, 16, 28, 0.85);
+  border: 1px solid rgba(226, 190, 106, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  padding: 5px 14px;
+}
+
+/* ---- Weapon / Gold / Level chips ---- */
+.inv-chip.weapon {
+  border-color: rgba(242, 215, 122, 0.45);
+  background: rgba(40, 56, 84, 0.6);
+}
+.inv-chip.gold {
+  background: rgba(40, 40, 20, 0.7);
+  border-color: rgba(255, 200, 61, 0.4);
+  font-weight: 600;
+}
+.inv-chip.level {
+  border-color: rgba(84, 194, 110, 0.45);
+  background: rgba(20, 50, 30, 0.6);
+}
+
+/* ---- Overlay polish ---- */
+.overlay #overlay-box {
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Responsive: compact on narrow screens ---- */
+@media (max-width: 600px) {
+  #hud { min-width: 200px; font-size: 11px; }
+  .bar-label { width: 22px; font-size: 8px; }
+  .bar-track { height: 6px; }
+  .bar-num { width: 22px; font-size: 9px; }
+  #inventory { width: 220px; padding: 10px 12px; }
+  #compass { width: 60px; height: 60px; bottom: 10px; right: 10px; }
+  #minimap { width: 100px; height: 100px; }
+  .menu-btn { font-size: 13px; padding: 8px 14px; }
+  #bootmenu h2 { font-size: 24px; letter-spacing: 4px; }
+  #help-panel #overlay-box { padding: 16px 20px; }
 }

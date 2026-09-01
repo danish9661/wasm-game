@@ -695,9 +695,10 @@
           let lastFrag = -1;
           let prevCoop = 0;
           let diedAt = 0;
-          var toast = (msg) => {
+          let prevGold = 0;
+          var toast = (msg, type) => {
             const t = document.createElement('div');
-            t.className = 'toast';
+            t.className = 'toast' + (type ? ' toast-' + type : '');
             t.textContent = msg;
             el('toasts').appendChild(t);
             setTimeout(() => t.remove(), 3200);
@@ -707,6 +708,11 @@
             setBar('bar-hunger', 'num-hunger', stats.hunger);
             setBar('bar-thirst', 'num-thirst', stats.thirst);
             setBar('bar-stamina', 'num-stamina', stats.stamina);
+            // Critical-low HP pulse on the bar track
+            const hpTrack = document.querySelector('#bar-hp').parentElement;
+            const hpFrac = stats.maxhp > 0 ? stats.hp / stats.maxhp : 1;
+            if (hpFrac < 0.2 && stats.alive) hpTrack.classList.add('critical-low');
+            else hpTrack.classList.remove('critical-low');
             el('inv-wood').textContent = `W ${stats.w}`;
             el('inv-stone').textContent = `S ${stats.s}`;
             el('inv-food').textContent = `F ${stats.f}`;
@@ -742,15 +748,14 @@
                 el('hud-coop').style.display = 'inline-block';
                 const ids = stats.coopids ? stats.coopids.split(',').map(s => 'P' + s).join(', ') : '';
                 el('hud-coop').textContent = `👥 Co-op: ${stats.online + 1} online${ids ? ' (' + ids + ')' : ''}`;
-                if (prevCoop === 0) toast('A co-op partner joined the world');
+                if (prevCoop === 0) toast('A co-op partner joined the world', 'info');
               } else {
                 el('hud-coop').style.display = 'none';
-                if (prevCoop > 0) toast('Co-op partner disconnected');
+                if (prevCoop > 0) toast('Co-op partner disconnected', 'info');
               }
               prevCoop = stats.online;
 
               // Low-HP vignette: a soft red pulse when the player is badly hurt.
-              const hpFrac = stats.maxhp > 0 ? stats.hp / stats.maxhp : 1;
               el('vignette').className = (stats.alive && hpFrac < 0.25) ? '' : 'hidden';
 
               el('hud-map').style.display = stats.maps > 0 ? 'inline-block' : 'none';
@@ -760,9 +765,11 @@
               if (gold > 0) {
                 el('hud-gold').style.display = 'inline-block';
                 el('hud-gold').textContent = '💰 ' + gold;
+                if (prevGold > 0 && gold > prevGold) toast(`+${gold - prevGold} gold`, 'gold');
               } else {
                 el('hud-gold').style.display = 'none';
               }
+              prevGold = gold;
 
               el('hud-near').style.display = 'inline-block';
               el('hud-near').textContent = '📍 ' + stats.near;
@@ -804,9 +811,9 @@
 
             const inv = { w: stats.w, s: stats.s, f: stats.f };
             if (lastInv.w >= 0) {
-              if (inv.w > lastInv.w) toast(`+${inv.w - lastInv.w} wood`);
-              if (inv.s > lastInv.s) toast(`+${inv.s - lastInv.s} stone`);
-              if (inv.f > lastInv.f) toast(`+${inv.f - lastInv.f} food`);
+              if (inv.w > lastInv.w) toast(`+${inv.w - lastInv.w} wood`, 'wood');
+              if (inv.s > lastInv.s) toast(`+${inv.s - lastInv.s} stone`, 'stone');
+              if (inv.f > lastInv.f) toast(`+${inv.f - lastInv.f} food`, 'food');
             }
             lastInv = inv;
 
@@ -1292,7 +1299,7 @@
           // (which pauses the game and covers the view).
           try {
             if (!localStorage.getItem('sf_help_seen')) {
-              setTimeout(() => toast('Press ? for controls & goals'), 2000);
+              setTimeout(() => toast('Press ? for controls & goals', 'info'), 2000);
               localStorage.setItem('sf_help_seen', '1');
             }
           } catch (_) {}
