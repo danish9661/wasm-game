@@ -2195,6 +2195,8 @@ impl App {
                     | StructureKind::Cabin
                     | StructureKind::Hut
                     | StructureKind::Inn
+                    | StructureKind::Barn
+                    | StructureKind::Watchtower
                     | StructureKind::Dungeon
             ) {
                 let dx = s.tx as f32 + 0.5 - px;
@@ -2208,12 +2210,13 @@ impl App {
         match best {
             Some((_, kind)) => {
                 let is_dungeon = kind == StructureKind::Dungeon;
-                let max_floors = if kind == StructureKind::House { 2 } else { 1 };
                 let name = match kind {
                     StructureKind::House => "House",
                     StructureKind::Cabin => "Cabin",
                     StructureKind::Hut => "Hut",
                     StructureKind::Inn => "Inn",
+                    StructureKind::Barn => "Barn",
+                    StructureKind::Watchtower => "Watchtower",
                     _ => "Dungeon",
                 };
                 // Dungeons seed a few spike traps on the floor; the vault loot is
@@ -2223,12 +2226,26 @@ impl App {
                 } else {
                     Vec::new()
                 };
+                // Per-building interior dimensions match exterior footprint.
+                let (rw, rh) = match kind {
+                    StructureKind::House => (4.0, 3.0),
+                    StructureKind::Cabin => (3.2, 2.5),
+                    StructureKind::Hut => (2.5, 2.0),
+                    StructureKind::Inn => (5.0, 3.5),
+                    StructureKind::Barn => (5.5, 3.0),
+                    StructureKind::Watchtower => (2.2, 4.0),
+                    _ => (3.5, 2.5),
+                };
+                let max_floors = match kind {
+                    StructureKind::House | StructureKind::Inn | StructureKind::Watchtower => 2,
+                    _ => 1,
+                };
                 self.interior = Some(Interior {
                     kind,
                     floor: 1,
                     max_floors,
-                    rw: 3.5,
-                    rh: 2.5,
+                    rw,
+                    rh,
                     px: 0.0,
                     py: 0.0,
                     bx: self.player.x,
@@ -2335,14 +2352,23 @@ impl App {
         let bx = int.bx;
         let by = int.by;
         let mut v = Vec::new();
+        // Per-building floor + wall colours.
+        let (floor_col, wall_col) = match int.kind {
+            StructureKind::House => ([0.45, 0.33, 0.22], [0.55, 0.45, 0.34]),
+            StructureKind::Cabin => ([0.38, 0.28, 0.18], [0.42, 0.32, 0.20]),
+            StructureKind::Hut => ([0.50, 0.42, 0.25], [0.58, 0.48, 0.28]),
+            StructureKind::Inn => ([0.42, 0.30, 0.20], [0.50, 0.38, 0.28]),
+            StructureKind::Barn => ([0.40, 0.35, 0.20], [0.48, 0.30, 0.18]),
+            StructureKind::Watchtower => ([0.50, 0.50, 0.48], [0.58, 0.55, 0.50]),
+            _ => ([0.35, 0.28, 0.22], [0.45, 0.38, 0.32]),
+        };
         // Floor.
         let fw = (int.rw + 0.7) * 32.0;
         let fh = (int.rh + 0.7) * 16.0;
         v.push(
-            Sprite::new_center(bx, by, [0.45, 0.33, 0.22], fw, fh, 0.0)
+            Sprite::new_center(bx, by, floor_col, fw, fh, 0.0)
                 .with_style(SpriteStyle::Floor),
         );
-        let wall_col = [0.55, 0.45, 0.34];
         let n = 7;
         // Top & bottom edges.
         for i in 0..=n {
@@ -2390,36 +2416,64 @@ impl App {
                     .with_style(SpriteStyle::Wall),
             );
         }
-        // Furniture.
-        v.push(
-            Sprite::new_center(bx - int.rw + 0.8, by - int.rh + 0.8, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0)
-                .with_style(SpriteStyle::Bed),
-        );
-        v.push(
-            Sprite::new_center(bx + int.rw - 0.8, by + int.rh - 0.8, [0.6, 0.45, 0.3], 16.0, 18.0, 0.0)
-                .with_style(SpriteStyle::Crate),
-        );
-        v.push(
-            Sprite::new_center(bx + int.rw - 0.8, by - int.rh + 0.8, [0.5, 0.4, 0.3], 14.0, 20.0, 0.0)
-                .with_style(SpriteStyle::Barrel),
-        );
-        v.push(
-            Sprite::new_center(bx - int.rw + 0.8, by + int.rh - 0.8, [0.9, 0.8, 0.4], 10.0, 22.0, 0.0)
-                .with_style(SpriteStyle::Lantern),
-        );
-        // Dungeon spike traps (room-relative tiles) and the sealed vault chest
-        // at the back wall until it has been looted.
-        for &(hx, hy) in &int.hazards {
-            v.push(
-                Sprite::new_center(bx + hx as f32, by + hy as f32, [0.72, 0.72, 0.78], 12.0, 14.0, 0.0)
-                    .with_style(SpriteStyle::Spike),
-            );
-        }
-        if int.kind == StructureKind::Dungeon && !int.loot_taken {
-            v.push(
-                Sprite::new_center(bx - int.rw + 0.8, by, [0.95, 0.8, 0.3], 16.0, 18.0, 0.0)
-                    .with_style(SpriteStyle::Chest),
-            );
+        // Per-building furniture.
+        match int.kind {
+            StructureKind::House => {
+                // Comfortable home: bed, crate, barrel, lantern, table.
+                v.push(Sprite::new_center(bx - int.rw + 0.8, by - int.rh + 0.8, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0).with_style(SpriteStyle::Bed));
+                v.push(Sprite::new_center(bx + int.rw - 0.8, by + int.rh - 0.8, [0.6, 0.45, 0.3], 16.0, 18.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx + int.rw - 0.8, by - int.rh + 0.8, [0.5, 0.4, 0.3], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
+                v.push(Sprite::new_center(bx - int.rw + 0.8, by + int.rh - 0.8, [0.9, 0.8, 0.4], 10.0, 22.0, 0.0).with_style(SpriteStyle::Lantern));
+                v.push(Sprite::new_center(bx, by, [0.65, 0.50, 0.35], 20.0, 14.0, 0.0).with_style(SpriteStyle::Crate));
+            }
+            StructureKind::Cabin => {
+                // Rustic cabin: bed, barrel, lantern. Simpler, sparser.
+                v.push(Sprite::new_center(bx - int.rw + 0.6, by - int.rh + 0.6, [0.7, 0.6, 0.45], 16.0, 10.0, 0.0).with_style(SpriteStyle::Bed));
+                v.push(Sprite::new_center(bx + int.rw - 0.6, by - int.rh + 0.6, [0.45, 0.35, 0.22], 12.0, 18.0, 0.0).with_style(SpriteStyle::Barrel));
+                v.push(Sprite::new_center(bx - int.rw + 0.6, by + int.rh - 0.6, [0.85, 0.75, 0.35], 10.0, 20.0, 0.0).with_style(SpriteStyle::Lantern));
+                v.push(Sprite::new_center(bx + int.rw - 0.6, by + int.rh - 0.6, [0.55, 0.42, 0.28], 14.0, 16.0, 0.0).with_style(SpriteStyle::Crate));
+            }
+            StructureKind::Hut => {
+                // Tiny thatched hut: bed + lantern only. Barely room for anything.
+                v.push(Sprite::new_center(bx - int.rw + 0.5, by - int.rh + 0.5, [0.7, 0.6, 0.45], 14.0, 8.0, 0.0).with_style(SpriteStyle::Bed));
+                v.push(Sprite::new_center(bx + int.rw - 0.5, by - int.rh + 0.5, [0.85, 0.75, 0.35], 8.0, 18.0, 0.0).with_style(SpriteStyle::Lantern));
+            }
+            StructureKind::Inn => {
+                // Tavern: two beds, multiple barrels, crates, a counter/table.
+                v.push(Sprite::new_center(bx - int.rw + 0.8, by - int.rh + 0.8, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0).with_style(SpriteStyle::Bed));
+                v.push(Sprite::new_center(bx - int.rw + 0.8, by + int.rh - 0.8, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0).with_style(SpriteStyle::Bed));
+                v.push(Sprite::new_center(bx + int.rw - 0.8, by - int.rh + 0.8, [0.5, 0.4, 0.3], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
+                v.push(Sprite::new_center(bx + int.rw - 1.8, by - int.rh + 0.8, [0.5, 0.4, 0.3], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
+                v.push(Sprite::new_center(bx + int.rw - 0.8, by + int.rh - 0.8, [0.6, 0.45, 0.3], 16.0, 18.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx, by, [0.65, 0.50, 0.35], 26.0, 16.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx + 1.2, by - 0.5, [0.9, 0.8, 0.4], 10.0, 22.0, 0.0).with_style(SpriteStyle::Lantern));
+                v.push(Sprite::new_center(bx - 1.2, by + 0.5, [0.9, 0.8, 0.4], 10.0, 22.0, 0.0).with_style(SpriteStyle::Lantern));
+            }
+            StructureKind::Barn => {
+                // Farm barn: hay bales (crates), trough (barrel), no bed.
+                v.push(Sprite::new_center(bx - int.rw + 1.0, by - int.rh + 0.8, [0.7, 0.6, 0.3], 20.0, 16.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx - int.rw + 1.0, by - int.rh + 1.8, [0.7, 0.6, 0.3], 20.0, 16.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx + int.rw - 1.0, by - int.rh + 0.8, [0.45, 0.35, 0.22], 18.0, 22.0, 0.0).with_style(SpriteStyle::Barrel));
+                v.push(Sprite::new_center(bx + int.rw - 1.0, by + int.rh - 0.8, [0.45, 0.35, 0.22], 18.0, 22.0, 0.0).with_style(SpriteStyle::Barrel));
+                v.push(Sprite::new_center(bx, by, [0.6, 0.5, 0.3], 24.0, 14.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx, by + 1.0, [0.6, 0.5, 0.3], 24.0, 14.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx - int.rw + 1.0, by + int.rh - 0.8, [0.85, 0.75, 0.35], 10.0, 22.0, 0.0).with_style(SpriteStyle::Lantern));
+            }
+            StructureKind::Watchtower => {
+                // Military tower: weapon rack (barrel), supply crate, lantern. Narrow.
+                v.push(Sprite::new_center(bx - int.rw + 0.5, by - int.rh + 0.5, [0.5, 0.4, 0.3], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
+                v.push(Sprite::new_center(bx + int.rw - 0.5, by + int.rh - 0.5, [0.6, 0.45, 0.3], 14.0, 16.0, 0.0).with_style(SpriteStyle::Crate));
+                v.push(Sprite::new_center(bx, by, [0.85, 0.75, 0.35], 10.0, 22.0, 0.0).with_style(SpriteStyle::Lantern));
+            }
+            _ => {
+                // Dungeon / fallback: spike traps + vault chest.
+                for &(hx, hy) in &int.hazards {
+                    v.push(Sprite::new_center(bx + hx as f32, by + hy as f32, [0.72, 0.72, 0.78], 12.0, 14.0, 0.0).with_style(SpriteStyle::Spike));
+                }
+                if !int.loot_taken {
+                    v.push(Sprite::new_center(bx - int.rw + 0.8, by, [0.95, 0.8, 0.3], 16.0, 18.0, 0.0).with_style(SpriteStyle::Chest));
+                }
+            }
         }
         // Player (sits on the floor — no lift).
         v.push(
