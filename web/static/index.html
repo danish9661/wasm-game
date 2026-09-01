@@ -116,17 +116,21 @@
   <div id="touch" class="hidden">
     <div id="joystick"><div id="joy-knob"></div></div>
     <div class="touch-actions">
-      <button class="tbtn act" data-key="KeyE">E</button>
-      <button class="tbtn act" data-key="KeyJ">⚔</button>
-      <button class="tbtn act" data-key="KeyK">🏹</button>
-      <button class="tbtn act" data-key="Space">⤢</button>
-      <button class="tbtn act" data-key="KeyC">🍖</button>
-      <button class="tbtn act" data-key="KeyR">🧪</button>
-      <button class="tbtn act" data-key="KeyZ">💤</button>
-      <button class="tbtn act" data-key="KeyQ">🔨</button>
-      <button class="tbtn act" data-key="KeyI">🎒</button>
-      <button class="tbtn act" data-key="KeyL">📖</button>
-      <button class="tbtn act" data-key="PrintScreen">📷</button>
+      <button class="tbtn act" data-key="KeyE" title="Interact"><span class="tbtn-icon">E</span><span class="tbtn-label">Use</span></button>
+      <button class="tbtn act" data-key="KeyJ" title="Attack"><span class="tbtn-icon">⚔</span><span class="tbtn-label">Atk</span></button>
+      <button class="tbtn act" data-key="KeyK" title="Bow"><span class="tbtn-icon">🏹</span><span class="tbtn-label">Bow</span></button>
+      <button class="tbtn act" data-key="Space" title="Dodge roll"><span class="tbtn-icon">💨</span><span class="tbtn-label">Dodge</span></button>
+      <button class="tbtn act" data-key="ShiftLeft" title="Block"><span class="tbtn-icon">🛡</span><span class="tbtn-label">Block</span></button>
+      <button class="tbtn act" data-key="KeyC" title="Eat food"><span class="tbtn-icon">🍖</span><span class="tbtn-label">Eat</span></button>
+      <button class="tbtn act" data-key="KeyR" title="Use salve"><span class="tbtn-icon">🧪</span><span class="tbtn-label">Salve</span></button>
+      <button class="tbtn act" data-key="KeyT" title="Drink water"><span class="tbtn-icon">💧</span><span class="tbtn-label">Drink</span></button>
+      <button class="tbtn act" data-key="Enter" title="Enter house"><span class="tbtn-icon">🚪</span><span class="tbtn-label">Door</span></button>
+      <button class="tbtn act" data-key="KeyP" title="Cycle weapon"><span class="tbtn-icon">🗡</span><span class="tbtn-label">Wpn</span></button>
+      <button class="tbtn act" data-key="KeyM" title="Forge / Enchant"><span class="tbtn-icon">⚒</span><span class="tbtn-label">Forge</span></button>
+      <button class="tbtn act" data-key="KeyQ" title="Build mode"><span class="tbtn-icon">🔨</span><span class="tbtn-label">Build</span></button>
+      <button class="tbtn act" data-key="KeyI" title="Inventory"><span class="tbtn-icon">🎒</span><span class="tbtn-label">Inv</span></button>
+      <button class="tbtn act" data-key="KeyL" title="Codex"><span class="tbtn-icon">📖</span><span class="tbtn-label">Codex</span></button>
+      <button class="tbtn act" data-key="PrintScreen" title="Screenshot"><span class="tbtn-icon">📷</span><span class="tbtn-label"></span></button>
     </div>
     <div id="touch-build" class="hidden">BUILD MODE — tap ground to place · 🔨 to exit</div>
   </div>
@@ -1389,7 +1393,7 @@
           const joy = document.getElementById('joystick');
           const knob = document.getElementById('joy-knob');
           let joyId = null;
-          const JOY_R = 48.0;
+          const JOY_R = 42.0;
           const joyMove = (ev) => {
             if (joyId === null || ev.pointerId !== joyId) return;
             const r = joy.getBoundingClientRect();

@@ -125,7 +125,7 @@ html, body {
   left: 12px;
   color: #cfd8e3;
   font-size: 13px;
-  opacity: 0.92;
+  opacity: 0.80;
   pointer-events: none;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   user-select: none;
@@ -411,62 +411,69 @@ html, body {
 
 #touch.hidden { display: none; }
 
-.touch-dpad {
+.touch-actions {
   display: grid;
-  grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(3, 56px);
-  grid-template-areas: ". up ." "left . right" ". down .";
+  grid-template-columns: repeat(3, 52px);
   gap: 6px;
   pointer-events: auto;
+  margin-left: auto;
+  align-content: end;
 }
 
 #joystick {
   position: fixed;
-  left: 26px;
-  bottom: 26px;
-  width: 130px;
-  height: 130px;
+  left: 20px;
+  bottom: 20px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  background: rgba(10, 16, 28, 0.32);
-  border: 1px solid rgba(160, 180, 205, 0.35);
+  background: rgba(10, 16, 28, 0.5);
+  border: 2px solid rgba(160, 180, 205, 0.45);
   pointer-events: auto;
   touch-action: none;
   z-index: 16;
+  box-shadow: 0 0 12px rgba(100, 140, 200, 0.15);
 }
 #joy-knob {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
+  width: 50px;
+  height: 50px;
+  margin: -25px 0 0 -25px;
   border-radius: 50%;
-  background: rgba(242, 215, 122, 0.55);
-  border: 1px solid rgba(242, 215, 122, 0.9);
+  background: rgba(242, 215, 122, 0.6);
+  border: 2px solid rgba(242, 215, 122, 0.85);
   pointer-events: none;
+  transition: background 0.1s;
+  box-shadow: 0 0 8px rgba(242, 215, 122, 0.2);
 }
-
-.touch-actions {
-  display: grid;
-  grid-template-columns: repeat(2, 56px);
-  gap: 8px;
-  pointer-events: auto;
-  margin-left: auto;
+#joystick:active #joy-knob {
+  background: rgba(242, 215, 122, 0.85);
+  box-shadow: 0 0 14px rgba(242, 215, 122, 0.4);
 }
 
 .tbtn {
-  width: 56px;
-  height: 56px;
-  font-size: 18px;
+  width: 52px;
+  height: 52px;
+  font-size: 16px;
   color: #e8edf3;
-  background: rgba(10, 16, 28, 0.7);
-  border: 1px solid rgba(160, 180, 205, 0.45);
+  background: rgba(10, 16, 28, 0.65);
+  border: 1px solid rgba(160, 180, 205, 0.4);
   border-radius: 10px;
   user-select: none;
   touch-action: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 2px;
 }
+.tbtn-icon { font-size: 16px; line-height: 1; }
+.tbtn-label { font-size: 8px; letter-spacing: 0.5px; color: #9fb3c8; line-height: 1; }
 
-.tbtn.act { background: rgba(40, 56, 84, 0.8); }
+.tbtn.act { background: rgba(40, 56, 84, 0.65); }
 .tbtn.pressed { background: rgba(242, 215, 122, 0.5); border-color: #f2d77a; }
 
 #overlay-box h2 {
@@ -1239,16 +1246,94 @@ span.weather { background: rgba(40, 70, 110, 0.85); color: #cfe2f5; border-color
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* ---- Responsive: compact on narrow screens ---- */
+/* ---- Responsive: mobile/touch screens ---- */
 @media (max-width: 600px) {
-  #hud { min-width: 200px; font-size: 11px; }
-  .bar-label { width: 22px; font-size: 8px; }
+  /* HUD: compact bars, hide debug row */
+  #hud { min-width: 180px; font-size: 11px; gap: 4px; padding: 8px; }
+  .bar-label { width: 20px; font-size: 8px; letter-spacing: 0; }
   .bar-track { height: 6px; }
-  .bar-num { width: 22px; font-size: 9px; }
-  #inventory { width: 220px; padding: 10px 12px; }
-  #compass { width: 60px; height: 60px; bottom: 10px; right: 10px; }
-  #minimap { width: 100px; height: 100px; }
-  .menu-btn { font-size: 13px; padding: 8px 14px; }
-  #bootmenu h2 { font-size: 24px; letter-spacing: 4px; }
-  #help-panel #overlay-box { padding: 16px 20px; }
+  .bar-num { width: 20px; font-size: 9px; }
+  #hud .hud-row:last-child { display: none; }
+  .inv-chip { font-size: 10px; padding: 1px 5px; }
+
+  /* Top-bar buttons: bigger touch targets */
+  #invbtn, #codexbtn, #help, #gear {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 8px;
+  }
+  #gear { right: 8px; top: 8px; }
+  #help { right: 56px; top: 8px; }
+  #invbtn { right: 104px; top: 8px; }
+  #codexbtn { right: 152px; top: 8px; }
+
+  /* Minimap: smaller, top-right */
+  #minimap { width: 90px; height: 90px; top: 56px; right: 8px; }
+  .mm-legend { top: 152px; right: 8px; width: 90px; font-size: 7px; padding: 3px 4px; }
+
+  /* Compass: hide on mobile to avoid action button conflict */
+  #compass { display: none !important; }
+
+  /* Quest: tighter */
+  #quest { font-size: 12px; padding: 4px 10px; top: 60px; }
+
+  /* Inventory panel: narrower */
+  #inventory { width: 200px; padding: 10px 12px; top: 52px; }
+
+  /* Menu buttons: bigger */
+  .menu-btn { font-size: 14px; padding: 10px 16px; }
+  #bootmenu h2 { font-size: 22px; letter-spacing: 3px; }
+
+  /* Help panel: tighter padding */
+  #help-panel #overlay-box { padding: 14px 16px; max-height: 85vh; }
+  #help-panel .help-grid { font-size: 12px; gap: 4px 10px; }
+
+  /* Build hint: above touch buttons */
+  #buildhint { bottom: 140px; font-size: 12px; }
+
+  /* Touch actions: 3-col compact */
+  .touch-actions { gap: 5px; }
+  .tbtn { width: 48px; height: 48px; }
+  .tbtn-icon { font-size: 15px; }
+  .tbtn-label { font-size: 7px; }
+
+  /* Joystick: slightly smaller on small screens */
+  #joystick { width: 100px; height: 100px; left: 14px; bottom: 14px; }
+  #joy-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+
+  /* Touch build hint */
+  #touch-build { font-size: 13px; padding: 6px 14px; }
+
+  /* Altar/anvil prompts: tighter */
+  #altar-prompt { font-size: 13px; padding: 6px 12px; bottom: 140px; }
+
+  /* Overlay boxes: tighter */
+  #overlay-box { padding: 20px 24px; }
+
+  /* Coop tags: smaller */
+  .coop-tag { font-size: 10px; padding: 1px 4px; }
+}
+
+/* Landscape mobile (wider than tall) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .touch-actions { grid-template-columns: repeat(5, 44px); gap: 4px; }
+  .tbtn { width: 44px; height: 44px; }
+  .tbtn-label { display: none; }
+  #joystick { width: 90px; height: 90px; left: 10px; bottom: 10px; }
+  #joy-knob { width: 38px; height: 38px; margin: -19px 0 0 -19px; }
+  #hud { min-width: 140px; }
+  #quest { top: 50px; font-size: 11px; }
+  #minimap { width: 70px; height: 70px; top: 46px; }
+}
+
+/* Safe area insets for notched phones (iPhone X+, etc.) */
+@supports (padding: env(safe-area-inset-bottom)) {
+  #touch { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  #joystick { bottom: max(20px, env(safe-area-inset-bottom)); left: max(20px, env(safe-area-inset-left)); }
+  #gear { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); }
+  #help { top: max(8px, env(safe-area-inset-top)); }
+  #invbtn { top: max(8px, env(safe-area-inset-top)); }
+  #codexbtn { top: max(8px, env(safe-area-inset-top)); }
+  #compass { bottom: max(14px, env(safe-area-inset-bottom)); right: max(14px, env(safe-area-inset-right)); }
 }
