@@ -400,15 +400,15 @@ impl EnemyKind {
             EnemyKind::Wraith => SpriteStyle::Wraith,
             EnemyKind::Stoneslinger => SpriteStyle::Humanoid,
             EnemyKind::Colossus => SpriteStyle::Colossus,
-            EnemyKind::ScorpionQueen => SpriteStyle::Humanoid,
+            EnemyKind::ScorpionQueen => SpriteStyle::ScorpionQueen,
             EnemyKind::FrostGolem => SpriteStyle::Colossus,
-            EnemyKind::ToadKing => SpriteStyle::Humanoid,
-            EnemyKind::OceanLeviathan => SpriteStyle::Wolf,
-            EnemyKind::Brute => SpriteStyle::Humanoid,
-            EnemyKind::Stormcaller => SpriteStyle::Humanoid,
+            EnemyKind::ToadKing => SpriteStyle::ToadKing,
+            EnemyKind::OceanLeviathan => SpriteStyle::OceanLeviathan,
+            EnemyKind::Brute => SpriteStyle::Brute,
+            EnemyKind::Stormcaller => SpriteStyle::Stormcaller,
             EnemyKind::Wolf => SpriteStyle::Wolf,
-            EnemyKind::Archer => SpriteStyle::Humanoid,
-            EnemyKind::Raider => SpriteStyle::Humanoid,
+            EnemyKind::Archer => SpriteStyle::Archer,
+            EnemyKind::Raider => SpriteStyle::Raider,
         };
         let mut s = Sprite::new_center(x, y, self.color(), hw, hh, 2.0)
             .with_style(style)

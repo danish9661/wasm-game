@@ -67,6 +67,19 @@ pub(crate) mod spider;
 pub(crate) mod imp;
 pub(crate) mod wraith;
 pub(crate) mod colossus;
+pub(crate) mod scorpion_queen;
+pub(crate) mod toad_king;
+pub(crate) mod brute;
+pub(crate) mod stormcaller;
+pub(crate) mod ocean_leviathan;
+pub(crate) mod wolf;
+pub(crate) mod archer;
+pub(crate) mod raider;
+
+// Structures with bespoke art
+pub(crate) mod banner;
+pub(crate) mod enchanting_table;
+pub(crate) mod dungeon;
 
 /// Offline tooling hook: build every element into a flat vertex buffer so a
 /// `bin` in this package can rasterize and save PNGs. Each vertex is
@@ -133,5 +146,16 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "wraith", wraith::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "stoneslinger", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     add(&mut out, "colossus", colossus::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "scorpion_queen", scorpion_queen::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "toad_king", toad_king::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "brute", brute::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "stormcaller", stormcaller::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "ocean_leviathan", ocean_leviathan::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "wolf", wolf::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "archer", archer::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "raider", raider::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "banner", banner::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "enchanting_table", enchanting_table::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "dungeon", dungeon::build(0.0, 0.0, color, alpha, facing, t));
     out
 }

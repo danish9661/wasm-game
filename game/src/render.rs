@@ -77,6 +77,12 @@ pub enum SpriteStyle {
     RuinTower,
     /// Arcane village portal that teleports the player to the walled town.
     Portal,
+    /// War Banner: fluttering cloth on a tall pole with glowing gem topper.
+    Banner,
+    /// Enchanting Table: stone table with floating arcane symbols.
+    EnchantingTable,
+    /// Dungeon entrance: crumbling stone archway with ominous glow.
+    Dungeon,
     // ---- Default world buildings (decor, scattered by worldgen) -----------
     House,
     Cabin,
@@ -93,8 +99,22 @@ pub enum SpriteStyle {
     Imp,
     Wraith,
     Colossus,
+    /// Scorpion Queen: wide arachnid with claws and stinger.
+    ScorpionQueen,
+    /// Toad King: bloated amphibian with tongue flick.
+    ToadKing,
+    /// Brute: hulking melee tank with massive upper body.
+    Brute,
+    /// Stormcaller: flying storm-mage with lightning wisps.
+    Stormcaller,
+    /// Ocean Leviathan: serpentine sea creature.
+    OceanLeviathan,
     /// Lupine melee swarmer: a low, fast four-legged silhouette.
     Wolf,
+    /// Archer: ranged marksman with drawn bow and quiver.
+    Archer,
+    /// Raider: night-stalking bandit with dark cloak and dagger.
+    Raider,
     /// Old-world vehicles and railway props scattered through towns.
     Car,
     Train,
@@ -156,6 +176,9 @@ pub fn style_label(s: SpriteStyle) -> &'static str {
         SpriteStyle::Rubble => "..",
         SpriteStyle::RuinTower => "^",
         SpriteStyle::Portal => "@",
+        SpriteStyle::Banner => "Bn",
+        SpriteStyle::EnchantingTable => "Eq",
+        SpriteStyle::Dungeon => "Dn",
         SpriteStyle::House => "H",
         SpriteStyle::Cabin => "C",
         SpriteStyle::Hut => "U",
@@ -167,7 +190,14 @@ pub fn style_label(s: SpriteStyle) -> &'static str {
         SpriteStyle::Imp => "j",
         SpriteStyle::Wraith => "w",
         SpriteStyle::Colossus => "Q",
+        SpriteStyle::ScorpionQueen => "sq",
+        SpriteStyle::ToadKing => "tk",
+        SpriteStyle::Brute => "bt",
+        SpriteStyle::Stormcaller => "sc",
+        SpriteStyle::OceanLeviathan => "ol",
         SpriteStyle::Wolf => "Q",
+        SpriteStyle::Archer => "ar",
+        SpriteStyle::Raider => "rd",
         SpriteStyle::Car => "V",
         SpriteStyle::Train => "J",
         SpriteStyle::Rail => "-",
@@ -277,6 +307,10 @@ struct Draw {
     walk: f32,
     flash: f32,
     attack: f32,
+    /// Remaining dodge-roll time (for ghost trail rendering).
+    dodge_timer: f32,
+    /// Weapon enchantment level (0..5) for glow effect.
+    enchant: u8,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -375,6 +409,8 @@ pub fn build_tile_mesh(
             walk: 0.0,
             flash: 0.0,
             attack: 0.0,
+            dodge_timer: 0.0,
+            enchant: 0,
         });
     }
 
@@ -412,6 +448,8 @@ pub fn build_tile_mesh(
             walk: s.walk,
             flash: s.flash,
             attack: s.attack,
+            dodge_timer: 0.0,
+            enchant: 0,
         });
     }
 
@@ -444,6 +482,8 @@ pub fn build_tile_mesh(
             // Lunge out and back over the swing: peaks mid-swing where the hit
             // lands, then recovers — reads as a committed strike.
             attack: (p.swing_t * (1.0 - p.swing_t) * 4.0).clamp(0.0, 1.0),
+            dodge_timer: p.dodge_timer,
+            enchant: p.enchant,
         });
     }
 
@@ -592,6 +632,24 @@ pub fn build_tile_mesh(
                 } else {
                     PLAYER_COLOR
                 };
+
+                // Dodge ghost trail: draw fading copies behind the player
+                // during a dodge roll, giving a motion-blur feel.
+                if d.dodge_timer > 0.01 {
+                    let ghost_count = 3;
+                    for i in 1..=ghost_count {
+                        let t = i as f32 / ghost_count as f32;
+                        let offset = d.dodge_timer * 4.0 * t; // trail behind
+                        let gx = d.sx - d.facing.0 * offset * 12.0;
+                        let gy2 = gy - d.facing.1 * offset * 12.0;
+                        let ga = 0.35 * (1.0 - t); // fade out
+                        let ghost_parts = crate::elements::humanoid::build(
+                            gx, gy2, PLAYER_COLOR, ga, d.facing, 0.0, 0.0, 0.0,
+                        );
+                        rasterize(&ghost_parts, out);
+                    }
+                }
+
                 push_shadow(out, d.sx, gy, HALF_W * 0.7, HALF_H * 0.7);
                 let parts = crate::elements::humanoid::build(
                     d.sx,
@@ -604,6 +662,23 @@ pub fn build_tile_mesh(
                     d.attack,
                 );
                 rasterize(&crate::elements::prim::flashed(&parts, d.flash), out);
+
+                // Enchantment glow: a pulsing arcane ring around the player
+                // when the weapon is enchanted (levels 1-5).
+                if d.enchant > 0 {
+                    let intensity = d.enchant as f32 / 5.0;
+                    let pulse = (anim_time * 4.0).sin() * 0.3 + 0.7;
+                    let glow_alpha = intensity * pulse * 0.35;
+                    let glow_color = [0.40, 0.25, 0.70]; // arcane purple
+                    let glow_size = 10.0 + intensity * 6.0;
+                    rasterize(
+                        &[
+                            crate::elements::prim::Part::diamond(d.sx, gy - 16.0, glow_size, glow_size * 0.6, 0.0, glow_color, glow_alpha, false),
+                            crate::elements::prim::Part::diamond(d.sx, gy - 16.0, glow_size * 0.5, glow_size * 0.3, 0.0, [0.60, 0.45, 0.90], glow_alpha * 0.5, false),
+                        ],
+                        out,
+                    );
+                }
             }
         }
     }
@@ -855,10 +930,11 @@ fn push_styled_sprite(
     attack: f32,
 ) {
     use crate::elements::{
-        altar, anvil, arrow, barrel, bat, bed, bone_pile, brazier, bush, cactus, campfire, chest,
-        crate_box, crystal, fence, fern, flower,         grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
-        lilypad, mushroom, ore, pillar, portal, reed, rock, rock_pile, rubble, ruin_tower, sign,
-        slime, spider, statue, torch, totem, tree, turret, vines, wall, well, wraith,
+        altar, anvil, archer, arrow, banner, barrel, bat, bed, bone_pile, brazier, brute, bush, cactus, campfire, chest,
+        crate_box, crystal, dungeon, enchanting_table, fence, fern, flower,
+        grass_tuft, healing_totem, humanoid, hpbar, imp, lantern,
+        lilypad, mushroom, ocean_leviathan, ore, pillar, portal, raider, reed, rock, rock_pile, rubble, ruin_tower, scorpion_queen, sign,
+        slime, spider, stormcaller, statue, toad_king, torch, totem, tree, turret, vines, wall, well, wraith, wolf,
         colossus, spike, farm_plot, house, guard, golem,
     };
     match style {
@@ -932,16 +1008,37 @@ fn push_styled_sprite(
         SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Wraith => rasterize(&wraith::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Colossus => rasterize(&colossus::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::ScorpionQueen => {
+            let parts = scorpion_queen::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::ToadKing => {
+            let parts = toad_king::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Brute => {
+            let parts = brute::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Stormcaller => {
+            let parts = stormcaller::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::OceanLeviathan => {
+            let parts = ocean_leviathan::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
         SpriteStyle::Wolf => {
-            // Low, fast quadruped: body + head + four legs, tinted per kind.
-            let mut p = Vec::new();
-            p.push(Part::vquad(cx - 7.0, cy - 11.0, 14.0, 9.0, color, alpha, true));
-            p.push(Part::vquad(cx + 6.0, cy - 14.0, 7.0, 7.0, color, alpha, true));
-            p.push(Part::vquad(cx - 5.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
-            p.push(Part::vquad(cx - 1.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
-            p.push(Part::vquad(cx + 3.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
-            p.push(Part::vquad(cx + 7.0, cy - 3.0, 2.5, 6.0, color, alpha, false));
-            rasterize(&p, out);
+            let parts = wolf::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Archer => {
+            let parts = archer::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Raider => {
+            let parts = raider::build(cx, cy, color, alpha, facing, anim_time);
+            rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Car => {
             // Abandoned old-world automobile: body + cabin + two wheels.
@@ -999,6 +1096,11 @@ fn push_styled_sprite(
         SpriteStyle::Rubble => rasterize(&rubble::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::RuinTower => rasterize(&ruin_tower::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Portal => rasterize(&portal::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Banner => rasterize(&banner::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::EnchantingTable => {
+            rasterize(&enchanting_table::build(cx, cy, color, alpha, facing, anim_time), out)
+        }
+        SpriteStyle::Dungeon => rasterize(&dungeon::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::House => rasterize(&house::build(0, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Cabin => rasterize(&house::build(1, cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Hut => rasterize(&house::build(2, cx, cy, color, alpha, facing, anim_time), out),

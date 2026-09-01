@@ -289,7 +289,7 @@ impl StructureKind {
             StructureKind::Turret => SpriteStyle::Turret,
             StructureKind::HealingTotem => SpriteStyle::HealingTotem,
             StructureKind::Trap => SpriteStyle::Spike,
-            StructureKind::Banner => SpriteStyle::Totem,
+            StructureKind::Banner => SpriteStyle::Banner,
             StructureKind::Sign => SpriteStyle::Sign,
             StructureKind::Barrel => SpriteStyle::Barrel,
             StructureKind::Totem => SpriteStyle::Totem,
@@ -312,12 +312,12 @@ impl StructureKind {
             StructureKind::Car => SpriteStyle::Car,
             StructureKind::Train => SpriteStyle::Train,
             StructureKind::Rail => SpriteStyle::Rail,
-            StructureKind::Dungeon => SpriteStyle::RuinTower,
+            StructureKind::Dungeon => SpriteStyle::Dungeon,
             StructureKind::Portal => SpriteStyle::Portal,
             StructureKind::Inn => SpriteStyle::Inn,
             StructureKind::Barn => SpriteStyle::Barn,
             StructureKind::Watchtower => SpriteStyle::Watchtower,
-            StructureKind::EnchantingTable => SpriteStyle::Altar,
+            StructureKind::EnchantingTable => SpriteStyle::EnchantingTable,
         };
         Sprite::new(tx, ty, self.color(), hw, hh, lift).with_style(style)
     }

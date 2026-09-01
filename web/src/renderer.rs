@@ -4137,6 +4137,39 @@ impl App {
             }
         }
 
+        // Ambient structure particles: campfire embers, portal sparkles,
+        // healing totem aura.
+        {
+            let t = self.anim_clock;
+            let mut spawns: Vec<(f32, f32, [f32; 3], u32, f32, f32, f32)> = Vec::new();
+            for s in &self.structures {
+                match s.kind {
+                    StructureKind::Campfire => {
+                        let phase = (t * 2.5 + s.tx as f32 * 0.7 + s.ty as f32 * 1.3).fract();
+                        if phase < dt * 2.5 {
+                            spawns.push((s.tx as f32 + 0.5, s.ty as f32 + 0.5, [1.0, 0.6, 0.15], 2, 12.0, 0.8, 1.5));
+                        }
+                    }
+                    StructureKind::Portal => {
+                        let phase = (t * 1.5 + s.tx as f32 * 1.1 + s.ty as f32 * 0.9).fract();
+                        if phase < dt * 1.5 {
+                            spawns.push((s.tx as f32 + 0.5, s.ty as f32 + 0.5, [0.5, 0.3, 0.9], 3, 18.0, 0.6, 1.2));
+                        }
+                    }
+                    StructureKind::HealingTotem => {
+                        let phase = (t * 1.2 + s.tx as f32 * 0.5 + s.ty as f32 * 1.7).fract();
+                        if phase < dt * 1.2 {
+                            spawns.push((s.tx as f32 + 0.5, s.ty as f32 + 0.5, [0.3, 0.85, 0.4], 2, 10.0, 0.7, 1.8));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            for (x, y, c, n, sp, l, sz) in spawns {
+                self.spawn_particles(x, y, c, n, sp, l, sz);
+            }
+        }
+
         // story beats: cheap facts from the session state
         let near_ruins = (self.player.x - (self.ruins.0 as f32 + 0.5))
             .abs()

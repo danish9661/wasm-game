@@ -1,6 +1,6 @@
-//! Fence: two posts with two horizontal rails between them.
+//! Fence: two posts with two horizontal rails — gentle sway in the wind.
 
-use crate::elements::prim::{shade, Part};
+use crate::elements::prim::{anim_seed, shade, Part};
 
 pub(crate) fn build(
     cx: f32,
@@ -8,13 +8,15 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     _facing: (f32, f32),
-    _anim_time: f32,
+    anim_time: f32,
 ) -> Vec<Part> {
     let wood = color;
+    let seed = anim_seed(cx, cy);
+    let sway = (anim_time * 1.2 + seed).sin() * 0.5;
     vec![
         Part::vquad(cx - 12.0, cy - 16.0, 3.0, 16.0, wood, alpha, true),
-        Part::vquad(cx + 12.0, cy - 16.0, 3.0, 16.0, wood, alpha, true),
+        Part::vquad(cx + 12.0 + sway, cy - 16.0, 3.0, 16.0, wood, alpha, true),
         Part::vquad(cx - 15.0, cy - 12.0, 15.0, 3.0, shade(wood, 0.9), alpha, true),
-        Part::vquad(cx - 15.0, cy - 6.0, 15.0, 3.0, shade(wood, 0.9), alpha, true),
+        Part::vquad(cx - 15.0 + sway * 0.5, cy - 6.0, 15.0, 3.0, shade(wood, 0.9), alpha, true),
     ]
 }
