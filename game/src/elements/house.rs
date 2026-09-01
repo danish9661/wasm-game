@@ -38,11 +38,11 @@ fn cottage(
 ) -> Vec<Part> {
     // (wall_w, wall_h, roof_h, roof_col, door_w, windows_per_floor, floors)
     let (wall_w, wall_h, roof_h, roof_col, door_w, win_per, floors) = match kind {
-        0 => (46.0, 58.0, 36.0, [0.40, 0.27, 0.19], 10.0, 2, 2),
-        1 => (38.0, 46.0, 30.0, [0.45, 0.28, 0.16], 8.0, 1, 1),
-        2 => (30.0, 34.0, 24.0, [0.55, 0.45, 0.22], 6.0, 1, 1),
+        0 => (65.0, 78.0, 48.0, [0.40, 0.27, 0.19], 14.0, 2, 2),
+        1 => (52.0, 62.0, 40.0, [0.45, 0.28, 0.16], 11.0, 1, 1),
+        2 => (40.0, 46.0, 32.0, [0.55, 0.45, 0.22], 8.0, 1, 1),
         // Inn: a broad, warm two-storey tavern.
-        _ => (58.0, 52.0, 26.0, [0.34, 0.20, 0.16], 12.0, 2, 2),
+        _ => (78.0, 72.0, 36.0, [0.34, 0.20, 0.16], 16.0, 2, 2),
     };
     let wall = color;
     let dark = shade(wall, 0.62);
@@ -192,8 +192,8 @@ fn barn(
     alpha: f32,
     _anim_time: f32,
 ) -> Vec<Part> {
-    let wall_w = 62.0;
-    let wall_h = 44.0;
+    let wall_w = 82.0;
+    let wall_h = 58.0;
     let wall = color;
     let dark = shade(wall, 0.62);
     let roof_col = [0.38, 0.16, 0.14];
@@ -230,8 +230,8 @@ fn watchtower(
     alpha: f32,
     anim_time: f32,
 ) -> Vec<Part> {
-    let wall_w = 26.0;
-    let wall_h = 120.0;
+    let wall_w = 32.0;
+    let wall_h = 155.0;
     let wall = color;
     let dark = shade(wall, 0.62);
     let mut parts = Vec::new();
