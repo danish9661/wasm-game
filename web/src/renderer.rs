@@ -3134,9 +3134,12 @@ impl App {
             StructureKind::House,
             StructureKind::Cabin,
             StructureKind::Hut,
+        ];
+        let special_kinds = [
             StructureKind::Inn,
             StructureKind::Barn,
             StructureKind::Watchtower,
+            StructureKind::House,
         ];
         let ring: [(i32, i32); 12] = [
             (3, 0),
@@ -3164,10 +3167,11 @@ impl App {
                 let hx = vx + dx;
                 let hy = vy + dy;
                 if tile_at(&self.world, &mut self.chunks, hx, hy).walkable() {
+                    let kind = if i < 8 { house_kinds[i % 3] } else { special_kinds[(i - 8) % special_kinds.len()] };
                     structures.push(Structure {
                         tx: hx,
                         ty: hy,
-                        kind: house_kinds[i % 3],
+                        kind,
                     });
                 }
             }
