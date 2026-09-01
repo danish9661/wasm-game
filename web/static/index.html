@@ -1635,6 +1635,7 @@
               '<button id="vnClose" aria-label="Dismiss">×</button>';
             document.body.appendChild(n);
             document.getElementById('vnClose').onclick = () => n.remove();
+            setTimeout(() => n.remove(), 5000);
           }
 
           // ---- Canvas self-check: read the ACTUAL presented surface and count
