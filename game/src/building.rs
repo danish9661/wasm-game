@@ -348,14 +348,14 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
 /// emit light, or appear in the build menu. Same seed → same layout forever.
 pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
     let base = raw_decor(tx, ty, tile);
-    // Space default homes out: skip a home if any of the 8 neighbouring tiles
+    // Space default homes out: skip a home if any tile within a 2-tile radius
     // is also a home, so scattered settlements don't clump into a wall of houses.
     if matches!(
         base,
         Some(StructureKind::House) | Some(StructureKind::Cabin) | Some(StructureKind::Hut)
     ) {
-        for dx in -1..=1i32 {
-            for dy in -1..=1i32 {
+        for dx in -2..=2i32 {
+            for dy in -2..=2i32 {
                 if dx == 0 && dy == 0 {
                     continue;
                 }
@@ -381,12 +381,12 @@ fn raw_decor(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
         TileKind::Grass if h.rem_euclid(167) == 0 => Some(StructureKind::Pillar),
         TileKind::Grass if h.rem_euclid(223) == 0 => Some(StructureKind::Rubble),
         // Default settlements: scattered homes so the grasslands feel inhabited.
-        // The `tx % 3 == 0 && ty % 3 == 0` gate forces homes onto a 3-tile
-        // sub-grid, so no two default homes can ever land on adjacent tiles.
-        TileKind::Grass if h.rem_euclid(83) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::House),
-        TileKind::Grass if h.rem_euclid(127) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::Cabin),
-        TileKind::Forest if h.rem_euclid(139) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::Hut),
-        TileKind::Tundra if h.rem_euclid(97) == 0 && tx % 3 == 0 && ty % 3 == 0 => Some(StructureKind::Cabin),
+        // The `tx % 5 == 0 && ty % 5 == 0` gate forces homes onto a 5-tile
+        // sub-grid, so no two default homes overlap visually.
+        TileKind::Grass if h.rem_euclid(83) == 0 && tx % 5 == 0 && ty % 5 == 0 => Some(StructureKind::House),
+        TileKind::Grass if h.rem_euclid(127) == 0 && tx % 5 == 0 && ty % 5 == 0 => Some(StructureKind::Cabin),
+        TileKind::Forest if h.rem_euclid(139) == 0 && tx % 5 == 0 && ty % 5 == 0 => Some(StructureKind::Hut),
+        TileKind::Tundra if h.rem_euclid(97) == 0 && tx % 5 == 0 && ty % 5 == 0 => Some(StructureKind::Cabin),
         TileKind::Forest if h.rem_euclid(67) == 0 => Some(StructureKind::Totem),
         TileKind::Forest if h.rem_euclid(71) == 0 => Some(StructureKind::BonePile),
         TileKind::Forest if h.rem_euclid(173) == 0 => Some(StructureKind::Vines),
@@ -540,14 +540,15 @@ mod tests {
             for tx in -200..200 {
                 for ty in -200..200 {
                     if is_home(tx, ty) {
-                        for dx in -1..=1i32 {
-                            for dy in -1..=1i32 {
+                        // No home within 2 tiles (the adjacency check used by decor_on).
+                        for dx in -2..=2i32 {
+                            for dy in -2..=2i32 {
                                 if dx == 0 && dy == 0 {
                                     continue;
                                 }
                                 assert!(
                                     !is_home(tx + dx, ty + dy),
-                                    "adjacent default homes at ({tx},{ty}) and ({},{}), tile {tile:?}",
+                                    "nearby default homes at ({tx},{ty}) and ({},{}), tile {tile:?}",
                                     tx + dx,
                                     ty + dy
                                 );
