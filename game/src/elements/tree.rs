@@ -12,7 +12,7 @@ pub(crate) fn build(
 ) -> Vec<Part> {
     let trunk = [0.35, 0.22, 0.10];
     let canopy = color; // green from ResourceKind::Tree
-    let s = sway(cx, cy, anim_time, 2.5);
+    let s = sway(cx, cy, anim_time, 3.5);
     vec![
         // trunk (dark base, lit upper)
         Part::vquad(cx, cy - 4.0, 4.0, 4.0, shade(trunk, 0.7), alpha, true),

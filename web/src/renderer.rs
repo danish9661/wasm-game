@@ -51,6 +51,9 @@ const CRAFT_RECIPES: &[(&str, &[(ItemKind, u32)])] = &[
     ("Iron Plate", &[(ItemKind::Stone, 4), (ItemKind::Gem, 2)]),
     ("Healing Salve x3", &[(ItemKind::Herb, 3), (ItemKind::Food, 2)]),
     ("Cook Meal (Food x2)", &[(ItemKind::Herb, 2)]),
+    ("Fortified Walls x3", &[(ItemKind::Stone, 6), (ItemKind::Wood, 4)]),
+    ("Lantern Post", &[(ItemKind::Wood, 3), (ItemKind::Gem, 1)]),
+    ("Battle Banner", &[(ItemKind::Wood, 4), (ItemKind::Herb, 2), (ItemKind::Gem, 1)]),
 ];
 
 /// Console-only log for the GPU pipeline (does not touch the #log HUD element).
@@ -971,6 +974,8 @@ pub struct App {
     build_mode: Option<StructureKind>,
     /// Cached ghost preview: (kind, tx, ty, valid) for the hovered tile.
     build_ghost: Option<(StructureKind, i32, i32, bool)>,
+    /// Build rotation 0..3 (90° steps), cycled with R.
+    build_rot: u8,
     /// Crafting bonuses unlocked at an Anvil.
     craft_harvest: u32,
     craft_armor: f32,
@@ -1711,6 +1716,7 @@ impl App {
             mouse_screen: None,
             build_mode: None,
             build_ghost: None,
+            build_rot: 0,
             craft_harvest: 0,
             craft_armor: 0.0,
             salves: 0,
@@ -1847,7 +1853,11 @@ impl App {
                     }
                 }
                 "KeyR" => {
-                    if self.use_salve() {
+                    if self.build_mode.is_some() {
+                        self.build_rot = (self.build_rot + 1) % 4;
+                        toast(&format!("Rotation {}°", self.build_rot as u32 * 90));
+                        play_sfx("build");
+                    } else if self.use_salve() {
                         play_sfx("salve");
                     }
                 }
@@ -2148,6 +2158,8 @@ impl App {
             (ItemKind::Food, 3, 20, ItemKind::Gem, 1),
             (ItemKind::Herb, 3, 18, ItemKind::Food, 2),
             (ItemKind::Gem, 1, 30, ItemKind::Food, 3),
+            (ItemKind::Iron, 2, 25, ItemKind::Gem, 1),
+            (ItemKind::Gold, 2, 28, ItemKind::Iron, 2),
         ];
         let q = pool[(seed as usize) % pool.len()];
         npc.quest = Some(q);
@@ -2218,7 +2230,7 @@ impl App {
                 let dx = s.tx as f32 + 0.5 - px;
                 let dy = s.ty as f32 + 0.5 - py;
                 let d2 = dx * dx + dy * dy;
-                if d2 < 9.0 && best.map_or(true, |(bd, _)| d2 < bd) {
+                if d2 < 16.0 && best.map_or(true, |(bd, _)| d2 < bd) {
                     best = Some((d2, s.kind));
                 }
             }
@@ -2553,6 +2565,34 @@ impl App {
             }
             2 => self.salves += 3,
             3 => self.inventory.add(ItemKind::Food, 2),
+            4 => {
+                // Fortified Walls: instant 3 walls around player.
+                for (dx, dy) in [(1, 0), (-1, 0), (0, 1)] {
+                    let tx = self.player.x.floor() as i32 + dx;
+                    let ty = self.player.y.floor() as i32 + dy;
+                    if self.can_place(StructureKind::Wall, tx, ty) {
+                        self.structures.push(Structure { tx, ty, kind: StructureKind::Wall });
+                    }
+                }
+            }
+            5 => {
+                let tx = self.player.x.floor() as i32;
+                let ty = self.player.y.floor() as i32 + 1;
+                if self.can_place(StructureKind::Brazier, tx, ty) {
+                    self.structures.push(Structure { tx, ty, kind: StructureKind::Brazier });
+                } else {
+                    self.inventory.add(ItemKind::Wood, 2);
+                }
+            }
+            6 => {
+                let tx = self.player.x.floor() as i32;
+                let ty = self.player.y.floor() as i32;
+                if self.can_place(StructureKind::Banner, tx, ty) {
+                    self.structures.push(Structure { tx, ty, kind: StructureKind::Banner });
+                } else {
+                    self.inventory.add(ItemKind::Wood, 2);
+                }
+            }
             _ => {}
         }
         play_sfx("craft");
@@ -2662,6 +2702,11 @@ impl App {
                 let len = (dx * dx + dy * dy).sqrt().max(0.01);
                 e.x += dx / len * 0.35;
                 e.y += dy / len * 0.35;
+                // Hammer stagger: heavy hit stuns briefly.
+                if w == WeaponKind::Hammer {
+                    e.flash = 1.0;
+                    e.windup = e.windup.max(0.55);
+                }
                 sparks.push((e.x, e.y));
             }
             if !hits.is_empty() {
@@ -3235,18 +3280,18 @@ impl App {
             StructureKind::House,
         ];
         let ring: [(i32, i32); 12] = [
-            (4, 0),
-            (-4, 0),
-            (0, 4),
-            (0, -4),
-            (4, 4),
-            (-4, -4),
-            (4, -4),
-            (-4, 4),
-            (7, 0),
-            (-7, 0),
-            (0, 7),
-            (0, -7),
+            (5, 0),
+            (-5, 0),
+            (0, 5),
+            (0, -5),
+            (5, 5),
+            (-5, -5),
+            (5, -5),
+            (-5, 5),
+            (9, 0),
+            (-9, 0),
+            (0, 9),
+            (0, -9),
         ];
         const FIRST_NAMES: &[&str] = &[
             "Bryn", "Cael", "Dora", "Edda", "Finn", "Greta", "Hale", "Ivo", "Jora", "Kell",
@@ -3785,6 +3830,19 @@ impl App {
         } else {
             0.0
         };
+        // Weapon trail for heavy swings — hammer/axe leave a bright arc.
+        if self.player.swing_t > 0.25
+            && matches!(self.player.weapon, WeaponKind::Hammer | WeaponKind::Axe)
+        {
+            let col = if self.player.weapon == WeaponKind::Hammer {
+                [0.95, 0.85, 0.45]
+            } else {
+                [0.85, 0.85, 0.92]
+            };
+            let ax = self.player.facing.0 * 1.2;
+            let ay = self.player.facing.1 * 1.2;
+            self.spawn_particles(self.player.x + ax, self.player.y + ay, col, 2, 1.2, 0.22, 2.0);
+        }
         // Decay any active screen-shake (set when a boss lands a hit).
         self.shake = (self.shake * 0.82).max(0.0);
         // Minimal screen-shake: when a boss lands a blow on the player, nudge the
@@ -4159,9 +4217,15 @@ impl App {
         }
         if let Some((ex, ey, dmg)) = contact {
             // Iron Plate (crafted at an Anvil) reduces incoming damage, and the
-            // world bites harder at night.
+            // world bites harder at night. Blocking (Shift) parries 70% if you
+            // have stamina.
             let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
-            let dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
+            let mut dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
+            if self.player.blocking && self.player.stamina > 10.0 {
+                dmg *= 0.30;
+                self.player.stamina = (self.player.stamina - 10.0).max(0.0);
+                self.spawn_particles(self.player.x, self.player.y, [0.7, 0.85, 1.0], 7, 2.8, 0.45, 2.4);
+            }
             self.player.take_damage(dmg);
             if dmg > 0.5 {
                 self.hitstop = 0.06;
@@ -4692,6 +4756,29 @@ impl App {
                 sprites.push(Sprite::new(s.tx, s.ty, [0.40, 0.26, 0.10], 16.0, 12.0, 6.0));
             } else {
                 sprites.push(s.kind.sprite(s.tx, s.ty));
+                // Puddle reflections during rain/storm under buildings.
+                if self.weather == 1 || self.weather == 3 {
+                    if matches!(
+                        s.kind,
+                        StructureKind::House
+                            | StructureKind::Cabin
+                            | StructureKind::Hut
+                            | StructureKind::Inn
+                            | StructureKind::Barn
+                            | StructureKind::Watchtower
+                    ) {
+                        let mut puddle = game::render::Sprite::new(
+                            s.tx,
+                            s.ty,
+                            [0.65, 0.75, 0.88],
+                            HALF_W * 0.85,
+                            HALF_H * 0.85,
+                            0.01,
+                        );
+                        puddle.alpha = 0.18;
+                        sprites.push(puddle);
+                    }
+                }
             }
         }
         for e in self.enemies.enemies() {

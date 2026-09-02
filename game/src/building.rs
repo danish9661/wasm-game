@@ -348,14 +348,14 @@ pub const BUILDABLE: &[(StructureKind, &str, &str)] = &[
 /// emit light, or appear in the build menu. Same seed → same layout forever.
 pub fn decor_on(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
     let base = raw_decor(tx, ty, tile);
-    // Space default homes out: skip a home if any tile within a 2-tile radius
+    // Space default homes out: skip a home if any tile within a 3-tile radius
     // is also a home, so scattered settlements don't clump into a wall of houses.
     if matches!(
         base,
         Some(StructureKind::House) | Some(StructureKind::Cabin) | Some(StructureKind::Hut)
     ) {
-        for dx in -2..=2i32 {
-            for dy in -2..=2i32 {
+        for dx in -3..=3i32 {
+            for dy in -3..=3i32 {
                 if dx == 0 && dy == 0 {
                     continue;
                 }
