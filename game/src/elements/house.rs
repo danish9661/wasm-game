@@ -38,11 +38,11 @@ fn cottage(
 ) -> Vec<Part> {
     // (wall_w, wall_h, roof_h, roof_col, door_w, windows_per_floor, floors)
     let (wall_w, wall_h, roof_h, roof_col, door_w, win_per, floors) = match kind {
-        0 => (65.0, 78.0, 48.0, [0.40, 0.27, 0.19], 14.0, 2, 2),
-        1 => (52.0, 62.0, 40.0, [0.45, 0.28, 0.16], 11.0, 1, 1),
-        2 => (40.0, 46.0, 32.0, [0.55, 0.45, 0.22], 8.0, 1, 1),
+        0 => (92.0, 110.0, 67.0, [0.40, 0.27, 0.19], 19.0, 2, 2),
+        1 => (74.0, 88.0, 56.0, [0.45, 0.28, 0.16], 15.0, 1, 1),
+        2 => (56.0, 65.0, 45.0, [0.55, 0.45, 0.22], 11.0, 1, 1),
         // Inn: a broad, warm two-storey tavern.
-        _ => (78.0, 72.0, 36.0, [0.34, 0.20, 0.16], 16.0, 2, 2),
+        _ => (110.0, 102.0, 50.0, [0.34, 0.20, 0.16], 22.0, 2, 2),
     };
     let wall = color;
     let dark = shade(wall, 0.62);
@@ -192,8 +192,8 @@ fn barn(
     alpha: f32,
     _anim_time: f32,
 ) -> Vec<Part> {
-    let wall_w = 82.0;
-    let wall_h = 58.0;
+    let wall_w = 116.0;
+    let wall_h = 82.0;
     let wall = color;
     let dark = shade(wall, 0.62);
     let roof_col = [0.38, 0.16, 0.14];
@@ -206,18 +206,18 @@ fn barn(
     parts.push(Part::vquad(cx + wall_w / 2.0 - 2.0, cy - wall_h, 2.0, wall_h, [0.92, 0.88, 0.82], alpha, false));
 
     // Big double doors.
-    let dw = 18.0;
-    parts.push(Part::vquad(cx - dw / 2.0, cy - 26.0, dw / 2.0, 26.0, shade(wall, 0.5), alpha, true));
-    parts.push(Part::vquad(cx - dw / 2.0 + 1.5, cy - 24.0, dw / 2.0 - 1.5, 24.0, [0.40, 0.16, 0.14], alpha * 0.9, false));
-    parts.push(Part::vquad(cx - 0.6, cy - 26.0, 0.6, 26.0, [0.25, 0.10, 0.08], alpha, false));
+    let dw = 25.0;
+    parts.push(Part::vquad(cx - dw / 2.0, cy - 36.0, dw / 2.0, 36.0, shade(wall, 0.5), alpha, true));
+    parts.push(Part::vquad(cx - dw / 2.0 + 2.0, cy - 34.0, dw / 2.0 - 2.0, 34.0, [0.40, 0.16, 0.14], alpha * 0.9, false));
+    parts.push(Part::vquad(cx - 0.8, cy - 36.0, 0.8, 36.0, [0.25, 0.10, 0.08], alpha, false));
     // Hayloft window.
-    parts.push(Part::vquad(cx - 4.0, cy - wall_h + 6.0, 4.0, 8.0, [0.22, 0.16, 0.10], alpha, false));
-    parts.push(Part::vquad(cx - 3.0, cy - wall_h + 7.0, 3.0, 6.0, [1.0, 0.86, 0.46], alpha, false));
+    parts.push(Part::vquad(cx - 5.5, cy - wall_h + 8.0, 5.5, 11.0, [0.22, 0.16, 0.10], alpha, false));
+    parts.push(Part::vquad(cx - 4.2, cy - wall_h + 9.5, 4.2, 8.5, [1.0, 0.86, 0.46], alpha, false));
 
     // Gambrel roof: an eave slab plus a wide apex diamond in barn-red.
     let roof_base_y = cy - wall_h;
-    parts.push(Part::vquad(cx - wall_w / 2.0 - 4.0, roof_base_y - 12.0, wall_w / 2.0 + 4.0, 12.0, roof_col, alpha, true));
-    parts.push(Part::diamond(cx, roof_base_y - 26.0, wall_w / 2.0 + 5.0, 22.0, 0.0, roof_col, alpha, true));
+    parts.push(Part::vquad(cx - wall_w / 2.0 - 5.5, roof_base_y - 17.0, wall_w / 2.0 + 5.5, 17.0, roof_col, alpha, true));
+    parts.push(Part::diamond(cx, roof_base_y - 36.0, wall_w / 2.0 + 7.0, 31.0, 0.0, roof_col, alpha, true));
     parts
 }
 
@@ -230,8 +230,8 @@ fn watchtower(
     alpha: f32,
     anim_time: f32,
 ) -> Vec<Part> {
-    let wall_w = 32.0;
-    let wall_h = 155.0;
+    let wall_w = 45.0;
+    let wall_h = 218.0;
     let wall = color;
     let dark = shade(wall, 0.62);
     let mut parts = Vec::new();
@@ -250,18 +250,18 @@ fn watchtower(
         parts.push(Part::vquad(cx - 1.5, fy - 5.0, 1.5, 10.0, [0.20, 0.18, 0.16], alpha, false));
     }
     // Stout door.
-    parts.push(Part::vquad(cx - 5.0, cy - 16.0, 5.0, 16.0, shade(wall, 0.45), alpha, true));
-    parts.push(Part::vquad(cx - 3.5, cy - 14.0, 3.5, 14.0, [0.35, 0.22, 0.14], alpha * 0.9, false));
+    parts.push(Part::vquad(cx - 7.0, cy - 22.0, 7.0, 22.0, shade(wall, 0.45), alpha, true));
+    parts.push(Part::vquad(cx - 5.0, cy - 20.0, 5.0, 20.0, [0.35, 0.22, 0.14], alpha * 0.9, false));
     // Battlements (merlons) at the top.
     let top_y = cy - wall_h;
     for m in 0..4 {
-        let mx = cx - wall_w / 2.0 + 2.0 + m as f32 * (wall_w - 4.0) / 3.0;
-        parts.push(Part::vquad(mx - 2.0, top_y - 8.0, 2.0, 8.0, shade(wall, 1.1), alpha, true));
+        let mx = cx - wall_w / 2.0 + 2.5 + m as f32 * (wall_w - 5.0) / 3.0;
+        parts.push(Part::vquad(mx - 2.5, top_y - 11.0, 2.5, 11.0, shade(wall, 1.1), alpha, true));
     }
     // Crenellated cap + glowing beacon.
-    parts.push(Part::vquad(cx - wall_w / 2.0 - 2.0, top_y - 6.0, wall_w / 2.0 + 2.0, 6.0, shade(wall, 0.9), alpha, true));
+    parts.push(Part::vquad(cx - wall_w / 2.0 - 2.5, top_y - 8.5, wall_w / 2.0 + 2.5, 8.5, shade(wall, 0.9), alpha, true));
     let beacon = (anim_time * 2.0).sin() * 0.5 + 0.5;
-    parts.push(Part::diamond(cx, top_y - 12.0, 5.0, 6.0, 0.0, [1.0, 0.85, 0.45], alpha, false));
-    parts.push(Part::diamond(cx, top_y - 12.0, 3.0 + beacon * 2.0, 4.0 + beacon * 2.0, 0.0, [1.0, 0.95, 0.7], alpha * (0.6 + 0.4 * beacon), false));
+    parts.push(Part::diamond(cx, top_y - 17.0, 7.0, 8.5, 0.0, [1.0, 0.85, 0.45], alpha, false));
+    parts.push(Part::diamond(cx, top_y - 17.0, 4.2 + beacon * 2.8, 5.6 + beacon * 2.8, 0.0, [1.0, 0.95, 0.7], alpha * (0.6 + 0.4 * beacon), false));
     parts
 }
