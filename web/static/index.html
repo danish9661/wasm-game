@@ -253,7 +253,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex } from './wasm_game.js?v=20260901';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step } from './wasm_game.js?v=20260901';
 
     const coopTagsEl = document.getElementById('coop-tags');
     const townTransitionEl = document.getElementById('town-transition');
@@ -1375,6 +1375,19 @@
           });
           window.addEventListener('pointerdown', ensureAudio, { once: false });
           window.addEventListener('touchstart', ensureAudio, { once: false });
+          // Zoom: +/- keys, mouse wheel, pinch.
+          window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) { e.preventDefault(); try { zoom_step(e.deltaY < 0 ? 1 : -1); } catch(_){} }
+          }, { passive: false });
+          let _pinchDist = 0;
+          window.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+              const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+              if (_pinchDist && Math.abs(d - _pinchDist) > 12) { try { zoom_step(d > _pinchDist ? 1 : -1); } catch(_){} _pinchDist = d; }
+              else if (!_pinchDist) _pinchDist = d;
+            }
+          }, { passive: true });
+          window.addEventListener('touchend', () => { _pinchDist = 0; }, { passive: true });
 
           // ---- Touch controls -------------------------------------------
           const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);

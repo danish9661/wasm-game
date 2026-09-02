@@ -834,6 +834,8 @@ pub struct App {
     bind_group: wgpu::BindGroup,
     vertex_buffer: VertexBuffer,
     viewport: [f32; 2],
+    /// Camera zoom (1.0 = default, <1 zoom out, >1 zoom in). +/- and pinch.
+    zoom: f32,
     camera: Camera,
     /// Smoothed player velocity (tiles/sec) used for camera look-ahead.
     last_px: f32,
@@ -1623,6 +1625,7 @@ impl App {
             bind_group,
             vertex_buffer,
             viewport: [width as f32, height as f32],
+            zoom: 1.0,
             camera: Camera::new(0.0, 0.0),
             last_px: px,
             last_py: py,
@@ -1871,9 +1874,22 @@ impl App {
                 "Digit7" => self.select_build(6),
                 "Digit8" => self.select_build(7),
                 "Digit9" => self.select_build(8),
+                "Equal" | "NumpadAdd" => {
+                    self.zoom = (self.zoom + 0.12).clamp(0.7, 1.6);
+                    toast(&format!("Zoom {:.0}%", self.zoom * 100.0));
+                }
+                "Minus" | "NumpadSubtract" => {
+                    self.zoom = (self.zoom - 0.12).clamp(0.7, 1.6);
+                    toast(&format!("Zoom {:.0}%", self.zoom * 100.0));
+                }
                 _ => {}
             }
         }
+    }
+
+    pub fn zoom_step(&mut self, delta: f32) {
+        self.zoom = (self.zoom + delta * 0.12).clamp(0.7, 1.6);
+        toast(&format!("Zoom {:.0}%", self.zoom * 100.0));
     }
 
     /// Set the cursor position in internal canvas pixels (for build ghost).
@@ -2254,6 +2270,20 @@ impl App {
                     loot_taken: false,
                 });
                 play_sfx("door");
+                // Interior loot: non-dungeon houses have a one-time pantry reward.
+                let (loot_kind, loot_n) = match kind {
+                    StructureKind::House => (ItemKind::Wood, 3),
+                    StructureKind::Cabin => (ItemKind::Wood, 2),
+                    StructureKind::Hut => (ItemKind::Food, 2),
+                    StructureKind::Inn => (ItemKind::Food, 3),
+                    StructureKind::Barn => (ItemKind::Wood, 4),
+                    StructureKind::Watchtower => (ItemKind::Stone, 3),
+                    _ => (ItemKind::Stone, 0),
+                };
+                if loot_n > 0 {
+                    self.inventory.add(loot_kind, loot_n);
+                    self.spawn_particles(self.player.x, self.player.y, loot_kind.color(), 8, 2.4, 0.6, 2.5);
+                }
                 toast(&format!(
                     "Entered the {}{}{}",
                     name,
@@ -2973,11 +3003,20 @@ impl App {
         if let Some((tx, ty, kind)) = self.nearest_resource() {
             if let Some(item) = self.nodes.chop(tx, ty, kind) {
                 play_sfx("harvest");
+                // Bigger feedback: screen shake, chunky particles, and a flash.
+                self.shake = (self.shake + 0.45).min(1.2);
+                let (lx, ly) = (tx as f32 + 0.5, ty as f32 + 0.5);
+                let col = match item {
+                    ItemKind::Wood => [0.42, 0.28, 0.16],
+                    ItemKind::Stone => [0.65, 0.65, 0.68],
+                    _ => item.color(),
+                };
+                self.spawn_particles(lx, ly, col, 10, 3.2, 0.55, 3.0);
+                self.spawn_particles(lx, ly, [1.0, 0.95, 0.6], 5, 2.0, 0.4, 2.2);
                 // Honed Tools (crafted at an Anvil) yield bonus resources. Drop
                 // the yield as ground loot (collected on proximity) rather than
                 // crediting inventory directly, so harvesting reads like looting.
                 let n = 1 + self.craft_harvest;
-                let (lx, ly) = (tx as f32 + 0.5, ty as f32 + 0.5);
                 self.loot.push(LootDrop {
                     kind: item,
                     x: lx,
@@ -4456,6 +4495,15 @@ impl App {
             self.anim_clock,
             player_walk,
         );
+        // Camera zoom: scale world vertices toward viewport center.
+        if (self.zoom - 1.0).abs() > 0.001 {
+            let cx = self.viewport[0] * 0.5;
+            let cy = self.viewport[1] * 0.5;
+            for i in (0..self.vertices.len()).step_by(6) {
+                self.vertices[i] = cx + (self.vertices[i] - cx) * self.zoom;
+                self.vertices[i + 1] = cy + (self.vertices[i + 1] - cy) * self.zoom;
+            }
+        }
         // The player quad is always emitted while `player` is Some (it is, in
         // the live loop), so scanning the whole vertex buffer every frame to
         // rediscover it is wasted work.
@@ -4649,6 +4697,23 @@ impl App {
         for e in self.enemies.enemies() {
             let hp_frac = (e.hp / e.kind.max_hp()).clamp(0.0, 1.0);
             let mut sp = e.kind.sprite(e.x, e.y, hp_frac, e.facing);
+            // Aggro pulse ring for chasing enemies (red, fading with flash).
+            if e.state == AiState::Chase && e.flash > 0.25 {
+                let pulse = e.flash * 0.7;
+                let mut ring = game::render::Sprite::new(
+                    e.x.floor() as i32,
+                    e.y.floor() as i32,
+                    [1.0, 0.25, 0.25],
+                    sp.half_w * (1.25 + pulse * 0.35),
+                    sp.half_h * (1.25 + pulse * 0.35),
+                    0.02,
+                );
+                // Keep ring tile-aligned to enemy's tile center, preserve x/y.
+                ring.x = e.x;
+                ring.y = e.y;
+                ring.alpha = 0.22 + pulse * 0.28;
+                sprites.push(ring);
+            }
             let f = e.flash.min(1.0);
             if f > 0.0 {
                 sp.color = [

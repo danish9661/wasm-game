@@ -606,8 +606,27 @@ pub fn build_tile_mesh(
                 }
             }
             DrawKind::Sprite => {
-                // Fake 2.5D: ground shadow first, then a kind-aware silhouette.
-                push_shadow(out, d.sx, d.sy, d.half_w, d.half_h);
+                // Fake 2.5D: ground shadow first — offset southeast for tall
+                // buildings so roofs cast a readable shadow.
+                let is_building = matches!(
+                    d.style,
+                    SpriteStyle::House
+                        | SpriteStyle::Cabin
+                        | SpriteStyle::Hut
+                        | SpriteStyle::Inn
+                        | SpriteStyle::Barn
+                        | SpriteStyle::Watchtower
+                );
+                if is_building {
+                    // Larger, offset shadow for depth; alpha scales with height.
+                    let ox = d.half_h * 0.22;
+                    let oy = d.half_h * 0.14;
+                    push_shadow(out, d.sx + ox, d.sy + oy, d.half_w * 1.35, d.half_h * 0.85);
+                    // Second soft shadow for roof overhang.
+                    push_shadow_soft(out, d.sx + ox * 0.6, d.sy + oy * 0.6, d.half_w * 0.9, d.half_h * 0.6);
+                } else {
+                    push_shadow(out, d.sx, d.sy, d.half_w, d.half_h);
+                }
                 match d.style {
                     SpriteStyle::Generic => {
                         let mut g = Vec::new();
@@ -788,6 +807,22 @@ fn push_shadow(out: &mut Vec<f32>, cx: f32, cy: f32, half_w: f32, half_h: f32) {
         out.push(0.0);
         out.push(0.0);
         out.push(0.42);
+    }
+}
+
+fn push_shadow_soft(out: &mut Vec<f32>, cx: f32, cy: f32, half_w: f32, half_h: f32) {
+    let top = (cx, cy - half_h);
+    let right = (cx + half_w, cy);
+    let bottom = (cx, cy + half_h);
+    let left = (cx - half_w, cy);
+    let verts = [top, right, bottom, top, bottom, left];
+    for (vx, vy) in verts {
+        out.push(vx);
+        out.push(vy);
+        out.push(0.0);
+        out.push(0.0);
+        out.push(0.0);
+        out.push(0.18);
     }
 }
 

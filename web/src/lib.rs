@@ -393,6 +393,15 @@ pub fn set_adaptive_res(v: bool) {
     crate::renderer::set_adaptive_res(v);
 }
 
+#[wasm_bindgen]
+pub fn zoom_step(delta: f32) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.zoom_step(delta);
+        }
+    });
+}
+
 /// Result of the last completed readback ("pending" until the map callback runs).
 #[wasm_bindgen]
 pub fn readback_stats() -> String {

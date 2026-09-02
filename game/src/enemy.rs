@@ -647,6 +647,9 @@ impl Enemy {
                 return None;
             }
 
+            if self.state != AiState::Chase {
+                self.flash = 0.85;
+            }
             self.state = AiState::Chase;
             // Brute: wind up, then dash in a straight line toward the player.
             if self.kind == EnemyKind::Brute {
@@ -868,8 +871,9 @@ pub fn get(&mut self, tx: i32, ty: i32, kind: EnemyKind, dt: f32) -> Option<&mut
         }
     }
     if !self.enemies.contains_key(&(tx, ty)) {
-        self.enemies
-            .insert((tx, ty), Enemy::new(tx as f32 + 0.5, ty as f32 + 0.5, kind));
+        let mut e = Enemy::new(tx as f32 + 0.5, ty as f32 + 0.5, kind);
+        e.flash = 0.9;
+        self.enemies.insert((tx, ty), e);
     }
     self.enemies.get_mut(&(tx, ty))
 }
@@ -888,7 +892,9 @@ pub fn get(&mut self, tx: i32, ty: i32, kind: EnemyKind, dt: f32) -> Option<&mut
     /// wanders from there under its own AI. `elite` scales HP, damage and XP.
     pub fn spawn_elite(&mut self, kind: EnemyKind, x: f32, y: f32, elite: f32) {
         let key = (x.floor() as i32, y.floor() as i32);
-        self.enemies.insert(key, Enemy::new(x, y, kind).with_elite(elite));
+        let mut e = Enemy::new(x, y, kind).with_elite(elite);
+        e.flash = 0.9;
+        self.enemies.insert(key, e);
     }
 
     pub fn enemies(&self) -> impl Iterator<Item = &Enemy> {
