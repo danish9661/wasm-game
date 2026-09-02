@@ -122,16 +122,19 @@ pub(crate) fn rasterize(parts: &[Part], out: &mut Vec<f32>) {
 fn emit(out: &mut Vec<f32>, p: &Part, dark: bool) {
     let _ = p.uv; // B-ready hook: ignored until atlas support lands.
     let color = if dark {
-        [p.color[0] * 0.45, p.color[1] * 0.45, p.color[2] * 0.45]
+        [p.color[0] * 0.28, p.color[1] * 0.28, p.color[2] * 0.28]
     } else {
         p.color
     };
+    // Thicker outline: dark skirt is slightly enlarged.
+    let hw = if dark { p.hw * 1.22 } else { p.hw };
+    let hh = if dark { p.hh * 1.22 } else { p.hh };
     match p.shape {
         Shape::Diamond => {
-            let top = (p.cx, p.cy - p.hh + p.lift);
-            let right = (p.cx + p.hw, p.cy + p.lift);
-            let bottom = (p.cx, p.cy + p.hh + p.lift);
-            let left = (p.cx - p.hw, p.cy + p.lift);
+            let top = (p.cx, p.cy - hh + p.lift);
+            let right = (p.cx + hw, p.cy + p.lift);
+            let bottom = (p.cx, p.cy + hh + p.lift);
+            let left = (p.cx - hw, p.cy + p.lift);
             let verts = [top, right, bottom, top, bottom, left];
             for (vx, vy) in verts {
                 out.push(vx);
@@ -141,15 +144,15 @@ fn emit(out: &mut Vec<f32>, p: &Part, dark: bool) {
             }
         }
         Shape::VQuad => {
-            let top = p.cy - p.hh + p.lift;
-            let bot = p.cy + p.hh + p.lift;
+            let top = p.cy - hh + p.lift;
+            let bot = p.cy + hh + p.lift;
             let verts = [
-                (p.cx - p.hw, top),
-                (p.cx + p.hw, top),
-                (p.cx + p.hw, bot),
-                (p.cx - p.hw, top),
-                (p.cx + p.hw, bot),
-                (p.cx - p.hw, bot),
+                (p.cx - hw, top),
+                (p.cx + hw, top),
+                (p.cx + hw, bot),
+                (p.cx - hw, top),
+                (p.cx + hw, bot),
+                (p.cx - hw, bot),
             ];
             for (vx, vy) in verts {
                 out.push(vx);

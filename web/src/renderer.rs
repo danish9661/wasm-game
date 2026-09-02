@@ -3196,18 +3196,18 @@ impl App {
             StructureKind::House,
         ];
         let ring: [(i32, i32); 12] = [
-            (3, 0),
-            (-3, 0),
-            (0, 3),
-            (0, -3),
-            (3, 3),
-            (-3, -3),
-            (3, -3),
-            (-3, 3),
-            (5, 0),
-            (-5, 0),
-            (0, 5),
-            (0, -5),
+            (4, 0),
+            (-4, 0),
+            (0, 4),
+            (0, -4),
+            (4, 4),
+            (-4, -4),
+            (4, -4),
+            (-4, 4),
+            (7, 0),
+            (-7, 0),
+            (0, 7),
+            (0, -7),
         ];
         const FIRST_NAMES: &[&str] = &[
             "Bryn", "Cael", "Dora", "Edda", "Finn", "Greta", "Hale", "Ivo", "Jora", "Kell",
@@ -4822,9 +4822,17 @@ impl App {
                 let ty = (wy + self.camera.y).floor() as i32;
                 let valid = self.can_place(kind, tx, ty);
                 self.build_ghost = Some((kind, tx, ty, valid));
+                // Big tile highlight ring under the ghost — larger and more visible.
+                let mut ring = game::render::Sprite::new(tx, ty, [1.0, 0.92, 0.35], HALF_W * 1.1, HALF_H * 1.1, 0.05);
+                ring.color = if valid { [0.35, 1.0, 0.45] } else { [1.0, 0.35, 0.35] };
+                ring.alpha = 0.35;
+                sprites.push(ring);
                 let mut g = kind.sprite(tx, ty);
                 g.color = if valid { [0.35, 1.0, 0.45] } else { [1.0, 0.35, 0.35] };
-                g.alpha = 0.55;
+                g.alpha = 0.82;
+                // Ghost slightly larger for clear placement.
+                g.half_w *= 1.08;
+                g.half_h *= 1.08;
                 sprites.push(g);
             }
         }

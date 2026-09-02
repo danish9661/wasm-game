@@ -650,7 +650,7 @@ pub fn build_tile_mesh(
                     }
                 }
 
-                push_shadow(out, d.sx, gy, HALF_W * 0.7, HALF_H * 0.7);
+                push_shadow(out, d.sx, gy, HALF_W * 1.05, HALF_H * 1.05);
                 let parts = crate::elements::humanoid::build(
                     d.sx,
                     gy,
@@ -787,7 +787,7 @@ fn push_shadow(out: &mut Vec<f32>, cx: f32, cy: f32, half_w: f32, half_h: f32) {
         out.push(0.0);
         out.push(0.0);
         out.push(0.0);
-        out.push(0.30);
+        out.push(0.42);
     }
 }
 
