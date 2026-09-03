@@ -1,10 +1,10 @@
 # Starfall — Multiplayer Plan & Server Scaffold
 
 Status: **implemented (co-op, server-authoritative)**. The full `game`
-simulation now runs authoritatively on the server and M0/M1/M3/M5 are done:
-rooms, shareable join codes, snapshot interpolation, and per-token save
-persistence are live. This document captures the architecture and protocol that
-shipped.
+simulation now runs authoritatively on the server and M0/M1/M2/M3/M4/M5 are
+done: rooms, shareable join codes, bincode + delta protocol, per-client view
+culling, snapshot interpolation, and per-token save persistence are live. This
+document captures the architecture and protocol that shipped.
 
 ---
 
@@ -187,7 +187,7 @@ client render path is identical; networking is a small additive layer.
 |---|------|-----------|
 | M0 | Extract `game::Simulation` (orchestration from `renderer.rs`) | ✅ done |
 | M1 | Server crate + netcode (real sim swapped in) | ✅ done |
-| M2 | Protocol hardening (bincode, deltas) | M1 |
+| M2 | Protocol hardening (bincode, deltas) | ✅ done (bincode Binary frames + periodic full + delta, JSON fallback) |
 | M3 | Client prediction + interpolation | ✅ done (interpolation + local predict) |
-| M4 | Interest management / view culling | M2 |
+| M4 | Interest management / view culling | ✅ done (per-client `VIEW_RADIUS` culling in `snapshot_for`) |
 | M5 | Lobby, rooms, persistence | ✅ done (room codes + token saves) |

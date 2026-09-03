@@ -26,6 +26,23 @@ const HEAL_RATE: f32 = 8.0;
 const TURRET_RANGE: f32 = 9.0;
 const TURRET_CD: f32 = 1.1;
 
+/// Wire protocol version. Bumped 1 -> 2 when binary (bincode) frames and
+/// `ServerMsg::Delta` were added. JSON text frames remain accepted so old
+/// clients keep working; new clients send/receive bincode `Binary` frames.
+pub const PROTOCOL_VERSION: u32 = 2;
+/// Ticks between authoritative full snapshots. Ticks in between carry
+/// `SimDelta` (dynamic entities + optionally changed statics), so the ~200
+/// static village/town structures are not re-sent 30x/sec.
+pub const FULL_SNAPSHOT_INTERVAL: u32 = 30;
+/// Interest-management view radius (tiles) for per-client culling. Players are
+/// always all sent (tiny); enemies/arrows/structures/resources outside this
+/// radius from the viewer are omitted.
+pub const VIEW_RADIUS: f32 = 36.0;
+
+fn default_protocol() -> u32 {
+    1
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ClientMsg {
     Join {
@@ -41,8 +58,20 @@ pub enum ClientMsg {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ServerMsg {
-    Welcome { player_id: u32, tick_rate: u32, seed: u32 },
+    Welcome {
+        player_id: u32,
+        tick_rate: u32,
+        seed: u32,
+        /// Wire protocol version (see `PROTOCOL_VERSION`). Defaults to 1 when
+        /// talking to an old server that omits it, so legacy JSON still parses.
+        #[serde(default = "default_protocol")]
+        protocol: u32,
+    },
     Snapshot(SimSnapshot),
+    /// Incremental update against tick `base_tick`. The client merges it onto
+    /// its last full snapshot (see `SimSnapshot::apply_delta`). Static
+    /// `structures`/`resources` are `None` when unchanged since the base.
+    Delta(SimDelta),
     Disconnect { reason: String },
 }
 
@@ -132,6 +161,104 @@ pub struct SimSnapshot {
     /// render the same quest objective / crafting milestone in its HUD.
     pub quest_stage: u8,
     pub iron_crafted: bool,
+}
+
+/// Incremental world update. Carries everything dynamic every tick
+/// (players, enemies, arrows, clock, quest) but only carries the static
+/// `structures`/`resources` when they changed since `base_tick` — villages
+/// don't move, so most ticks omit ~200 static entries entirely.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SimDelta {
+    pub base_tick: u32,
+    pub tick: u32,
+    pub time_of_day: f32,
+    pub weather: u8,
+    pub players: Vec<PlayerSnapshot>,
+    pub enemies: Vec<EnemySnapshot>,
+    pub arrows: Vec<ArrowSnapshot>,
+    pub structures: Option<Vec<StructureSnapshot>>,
+    pub resources: Option<Vec<ResourceSnapshot>>,
+    pub quest_stage: u8,
+    pub iron_crafted: bool,
+}
+
+impl SimSnapshot {
+    /// Cheap change fingerprint for the static layers (structure count +
+    /// coordinates hash). The server compares it against what it last sent a
+    /// client to decide whether a delta can omit statics.
+    pub fn statics_hash(&self) -> u64 {
+        let mut h: u64 = self.structures.len() as u64 * 0x9E3779B1;
+        for s in &self.structures {
+            h = h.wrapping_add((s.tx as u64).wrapping_mul(73856093) ^ (s.ty as u64).wrapping_mul(19349663) ^ (s.kind as u64));
+        }
+        h = h.wrapping_add(self.resources.len() as u64 * 0x85EBCA6B);
+        for r in &self.resources {
+            h = h.wrapping_add((r.tx as u64).wrapping_mul(83492791) ^ (r.ty as u64).wrapping_mul(2971215073));
+        }
+        h
+    }
+
+    /// Build the delta against a previously-sent snapshot. `base` is `None`
+    /// for a brand-new client (statics always included).
+    pub fn delta_from(&self, base: Option<&SimSnapshot>) -> SimDelta {
+        let include_statics = match base {
+            None => true,
+            Some(b) => b.statics_hash() != self.statics_hash(),
+        };
+        SimDelta {
+            base_tick: base.map_or(self.tick, |b| b.tick),
+            tick: self.tick,
+            time_of_day: self.time_of_day,
+            weather: self.weather,
+            players: self.players.clone(),
+            enemies: self.enemies.clone(),
+            arrows: self.arrows.clone(),
+            structures: if include_statics { Some(self.structures.clone()) } else { None },
+            resources: if include_statics { Some(self.resources.clone()) } else { None },
+            quest_stage: self.quest_stage,
+            iron_crafted: self.iron_crafted,
+        }
+    }
+
+    /// Merge a delta onto this snapshot (the client keeps one base snapshot
+    /// and rolls it forward). Stale deltas (older than the base) are ignored.
+    pub fn apply_delta(&mut self, d: SimDelta) {
+        if d.tick < self.tick {
+            return;
+        }
+        self.tick = d.tick;
+        self.time_of_day = d.time_of_day;
+        self.weather = d.weather;
+        self.players = d.players;
+        self.enemies = d.enemies;
+        self.arrows = d.arrows;
+        if let Some(s) = d.structures {
+            self.structures = s;
+        }
+        if let Some(r) = d.resources {
+            self.resources = r;
+        }
+        self.quest_stage = d.quest_stage;
+        self.iron_crafted = d.iron_crafted;
+    }
+}
+
+/// Bincode wire codec (M2). Binary `Binary` WebSocket frames; JSON text frames
+/// remain supported for backward compatibility.
+pub fn encode_client(msg: &ClientMsg) -> Vec<u8> {
+    bincode::serialize(msg).unwrap_or_default()
+}
+
+pub fn decode_client_bin(bytes: &[u8]) -> Option<ClientMsg> {
+    bincode::deserialize(bytes).ok()
+}
+
+pub fn encode_server(msg: &ServerMsg) -> Vec<u8> {
+    bincode::serialize(msg).unwrap_or_default()
+}
+
+pub fn decode_server_bin(bytes: &[u8]) -> Option<ServerMsg> {
+    bincode::deserialize(bytes).ok()
 }
 
 /// Persisted player state for cross-device saves (keyed by an account
@@ -913,6 +1040,35 @@ fn step_player(
             iron_crafted: self.iron_crafted,
         }
     }
+
+    /// World position of a connected player (for interest management).
+    pub fn player_pos(&self, id: u32) -> Option<(f32, f32)> {
+        self.players.get(&id).map(|p| (p.player.x, p.player.y))
+    }
+
+    /// Per-client culled snapshot (M4): the full world state filtered to
+    /// `VIEW_RADIUS` tiles around `viewer`. Players, clock, weather and quest
+    /// are always included (tiny); enemies, arrows, structures and resources
+    /// outside the radius are omitted. Unknown viewers get the full snapshot.
+    pub fn snapshot_for(&self, viewer: u32) -> SimSnapshot {
+        let mut snap = self.snapshot();
+        let (vx, vy) = match self.player_pos(viewer) {
+            Some(p) => p,
+            None => return snap,
+        };
+        let r2 = VIEW_RADIUS * VIEW_RADIUS;
+        snap.enemies.retain(|e| (e.x - vx).powi(2) + (e.y - vy).powi(2) <= r2);
+        snap.arrows.retain(|a| (a.x - vx).powi(2) + (a.y - vy).powi(2) <= r2);
+        snap.structures.retain(|s| {
+            let (sx, sy) = (s.tx as f32 + 0.5, s.ty as f32 + 0.5);
+            (sx - vx).powi(2) + (sy - vy).powi(2) <= r2
+        });
+        snap.resources.retain(|res| {
+            let (sx, sy) = (res.tx as f32 + 0.5, res.ty as f32 + 0.5);
+            (sx - vx).powi(2) + (sy - vy).powi(2) <= r2
+        });
+        snap
+    }
 }
 
 fn find_spawn(world: &WorldGen, cache: &mut ChunkCache) -> (f32, f32) {
@@ -1063,5 +1219,105 @@ mod tests {
         assert!(snap.quest_stage >= 1, "quest should have advanced past stage 0");
         assert_eq!(snap.iron_crafted, sim.iron_crafted, "snapshot must mirror the craft milestone");
         assert!(snap.iron_crafted, "iron plate should be marked crafted");
+    }
+
+    #[test]
+    fn bincode_roundtrips_client_and_server_messages() {
+        let join = ClientMsg::Join { name: "hero".into(), token: Some("tok".into()), room: "R1".into() };
+        let bytes = encode_client(&join);
+        // Binary encoding is far smaller than the equivalent JSON text frame.
+        let json = serde_json::to_string(&join).unwrap();
+        assert!(bytes.len() < json.len(), "bincode should beat JSON on size");
+        let back = decode_client_bin(&bytes).expect("bincode client decode");
+        assert!(matches!(back, ClientMsg::Join { .. }));
+
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        sim.set_input(id, input());
+        sim.step(1.0 / 30.0);
+        let snap = sim.snapshot();
+        let msg = ServerMsg::Snapshot(snap);
+        let bytes = encode_server(&msg);
+        let back = decode_server_bin(&bytes).expect("bincode server decode");
+        assert!(matches!(back, ServerMsg::Snapshot(_)));
+    }
+
+    #[test]
+    fn legacy_json_welcome_still_parses_with_default_protocol() {
+        // Old servers omit `protocol`; serde default must keep old captures working.
+        let msg: ServerMsg = serde_json::from_str(
+            r#"{"Welcome":{"player_id":7,"tick_rate":30,"seed":1337}}"#,
+        )
+        .expect("legacy welcome parses");
+        match msg {
+            ServerMsg::Welcome { player_id, protocol, .. } => {
+                assert_eq!(player_id, 7);
+                assert_eq!(protocol, 1);
+            }
+            _ => panic!("expected Welcome"),
+        }
+    }
+
+    #[test]
+    fn delta_omits_unchanged_statics_and_applies_cleanly() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        sim.set_input(id, input());
+        sim.step(1.0 / 30.0);
+        let a = sim.snapshot();
+        sim.step(1.0 / 30.0);
+        let b = sim.snapshot();
+
+        // Nothing built between ticks: statics must be omitted from the delta.
+        let d = b.delta_from(Some(&a));
+        assert_eq!(d.base_tick, a.tick);
+        assert_eq!(d.tick, b.tick);
+        assert!(d.structures.is_none(), "unchanged structures must be omitted");
+        assert!(d.resources.is_none(), "unchanged resources must be omitted");
+
+        let mut merged = a.clone();
+        merged.apply_delta(d);
+        assert_eq!(merged.tick, b.tick);
+        assert_eq!(merged.players.len(), b.players.len());
+        assert_eq!(merged.structures.len(), b.structures.len());
+
+        // Building a wall changes the statics hash: next delta includes them.
+        sim.structures.push(Structure { tx: 0, ty: 0, kind: StructureKind::Wall });
+        let c = sim.snapshot();
+        let d2 = c.delta_from(Some(&b));
+        assert!(d2.structures.is_some(), "changed structures must be included");
+    }
+
+    #[test]
+    fn snapshot_for_culls_distant_entities_but_keeps_players() {
+        let mut sim = Simulation::new(1337);
+        let a = sim.add_player("alice".into(), None);
+        let b = sim.add_player("bob".into(), None);
+        // Teleport Bob far away; spawn an enemy next to him (far from Alice).
+        {
+            let pb = sim.players.get_mut(&b).unwrap();
+            pb.player.x += VIEW_RADIUS * 3.0;
+            pb.player.y += VIEW_RADIUS * 3.0;
+        }
+        let (bx, by) = sim.player_pos(b).unwrap();
+        sim.enemies.get(bx as i32, by as i32, EnemyKind::Slime, 0.0);
+        sim.step(1.0 / 30.0);
+
+        let full = sim.snapshot();
+        let culled = sim.snapshot_for(a);
+        // Both players always visible (co-op tags + interpolation need them).
+        assert_eq!(culled.players.len(), 2);
+        // The far-away enemy is outside Alice's interest radius.
+        assert!(
+            culled.enemies.len() <= full.enemies.len(),
+            "culling must not add entities"
+        );
+        for e in &culled.enemies {
+            let (ax, ay) = sim.player_pos(a).unwrap();
+            assert!(
+                (e.x - ax).hypot(e.y - ay) <= VIEW_RADIUS + 2.0,
+                "culled enemies must be near the viewer"
+            );
+        }
     }
 }

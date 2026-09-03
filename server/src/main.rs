@@ -11,7 +11,9 @@ use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 use tokio_tungstenite::tungstenite::Message;
 
-use game::sim::{SaveData, Simulation, SimSnapshot};
+use game::sim::{
+    FULL_SNAPSHOT_INTERVAL, PROTOCOL_VERSION, SaveData, Simulation, SimSnapshot, decode_client_bin,
+};
 use protocol::{ClientMsg, ServerMsg};
 use std::path::PathBuf;
 
@@ -20,11 +22,22 @@ const DT: f32 = 1.0 / TICK_RATE as f32;
 
 type Clients = Arc<Mutex<HashMap<u32, mpsc::UnboundedSender<ServerMsg>>>>;
 
+/// Per-connection send state: what we last sent (for delta compression) and
+/// when we last sent a full snapshot (for periodic full refreshes).
+#[derive(Default)]
+struct SenderState {
+    last: Option<SimSnapshot>,
+    last_full_tick: u32,
+}
+
 /// One co-op session. Each room has its own authoritative simulation and its
 /// own set of connected clients; snapshots are only broadcast within the room.
 struct Room {
     sim: Mutex<Simulation>,
     clients: Clients,
+    /// Delta-compression state per player id (M2) — the last (culled)
+    /// snapshot we sent them, so the next tick can be a small delta.
+    sender: Mutex<HashMap<u32, SenderState>>,
     seed: i32,
 }
 
@@ -49,7 +62,11 @@ async fn main() -> Result<()> {
         default_seed,
     });
 
-    // One broadcast task that ticks every room independently.
+    // One broadcast task that ticks every room independently. Each tick steps
+    // the authoritative sim once, then sends every client its own message:
+    // a per-client interest-culled (M4) full snapshot, or a small delta (M2)
+    // against what that client last received. Full snapshots refresh
+    // periodically so a dropped delta can never desync a client for long.
     let shared_broadcast = shared.clone();
     tokio::spawn(async move {
         let mut interval =
@@ -58,14 +75,25 @@ async fn main() -> Result<()> {
             interval.tick().await;
             let rooms = shared_broadcast.rooms.lock().await;
             for room in rooms.values() {
-                let snap: SimSnapshot = {
-                    let mut sim = room.sim.lock().await;
-                    sim.step(DT);
-                    sim.snapshot()
-                };
+                let mut sim = room.sim.lock().await;
+                sim.step(DT);
                 let clients = room.clients.lock().await;
-                for (_, tx) in clients.iter() {
-                    let _ = tx.unbounded_send(ServerMsg::Snapshot(snap.clone()));
+                let mut sender = room.sender.lock().await;
+                for (id, tx) in clients.iter() {
+                    // Interest management: only entities near this player.
+                    let snap = sim.snapshot_for(*id);
+                    let st = sender.entry(*id).or_default();
+                    let tick = snap.tick;
+                    let need_full = st.last.is_none()
+                        || tick.wrapping_sub(st.last_full_tick) >= FULL_SNAPSHOT_INTERVAL;
+                    let msg = if need_full {
+                        st.last_full_tick = tick;
+                        ServerMsg::Snapshot(snap.clone())
+                    } else {
+                        ServerMsg::Delta(snap.delta_from(st.last.as_ref()))
+                    };
+                    st.last = Some(snap);
+                    let _ = tx.unbounded_send(msg);
                 }
             }
         }
@@ -96,11 +124,10 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
 
     let write_task = tokio::spawn(async move {
         while let Some(msg) = rx.next().await {
-            let text = match serde_json::to_string(&msg) {
-                Ok(t) => t,
-                Err(_) => continue,
-            };
-            if sink.send(Message::Text(text)).await.is_err() {
+            // Binary bincode frames (M2): ~3-5x smaller than JSON text. Old
+            // clients that only read Text frames must upgrade.
+            let bytes = game::sim::encode_server(&msg);
+            if sink.send(Message::Binary(bytes)).await.is_err() {
                 break;
             }
         }
@@ -110,12 +137,18 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
     let mut room_code: Option<String> = None;
     let mut player_id: Option<u32> = None;
     while let Some(Ok(msg)) = source.next().await {
-        match msg {
-            Message::Text(t) => {
-                let client: ClientMsg = match serde_json::from_str(&t) {
-                    Ok(c) => c,
-                    Err(_) => continue,
-                };
+        // Accept both wire formats: Binary (bincode, new clients) and Text
+        // (JSON, legacy clients) so a mixed-version room still plays.
+        let client: Option<ClientMsg> = match msg {
+            Message::Binary(b) => decode_client_bin(&b),
+            Message::Text(t) => serde_json::from_str(&t).ok(),
+            Message::Close(_) => break,
+            _ => continue,
+        };
+        let client = match client {
+            Some(c) => c,
+            None => continue,
+        };
                 match client {
                     ClientMsg::Join { name, token, room } => {
                         let code = if room.trim().is_empty() {
@@ -128,6 +161,7 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
                         let entry = rooms.entry(code.clone()).or_insert_with(|| Room {
                             sim: Mutex::new(Simulation::new(shared.default_seed as u32)),
                             clients: Arc::new(Mutex::new(HashMap::new())),
+                            sender: Mutex::new(HashMap::new()),
                             seed: shared.default_seed,
                         });
                         let id = entry
@@ -162,6 +196,7 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
                             player_id: id,
                             tick_rate: TICK_RATE,
                             seed: shared.default_seed as u32,
+                            protocol: PROTOCOL_VERSION,
                         };
                         let _ = tx.unbounded_send(welcome);
                         println!("[server] player {id} joined room '{code}'");
@@ -175,10 +210,6 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
                     }
                     ClientMsg::Leave => break,
                 }
-            }
-            Message::Close(_) => break,
-            _ => {}
-        }
     }
 
     // Persist + clean up on disconnect.
@@ -196,6 +227,10 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
                 }
             }
             sim.remove_player(id);
+            // Prune the connection (previously leaked: the id stayed in the
+            // map forever, so rooms never emptied and never closed).
+            room.clients.lock().await.remove(&id);
+            room.sender.lock().await.remove(&id);
         }
         // Drop the room entirely once empty so it can be recreated fresh later.
         if let Some(room) = sim_guard.get(&code.clone()) {

@@ -1,10 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use game::sim::{ClientMsg, PlayerInput, ServerMsg, SimSnapshot};
+use game::sim::{ClientMsg, PlayerInput, ServerMsg, SimSnapshot, decode_server_bin, encode_client};
 use js_sys::Function;
 use wasm_bindgen::prelude::*;
-use web_sys::{MessageEvent, WebSocket};
+use web_sys::{BinaryType, MessageEvent, WebSocket};
 
 /// Render delay (ms) applied when interpolating between snapshots. ~3 ticks at
 /// 30 Hz, so we always have a previous frame to blend from and remote motion
@@ -26,13 +26,35 @@ fn lerp_facing(a: (f32, f32), b: (f32, f32), t: f64) -> (f32, f32) {
     (lerp(a.0, b.0, t), lerp(a.1, b.1, t))
 }
 
+/// Decode one incoming WebSocket frame in either wire format: Binary (bincode,
+/// new servers) or text (JSON, legacy servers / mixed-version rooms).
+fn decode_frame(data: &JsValue) -> Option<ServerMsg> {
+    if let Some(s) = data.as_string() {
+        return serde_json::from_str::<ServerMsg>(&s).ok();
+    }
+    if let Ok(buf) = data.clone().dyn_into::<js_sys::ArrayBuffer>() {
+        let bytes = js_sys::Uint8Array::new(&buf).to_vec();
+        return decode_server_bin(&bytes);
+    }
+    // Some browsers deliver binary frames as a Uint8Array view directly.
+    if js_sys::ArrayBuffer::is_view(data) {
+        let view = js_sys::Uint8Array::new(data);
+        return decode_server_bin(&view.to_vec());
+    }
+    None
+}
+
 /// Thin WebSocket client for the Starfall multiplayer server. It sends the
-/// local player's `PlayerInput` each frame and keeps the latest world
-/// `SimSnapshot` received from the server (server is authoritative). Remote
-/// entity positions are interpolated between the previous and current
-/// snapshots in `sample()` so movement looks continuous.
+/// local player's `PlayerInput` each frame (bincode `Binary` frames) and keeps
+/// the latest world `SimSnapshot` received from the server (server is
+/// authoritative). Full snapshots replace the base; `Delta` frames are merged
+/// onto the base (see `SimSnapshot::apply_delta`). Remote entity positions are
+/// interpolated between the previous and current snapshots in `sample()` so
+/// movement looks continuous.
 pub struct NetClient {
     ws: WebSocket,
+    /// Merge base: last full snapshot with all received deltas applied.
+    base: Rc<RefCell<Option<SimSnapshot>>>,
     /// Most recent snapshot + the wall-clock time it arrived.
     curr: Rc<RefCell<Option<(SimSnapshot, f64)>>>,
     /// The snapshot before `curr`, for interpolation.
@@ -48,44 +70,92 @@ impl NetClient {
         room: &str,
     ) -> Result<NetClient, JsValue> {
         let ws = WebSocket::new(url)?;
+        ws.set_binary_type(BinaryType::Arraybuffer);
+        let base = Rc::new(RefCell::new(None));
         let curr = Rc::new(RefCell::new(None));
         let prev = Rc::new(RefCell::new(None));
         let id = Rc::new(RefCell::new(None));
 
+        let base_cb = base.clone();
         let curr_cb = curr.clone();
         let prev_cb = prev.clone();
         let id_cb = id.clone();
         let on_message = Closure::wrap(Box::new(move |e: MessageEvent| {
-            if let Some(s) = e.data().as_string() {
-                if let Ok(msg) = serde_json::from_str::<ServerMsg>(&s) {
-                    match msg {
-                        ServerMsg::Welcome { player_id, .. } => {
-                            *id_cb.borrow_mut() = Some(player_id);
-                        }
-                        ServerMsg::Snapshot(snap) => {
-                            *prev_cb.borrow_mut() = curr_cb.borrow_mut().take();
-                            *curr_cb.borrow_mut() = Some((snap, now_ms()));
-                        }
-                        _ => {}
+            let Some(msg) = decode_frame(&e.data()) else {
+                return;
+            };
+            match msg {
+                ServerMsg::Welcome { player_id, protocol, .. } => {
+                    *id_cb.borrow_mut() = Some(player_id);
+                    if protocol != game::sim::PROTOCOL_VERSION {
+                        web_sys::console::log_1(&JsValue::from_str(&format!(
+                            "[net] server protocol v{protocol} (client v{}) — mixed-version room, JSON fallback active",
+                            game::sim::PROTOCOL_VERSION
+                        )));
                     }
                 }
+                ServerMsg::Snapshot(snap) => {
+                    *base_cb.borrow_mut() = Some(snap.clone());
+                    *prev_cb.borrow_mut() = curr_cb.borrow_mut().take();
+                    *curr_cb.borrow_mut() = Some((snap, now_ms()));
+                }
+                ServerMsg::Delta(d) => {
+                    let mut base_ref = base_cb.borrow_mut();
+                    if let Some(base_snap) = base_ref.as_mut() {
+                        // Stale or out-of-order deltas are dropped inside
+                        // `apply_delta` / by the base-tick guard here.
+                        if d.base_tick != base_snap.tick && d.tick <= base_snap.tick {
+                            return;
+                        }
+                        base_snap.apply_delta(d);
+                        let merged = base_snap.clone();
+                        *prev_cb.borrow_mut() = curr_cb.borrow_mut().take();
+                        *curr_cb.borrow_mut() = Some((merged, now_ms()));
+                    }
+                    // No base yet (delta arrived before the first full
+                    // snapshot): wait for the periodic full refresh.
+                }
+                _ => {}
             }
         }) as Box<dyn FnMut(MessageEvent)>);
         ws.set_onmessage(Some(on_message.as_ref().unchecked_ref::<Function>()));
         on_message.forget();
 
-        if let Ok(t) = serde_json::to_string(&ClientMsg::Join {
+        // Join is tiny and must be readable even by an old JSON-only server,
+        // so it stays a text frame. It MUST go out in `onopen`: sending
+        // synchronously here races the CONNECTING state and the Join is
+        // silently dropped (the client then sits in local mode forever).
+        let join_text = serde_json::to_string(&ClientMsg::Join {
             name: name.to_string(),
             token,
             room: room.to_string(),
-        }) {
-            let _ = ws.send_with_str(&t);
+        })
+        .unwrap_or_default();
+        {
+            let ws_open = ws.clone();
+            let on_open = Closure::wrap(Box::new(move |_: JsValue| {
+                if !join_text.is_empty() {
+                    if ws_open.send_with_str(&join_text).is_ok() {
+                        web_sys::console::log_1(&JsValue::from_str("[net] Join sent"));
+                    }
+                }
+            }) as Box<dyn FnMut(JsValue)>);
+            ws.set_onopen(Some(on_open.as_ref().unchecked_ref::<Function>()));
+            on_open.forget();
         }
 
-        Ok(NetClient { ws, curr, prev, id })
+        Ok(NetClient { ws, base, curr, prev, id })
     }
 
     pub fn send_input(&self, input: &PlayerInput) {
+        // Bincode binary at 30 Hz (~1/4 the bytes of JSON); fall back to a
+        // JSON text frame if encoding ever fails so input never stalls.
+        let bytes = encode_client(&ClientMsg::Input(*input));
+        if !bytes.is_empty() {
+            if self.ws.send_with_u8_array(&bytes).is_ok() {
+                return;
+            }
+        }
         if let Ok(t) = serde_json::to_string(&ClientMsg::Input(*input)) {
             let _ = self.ws.send_with_str(&t);
         }
