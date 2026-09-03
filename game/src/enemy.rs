@@ -351,7 +351,10 @@ impl EnemyKind {
         }
     }
 
-    /// Contact damage dealt per hit.
+    /// Contact damage dealt per hit. Tuned against the weapon TTK table
+    /// (see `weapons.rs`): players kill faster than at launch, so
+    /// fragment guardians hit 9-12 — face-tanking a golem (11 sword swings)    /// costs ~130 HP without food/block, while slime packs stay chip damage.
+    /// Night (x1.0-1.6), NG+ (x1.25/cycle) and enrage multiply on top.
     pub fn damage(self) -> f32 {
         match self {
             EnemyKind::Slime => 3.0,
@@ -364,11 +367,11 @@ impl EnemyKind {
             EnemyKind::Ogre => 8.0,
             EnemyKind::Wraith => 3.5,
             EnemyKind::Stoneslinger => 4.0,
-            EnemyKind::Colossus => 10.0,
-            EnemyKind::ScorpionQueen => 9.0,
-            EnemyKind::FrostGolem => 10.0,
-            EnemyKind::ToadKing => 8.0,
-            EnemyKind::OceanLeviathan => 9.0,
+            EnemyKind::Colossus => 12.0,
+            EnemyKind::ScorpionQueen => 10.0,
+            EnemyKind::FrostGolem => 12.0,
+            EnemyKind::ToadKing => 9.0,
+            EnemyKind::OceanLeviathan => 10.0,
             EnemyKind::Brute => 9.0,
             EnemyKind::Stormcaller => 6.0,
             EnemyKind::Wolf => 3.5,
@@ -1367,13 +1370,32 @@ mod tests {
     }
 
     #[test]
-    fn telegraph_progress_ramps_into_the_strike() {
-        assert_eq!(super::telegraph_progress(super::WINDUP), 0.0);
+    fn telegraph_progress_ramps_into_the_strike() {        assert_eq!(super::telegraph_progress(super::WINDUP), 0.0);
         assert_eq!(super::telegraph_progress(0.0), 1.0);
         let mid = super::telegraph_progress(super::WINDUP * 0.5);
         assert!((mid - 0.5).abs() < 1e-5, "progress must be linear, got {mid}");
         // Clamped against overshoot from either side.
         assert_eq!(super::telegraph_progress(super::WINDUP * 3.0), 0.0);
         assert_eq!(super::telegraph_progress(-1.0), 1.0);
+    }
+
+    #[test]
+    fn exchange_math_vs_new_weapon_ttks() {
+        use crate::weapons::WeaponKind;
+        // Cost to melee something down with the sword, assuming every one of
+        // YOUR swings eats one hit back (pessimistic stand-and-trade).
+        let trade = |foe: EnemyKind| {
+            WeaponKind::Sword.swings_to_kill(foe.max_hp()) as f32 * foe.damage()
+        };
+        // A slime costs chip damage (killable from spawn with fists+food).
+        assert!(trade(EnemyKind::Slime) <= 12.0, "slime must stay cheap");
+        // Face-tanking a fragment guardian without food/block should nearly
+        // (golem) or actually (leviathan+) kill a 100 HP player: dodging,
+        // blocking and weak-points are the intended answers, not trading.
+        assert!(trade(EnemyKind::FrostGolem) >= 100.0, "golem must punish trading");
+        assert!(trade(EnemyKind::ScorpionQueen) >= 60.0, "queen must punish trading");
+        // Mid-game brutes stay fair to trade with food backup.
+        let brute = trade(EnemyKind::Brute);
+        assert!((30.0..=70.0).contains(&brute), "brute trade cost {brute} out of band");
     }
 }
