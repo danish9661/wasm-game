@@ -1386,6 +1386,9 @@ impl App {
 
     /// Machine-readable game state for the JS HUD / test harness.
     pub fn stats_line(&mut self) -> String {
+        // Hoisted: `near_water` needs `&mut self` (chunk cache) and would
+        // clash with the field borrows inside the format! below.
+        let near_water = self.near_water() as u8;
         let near = match self.nearest_resource() {
             Some((tx, ty, kind)) => format!("{}@({tx},{ty})", kind_name(kind)),
             None => String::from("none"),
@@ -1447,7 +1450,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={}",
 
             self.quad_count(),
             self.frames(),
@@ -1513,6 +1516,7 @@ impl App {
                self.ending_pending as u8,
                self.player.unlocked,
                self.player.blocking as u8,
+               near_water,
             )
     }
 
@@ -1853,9 +1857,11 @@ impl App {
                         if self.player.drink_water() {
                             play_sfx("drink");
                             toast("Drank water");
+                        } else {
+                            toast("Already hydrated");
                         }
                     } else {
-                        toast("No water nearby");
+                        toast("No water nearby — build a Well (H) or find a shore");
                     }
                 }
                 "KeyR" => {
@@ -1941,7 +1947,8 @@ impl App {
     pub fn place_selected(&mut self) {
         if let Some(kind) = self.build_mode {
             self.build(kind);
-            play_sfx("build");
+            // Tilling soil reads softer than hammering walls.
+            play_sfx(if kind == StructureKind::FarmPlot { "plant" } else { "build" });
         }
     }
 
@@ -2020,7 +2027,7 @@ impl App {
             return false;
         }
         self.player.weapon = kind;
-        play_sfx("codex");
+        play_sfx("equip");
         toast(&format!(
             "Equipped {} (dmg {} · reach {})",
             kind.name(),
@@ -2393,8 +2400,14 @@ impl App {
             let tx = int.px.round() as i32;
             let ty = int.py.round() as i32;
             if int.hazards.iter().any(|&(hx, hy)| hx == tx && hy == ty) {
+                // Throttled: hurt_timer is refreshed every frame while standing
+                // on spikes, so only sting on the vulnerable edge.
+                let sting = self.player.hurt_timer <= 0.0;
                 self.player.hp = (self.player.hp - 12.0 * dt).max(0.0);
                 self.player.hurt_timer = 0.3;
+                if sting {
+                    play_sfx("spike");
+                }
                 if self.player.hp <= 0.0 {
                     self.player.alive = false;
                 }
@@ -4587,8 +4600,11 @@ impl App {
 
         // Adopt the room's authoritative campaign progress so every co-op player
         // sees the same quest objective and crafting milestone in the HUD.
+        // The room's NG+ cycle also drives the local HUD badge (and any local
+        // NG scaling) so co-op difficulty reads the same for everyone.
         self.quest.stage = snap.quest_stage;
         self.crafted_iron = snap.iron_crafted;
+        self.ng_plus = snap.ng_cycle;
 
         let mut enemies = Vec::with_capacity(snap.enemies.len());
         for es in &snap.enemies {

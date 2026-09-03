@@ -68,6 +68,7 @@
   </div>
   <div id="vignette" class="hidden"></div>
   <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — press <b>M</b> to forge weapons · <b>O</b> near merchants to sell for gold</div>
+  <div id="water-prompt" class="hidden">💧 Water nearby — press <b>T</b> to drink</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
   <button id="codexbtn" title="Bestiary / Codex (L)">📖</button>
@@ -417,6 +418,9 @@
         case 'door': tone(160, 0.18, 'square', 0.18); noise(0.12, 0.10, 700); break;
         case 'block': tone(1200, 0.06, 'square', 0.16); noise(0.06, 0.12, 3000); break;
         case 'codex': tone(880, 0.08, 'sine', 0.12); tone(1175, 0.10, 'sine', 0.10); break;
+        case 'equip': tone(392, 0.07, 'triangle', 0.14); setTimeout(() => tone(587, 0.10, 'triangle', 0.14), 70); break;
+        case 'thunder': noise(0.9, 0.22, 140); tone(55, 0.9, 'sawtooth', 0.20); tone(41, 1.1, 'sine', 0.16); break;
+        case 'heartbeat': tone(58, 0.10, 'sine', 0.22); setTimeout(() => tone(52, 0.12, 'sine', 0.18), 160); break;
         case 'step': noise(0.06, 0.05, 360); break;
         case 'plant': tone(330, 0.08, 'triangle', 0.10); noise(0.06, 0.08, 1200); break;
         case 'spike': noise(0.10, 0.14, 300); tone(120, 0.10, 'square', 0.12); break;
@@ -771,6 +775,10 @@
             const hpFrac = stats.maxhp > 0 ? stats.hp / stats.maxhp : 1;
             if (hpFrac < 0.2 && stats.alive) hpTrack.classList.add('critical-low');
             else hpTrack.classList.remove('critical-low');
+            // Critical-low thirst pulse (dehydration kills faster than hunger).
+            const thirstTrack = document.querySelector('#bar-thirst').parentElement;
+            if (stats.thirst < 20 && stats.alive) thirstTrack.classList.add('critical-low');
+            else thirstTrack.classList.remove('critical-low');
             el('inv-wood').textContent = `W ${stats.w}`;
             el('inv-stone').textContent = `S ${stats.s}`;
             el('inv-food').textContent = `F ${stats.f}`;
@@ -884,6 +892,7 @@
             const atAltar = stats.altar === 1 && stats.frag >= 5 && stats.ending < 0 && stats.nearaltar === 1;
             el('altar-prompt').style.display = atAltar ? 'block' : 'none';
             el('anvil-prompt').style.display = (stats.nearAnvil === 1 && stats.alive === 1) ? 'block' : 'none';
+            el('water-prompt').style.display = (stats.nearWater === 1 && stats.alive === 1) ? 'block' : 'none';
 
             const ovEnd = el('overlay');
             if (stats.ending >= 0) {
@@ -970,6 +979,7 @@
               enchant: Number(get(/enchant=(\d+)/) || 0),
               wown: Number(get(/wown=(\d+)/) || 1),
               block: Number(get(/block=(\d)/) || 0),
+              nearWater: Number(get(/nearWater=(\d)/) || 0),
               level: Number(get(/level=(\d+)/) || 1),
               xp: Number(get(/xp=(\d+)/) || 0),
               online: Number(get(/online=(\d+)/) || 0),
@@ -1133,11 +1143,20 @@
               if (stats.weather !== prev.weather) {
                 if (stats.weather === 1) playSfx('rainstart');
                 else if (stats.weather === 2) playSfx('snowstart');
+                else if (stats.weather === 3) playSfx('thunder');
+              }
+              // low-HP heartbeat: a slow thump while critical (throttled).
+              if (stats.alive === 1 && stats.maxhp > 0 && stats.hp / stats.maxhp < 0.25) {
+                const now = performance.now();
+                if (!window.__lastBeat || now - window.__lastBeat > 1100) {
+                  window.__lastBeat = now;
+                  playSfx('heartbeat');
+                }
               }
             }
-            // drive the looping weather bed
+            // drive the looping weather bed (storm rumbles louder than rain)
             if (rainGain && actx) {
-              const target = stats.weather === 1 ? 0.10 : (stats.weather === 2 ? 0.045 : 0.0);
+              const target = stats.weather === 3 ? 0.13 : stats.weather === 1 ? 0.10 : (stats.weather === 2 ? 0.045 : 0.0);
               rainGain.gain.linearRampToValueAtTime(target, actx.currentTime + 0.6);
             }
             prev = { hp: stats.hp, atk: stats.atk, shots: stats.shots, boss: stats.boss, quest: stats.quest, alive: stats.alive, ending: stats.ending, structures: stats.structures, inv: get_inv_total(stats), weather: stats.weather };
@@ -1520,6 +1539,9 @@
               paused = false;
               el('pause-overlay').className = 'hidden';
             }
+            // Returning to the tab must revive suspended audio (autoplay
+            // policy / OS interruption), or music + SFX stay dead silently.
+            if (!document.hidden) { try { ensureAudio(); } catch (_) {} }
           });
           el('btn-resume-pause').onclick = () => {
             blurPaused = false;
