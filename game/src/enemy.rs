@@ -5,6 +5,33 @@ use crate::world::TileKind;
 use serde::{Deserialize, Serialize};
 use std::collections::{BinaryHeap, HashMap};
 
+/// How a boss animates its wind-up dodge window (see
+/// `EnemyKind::telegraph`). The renderer scales/positions the tell by charge
+/// progress so it peaks the instant the strike lands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Telegraph {
+    /// No bespoke tell (generic red flush only).
+    None,
+    /// Oversized red ring (Warden, Brute).
+    Lunge,
+    /// Venom stinger diamond rising overhead (Scorpion Queen).
+    StingRaise,
+    /// Ice shards swelling outward (Frost Golem).
+    IceSwell,
+    /// Toxic throat sac inflating in front (Toad King).
+    ThroatPuff,
+    /// Expanding tidal ring (Ocean Leviathan).
+    TidalRing,
+    /// Double shockwave ring (Colossus slam).
+    SlamRing,
+}
+
+/// 0..1 charge progress from remaining wind-up seconds: 0 at wind-up start,
+/// 1 the instant the strike lands. Clamped so HUD/anim code can't overshoot.
+pub fn telegraph_progress(windup: f32) -> f32 {
+    (1.0 - (windup / WINDUP).clamp(0.0, 1.0)).clamp(0.0, 1.0)
+}
+
 /// Aggro range: enemies start chasing within this many tiles (chebyshev).
 pub const AGGRO_RANGE: f32 = 6.0;
 /// Contact damage range for attacks (chebyshev, tile units).
@@ -203,8 +230,7 @@ impl EnemyKind {
         }
     }
 
-    /// Damage multiplier for a given weapon — certain weapons are strong against
-    /// certain foes (the Bestiary calls these out). 1.0 means no bonus.
+    /// Damage multiplier for a given weapon — certain weapons are strong against    /// certain foes (the Bestiary calls these out). 1.0 means no bonus.
     pub fn weakness_to(self, w: WeaponKind) -> f32 {
         match (self, w) {
             (EnemyKind::Wraith | EnemyKind::Stormcaller, WeaponKind::Bow) => 1.5,
@@ -224,6 +250,23 @@ impl EnemyKind {
             (EnemyKind::ToadKing, WeaponKind::Axe) => 1.5,
             (EnemyKind::OceanLeviathan, WeaponKind::Spear) => 1.5,
             _ => 1.0,
+        }
+    }
+
+    /// Per-boss strike telegraph style: each Crown Fragment guardian (plus the
+    /// Colossus and the charging Brute) animates its wind-up dodge window
+    /// differently, so veterans can read *who* is about to hit them without
+    /// looking at the HP bar. Ordinary mobs keep the generic red flush.
+    pub fn telegraph(self) -> Telegraph {
+        match self {
+            EnemyKind::Boss => Telegraph::Lunge,
+            EnemyKind::ScorpionQueen => Telegraph::StingRaise,
+            EnemyKind::FrostGolem => Telegraph::IceSwell,
+            EnemyKind::ToadKing => Telegraph::ThroatPuff,
+            EnemyKind::OceanLeviathan => Telegraph::TidalRing,
+            EnemyKind::Colossus => Telegraph::SlamRing,
+            EnemyKind::Brute => Telegraph::Lunge,
+            _ => Telegraph::None,
         }
     }
 
@@ -1293,5 +1336,44 @@ mod tests {
                 "{k:?} should drop gems"
             );
         }
+    }
+
+    #[test]
+    fn every_fragment_guardian_has_a_distinct_telegraph() {
+        use super::Telegraph;
+        // All five Crown Fragment guardians + Colossus + Brute read uniquely.
+        let styles = [
+            EnemyKind::Boss.telegraph(),
+            EnemyKind::ScorpionQueen.telegraph(),
+            EnemyKind::FrostGolem.telegraph(),
+            EnemyKind::ToadKing.telegraph(),
+            EnemyKind::OceanLeviathan.telegraph(),
+            EnemyKind::Colossus.telegraph(),
+            EnemyKind::Brute.telegraph(),
+        ];
+        for s in &styles {
+            assert_ne!(*s, Telegraph::None, "bosses must have a bespoke tell");
+        }
+        let mut uniq = styles.to_vec();
+        uniq.sort_by_key(|s| *s as u8);
+        uniq.dedup();
+        // Queens/golems/kings/leviathans/colossi differ; Warden shares Lunge
+        // with the Brute (both are chargers), so 6 distinct of 7.
+        assert_eq!(uniq.len(), 6, "telegraphs must differ per boss: {styles:?}");
+        // Ordinary mobs keep the generic flush.
+        for k in [EnemyKind::Slime, EnemyKind::Wolf, EnemyKind::Archer, EnemyKind::Raider] {
+            assert_eq!(k.telegraph(), Telegraph::None, "{k:?} stays generic");
+        }
+    }
+
+    #[test]
+    fn telegraph_progress_ramps_into_the_strike() {
+        assert_eq!(super::telegraph_progress(super::WINDUP), 0.0);
+        assert_eq!(super::telegraph_progress(0.0), 1.0);
+        let mid = super::telegraph_progress(super::WINDUP * 0.5);
+        assert!((mid - 0.5).abs() < 1e-5, "progress must be linear, got {mid}");
+        // Clamped against overshoot from either side.
+        assert_eq!(super::telegraph_progress(super::WINDUP * 3.0), 0.0);
+        assert_eq!(super::telegraph_progress(-1.0), 1.0);
     }
 }

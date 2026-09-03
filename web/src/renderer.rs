@@ -5,7 +5,7 @@ use game::combat::{
     arrow_hits, swing_hits,
 };
 use game::daynight::{DAY_LENGTH, START_TIME, clock, daylight as daylight_at, temperature};
-use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, WINDUP, spawner_on};
+use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, Telegraph, WINDUP, spawner_on, telegraph_progress};
 use game::items::{Inventory, ItemKind};
 use game::npc::{Npc, NpcKind};
 use game::player::{self, Player};
@@ -996,6 +996,9 @@ pub struct App {
     farm_cd: std::collections::HashMap<(i32, i32), f32>,
     /// Turret emplacements: seconds until each may fire again (keyed by tile).
     turret_cd: std::collections::HashMap<(i32, i32), f32>,
+    /// Harvest shake: seconds remaining of the wobble animation per resource
+    /// tile (set on every chop, decays fast). Purely cosmetic, client-side.
+    node_shake: std::collections::HashMap<(i32, i32), f32>,
     /// True once the player has crafted Iron Plate (used by the quest log).
     crafted_iron: bool,
     /// Red damage-flash intensity (0..1), decays each frame; set to 1 on hit.
@@ -1727,6 +1730,7 @@ impl App {
             weather_timer: 25.0,
             farm_cd: std::collections::HashMap::new(),
             turret_cd: std::collections::HashMap::new(),
+            node_shake: std::collections::HashMap::new(),
             crafted_iron: false,
             hurt_flash: 0.0,
             analog: None,
@@ -3086,6 +3090,9 @@ impl App {
             }
         }
         if let Some((tx, ty, kind)) = self.nearest_resource() {
+            // Wobble the struck node so every chop lands visually (decays in
+            // `update`; render-side only, so co-op stays server-authoritative).
+            self.node_shake.insert((tx, ty), 1.0);
             if let Some(item) = self.nodes.chop(tx, ty, kind) {
                 play_sfx("harvest");
                 // Bigger feedback: screen shake, chunky particles, and a flash.
@@ -3652,6 +3659,7 @@ impl App {
     fn reset_run_state(&mut self) {
         self.farm_cd.clear();
         self.turret_cd.clear();
+        self.node_shake.clear();
         self.crafted_iron = false;
         self.loot.clear();
         self.weapon_loot.clear();
@@ -4310,6 +4318,11 @@ impl App {
                 *cd = (*cd - dt).max(0.0);
             }
         }
+        // Harvest wobble decays fast (~0.45s): a sharp shake, not a sway.
+        self.node_shake.retain(|_, t| {
+            *t -= dt / 0.45;
+            *t > 0.0
+        });
 
         // Turrets auto-fire at the nearest enemy in range; Healing Totems slowly
         // regenerate the player while they linger nearby.
@@ -4328,7 +4341,7 @@ impl App {
                 if *cd <= 0.0 {
                     let r2 = TURRET_RANGE * TURRET_RANGE;
                     let mut best: Option<(f32, f32, f32)> = None; // (dist2, ex, ey)
-                    for e in self.enemies.enemies() {
+        for e in self.enemies.enemies() {
                         let dx = e.x - cx;
                         let dy = e.y - cy;
                         let d2 = dx * dx + dy * dy;
@@ -4793,7 +4806,12 @@ impl App {
                 let chunk = self.chunks.get(&self.world, cx * CHUNK_SIZE, cy * CHUNK_SIZE);
                 for &(tx, ty, kind) in &chunk.resources {
                     if !self.nodes.is_depleted(tx, ty) {
-                        sprites.push(kind.sprite(tx, ty));
+                        let mut sp = kind.sprite(tx, ty);
+                        // Harvest wobble (see `game::resources::shake_offset`).
+                        if let Some(sh) = self.node_shake.get(&(tx, ty)) {
+                            sp.x += game::resources::shake_offset(*sh, tx, ty);
+                        }
+                        sprites.push(sp);
                     }
                 }
                 for &(tx, ty, kind) in &chunk.decor {
@@ -4840,6 +4858,9 @@ impl App {
                 }
             }
         }
+        // Hoisted: this loop borrows `self.enemies`, so the clock for the
+        // boss-telegraph throbs below must be copied before the loop is built.
+        let tick = self.anim_clock;
         for e in self.enemies.enemies() {
             let hp_frac = (e.hp / e.kind.max_hp()).clamp(0.0, 1.0);
             let mut sp = e.kind.sprite(e.x, e.y, hp_frac, e.facing);
@@ -4900,6 +4921,69 @@ impl App {
             } else {
                 0.0
             };
+            // Per-boss strike telegraph: a kind-specific tell that swells as
+            // the wind-up completes, so each guardian reads differently in its
+            // dodge window. Enraged bosses throb twice as fast.
+            if e.windup > 0.0 && e.kind.telegraph() != Telegraph::None {
+                let prog = telegraph_progress(e.windup);
+                let rate = if e.enraged { 2.0 } else { 1.0 };
+                let throb = (tick * 6.0 * rate).sin() * 0.5 + 0.5;
+                let mut tell = |x: f32, y: f32, hw: f32, hh: f32, lift: f32, col: [f32; 3], alpha: f32| {
+                    let mut s = Sprite::new_center(x, y, col, hw, hh, lift)
+                        .with_style(SpriteStyle::Generic);
+                    s.alpha = alpha.clamp(0.0, 1.0);
+                    sprites.push(s);
+                };
+                match e.kind.telegraph() {
+                    Telegraph::None => {}
+                    Telegraph::Lunge => {
+                        let col = if e.enraged { [1.0, 0.15, 0.05] } else { [1.0, 0.3, 0.2] };
+                        tell(e.x, e.y, sp.half_w * (1.5 + prog * 0.5), sp.half_h * (1.5 + prog * 0.5), 0.02, col, 0.22 + 0.30 * prog);
+                    }
+                    Telegraph::StingRaise => {
+                        // Venom stinger rising overhead + a dripping glob.
+                        tell(e.x, e.y, 5.0 + prog * 4.0, 6.0 + prog * 5.0, 30.0 + prog * 16.0, [0.75, 0.3, 0.95], 0.5 + 0.4 * prog);
+                        tell(e.x + 4.0, e.y, 2.0 + throb * 1.5, 2.0 + throb * 1.5, 22.0 + prog * 10.0, [0.6, 0.9, 0.3], 0.6);
+                    }
+                    Telegraph::IceSwell => {
+                        // Three ice shards orbiting outward as the slam charges.
+                        for i in 0..3 {
+                            let ang = tick * 2.0 * rate + i as f32 * std::f32::consts::TAU / 3.0;
+                            let r = 0.9 + prog * 0.7;
+                            tell(
+                                e.x + ang.cos() * r,
+                                e.y + ang.sin() * r,
+                                4.0 + prog * 3.5,
+                                5.0 + prog * 4.0,
+                                6.0,
+                                [0.6, 0.85, 1.0],
+                                0.55,
+                            );
+                        }
+                    }
+                    Telegraph::ThroatPuff => {
+                        // Toxic throat sac inflating toward the player.
+                        let len = (e.facing.0 * e.facing.0 + e.facing.1 * e.facing.1).sqrt().max(1e-4);
+                        tell(
+                            e.x + e.facing.0 / len * (0.7 + prog * 0.5),
+                            e.y + e.facing.1 / len * (0.7 + prog * 0.5),
+                            5.0 + prog * 8.0,
+                            5.0 + prog * 8.0,
+                            10.0,
+                            [0.4, 0.9, 0.3],
+                            0.4 + 0.35 * prog,
+                        );
+                    }
+                    Telegraph::TidalRing => {
+                        tell(e.x, e.y, sp.half_w * (1.2 + prog * 0.9), sp.half_h * (1.2 + prog * 0.9), 0.02, [0.3, 0.9, 0.85], 0.3 + 0.3 * prog);
+                    }
+                    Telegraph::SlamRing => {
+                        // Double shockwave: inner ring collapses in, outer bursts out.
+                        tell(e.x, e.y, 17.0 - prog * 8.0, 17.0 - prog * 8.0, 0.02, [0.8, 0.75, 0.7], 0.45);
+                        tell(e.x, e.y, 10.0 + prog * 15.0, 10.0 + prog * 15.0, 0.02, [0.9, 0.85, 0.8], 0.25 + 0.25 * throb);
+                    }
+                }
+            }
             // Flash is already baked into sp.color above; keep the generic path idle.
             sp.flash = 0.0;
             sprites.push(sp);

@@ -118,10 +118,11 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
         add(
             &mut out,
             &format!("weapon_{}", k.name().to_lowercase()),
-            weapon::build(k, 0.0, 0.0, facing, 0.5, 0, alpha),
+            weapon::build(k, 0.0, 0.0, facing, 0.5, 0, true, alpha),
         );
     }
     add(&mut out, "block_shield", weapon::block_shield(0.0, 0.0, facing, alpha));
+    add(&mut out, "bow_loosed", weapon::build(crate::weapons::WeaponKind::Bow, 0.0, 0.0, facing, 0.6, 0, false, alpha));
     add(&mut out, "mushroom", mushroom::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "crystal", crystal::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "flower", flower::build(0.0, 0.0, color, alpha, facing, t));

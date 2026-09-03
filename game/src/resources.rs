@@ -158,6 +158,19 @@ pub fn resource_on(tx: i32, ty: i32, tile: TileKind) -> Option<ResourceKind> {
     }
 }
 
+/// Harvest wobble offset (world tiles, added to the sprite's x): a fast
+/// decaying side-to-side shake, phased per tile so neighbouring nodes
+/// don't move in unison. `shake` is 1.0 on the struck frame, decaying to
+/// 0 (~0.45s in the renderer). Max amplitude ≈ 0.09 tiles (~6px) — felt,
+/// never seasick.
+pub fn shake_offset(shake: f32, tx: i32, ty: i32) -> f32 {
+    if shake <= 0.0 {
+        return 0.0;
+    }
+    let phase = (tx * 31 + ty * 17) as f32 * 0.37;
+    (shake * 22.0 + phase).sin() * 0.09 * shake
+}
+
 /// A harvestable node with current health.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ResourceNode {
@@ -333,8 +346,7 @@ mod tests {
     }
 
     #[test]
-    fn only_solid_props_block_movement() {
-        assert!(ResourceKind::Tree.blocks_movement());
+    fn only_solid_props_block_movement() {        assert!(ResourceKind::Tree.blocks_movement());
         assert!(ResourceKind::Rock.blocks_movement());
         assert!(ResourceKind::Ore.blocks_movement());
         assert!(ResourceKind::Crystal.blocks_movement());
@@ -343,5 +355,27 @@ mod tests {
         assert!(!ResourceKind::Flower.blocks_movement());
         assert!(!ResourceKind::GrassTuft.blocks_movement());
         assert!(!ResourceKind::Fern.blocks_movement());
+    }
+
+    #[test]
+    fn harvest_shake_is_small_fast_and_phased() {
+        // Rest: exactly zero (no drift on idle nodes).
+        assert_eq!(super::shake_offset(0.0, 3, 4), 0.0);
+        assert_eq!(super::shake_offset(-0.5, 3, 4), 0.0);
+        // Struck frame: bounded, never more than ~0.09 tiles.
+        for &(tx, ty) in &[(0, 0), (3, 4), (-22, 30), (100, -7)] {
+            let o = super::shake_offset(1.0, tx, ty);
+            assert!(o.abs() <= 0.09 + 1e-5, "shake capped at {o} for ({tx},{ty})");
+        }
+        // Decays with the timer: the amplitude envelope (0.09 * shake)
+        // shrinks even though the instantaneous sine phase varies.
+        for &sh in &[1.0f32, 0.5, 0.25] {
+            let o = super::shake_offset(sh, 3, 4);
+            assert!(o.abs() <= 0.09 * sh + 1e-5, "envelope must shrink with {sh}");
+        }
+        // Phased: neighbouring tiles don't move in unison.
+        let a = super::shake_offset(1.0, 3, 4);
+        let b = super::shake_offset(1.0, 4, 4);
+        assert!((a - b).abs() > 1e-4, "adjacent tiles must phase-offset");
     }
 }

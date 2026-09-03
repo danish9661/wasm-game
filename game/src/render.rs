@@ -697,6 +697,9 @@ pub fn build_tile_mesh(
                 // arm lunge, extended by the strike curve. Flash applies too.
                 if d.weapon != WeaponKind::Fists {
                     let (ox, oy) = facing_offset(d.facing, 5.0 + d.attack * 8.0);
+                    // The bow rests nocked while idle and empties the instant a
+                    // shot is loosed (attack curve > 0 through the cooldown).
+                    let nocked = d.weapon == WeaponKind::Bow && d.attack < 0.05;
                     let wparts = crate::elements::weapon::build(
                         d.weapon,
                         d.sx + ox,
@@ -704,6 +707,7 @@ pub fn build_tile_mesh(
                         d.facing,
                         d.attack,
                         d.enchant,
+                        nocked,
                         1.0,
                     );
                     rasterize(&crate::elements::prim::flashed(&wparts, d.flash), out);

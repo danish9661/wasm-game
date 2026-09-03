@@ -25,6 +25,9 @@ fn brass() -> [f32; 3] {
 
 /// Weapon parts at hand anchor (`hx`, `hy`). `attack` extends the weapon along
 /// the facing; `enchant` (0..5) tints the business end arcane purple.
+/// `nocked` (bow only) rests an arrow on the grip — true while idle, false in
+/// the moment after loosing (driven by the swing cooldown), so the bow visibly
+/// empties and re-nocks every shot.
 pub fn build(
     kind: WeaponKind,
     hx: f32,
@@ -32,6 +35,7 @@ pub fn build(
     facing: (f32, f32),
     attack: f32,
     enchant: u8,
+    nocked: bool,
     alpha: f32,
 ) -> Vec<Part> {
     if kind == WeaponKind::Fists {
@@ -113,11 +117,19 @@ pub fn build(
         }
         WeaponKind::Bow => {
             // Held across the body: grip at hand, limbs curving out both ways.
+            // A nocked arrow rests on the grip while idle and vanishes the
+            // instant the shot is loosed (re-nocking on cooldown end).
             v.push(Part::vquad(hx - 1.8, hy - 9.0, 1.8, 18.0, wood(), alpha, true));
             let bow = 9.0 + a * 3.0; // limbs flex a touch on release
             v.push(Part::diamond(hx + px * bow, hy + py * bow - 7.0, 2.4, 7.0, 0.0, wood(), alpha, false));
             v.push(Part::diamond(hx - px * bow, hy - py * bow + 7.0, 2.4, 7.0, 0.0, wood(), alpha, false));
             v.push(Part::diamond(hx + ux * 3.0, hy + uy * 3.0, 1.8, 1.8, 0.0, brass(), alpha, false));
+            if nocked {
+                let nx = hx + ux * 7.0;
+                let ny = hy + uy * 7.0;
+                v.push(Part::vquad(nx - 1.0, ny - 1.0, 1.0, 15.0, [0.80, 0.72, 0.55], alpha, false));
+                v.push(Part::diamond(nx + ux * 8.0, ny + uy * 8.0, 1.6, 2.2, 0.0, steel(), alpha, false));
+            }
         }
     }
     v
@@ -151,10 +163,10 @@ mod tests {
         ];
         let counts: Vec<usize> = kinds
             .iter()
-            .map(|k| build(*k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, 1.0).len())
+            .map(|k| build(*k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0).len())
             .collect();
         // Fists draw nothing; every real weapon draws 3-4 parts.
-        assert_eq!(build(WeaponKind::Fists, 0.0, 0.0, (1.0, 0.0), 0.5, 0, 1.0).len(), 0);
+        assert_eq!(build(WeaponKind::Fists, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0).len(), 0);
         for (k, n) in kinds.iter().zip(counts.iter()) {
             assert!((3..=4).contains(n), "{k:?} should draw 3-4 parts, drew {n}");
         }
@@ -172,7 +184,7 @@ mod tests {
             WeaponKind::Hammer,
             WeaponKind::Bow,
         ] {
-            let parts = build(k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, 1.0);
+            let parts = build(k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0);
             let widest = parts.iter().map(|p| p.hw).fold(0.0f32, f32::max);
             assert!(widest >= 2.0, "{k:?} widest half-width {widest} reads <4px wide");
         }
@@ -190,8 +202,8 @@ mod tests {
             (x0, x1)
         };
         for k in [WeaponKind::Sword, WeaponKind::Spear, WeaponKind::Hammer] {
-            let rest = build(k, 0.0, 0.0, (1.0, 0.0), 0.0, 0, 1.0);
-            let strike = build(k, 0.0, 0.0, (1.0, 0.0), 1.0, 0, 1.0);
+            let rest = build(k, 0.0, 0.0, (1.0, 0.0), 0.0, 0, false, 1.0);
+            let strike = build(k, 0.0, 0.0, (1.0, 0.0), 1.0, 0, false, 1.0);
             let (r0, r1) = bbox(&rest);
             let (s0, s1) = bbox(&strike);
             assert!(s1 > r1, "{k:?} must extend forward on strike");
@@ -203,7 +215,7 @@ mod tests {
     fn spear_outreaches_sword() {
         // Reach order must match WeaponKind::reach: spear longest.
         let extent = |k: WeaponKind| {
-            build(k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, 1.0)
+            build(k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0)
                 .iter()
                 .map(|p| p.cx + p.hw)
                 .fold(f32::MIN, f32::max)
@@ -223,9 +235,18 @@ mod tests {
     }
 
     #[test]
+    fn bow_nocks_and_looses() {
+        let nocked = build(WeaponKind::Bow, 0.0, 0.0, (1.0, 0.0), 0.0, 0, true, 1.0);
+        let loosed = build(WeaponKind::Bow, 0.0, 0.0, (1.0, 0.0), 0.6, 0, false, 1.0);
+        // Grip + 2 limbs + boss + shaft + head vs grip + 2 limbs + boss.
+        assert_eq!(nocked.len(), 6);
+        assert_eq!(loosed.len(), 4);
+    }
+
+    #[test]
     fn enchant_tints_the_edge() {
-        let plain = build(WeaponKind::Sword, 0.0, 0.0, (1.0, 0.0), 0.5, 0, 1.0);
-        let ench = build(WeaponKind::Sword, 0.0, 0.0, (1.0, 0.0), 0.5, 5, 1.0);
+        let plain = build(WeaponKind::Sword, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0);
+        let ench = build(WeaponKind::Sword, 0.0, 0.0, (1.0, 0.0), 0.5, 5, false, 1.0);
         let blue = |ps: &[Part]| ps.iter().map(|p| p.color[2]).fold(0.0f32, f32::max);
         assert!(blue(&ench) >= blue(&plain));
     }
