@@ -26,10 +26,10 @@ const HEAL_RATE: f32 = 8.0;
 const TURRET_RANGE: f32 = 9.0;
 const TURRET_CD: f32 = 1.1;
 
-/// Wire protocol version. Bumped 1 -> 2 when binary (bincode) frames and
-/// `ServerMsg::Delta` were added. JSON text frames remain accepted so old
+/// Wire protocol version. Bumped 1 -> 2 for binary frames + deltas, 2 -> 3
+/// for the `ng_cycle` campaign field. JSON text frames remain accepted so old
 /// clients keep working; new clients send/receive bincode `Binary` frames.
-pub const PROTOCOL_VERSION: u32 = 2;
+pub const PROTOCOL_VERSION: u32 = 3;
 /// Ticks between authoritative full snapshots. Ticks in between carry
 /// `SimDelta` (dynamic entities + optionally changed statics), so the ~200
 /// static village/town structures are not re-sent 30x/sec.
@@ -161,6 +161,10 @@ pub struct SimSnapshot {
     /// render the same quest objective / crafting milestone in its HUD.
     pub quest_stage: u8,
     pub iron_crafted: bool,
+    /// Room NG+ cycle (see `Simulation::ng_cycle`). Defaults to 0 when
+    /// talking to a v2 peer that omits it.
+    #[serde(default)]
+    pub ng_cycle: u32,
 }
 
 /// Incremental world update. Carries everything dynamic every tick
@@ -180,6 +184,7 @@ pub struct SimDelta {
     pub resources: Option<Vec<ResourceSnapshot>>,
     pub quest_stage: u8,
     pub iron_crafted: bool,
+    pub ng_cycle: u32,
 }
 
 impl SimSnapshot {
@@ -217,6 +222,7 @@ impl SimSnapshot {
             resources: if include_statics { Some(self.resources.clone()) } else { None },
             quest_stage: self.quest_stage,
             iron_crafted: self.iron_crafted,
+            ng_cycle: self.ng_cycle,
         }
     }
 
@@ -240,6 +246,7 @@ impl SimSnapshot {
         }
         self.quest_stage = d.quest_stage;
         self.iron_crafted = d.iron_crafted;
+        self.ng_cycle = d.ng_cycle;
     }
 }
 
@@ -320,9 +327,25 @@ pub struct Simulation {
     fragments_recovered: u8,
     altar_used: bool,
     colossus_defeated: bool,
+    /// Room NG+ cycle (0 = first run). Advances by one each time the crew
+    /// recovers all five Crown Fragments (then the counter resets so the next
+    /// cycle can be earned). Scales enemy damage (+25%/cycle) and day length
+    /// (-17%/cycle) — the same formulas as single-player `ng_plus`.
+    ng_cycle: u32,
 }
 
 impl Simulation {
+    /// Enemy damage multiplier for the current NG+ cycle (parity with the
+    /// single-player `ng_damage_mult`).
+    pub fn ng_damage_mult(&self) -> f32 {
+        1.0 + 0.25 * self.ng_cycle as f32
+    }
+
+    /// Day length in seconds for the current NG+ cycle (faster nights).
+    pub fn ng_day_length(&self) -> f32 {
+        DAY_LENGTH / (1.0 + 0.20 * self.ng_cycle as f32)
+    }
+
     pub fn new(seed: u32) -> Self {
         let world = WorldGen::new(seed);
         let mut cache = ChunkCache::new(256);
@@ -361,6 +384,7 @@ impl Simulation {
             fragments_recovered: 0,
             altar_used: false,
             colossus_defeated: false,
+            ng_cycle: 0,
         }
     }
 
@@ -458,7 +482,7 @@ impl Simulation {
 
     pub fn step(&mut self, dt: f32) {
         self.tick += 1;
-        self.time_of_day = (self.time_of_day + dt / DAY_LENGTH).rem_euclid(1.0);
+        self.time_of_day = (self.time_of_day + dt / self.ng_day_length()).rem_euclid(1.0);
         self.weather_timer -= dt;
         if self.weather_timer <= 0.0 {
             let r = (self.time_of_day * 311.0 + self.tick as f32 * 0.013).fract();
@@ -780,11 +804,14 @@ fn step_player(
             }
         }
 
+        // Hoisted: `ng_damage_mult` borrows all of self, which would clash
+        // with the per-player mutable borrows below.
+        let dmg_mult = self.ng_damage_mult();
         for (ex, ey, dmg) in contacts {
             if let Some(id) = self.nearest_player(ex, ey) {
                 if let Some(p) = self.players.get_mut(&id) {
                     if (p.player.x - ex).hypot(p.player.y - ey) < CONTACT_RANGE {
-                        p.player.take_damage(dmg);
+                        p.player.take_damage(dmg * dmg_mult);
                         // Knock the struck player back along the enemy→player vector.
                         let dx = p.player.x - ex;
                         let dy = p.player.y - ey;
@@ -797,6 +824,9 @@ fn step_player(
         let mut dead = Vec::new();
         let mut loot: Vec<(f32, f32, Vec<ItemKind>)> = Vec::new();
         let mut xp_grants: Vec<(u32, u32)> = Vec::new();
+        // Hoisted: `on_enemy_slain` borrows all of self, which clashes with
+        // the registry iteration — collect kinds, process after the loop.
+        let mut slain: Vec<EnemyKind> = Vec::new();
         for (k, e) in self.enemies.iter_mut_with_key() {
             if !e.alive() {
                 let mut best: Option<(u32, f32)> = None;
@@ -812,15 +842,16 @@ fn step_player(
                 if let Some((pid, _)) = best {
                     loot.push((e.x, e.y, e.drops()));
                     xp_grants.push((pid, e.kind.xp()));
-                    if e.kind == EnemyKind::Slime {
-                        self.slimes_killed += 1;
-                    }
+                    slain.push(e.kind);
                 }
                 dead.push(k);
             }
         }
         for (tx, ty) in dead {
             self.enemies.kill(tx, ty, RESPAWN_SECS);
+        }
+        for kind in slain {
+            self.on_enemy_slain(kind);
         }
         for (x, y, items) in loot {
             self.give_loot(x, y, items);
@@ -830,7 +861,35 @@ fn step_player(
                 p.player.add_xp(xp);
             }
         }
+        self.maybe_advance_ng();
         self.step_quests();
+    }
+
+    /// Shared kill bookkeeping for melee (`step_enemies`) and arrow
+    /// (`step_arrows`) deaths: slime counter, Crown Fragment recovery (drives
+    /// quest stages 6-8), and the Colossus true-ending flag.
+    fn on_enemy_slain(&mut self, kind: EnemyKind) {
+        if kind == EnemyKind::Slime {
+            self.slimes_killed += 1;
+        }
+        if let Some(bit) = kind.fragment_bit() {
+            self.fragments_recovered |= 1 << bit;
+        }
+        if kind == EnemyKind::Colossus {
+            self.colossus_defeated = true;
+        }
+    }
+
+    /// Advance the room's NG+ cycle once the crew recovers all five Crown
+    /// Fragments, then reset the counter so the next cycle can be earned
+    /// (guardians respawn on their tiles). The altar rite itself is
+    /// single-player; in co-op the full recovery IS the victory that hardens
+    /// the world (+25% enemy damage, faster days per cycle).
+    fn maybe_advance_ng(&mut self) {
+        if self.fragments_recovered == 0b11111 {
+            self.ng_cycle += 1;
+            self.fragments_recovered = 0;
+        }
     }
 
     /// Feed real world facts into the story `QuestLog` so the campaign advances
@@ -885,6 +944,7 @@ fn step_player(
 
     fn step_arrows(&mut self, dt: f32) {
         let arrows = std::mem::replace(&mut self.arrows, Vec::new());
+        let dmg_mult = self.ng_damage_mult();
         let mut alive = Vec::new();
         for mut a in arrows {
             if !a.step(dt) {
@@ -892,18 +952,32 @@ fn step_player(
             }
             if a.from_player {
                 let mut hit = false;
-                let mut loot: Vec<(f32, f32, Vec<ItemKind>)> = Vec::new();
+                // (tile, x, y, kind, drops): `take_damage` returns true on any
+                // hit, so death must be detected via the alive() edge — and
+                // the corpse removed here, or next tick's sweep would loot it
+                // a second time.
+                let mut loot: Vec<(i32, i32, f32, f32, EnemyKind, Vec<ItemKind>)> = Vec::new();
                 for e in self.enemies.enemies_mut() {
                     if (e.x - a.x).hypot(e.y - a.y) < 0.8 {
-                        if e.take_damage(a.damage) {
-                            loot.push((e.x, e.y, e.drops()));
+                        let was_alive = e.alive();
+                        e.take_damage(a.damage);
+                        if was_alive && !e.alive() {
+                            loot.push((e.x.floor() as i32, e.y.floor() as i32, e.x, e.y, e.kind, e.drops()));
                         }
                         hit = true;
                         break;
                     }
                 }
-                for (x, y, items) in loot {
+                // Arrow kills progress campaign + XP exactly like melee kills.
+                for (tx, ty, x, y, kind, items) in loot {
                     self.give_loot(x, y, items);
+                    self.on_enemy_slain(kind);
+                    if let Some(id) = self.nearest_player(x, y) {
+                        if let Some(p) = self.players.get_mut(&id) {
+                            p.player.add_xp(kind.xp());
+                        }
+                    }
+                    self.enemies.kill(tx, ty, RESPAWN_SECS);
                 }
                 if !hit {
                     alive.push(a);
@@ -912,7 +986,7 @@ fn step_player(
                 let mut hit = false;
                 for p in self.players.values_mut() {
                     if (p.player.x - a.x).hypot(p.player.y - a.y) < 0.8 {
-                        p.player.take_damage(a.damage);
+                        p.player.take_damage(a.damage * dmg_mult);
                         hit = true;
                         break;
                     }
@@ -1049,6 +1123,7 @@ fn step_player(
             arrows,
             quest_stage: self.quest.stage,
             iron_crafted: self.iron_crafted,
+            ng_cycle: self.ng_cycle,
         }
     }
 
@@ -1355,5 +1430,121 @@ mod tests {
             (x - (vx as f32 + 0.5)).abs() < 1e-3 && (y - (vy as f32 + 0.5)).abs() < 1e-3,
             "server spawn must be the first village plaza"
         );
+    }
+
+
+    #[test]
+    fn guardian_kills_recover_fragments_and_advance_ng() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        let (px, py) = sim.player_pos(id).unwrap();
+        // Slay each Crown Fragment guardian (lethal damage, then one step so
+        // the death sweep runs).
+        for (bit, kind) in [
+            (0u8, EnemyKind::Boss),
+            (1, EnemyKind::ScorpionQueen),
+            (2, EnemyKind::FrostGolem),
+            (3, EnemyKind::ToadKing),
+            (4, EnemyKind::OceanLeviathan),
+        ] {
+            // NOTE: floor(), not `as i32` (truncates toward zero and misses
+            // for negative coordinates); distinct tiles (one foe per tile).
+            let gx = px.floor() as i32 + bit as i32;
+            let gy = py.floor() as i32;
+            sim.enemies.get(gx, gy, kind, 0.0);
+            for e in sim.enemies.enemies_mut() {
+                if e.kind == kind {
+                    e.take_damage(99999.0);
+                }
+            }
+            sim.set_input(id, input());
+            sim.step(1.0 / 30.0);
+            // Full recovery advances NG immediately and resets the counter...
+            if bit < 4 {
+                assert!(
+                    sim.fragments_recovered & (1 << bit) != 0,
+                    "{kind:?} kill must set fragment bit {bit}"
+                );
+            }
+        }
+        assert_eq!(sim.ng_cycle, 1, "full recovery must advance the room to NG+1");
+        assert_eq!(sim.fragments_recovered, 0, "counter resets for the next cycle");
+        assert_eq!(sim.snapshot().ng_cycle, 1, "snapshot must carry the cycle");
+    }
+
+    #[test]
+    fn ng_scaling_matches_single_player_formulas() {
+        let mut sim = Simulation::new(1337);
+        assert_eq!(sim.ng_damage_mult(), 1.0);
+        assert_eq!(sim.ng_cycle, 0);
+        sim.ng_cycle = 2;
+        assert_eq!(sim.ng_damage_mult(), 1.5);
+        assert!(sim.ng_day_length() < DAY_LENGTH, "NG days must run faster");
+        // ...and contact damage actually scales: slime 3.0 x 1.5 = 4.5.
+        let id = sim.add_player("hero".into(), None);
+        let (px, py) = sim.player_pos(id).unwrap();
+        // Same tile as the player (floor, not truncation, for negatives).
+        sim.enemies.get(px.floor() as i32, py.floor() as i32, EnemyKind::Slime, 0.0);
+        sim.set_input(id, input());
+        for _ in 0..40 {
+            sim.step(1.0 / 30.0);
+            if sim.players[&id].player.hp < 100.0 {
+                break;
+            }
+        }
+        let hp = sim.players[&id].player.hp;
+        assert!((hp - 95.5).abs() < 0.6, "NG2 slime hit must deal ~4.5, hp={hp}");
+    }
+
+    #[test]
+    fn arrow_kills_loot_once_and_progress_campaign() {
+        use crate::combat::Arrow;
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("archer".into(), None);
+        let (px, py) = sim.player_pos(id).unwrap();
+        // Park a lethal arrow right on top of a slime (same tile as the foe).
+        let ex = px.floor() as i32 + 1;
+        let ey = py.floor() as i32;
+        sim.enemies.get(ex, ey, EnemyKind::Slime, 0.0);
+        let mut a = Arrow::new(ex as f32 + 0.5, ey as f32 + 0.5, 0.0, 0.0);
+        a.damage = 500.0;
+        sim.arrows.push(a);
+        let xp0 = sim.players[&id].player.xp;
+        sim.set_input(id, input());
+        for _ in 0..10 {
+            sim.step(1.0 / 30.0);
+        }
+        // Corpse removed immediately (no double-loot on the next sweep)...
+        assert!(
+            sim.enemies.enemies().all(|e| e.alive()),
+            "no arrow-killed corpse may linger for the sweep"
+        );
+        // ...loot granted exactly once, XP paid, slime counter ticked.
+        let inv = &sim.players[&id].inv;
+        let loot_total = inv.count(ItemKind::Food) + inv.count(ItemKind::Herb) + inv.count(ItemKind::Gold);
+        assert_eq!(
+            loot_total,
+            EnemyKind::Slime.drops().len() as u32,
+            "exactly one full drop table for one arrow kill"
+        );
+        assert!(sim.players[&id].player.xp > xp0, "arrow kills must grant XP");
+        assert_eq!(sim.slimes_killed, 1, "arrow kills must count for quests");
+    }
+
+    #[test]
+    fn delta_carries_ng_cycle() {
+        let mut sim = Simulation::new(1337);
+        sim.add_player("hero".into(), None);
+        sim.ng_cycle = 3;
+        sim.step(1.0 / 30.0);
+        let full = sim.snapshot();
+        assert_eq!(full.ng_cycle, 3);
+        sim.step(1.0 / 30.0);
+        let next = sim.snapshot();
+        let d = next.delta_from(Some(&full));
+        assert_eq!(d.ng_cycle, 3);
+        let mut merged = full;
+        merged.apply_delta(d);
+        assert_eq!(merged.ng_cycle, 3, "delta merge must preserve the cycle");
     }
 }
