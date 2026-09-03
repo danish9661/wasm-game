@@ -1,3 +1,6 @@
+use crate::building::{Structure, StructureKind};
+use crate::world::{ChunkCache, WorldGen, tile_at};
+
 /// Candidate ruins sites as tile offsets from spawn. Fixed set so the POI
 /// lands in reachable countryside (12-26 tiles out) instead of mid-ocean.
 const CANDIDATES: [(i32, i32); 10] = [
@@ -164,6 +167,166 @@ pub fn town_name(tx: i32, ty: i32) -> String {
     format!("{}{}", p, s)
 }
 
+/// Full point-of-interest structure layout for a world seed: ruins chest +
+/// flanking walls, village hamlets (sign, houses on the 7/12 ring, anvil,
+/// well, portal), walled town (boundary, plaza, railway, buildings, cars),
+/// and scattered dungeon entrances.
+///
+/// This is the SINGLE source of truth for world structures: the WASM client's
+/// `reset_world` and the authoritative co-op `Simulation::new` both call it,
+/// so single-player and multiplayer share one identical world for a seed.
+/// NPCs, names, portal state and the town build-in animation stay client-side
+/// (cosmetic); everything that blocks movement, gives light, or holds loot is
+/// here.
+pub fn poi_structures(seed: u32, world: &WorldGen, cache: &mut ChunkCache) -> Vec<Structure> {
+    let mut structures = Vec::new();
+
+    // Ruins: chest + flanking U walls.
+    let ruins = ruins_at(seed, |tx, ty| tile_at(world, cache, tx, ty).walkable());
+    structures.push(Structure { tx: ruins.0, ty: ruins.1, kind: StructureKind::Chest });
+    for (wx, wy) in ruins_walls(ruins.0, ruins.1) {
+        structures.push(Structure { tx: wx, ty: wy, kind: StructureKind::Wall });
+    }
+
+    // Villages.
+    let sites = village_sites(seed, 3, |tx, ty| tile_at(world, cache, tx, ty).walkable());
+    let first_village = sites.first().copied();
+    let house_kinds = [StructureKind::House, StructureKind::Cabin, StructureKind::Hut];
+    let special_kinds = [StructureKind::Inn, StructureKind::Barn, StructureKind::Watchtower, StructureKind::House];
+    // Houses render oversized: ring at 7/12 keeps a clear spawn plaza.
+    let ring: [(i32, i32); 12] = [
+        (7, 0), (-7, 0), (0, 7), (0, -7),
+        (7, 7), (-7, -7), (7, -7), (-7, 7),
+        (12, 0), (-12, 0), (0, 12), (0, -12),
+    ];
+    for (vx, vy) in sites {
+        structures.push(Structure { tx: vx, ty: vy, kind: StructureKind::Sign });
+        for (i, (dx, dy)) in ring.iter().enumerate() {
+            let (hx, hy) = (vx + dx, vy + dy);
+            if tile_at(world, cache, hx, hy).walkable() {
+                let kind = if i < 8 { house_kinds[i % 3] } else { special_kinds[(i - 8) % special_kinds.len()] };
+                structures.push(Structure { tx: hx, ty: hy, kind });
+            }
+        }
+        if tile_at(world, cache, vx + 2, vy).walkable() {
+            structures.push(Structure { tx: vx + 2, ty: vy, kind: StructureKind::Anvil });
+        }
+        if tile_at(world, cache, vx - 2, vy).walkable() {
+            structures.push(Structure { tx: vx - 2, ty: vy, kind: StructureKind::Well });
+        }
+    }
+
+    // Village portal (first hamlet only).
+    if let Some((fvx, fvy)) = first_village {
+        let spots = [(fvx, fvy - 2), (fvx, fvy + 2), (fvx + 2, fvy), (fvx - 2, fvy)];
+        if let Some(&(px, py)) = spots
+            .iter()
+            .find(|&&(x, y)| tile_at(world, cache, x, y).walkable())
+        {
+            structures.push(Structure { tx: px, ty: py, kind: StructureKind::Portal });
+        }
+    }
+
+    // Town / city.
+    let (tx0, ty0) = town_site(seed, |tx, ty| tile_at(world, cache, tx, ty).walkable());
+    let r = 14;
+    for x in (tx0 - r)..=(tx0 + r) {
+        for y in (ty0 - r)..=(ty0 + r) {
+            let edge = x == tx0 - r || x == tx0 + r || y == ty0 - r || y == ty0 + r;
+            if !edge {
+                continue;
+            }
+            let gate = ((x == tx0 - r || x == tx0 + r) && (y - ty0).abs() <= 1)
+                || ((y == ty0 - r || y == ty0 + r) && (x - tx0).abs() <= 1);
+            if gate {
+                continue;
+            }
+            if tile_at(world, cache, x, y).walkable() {
+                structures.push(Structure { tx: x, ty: y, kind: StructureKind::Wall });
+            }
+        }
+    }
+    structures.push(Structure { tx: tx0, ty: ty0, kind: StructureKind::Sign });
+    let rail_y = ty0 + 4;
+    for x in (tx0 - r + 1)..=(tx0 + r - 1) {
+        if tile_at(world, cache, x, rail_y).walkable() {
+            structures.push(Structure { tx: x, ty: rail_y, kind: StructureKind::Rail });
+        }
+    }
+    structures.push(Structure { tx: tx0, ty: rail_y, kind: StructureKind::Train });
+    let bkinds = [
+        StructureKind::House,
+        StructureKind::Cabin,
+        StructureKind::Hut,
+        StructureKind::Inn,
+        StructureKind::Barn,
+        StructureKind::Watchtower,
+    ];
+    let mut bi = 0usize;
+    for gx in (tx0 - 10..=tx0 + 10).step_by(5) {
+        for gy in (ty0 - 10..=ty0 + 10).step_by(5) {
+            if (gx - tx0).abs() <= 2 && (gy - ty0).abs() <= 2 {
+                continue;
+            }
+            if gy == rail_y {
+                continue;
+            }
+            if tile_at(world, cache, gx, gy).walkable() {
+                let k = bkinds[bi % bkinds.len()];
+                bi += 1;
+                structures.push(Structure { tx: gx, ty: gy, kind: k });
+            }
+        }
+    }
+    let mut h = ((tx0 as u32) ^ (ty0 as u32)).wrapping_mul(2654435761);
+    for _ in 0..8 {
+        h = h.wrapping_mul(1664525).wrapping_add(1013904223);
+        let cx = tx0 - 10 + (((h as i32) % 21i32).abs());
+        let cy = ty0 - 10 + (((h >> 8) as i32) % 21i32).abs();
+        if (cx - tx0).abs() <= 1 && (cy - ty0).abs() <= 1 {
+            continue;
+        }
+        if cy == rail_y {
+            continue;
+        }
+        if tile_at(world, cache, cx, cy).walkable()
+            && !structures.iter().any(|s| s.tx == cx && s.ty == cy)
+        {
+            structures.push(Structure { tx: cx, ty: cy, kind: StructureKind::Car });
+        }
+    }
+
+    // Dungeon entrances, away from the spawn village and the ruins.
+    {
+        let start = first_village.unwrap_or((tx0, ty0));
+        let sp = (start.0, start.1);
+        let mut h = (seed ^ 0x9e37_79b9).wrapping_mul(2654435761);
+        let mut placed = 0;
+        for _ in 0..240 {
+            h = h.wrapping_mul(1664525).wrapping_add(1013904223);
+            let tx = sp.0 + ((h as i32) % 160) - 80;
+            let ty = sp.1 + (((h >> 11) as i32) % 160) - 80;
+            if (tx - sp.0).abs() < 30 && (ty - sp.1).abs() < 30 {
+                continue;
+            }
+            if (tx - ruins.0).abs() < 12 && (ty - ruins.1).abs() < 12 {
+                continue;
+            }
+            if tile_at(world, cache, tx, ty).walkable()
+                && !structures.iter().any(|s| s.tx == tx && s.ty == ty)
+            {
+                structures.push(Structure { tx, ty, kind: StructureKind::Dungeon });
+                placed += 1;
+                if placed >= 5 {
+                    break;
+                }
+            }
+        }
+    }
+
+    structures
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -188,8 +351,7 @@ mod tests {
     }
 
     #[test]
-    fn ruins_is_deterministic() {
-        for seed in [1u32, 1337, 42, 999] {
+    fn ruins_is_deterministic() {        for seed in [1u32, 1337, 42, 999] {
             let a = ruins_at(seed, walkable_1337);
             let b = ruins_at(seed, walkable_1337);
             assert_eq!(a, b);
@@ -207,6 +369,32 @@ mod tests {
                 crate::world::tile_at(&world, &mut cache, wx, wy).walkable(),
                 "flank wall at ({wx},{wy}) must sit on walkable ground"
             );
+        }
+    }
+
+    #[test]
+    fn poi_layout_is_deterministic_and_complete() {
+        use crate::building::StructureKind;
+        let build = |seed| {
+            let world = WorldGen::new(seed);
+            let mut cache = ChunkCache::new(128);
+            super::poi_structures(seed, &world, &mut cache)
+        };
+        let a = build(1337);
+        let b = build(1337);
+        assert_eq!(a.len(), b.len(), "same seed must yield same layout");
+        assert!(a.iter().zip(b.iter()).all(|(x, y)| x.tx == y.tx && x.ty == y.ty && x.kind == y.kind));
+        let has = |k: StructureKind| a.iter().any(|s| s.kind == k);
+        assert!(has(StructureKind::Chest), "ruins chest present");
+        assert!(has(StructureKind::House), "village houses present");
+        assert!(has(StructureKind::Anvil), "village anvil present");
+        assert!(has(StructureKind::Portal), "village portal present");
+        assert!(has(StructureKind::Train), "town railway present");
+        assert!(has(StructureKind::Dungeon), "dungeon entrances present");
+        // No two structures share a tile.
+        let mut seen = std::collections::HashSet::new();
+        for s in &a {
+            assert!(seen.insert((s.tx, s.ty, s.kind as u8)), "duplicate structure at ({},{})", s.tx, s.ty);
         }
     }
 }

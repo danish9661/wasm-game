@@ -9,7 +9,7 @@ use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, Telegra
 use game::items::{Inventory, ItemKind};
 use game::npc::{Npc, NpcKind};
 use game::player::{self, Player};
-use game::poi::{ruins_at, ruins_walls, town_name, town_site, village_sites, village_name};
+use game::poi::{poi_structures, ruins_at, ruins_walls, town_name, town_site, village_sites, village_name};
 use game::weapons::WeaponKind;
 use game::quest::QuestLog;
 use game::elements::humanoid;
@@ -3300,11 +3300,11 @@ impl App {
         self.craft_harvest = 0;
         self.craft_armor = 0.0;
         self.salves = 0;
-        let mut structures = Vec::new();
-        structures.push(Structure { tx: self.ruins.0, ty: self.ruins.1, kind: StructureKind::Chest });
-        for (wx, wy) in ruins_walls(self.ruins.0, self.ruins.1) {
-            structures.push(Structure { tx: wx, ty: wy, kind: StructureKind::Wall });
-        }
+        // World structures come from the shared POI generator — the exact
+        // layout the co-op server builds for this seed (single source of
+        // truth in `game::poi`). NPCs, names and portal state below stay
+        // client-side (cosmetic).
+        let structures = poi_structures(seed, &self.world, &mut self.chunks);
         // Villages: a few named hamlets of houses (which double as shelters) plus
         // a sign, an anvil and a well so each is a functional safe haven.
         self.villages.clear();
@@ -3315,20 +3315,11 @@ impl App {
         // Capture the first village so we can (re)spawn the player inside a
         // settlement even after `sites` is consumed by the generation loop below.
         let first_village = sites.first().copied();
-        let house_kinds = [
-            StructureKind::House,
-            StructureKind::Cabin,
-            StructureKind::Hut,
-        ];
-        let special_kinds = [
-            StructureKind::Inn,
-            StructureKind::Barn,
-            StructureKind::Watchtower,
-            StructureKind::House,
-        ];
         // Village houses are rendered ~50% oversized (large roofs), so the
         // ring sits at 7/12 tiles out — keeps a clear spawn plaza at the
         // center instead of burying the player under overlapping roofs.
+        // (The ring doubles for town-villager placement below; the actual
+        // house tiles come from `poi_structures` above.)
         let ring: [(i32, i32); 12] = [
             (7, 0),
             (-7, 0),
@@ -3350,26 +3341,9 @@ impl App {
         for (vx, vy) in sites {
             let name = village_name(vx, vy);
             self.villages.push((vx, vy, name.clone()));
-            structures.push(Structure { tx: vx, ty: vy, kind: StructureKind::Sign });
-            for (i, (dx, dy)) in ring.iter().enumerate() {
-                let hx = vx + dx;
-                let hy = vy + dy;
-                if tile_at(&self.world, &mut self.chunks, hx, hy).walkable() {
-                    let kind = if i < 8 { house_kinds[i % 3] } else { special_kinds[(i - 8) % special_kinds.len()] };
-                    structures.push(Structure {
-                        tx: hx,
-                        ty: hy,
-                        kind,
-                    });
-                }
-            }
-            if tile_at(&self.world, &mut self.chunks, vx + 2, vy).walkable() {
-                structures.push(Structure { tx: vx + 2, ty: vy, kind: StructureKind::Anvil });
-            }
-            if tile_at(&self.world, &mut self.chunks, vx - 2, vy).walkable() {
-                structures.push(Structure { tx: vx - 2, ty: vy, kind: StructureKind::Well });
-            }
-            // Populate the hamlet: a guard by the sign, a stone golem defender,
+            // Structures (sign, houses, anvil, well) already came from
+            // `poi_structures`; here we only populate the hamlet with a guard
+            // by the sign, a stone golem defender,
             // a merchant by the well, and a few villagers among the houses.
             let c = (vx as f32 + 0.5, vy as f32 + 0.5);
             self.npcs.push(Npc::new(NpcKind::Guard, c.0, c.1, format!("Guard of {}", name), (vx as f32, vy as f32)));
@@ -3404,15 +3378,14 @@ impl App {
             }
         }
 
-        // Village portal: a glowing arcane gate in the first hamlet that travels
-        // to the walled town. Placed just south of the sign on walkable ground.
+        // Village portal: the gate structure came from `poi_structures`; here
+        // we only record its world position for `use_portal`.
         if let Some((fvx, fvy)) = first_village {
             let spots = [(fvx, fvy - 2), (fvx, fvy + 2), (fvx + 2, fvy), (fvx - 2, fvy)];
             if let Some(&(px, py)) = spots
                 .iter()
                 .find(|&&(x, y)| tile_at(&self.world, &mut self.chunks, x, y).walkable())
             {
-                structures.push(Structure { tx: px, ty: py, kind: StructureKind::Portal });
                 self.portal = Some((px as f32 + 0.5, py as f32 + 0.5));
             }
         }
@@ -3426,78 +3399,9 @@ impl App {
         let (tx0, ty0) = town_site(seed, |tx, ty| tile_at(&self.world, &mut self.chunks, tx, ty).walkable());
         let town_nm = town_name(tx0, ty0);
         self.towns.push((tx0, ty0, town_nm.clone()));
+        // Walls, plaza, railway, buildings and cars all came from
+        // `poi_structures`; here we only populate the town with citizens.
         let r = 14;
-        // Wall boundary ring with a 2-tile gate centered on each side.
-        for x in (tx0 - r)..=(tx0 + r) {
-            for y in (ty0 - r)..=(ty0 + r) {
-                let edge = x == tx0 - r || x == tx0 + r || y == ty0 - r || y == ty0 + r;
-                if !edge {
-                    continue;
-                }
-                let gate = ((x == tx0 - r || x == tx0 + r) && (y - ty0).abs() <= 1)
-                    || ((y == ty0 - r || y == ty0 + r) && (x - tx0).abs() <= 1);
-                if gate {
-                    continue;
-                }
-                if tile_at(&self.world, &mut self.chunks, x, y).walkable() {
-                    structures.push(Structure { tx: x, ty: y, kind: StructureKind::Wall });
-                }
-            }
-        }
-        // Central plaza marker.
-        structures.push(Structure { tx: tx0, ty: ty0, kind: StructureKind::Sign });
-        // Railway: a horizontal run of rails across the town (train sits at center).
-        let rail_y = ty0 + 4;
-        for x in (tx0 - r + 1)..=(tx0 + r - 1) {
-            if tile_at(&self.world, &mut self.chunks, x, rail_y).walkable() {
-                structures.push(Structure { tx: x, ty: rail_y, kind: StructureKind::Rail });
-            }
-        }
-        structures.push(Structure { tx: tx0, ty: rail_y, kind: StructureKind::Train });
-        // Buildings on a grid, skipping the plaza and the rail row. Mix in inns,
-        // barns and a watchtower so the town reads as a real settlement.
-        let bkinds = [
-            StructureKind::House,
-            StructureKind::Cabin,
-            StructureKind::Hut,
-            StructureKind::Inn,
-            StructureKind::Barn,
-            StructureKind::Watchtower,
-        ];
-        let mut bi = 0usize;
-        for gx in (tx0 - 10..=tx0 + 10).step_by(5) {
-            for gy in (ty0 - 10..=ty0 + 10).step_by(5) {
-                if (gx - tx0).abs() <= 2 && (gy - ty0).abs() <= 2 {
-                    continue;
-                }
-                if gy == rail_y {
-                    continue;
-                }
-                if tile_at(&self.world, &mut self.chunks, gx, gy).walkable() {
-                    let k = bkinds[bi % bkinds.len()];
-                    bi += 1;
-                    structures.push(Structure { tx: gx, ty: gy, kind: k });
-                }
-            }
-        }
-        // A few parked old cars along the streets (deterministic scatter).
-        let mut h = ((tx0 as u32) ^ (ty0 as u32)).wrapping_mul(2654435761);
-        for _ in 0..8 {
-            h = h.wrapping_mul(1664525).wrapping_add(1013904223);
-            let cx = tx0 - 10 + (((h as i32) % 21i32).abs());
-            let cy = ty0 - 10 + (((h >> 8) as i32) % 21i32).abs();
-            if (cx - tx0).abs() <= 1 && (cy - ty0).abs() <= 1 {
-                continue;
-            }
-            if cy == rail_y {
-                continue;
-            }
-            if tile_at(&self.world, &mut self.chunks, cx, cy).walkable()
-                && !structures.iter().any(|s| s.tx == cx && s.ty == cy)
-            {
-                structures.push(Structure { tx: cx, ty: cy, kind: StructureKind::Car });
-            }
-        }
         // Populate the town with citizens: guards at the gates, a merchant, villagers.
         let tc = (tx0 as f32 + 0.5, ty0 as f32 + 0.5);
         self.npcs.push(Npc::new(
@@ -3547,33 +3451,6 @@ impl App {
         self.player = Player::new(spx, spy);
 
         self.structures = structures;
-        // Scatter a few dungeon entrances across the world, away from the spawn
-        // village and the ruins, so exploration has a deadly payoff.
-        {
-            let sp = (self.spawn_point.0 as i32, self.spawn_point.1 as i32);
-            let mut h = (seed ^ 0x9e37_79b9).wrapping_mul(2654435761);
-            let mut placed = 0;
-            for _ in 0..240 {
-                h = h.wrapping_mul(1664525).wrapping_add(1013904223);
-                let tx = sp.0 + ((h as i32) % 160) - 80;
-                let ty = sp.1 + (((h >> 11) as i32) % 160) - 80;
-                if (tx - sp.0).abs() < 30 && (ty - sp.1).abs() < 30 {
-                    continue;
-                }
-                if (tx - self.ruins.0).abs() < 12 && (ty - self.ruins.1).abs() < 12 {
-                    continue;
-                }
-                if tile_at(&self.world, &mut self.chunks, tx, ty).walkable()
-                    && !self.structures.iter().any(|s| s.tx == tx && s.ty == ty)
-                {
-                    self.structures.push(Structure { tx, ty, kind: StructureKind::Dungeon });
-                    placed += 1;
-                    if placed >= 5 {
-                        break;
-                    }
-                }
-            }
-        }
         self.quest = QuestLog::new();
         self.boss_killed = 0;
         self.colossus_killed = 0;

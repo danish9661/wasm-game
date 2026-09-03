@@ -9,7 +9,7 @@ use crate::weapons::WeaponKind;
 use crate::enemy::{AiState, Enemy, EnemyKind, EnemyRegistry, spawner_on};
 use crate::items::{Inventory, ItemKind};
 use crate::player::{self, Player};
-use crate::poi::ruins_at;
+use crate::poi::{ruins_at, village_sites};
 use crate::quest::QuestLog;
 use crate::resources::{resource_on, NodeRegistry, ResourceKind};
 use crate::world::{tile_at, ChunkCache, WorldGen, TileKind};
@@ -326,13 +326,24 @@ impl Simulation {
     pub fn new(seed: u32) -> Self {
         let world = WorldGen::new(seed);
         let mut cache = ChunkCache::new(256);
-        let spawn = find_spawn(&world, &mut cache);
+        // Spawn inside the first village plaza, exactly like the client's
+        // `reset_world` (falls back to origin spiral if no village exists).
+        let spawn = village_sites(seed, 3, |tx, ty| {
+            tile_at(&world, &mut cache, tx, ty).walkable()
+        })
+        .first()
+        .map(|(vx, vy)| (*vx as f32 + 0.5, *vy as f32 + 0.5))
+        .unwrap_or_else(|| find_spawn(&world, &mut cache));
+        // Shared world: the same POI layout the single-player client builds
+        // for this seed (ruins, villages, town, dungeons), so co-op players
+        // collide with, shelter in, and loot the same settlements.
+        let structures = crate::poi::poi_structures(seed, &world, &mut cache);
         Self {
             world,
             cache,
             nodes: NodeRegistry::new(),
             enemies: EnemyRegistry::new(),
-            structures: Vec::new(),
+            structures,
             arrows: Vec::new(),
             players: HashMap::new(),
             next_id: 1,
@@ -1289,8 +1300,7 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_for_culls_distant_entities_but_keeps_players() {
-        let mut sim = Simulation::new(1337);
+    fn snapshot_for_culls_distant_entities_but_keeps_players() {        let mut sim = Simulation::new(1337);
         let a = sim.add_player("alice".into(), None);
         let b = sim.add_player("bob".into(), None);
         // Teleport Bob far away; spawn an enemy next to him (far from Alice).
@@ -1319,5 +1329,31 @@ mod tests {
                 "culled enemies must be near the viewer"
             );
         }
+    }
+
+    #[test]
+    fn server_world_matches_client_poi_layout() {
+        use crate::building::StructureKind;
+        // Co-op parity: the authoritative sim must build the same settlements
+        // the single-player client builds for a seed (same generator now).
+        let mut sim = Simulation::new(1337);
+        let snap = sim.snapshot();
+        let kinds: Vec<StructureKind> = snap.structures.iter().map(|s| s.kind).collect();
+        for need in [StructureKind::Chest, StructureKind::House, StructureKind::Anvil, StructureKind::Portal, StructureKind::Train, StructureKind::Dungeon] {
+            assert!(kinds.contains(&need), "server world must contain {need:?}");
+        }
+        // ...and players spawn in the first village plaza, like the client.
+        let id = sim.add_player("hero".into(), None);
+        let (x, y) = sim.player_pos(id).unwrap();
+        let world = WorldGen::new(1337);
+        let mut cache = ChunkCache::new(64);
+        let sites = crate::poi::village_sites(1337, 3, |tx, ty| {
+            crate::world::tile_at(&world, &mut cache, tx, ty).walkable()
+        });
+        let (vx, vy) = sites[0];
+        assert!(
+            (x - (vx as f32 + 0.5)).abs() < 1e-3 && (y - (vy as f32 + 0.5)).abs() < 1e-3,
+            "server spawn must be the first village plaza"
+        );
     }
 }
