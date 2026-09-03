@@ -18,6 +18,7 @@ pub(crate) mod altar;
 pub(crate) mod arrow;
 pub(crate) mod slime;
 pub mod humanoid;
+pub(crate) mod weapon;
 pub(crate) mod guard;
 pub(crate) mod golem;
 pub(crate) mod hpbar;
@@ -107,6 +108,20 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "altar", altar::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "slime", slime::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "humanoid", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
+    for k in [
+        crate::weapons::WeaponKind::Sword,
+        crate::weapons::WeaponKind::Axe,
+        crate::weapons::WeaponKind::Spear,
+        crate::weapons::WeaponKind::Hammer,
+        crate::weapons::WeaponKind::Bow,
+    ] {
+        add(
+            &mut out,
+            &format!("weapon_{}", k.name().to_lowercase()),
+            weapon::build(k, 0.0, 0.0, facing, 0.5, 0, alpha),
+        );
+    }
+    add(&mut out, "block_shield", weapon::block_shield(0.0, 0.0, facing, alpha));
     add(&mut out, "mushroom", mushroom::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "crystal", crystal::build(0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "flower", flower::build(0.0, 0.0, color, alpha, facing, t));

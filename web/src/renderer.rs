@@ -1444,7 +1444,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={}",
 
             self.quad_count(),
             self.frames(),
@@ -1506,9 +1506,11 @@ impl App {
               self.inventory.count(ItemKind::Map),
               self.objective.map_or(0.0, |(ox, _)| ox - self.player.x),
               self.objective.map_or(0.0, |(_, oy)| oy - self.player.y),
-              self.ending.is_some() as u8,
-              self.ending_pending as u8,
-           )
+               self.ending.is_some() as u8,
+               self.ending_pending as u8,
+               self.player.unlocked,
+               self.player.blocking as u8,
+            )
     }
 
     /// Nearest alive enemy within aggro range, as "Kind@(tx,ty)" or "none".
@@ -1993,6 +1995,35 @@ impl App {
         self.player.thirst = (self.player.thirst + 10.0).min(100.0);
         play_sfx("eat");
         toast("Cooked a hot meal (+25 HP, +hunger)");
+    }
+
+    /// Equip an owned weapon by slot index (0 = Fists … 5 = Bow, matching
+    /// `Player::cycle_weapon` order). Used by the HUD weapon bar (tap/click to
+    /// equip). Returns false for locked or out-of-range slots.
+    pub fn equip_weapon_slot(&mut self, idx: usize) -> bool {
+        let order = [
+            WeaponKind::Fists,
+            WeaponKind::Sword,
+            WeaponKind::Axe,
+            WeaponKind::Spear,
+            WeaponKind::Hammer,
+            WeaponKind::Bow,
+        ];
+        let Some(kind) = order.get(idx).copied() else {
+            return false;
+        };
+        if !self.player.has_weapon(kind) || self.player.weapon == kind {
+            return false;
+        }
+        self.player.weapon = kind;
+        play_sfx("codex");
+        toast(&format!(
+            "Equipped {} (dmg {} · reach {})",
+            kind.name(),
+            kind.damage(),
+            if kind.ranged() { "ranged".to_string() } else { format!("{:.1}", kind.reach()) }
+        ));
+        true
     }
 
     /// Craft the next uncrafted weapon at an anvil: spends its resource cost,
@@ -2723,13 +2754,22 @@ impl App {
             for (x, y) in sparks {
                 self.spawn_particles(x, y, spark, 7, 55.0, 0.35, 3.5);
             }
-            // Swept slash: a short arc of particles, tinted by the weapon, in front
-            // of the player — so each weapon reads differently on screen.
+            // Per-weapon sweep: each weapon reads differently — quick light
+            // weapons flick a fast thin arc, heavy ones a slow wide shockwave.
+            // (count, speed, life, size) tuned per kind.
+            let (n, spd, life, size) = match w {
+                WeaponKind::Fists => (4, 45.0, 0.15, 2.0),
+                WeaponKind::Sword => (8, 70.0, 0.22, 2.2),
+                WeaponKind::Axe => (5, 45.0, 0.30, 3.6),
+                WeaponKind::Spear => (4, 60.0, 0.20, 2.0),
+                WeaponKind::Hammer => (10, 35.0, 0.45, 4.5),
+                WeaponKind::Bow => (3, 30.0, 0.15, 2.0),
+            };
             let (fx, fy) = self.player.facing;
             let flen = (fx * fx + fy * fy).sqrt().max(0.01);
             let cx = self.player.x + fx / flen * w.reach() * 0.5;
             let cy = self.player.y + fy / flen * w.reach() * 0.5;
-            self.spawn_particles(cx, cy, tint, 6, 40.0, 0.18, 2.5);
+            self.spawn_particles(cx, cy, tint, n, spd, life, size);
             self.sweep_dead();
         }
     }
@@ -3279,19 +3319,22 @@ impl App {
             StructureKind::Watchtower,
             StructureKind::House,
         ];
+        // Village houses are rendered ~50% oversized (large roofs), so the
+        // ring sits at 7/12 tiles out — keeps a clear spawn plaza at the
+        // center instead of burying the player under overlapping roofs.
         let ring: [(i32, i32); 12] = [
-            (5, 0),
-            (-5, 0),
-            (0, 5),
-            (0, -5),
-            (5, 5),
-            (-5, -5),
-            (5, -5),
-            (-5, 5),
-            (9, 0),
-            (-9, 0),
-            (0, 9),
-            (0, -9),
+            (7, 0),
+            (-7, 0),
+            (0, 7),
+            (0, -7),
+            (7, 7),
+            (-7, -7),
+            (7, -7),
+            (-7, 7),
+            (12, 0),
+            (-12, 0),
+            (0, 12),
+            (0, -12),
         ];
         const FIRST_NAMES: &[&str] = &[
             "Bryn", "Cael", "Dora", "Edda", "Finn", "Greta", "Hale", "Ivo", "Jora", "Kell",
@@ -3567,6 +3610,17 @@ impl App {
         self.ng_plus += 1;
         let seed = 1338 + (self.ng_plus - 1);
         self.reset_world(seed);
+    }
+
+    /// New Game+ difficulty ("Shatter delivers a harder world, faster nights"):
+    /// +25% enemy damage and 20% faster day/night cycles per completed cycle.
+    /// Single-player only — co-op rooms run the shared `game::Simulation`.
+    pub fn ng_damage_mult(&self) -> f32 {
+        1.0 + 0.25 * self.ng_plus as f32
+    }
+
+    pub fn ng_day_length(&self) -> f32 {
+        DAY_LENGTH / (1.0 + 0.20 * self.ng_plus as f32)
     }
 
     /// Start a brand-new run with a randomly-chosen seed.
@@ -3900,7 +3954,8 @@ impl App {
         }
 
         self.ensure_visible();
-        self.time_of_day = (self.time_of_day + dt / DAY_LENGTH).rem_euclid(1.0);
+        // NG+ runs a faster day/night cycle (see `ng_day_length`).
+        self.time_of_day = (self.time_of_day + dt / self.ng_day_length()).rem_euclid(1.0);
         self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
 
         // Portal trip: count down the "city is being built" loading overlay, then
@@ -4217,10 +4272,11 @@ impl App {
         }
         if let Some((ex, ey, dmg)) = contact {
             // Iron Plate (crafted at an Anvil) reduces incoming damage, and the
-            // world bites harder at night. Blocking (Shift) parries 70% if you
-            // have stamina.
+            // world bites harder at night — and harder still with each New Game+
+            // cycle. Blocking (Shift) parries 70% if you have stamina.
             let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
-            let mut dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
+            let ng = self.ng_damage_mult();
+            let mut dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.6 * night) * ng;
             if self.player.blocking && self.player.stamina > 10.0 {
                 dmg *= 0.30;
                 self.player.stamina = (self.player.stamina - 10.0).max(0.0);
@@ -4388,7 +4444,10 @@ impl App {
         );
         }
 
-        // arrows fly, hit, and expire (a hit removes the arrow)
+        // arrows fly, hit, and expire (a hit removes the arrow).
+        // Hoisted: `retain_mut` borrows `self.arrows`, so the NG+ multiplier
+        // (a `&self` method) must be computed before the closure is built.
+        let ng_mult = self.ng_damage_mult();
         let mut hit_pos = Vec::new();
         self.arrows.retain_mut(|a| {
             if !a.step(dt) {
@@ -4405,12 +4464,12 @@ impl App {
                     }
                 }
             } else {
-                // enemy arrow: hits the player
+                // enemy arrow: hits the player (NG+ scales like contact damage)
                 let dx = self.player.x - a.x;
                 let dy = self.player.y - a.y;
                 if dx * dx + dy * dy <= 0.8 * 0.8 {
                     let night = 1.0 - daylight_at(self.time_of_day).clamp(0.25, 1.0);
-                    let dmg = a.damage * (1.0 - self.craft_armor) * (1.0 + 0.6 * night);
+                    let dmg = a.damage * (1.0 - self.craft_armor) * (1.0 + 0.6 * night) * ng_mult;
                     self.player.take_damage(dmg);
                     if dmg > 0.5 {
                         self.hitstop = 0.06;

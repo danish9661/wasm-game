@@ -215,6 +215,66 @@ html, body {
   color: #8fa5bc;
 }
 
+/* ---- Weapon bar: owned/equipped at a glance, tap/click to equip ---- */
+#weaponbar {
+  position: fixed;
+  display: flex;
+  gap: 6px;
+  z-index: 11;
+  user-select: none;
+}
+/* Desktop: under the HUD bars, top-left. Mobile: bottom-center above touch. */
+body.desktop #weaponbar { top: 150px; left: 12px; }
+body.mobile #weaponbar {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 170px;
+  gap: 8px;
+}
+.wslot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 44px;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: #cfd8e3;
+  background: rgba(10, 16, 28, 0.8);
+  border: 1px solid rgba(160, 180, 205, 0.35);
+  border-radius: 6px;
+  cursor: pointer;
+}
+body.mobile .wslot { min-width: 52px; min-height: 52px; font-size: 12px; }
+.wslot .wicon { font-size: 17px; line-height: 1.1; }
+body.mobile .wslot .wicon { font-size: 20px; }
+.wslot .wlabel { font-size: 9px; letter-spacing: 0.5px; color: #9fb3c8; }
+.wslot.locked { opacity: 0.32; filter: grayscale(1); cursor: default; }
+.wslot.owned { border-color: rgba(160, 180, 205, 0.6); }
+.wslot.equipped {
+  border-color: #f2d77a;
+  box-shadow: 0 0 8px rgba(242, 215, 122, 0.45);
+  color: #f2e3b3;
+}
+/* Block indicator chip */
+.inv-chip.block {
+  color: #9fc2ff;
+  border-color: rgba(120, 170, 255, 0.6);
+  animation: blockpulse 0.9s ease-in-out infinite;
+}
+@keyframes blockpulse {
+  0%, 100% { background: rgba(20, 40, 80, 0.75); }
+  50% { background: rgba(40, 80, 150, 0.85); }
+}
+/* Clickable HUD chips need pointer events (HUD root disables them). */
+#fps, #hud-weapon { pointer-events: auto; cursor: pointer; }
+/* Debug-row collapse (tap FPS). */
+body.hide-debug #hud .hud-row:last-child { display: none; }
+/* Mobile HUD: keep chips clear of the top buttons + minimap. */
+body.mobile #hud { font-size: 11px; }
+body.mobile .hud-row.inv-row { flex-wrap: wrap; max-width: 58vw; }
+body.mobile #hud-coords, body.mobile #hud-mobs { display: none; }
+
 #quest {
   position: fixed;
   top: 85px;

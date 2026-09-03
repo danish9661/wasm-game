@@ -1,6 +1,7 @@
-use crate::elements::prim::{flashed, rasterize, rasterize_flash, sway, Part};
+use crate::elements::prim::{facing_offset, flashed, rasterize, rasterize_flash, sway, Part};
 use crate::iso::{depth_order, iso_to_world, world_to_iso, HALF_H, HALF_W};
 use crate::player::Player;
+use crate::weapons::WeaponKind;
 use crate::world::{ChunkCache, TileKind, WorldGen};
 use crate::TILE_HEIGHT;
 
@@ -311,6 +312,10 @@ struct Draw {
     dodge_timer: f32,
     /// Weapon enchantment level (0..5) for glow effect.
     enchant: u8,
+    /// Equipped weapon, drawn in the player's hands (Fists = bare hands).
+    weapon: WeaponKind,
+    /// True while holding block: a shield is raised in front of the figure.
+    blocking: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -411,6 +416,8 @@ pub fn build_tile_mesh(
             attack: 0.0,
             dodge_timer: 0.0,
             enchant: 0,
+            weapon: WeaponKind::Fists,
+            blocking: false,
         });
     }
 
@@ -450,6 +457,8 @@ pub fn build_tile_mesh(
             attack: s.attack,
             dodge_timer: 0.0,
             enchant: 0,
+            weapon: WeaponKind::Fists,
+            blocking: false,
         });
     }
 
@@ -484,6 +493,8 @@ pub fn build_tile_mesh(
             attack: (p.swing_t * (1.0 - p.swing_t) * 4.0).clamp(0.0, 1.0),
             dodge_timer: p.dodge_timer,
             enchant: p.enchant,
+            weapon: p.weapon,
+            blocking: p.blocking,
         });
     }
 
@@ -681,6 +692,28 @@ pub fn build_tile_mesh(
                     d.attack,
                 );
                 rasterize(&crate::elements::prim::flashed(&parts, d.flash), out);
+
+                // Held weapon: anchored at the forward hand so steel tracks the
+                // arm lunge, extended by the strike curve. Flash applies too.
+                if d.weapon != WeaponKind::Fists {
+                    let (ox, oy) = facing_offset(d.facing, 5.0 + d.attack * 8.0);
+                    let wparts = crate::elements::weapon::build(
+                        d.weapon,
+                        d.sx + ox,
+                        gy - 22.0 + oy,
+                        d.facing,
+                        d.attack,
+                        d.enchant,
+                        1.0,
+                    );
+                    rasterize(&crate::elements::prim::flashed(&wparts, d.flash), out);
+                }
+                // Raised block shield while holding block (drawn over weapon).
+                if d.blocking {
+                    let sparts =
+                        crate::elements::weapon::block_shield(d.sx, gy, d.facing, 0.95);
+                    rasterize(&sparts, out);
+                }
 
                 // Enchantment glow: a pulsing arcane ring around the player
                 // when the weapon is enchanted (levels 1-5).

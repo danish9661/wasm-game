@@ -219,6 +219,16 @@ pub fn craft(idx: usize) -> bool {
     })
 }
 
+/// Equip an owned weapon by slot (0 = Fists … 5 = Bow). Powers the HUD weapon
+/// bar (tap/click to equip). Returns false for locked slots.
+#[wasm_bindgen]
+pub fn equip_weapon_slot(idx: usize) -> bool {
+    APP.with(|cell| match cell.borrow_mut().as_mut() {
+        Some(app) => app.equip_weapon_slot(idx),
+        None => false,
+    })
+}
+
 /// JSON minimap data centered on the player (terrain grid + markers).
 #[wasm_bindgen]
 pub fn get_minimap() -> String {

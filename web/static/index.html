@@ -43,6 +43,7 @@
       <span class="inv-chip biome" id="hud-biome" style="display:none">🌍 Biome</span>
       <span class="inv-chip objective" id="hud-objective" style="display:none">🎯</span>
       <span class="inv-chip weapon" id="hud-weapon" style="display:none">🗡 Fists</span>
+      <span class="inv-chip block" id="hud-block" style="display:none" title="Blocking — damage reduced 65%">🛡 BLOCK</span>
       <span class="inv-chip level" id="hud-level" style="display:none">⭐ Lv 1</span>
       <span class="inv-chip coop" id="hud-coop" style="display:none">👥 Co-op</span>
       <span class="inv-chip map" id="hud-map" style="display:none">🗺 Map</span>
@@ -57,6 +58,7 @@
       <span class="inv-chip" id="kev" title="Keydown events seen by the engine (last key code)">KEY ev:0</span>
     </div>
   </div>
+  <div id="weaponbar" title="Tap / click to equip an owned weapon"></div>
   <div id="quest">Gathering supplies…</div>
   <div id="toasts"></div>
   <div id="altar-prompt" class="hidden">All five Crown Fragments blaze in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
@@ -92,7 +94,7 @@
         <span class="k">H</span><span class="d">Build a well (blocks movement)</span>
         <span class="k">J / K</span><span class="d">Attack with your equipped weapon (swing or loose an arrow)</span>
         <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Sword → Axe → Spear → Hammer → Bow)</span>
-        <span class="k">C</span><span class="d">Eat food to restore hunger</span>
+        <span class="k">Weapon bar</span><span class="d">Tap / click an owned weapon to equip it directly — locked slots are dimmed. Hold Shift to raise your shield (🛡 BLOCK chip); tap FPS to collapse the debug row</span>        <span class="k">C</span><span class="d">Eat food to restore hunger</span>
         <span class="k">T</span><span class="d">Drink at a well / shoreline (restores thirst)</span>
         <span class="k">Shift</span><span class="d">Hold to block (raises guard, cuts incoming damage)</span>
         <span class="k">M</span><span class="d">Forge weapons at an anvil · Enchant at an Enchanting Table (★ +15% dmg per level, cap 5)</span>
@@ -253,7 +255,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step } from './wasm_game.js?v=20260901';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot } from './wasm_game.js?v=20260901';
 
     const coopTagsEl = document.getElementById('coop-tags');
     const townTransitionEl = document.getElementById('town-transition');
@@ -397,6 +399,7 @@
         case 'eat': tone(300, 0.06, 'triangle', 0.12); tone(250, 0.06, 'triangle', 0.12); break;
         case 'roar': tone(80, 0.5, 'sawtooth', 0.28); break;
         case 'chime': tone(523, 0.12, 'sine', 0.12); tone(784, 0.14, 'sine', 0.12); break;
+        case 'join': tone(523, 0.10, 'sine', 0.14); setTimeout(() => tone(784, 0.14, 'sine', 0.14), 110); break;
         case 'death': tone(70, 0.6, 'sawtooth', 0.28); break;
         case 'victory': [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'triangle', 0.16), i * 110)); break;
         case 'shatter': [784, 587, 392, 262].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'sawtooth', 0.14), i * 110)); break;
@@ -707,6 +710,57 @@
             el('toasts').appendChild(t);
             setTimeout(() => t.remove(), 3200);
           };
+          // ---- Dynamic form factor --------------------------------------
+          // `body.mobile` drives the compact HUD (touch phones AND narrow
+          // desktop windows); `body.desktop` is the full HUD. Recomputed on
+          // load + resize so rotating a phone reflows the HUD live.
+          const updateFormFactor = () => {
+            const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            const mobile = touch || window.innerWidth <= 700;
+            document.body.classList.toggle('mobile', mobile);
+            document.body.classList.toggle('desktop', !mobile);
+          };
+          updateFormFactor();
+          window.addEventListener('resize', updateFormFactor);
+          // Debug-row toggle: tap FPS to collapse the perf row (mobile space).
+          document.getElementById('fps').addEventListener('click', () => {
+            document.body.classList.toggle('hide-debug');
+          });
+          // ---- Weapon bar ------------------------------------------------
+          // Mirrors game/src/weapons.rs: (slot, icon, label, dmg, reach, speed).
+          const WEAPONS = [
+            { icon: '✊', label: 'Fists',  sub: '4 dmg · fast' },
+            { icon: '🗡', label: 'Sword',  sub: '11 dmg · 3.2 reach' },
+            { icon: '🪓', label: 'Axe',    sub: '14 dmg · slow chop' },
+            { icon: '🔱', label: 'Spear',  sub: '9 dmg · 4.4 reach' },
+            { icon: '🔨', label: 'Hammer', sub: '18 dmg · stuns' },
+            { icon: '🏹', label: 'Bow',    sub: '10 dmg · ranged' },
+          ];
+          const wbar = document.getElementById('weaponbar');
+          WEAPONS.forEach((w, i) => {
+            const b = document.createElement('button');
+            b.className = 'wslot locked';
+            b.dataset.slot = String(i);
+            b.innerHTML = `<span class="wicon">${w.icon}</span><span class="wlabel">${w.label}</span>`;
+            b.title = `${w.label} — ${w.sub}`;
+            b.addEventListener('click', (ev) => {
+              ev.preventDefault();
+              try { equip_weapon_slot(i); } catch (_) {}
+            });
+            wbar.appendChild(b);
+          });
+          const updateWeaponBar = (stats) => {
+            const owned = stats.wown || 1;
+            const cur = (stats.weapon || 'Fists').toLowerCase();
+            wbar.querySelectorAll('.wslot').forEach((b) => {
+              const i = Number(b.dataset.slot);
+              const w = WEAPONS[i];
+              const has = (owned & (1 << i)) !== 0;
+              b.classList.toggle('locked', !has);
+              b.classList.toggle('owned', has);
+              b.classList.toggle('equipped', w.label.toLowerCase() === cur);
+            });
+          };
           const updateHud = (stats) => {
             setBar('bar-hp', 'num-hp', stats.hp);
             setBar('bar-hunger', 'num-hunger', stats.hunger);
@@ -739,11 +793,17 @@
              el('hud-weather').style.display = stats.weather !== 0 ? 'inline-block' : 'none';
              el('hud-weather').textContent = stats.weather === 4 ? '🔥 Heat' : stats.weather === 3 ? '⛈ Storm' : stats.weather === 2 ? '❄ Snow' : '🌧 Rain';
             el('hud-seed').style.display = 'inline-block';
-            el('hud-seed').textContent = '🌱 ' + stats.seed;
+            el('hud-seed').textContent = '🌱 ' + stats.seed + (stats.ng > 0 ? ' · NG' + stats.ng : '');
             el('hud-biome').style.display = 'inline-block';
             el('hud-biome').textContent = '🌍 ' + stats.biome.replace(/([A-Z])/g, ' $1').trim();
               el('hud-weapon').style.display = 'inline-block';
               el('hud-weapon').textContent = '🗡 ' + (stats.weapon || 'Fists') + (stats.enchant > 0 ? ' ' + '★'.repeat(stats.enchant) : '');
+
+              // Block shield indicator: visible only while holding block.
+              el('hud-block').style.display = stats.block === 1 ? 'inline-block' : 'none';
+
+              // Weapon bar: owned/equipped states refresh on the HUD tick.
+              updateWeaponBar(stats);
 
               el('hud-level').style.display = 'inline-block';
               el('hud-level').textContent = `⭐ Lv ${stats.level} · ${stats.xp}xp`;
@@ -908,6 +968,8 @@
               klast: get(/klast=(\S+)/) || '',
               weapon: get(/weapon=(\w+)/) || 'Fists',
               enchant: Number(get(/enchant=(\d+)/) || 0),
+              wown: Number(get(/wown=(\d+)/) || 1),
+              block: Number(get(/block=(\d)/) || 0),
               level: Number(get(/level=(\d+)/) || 1),
               xp: Number(get(/xp=(\d+)/) || 0),
               online: Number(get(/online=(\d+)/) || 0),
@@ -1394,8 +1456,11 @@
           if (isTouch) el('touch').classList.remove('hidden');
           document.querySelectorAll('#touch .tbtn').forEach((b) => {
             const code = b.dataset.key;
-            const down = (ev) => { ev.preventDefault(); ensureAudio(); b.classList.add('pressed'); window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true })); };
-            const up = (ev) => { ev.preventDefault(); b.classList.remove('pressed'); window.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true })); };
+            // NOTE: dispatch on `document` — the wasm input handlers listen on
+            // `document` (keydown/keyup), and a `window`-targeted event never
+            // reaches them, which silently broke every touch button.
+            const down = (ev) => { ev.preventDefault(); ensureAudio(); b.classList.add('pressed'); document.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true })); };
+            const up = (ev) => { ev.preventDefault(); b.classList.remove('pressed'); document.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true })); };
             b.addEventListener('pointerdown', down);
             b.addEventListener('pointerup', up);
             b.addEventListener('pointerleave', up);
@@ -1625,9 +1690,16 @@
               }
             } catch (e) {}
             // If, after a few seconds, the surface never composites, this visitor
-            // is on a backend that needs the Vulkan flag for full speed. Tell them.
+            // is on a backend that needs the Vulkan flag for full speed — but
+            // only nag when the measured fps is actually low (the blit fallback
+            // can still hit 55+ fps, in which case the notice is a false alarm).
             __gpuTries++;
-            if (__gpuTries === 10 && !window.__vulkanNoticeShown) showVulkanNotice();
+            if (__gpuTries === 10 && !window.__vulkanNoticeShown) {
+              const m = (document.getElementById('fps')?.textContent || '').match(/FPS\s+(\d+)/);
+              const fps = m ? parseInt(m[1], 10) : NaN;
+              if (Number.isNaN(fps) || fps < 30) showVulkanNotice();
+              else window.__vulkanNoticeShown = true;
+            }
           }
           setInterval(tryEnableGpuDirect, 500);
 
