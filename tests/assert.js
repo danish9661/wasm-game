@@ -673,6 +673,40 @@ try {
       : bad(`reforge failed: ending=${endWord} ng=${ng} quest=S${await questS()} :: ${stEnd.raw}`);
   }
 
+  // 30-33. weapon bar + defense HUD + dynamic form factor (fresh NG+ run).
+  {
+    // 30. weapon bar renders all 6 slots; a fresh NG+ run owns Fists only.
+    const slots = await evaluate(`document.querySelectorAll('#weaponbar .wslot').length`);
+    slots === 6 ? ok('weapon bar renders 6 slots') : bad(`weapon bar slots=${slots}`);
+    const locked = await evaluate(`document.querySelectorAll('#weaponbar .wslot.locked').length`);
+    locked === 5 ? ok('fresh run locks 5 weapon slots (Fists owned)') : bad(`locked slots=${locked}`);
+    // 31. stats carry the HUD wiring keys for owned-weapons + blocking.
+    // (getStat lives in the Chapter-2 block scope; match inline here.)
+    const wownRaw = await evaluate(`window.__m.get_stats()`);
+    const wown = Number((String(wownRaw).match(/wown=(\d+)/) || [])[1] ?? -1);
+    wown === 1 ? ok('stats expose wown=1 weapon bitmask') : bad(`wown=${wown}`);
+    // 32. BLOCK chip appears only while Shift is held.
+    const blockHidden = await evaluate(`document.getElementById('hud-block').style.display`);
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'ShiftLeft', key: 'Shift', windowsVirtualKeyCode: 16 });
+    await sleep(500);
+    const blockShown = await evaluate(`document.getElementById('hud-block').style.display`);
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'ShiftLeft', key: 'Shift', windowsVirtualKeyCode: 16 });
+    (blockHidden === 'none' && blockShown === 'inline-block')
+      ? ok('BLOCK chip follows Shift hold')
+      : bad(`block chip hidden=${blockHidden} shown=${blockShown}`);
+    // 33. equip binding rejects locked slots (hammer, idx 4, unowned here).
+    const equipLocked = await evaluate(`window.__m.equip_weapon_slot(4)`);
+    equipLocked === false ? ok('equip rejects locked slot') : bad(`equip_locked=${equipLocked}`);
+    // 34. narrow viewport flips the dynamic mobile HUD.
+    await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+    await sleep(500);
+    const mob = await evaluate(`document.body.classList.contains('mobile')`);
+    await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
+    await sleep(400);
+    const desk = await evaluate(`document.body.classList.contains('desktop')`);
+    (mob && desk) ? ok('form factor flips mobile <-> desktop') : bad(`mobile=${mob} desktop=${desk}`);
+  }
+
   // 26. no JS exceptions / wasm panics
   const errors = events.filter(e =>
     e.method === 'Runtime.exceptionThrown' ||
