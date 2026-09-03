@@ -23,6 +23,9 @@ pub struct Arrow {
     /// true = fired by the player (hits enemies); false = fired by an enemy
     /// (hits the player).
     pub from_player: bool,
+    /// true = loosed by the player (tags the victim for XP/quest credit).
+    /// Turret and trap arrows leave this false: shared spoils, no credit.
+    pub tagged: bool,
 }
 
 impl Arrow {
@@ -37,6 +40,7 @@ impl Arrow {
             life: 3.0,
             damage: ARROW_DAMAGE,
             from_player: true,
+            tagged: true,
         }
     }
 
@@ -44,6 +48,7 @@ impl Arrow {
     pub fn enemy(x: f32, y: f32, dx: f32, dy: f32) -> Self {
         let mut a = Self::new(x, y, dx, dy);
         a.from_player = false;
+        a.tagged = false;
         a
     }
 

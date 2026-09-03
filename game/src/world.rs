@@ -192,9 +192,7 @@ impl WorldGen {
                 let gy = cy * CHUNK_SIZE + ty;
                 let wx = gx as f64;
                 let wy = gy as f64;
-                let e = self.elevation.get([wx, wy]) as f32;
-                let m = self.moisture.get([wx, wy]) as f32;
-                let t = self.temperature.get([wx, wy]) as f32;
+                let (e, m, t) = self.sample(wx, wy);
                 let mut kind = self.classify(e, m, t);
                 // Intra-biome detail: deterministic swaps between walkable
                 // sibling tiles so regions aren't flat. Never introduces water
@@ -211,6 +209,21 @@ impl WorldGen {
                     TileKind::Sand if h.rem_euclid(37.0) == 0.0 => TileKind::Desert,
                     other => other,
                 };
+                // Shoreline: Sand touching open water becomes wadable
+                // shallows (the wade/drink/shore mechanics need real tiles).
+                // Checked after the detail swap so it is never swapped away.
+                if kind == TileKind::Sand
+                    && [(gx + 1, gy), (gx - 1, gy), (gx, gy + 1), (gx, gy - 1)]
+                        .iter()
+                        .any(|(nx, ny)| {
+                            matches!(
+                                self.classify_at(*nx as f64, *ny as f64),
+                                TileKind::DeepWater | TileKind::Water
+                            )
+                        })
+                {
+                    kind = TileKind::ShallowWater;
+                }
                 tiles[ty as usize][tx as usize].kind = kind;
                 // Terrain relief: water sits in a basin below land; land rises
                 // with elevation so hills/peaks emerge from the plains. Gentle
@@ -239,8 +252,24 @@ impl WorldGen {
         Chunk { cx, cy, tiles, resources, decor }
     }
 
-    fn classify(&self, elevation: f32, moisture: f32, temperature: f32) -> TileKind {
-        if elevation < -0.30 {
+    /// Raw noise fields at a world point (shared by chunk generation and the
+    /// shoreline probe, so both agree exactly).
+    fn sample(&self, wx: f64, wy: f64) -> (f32, f32, f32) {
+        (
+            self.elevation.get([wx, wy]) as f32,
+            self.moisture.get([wx, wy]) as f32,
+            self.temperature.get([wx, wy]) as f32,
+        )
+    }
+
+    /// Base biome at a world point, before intra-biome detail swaps (used for
+    /// the shoreline water check, which must see through the swaps).
+    fn classify_at(&self, wx: f64, wy: f64) -> TileKind {
+        let (e, m, t) = self.sample(wx, wy);
+        self.classify(e, m, t)
+    }
+
+    fn classify(&self, elevation: f32, moisture: f32, temperature: f32) -> TileKind {        if elevation < -0.30 {
             if elevation < -0.45 {
                 TileKind::DeepWater
             } else {
@@ -278,5 +307,38 @@ impl WorldGen {
         } else {
             TileKind::Grass
         }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shorelines_generate_wadable_shallows() {
+        // ShallowWater must actually occur (the wade/drink mechanics depend
+        // on it), always adjacent to open water, walkable and wadable.
+        let world = WorldGen::new(1337);
+        let mut cache = ChunkCache::new(256);
+        let mut found = 0;
+        for tx in -120..=120 {
+            for ty in -120..=120 {
+                if tile_at(&world, &mut cache, tx, ty) == TileKind::ShallowWater {
+                    found += 1;
+                    let near_water = [(tx + 1, ty), (tx - 1, ty), (tx, ty + 1), (tx, ty - 1)]
+                        .iter()
+                        .any(|(nx, ny)| {
+                            matches!(
+                                tile_at(&world, &mut cache, *nx, *ny),
+                                TileKind::DeepWater | TileKind::Water
+                            )
+                        });
+                    assert!(near_water, "shallows at ({tx},{ty}) must touch open water");
+                }
+            }
+        }
+        assert!(found > 0, "seed 1337 must generate some shoreline shallows");
+        assert!(TileKind::ShallowWater.walkable());
+        assert!(TileKind::ShallowWater.wadable());
+        assert!(!TileKind::Water.walkable(), "open water stays impassable");
     }
 }

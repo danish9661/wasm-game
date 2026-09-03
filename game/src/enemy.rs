@@ -514,6 +514,11 @@ pub struct Enemy {
     pub nocturnal: bool,
     /// Seconds remaining of the sunlight "burning" flash, for rendering tint.
     pub burn: f32,
+    /// True once the player has damaged this foe (swing or player arrow).
+    /// Only tagged kills pay XP and advance quests — guard, turret, spike and
+    /// burn kills still drop loot (shared spoils) but grant no credit, so
+    /// idling in a guarded village can't farm progression.
+    pub tagged: bool,
 }
 
 impl Enemy {
@@ -540,6 +545,7 @@ impl Enemy {
             speed_mult: 1.0,
             nocturnal: kind.nocturnal(),
             burn: 0.0,
+            tagged: false,
         }
     }
 

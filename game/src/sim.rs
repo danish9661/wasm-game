@@ -649,6 +649,7 @@ fn step_player(
         let w = np.player.weapon;
         let mut hits = crate::combat::swing_hits(&np.player, enemies.enemies_mut(), w.reach());
         for e in hits.iter_mut() {
+            e.tagged = true;
             e.take_damage(np.player.weapon_damage());
         }
     }
@@ -840,9 +841,14 @@ fn step_player(
                     }
                 }
                 if let Some((pid, _)) = best {
+                    // Loot is shared spoils (any death feeds the crew), but XP
+                    // and campaign credit require the player's tag — idling
+                    // behind guards/turrets can't farm progression.
                     loot.push((e.x, e.y, e.drops()));
-                    xp_grants.push((pid, e.kind.xp()));
-                    slain.push(e.kind);
+                    if e.tagged {
+                        xp_grants.push((pid, e.kind.xp()));
+                        slain.push(e.kind);
+                    }
                 }
                 dead.push(k);
             }
@@ -952,29 +958,32 @@ fn step_player(
             }
             if a.from_player {
                 let mut hit = false;
-                // (tile, x, y, kind, drops): `take_damage` returns true on any
-                // hit, so death must be detected via the alive() edge — and
-                // the corpse removed here, or next tick's sweep would loot it
-                // a second time.
-                let mut loot: Vec<(i32, i32, f32, f32, EnemyKind, Vec<ItemKind>)> = Vec::new();
+                // (tile, x, y, kind, tagged, drops): `take_damage` returns true
+                // on any hit, so death must be detected via the alive() edge —
+                // and the corpse removed here, or next tick's sweep would loot
+                // it a second time.
+                let mut loot: Vec<(i32, i32, f32, f32, EnemyKind, bool, Vec<ItemKind>)> = Vec::new();
                 for e in self.enemies.enemies_mut() {
                     if (e.x - a.x).hypot(e.y - a.y) < 0.8 {
                         let was_alive = e.alive();
                         e.take_damage(a.damage);
                         if was_alive && !e.alive() {
-                            loot.push((e.x.floor() as i32, e.y.floor() as i32, e.x, e.y, e.kind, e.drops()));
+                            loot.push((e.x.floor() as i32, e.y.floor() as i32, e.x, e.y, e.kind, a.tagged, e.drops()));
                         }
                         hit = true;
                         break;
                     }
                 }
-                // Arrow kills progress campaign + XP exactly like melee kills.
-                for (tx, ty, x, y, kind, items) in loot {
+                // Arrow kills progress campaign + XP exactly like melee kills —
+                // but only player-tagged arrows (turret shots share spoils).
+                for (tx, ty, x, y, kind, tagged, items) in loot {
                     self.give_loot(x, y, items);
-                    self.on_enemy_slain(kind);
-                    if let Some(id) = self.nearest_player(x, y) {
-                        if let Some(p) = self.players.get_mut(&id) {
-                            p.player.add_xp(kind.xp());
+                    if tagged {
+                        self.on_enemy_slain(kind);
+                        if let Some(id) = self.nearest_player(x, y) {
+                            if let Some(p) = self.players.get_mut(&id) {
+                                p.player.add_xp(kind.xp());
+                            }
                         }
                     }
                     self.enemies.kill(tx, ty, RESPAWN_SECS);
@@ -1026,7 +1035,11 @@ fn step_player(
                 if let Some((ex, ey)) = self.nearest_enemy_in(tx, ty, TURRET_RANGE) {
                     let dx = ex - tx;
                     let dy = ey - ty;
-                    self.arrows.push(Arrow::new(tx, ty, dx, dy));
+                    // Turret shots are untagged: shared spoils, no XP/quest
+                    // credit (same rule as guard kills).
+                    let mut ta = Arrow::new(tx, ty, dx, dy);
+                    ta.tagged = false;
+                    self.arrows.push(ta);
                     self.turret_cd.insert(key, TURRET_CD);
                 }
             }
@@ -1454,6 +1467,8 @@ mod tests {
             sim.enemies.get(gx, gy, kind, 0.0);
             for e in sim.enemies.enemies_mut() {
                 if e.kind == kind {
+                    // Tag + lethal damage = a player-earned kill.
+                    e.tagged = true;
                     e.take_damage(99999.0);
                 }
             }
@@ -1529,6 +1544,29 @@ mod tests {
         );
         assert!(sim.players[&id].player.xp > xp0, "arrow kills must grant XP");
         assert_eq!(sim.slimes_killed, 1, "arrow kills must count for quests");
+    }
+
+    #[test]
+    fn untagged_kills_drop_loot_but_grant_no_credit() {
+        // Guard/spike/burn kills (no player tag): the crew still gets the
+        // spoils, but no XP and no quest progress — idling can't farm.
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("idler".into(), None);
+        let (px, py) = sim.player_pos(id).unwrap();
+        sim.enemies.get(px.floor() as i32, py.floor() as i32, EnemyKind::Slime, 0.0);
+        for e in sim.enemies.enemies_mut() {
+            if e.kind == EnemyKind::Slime {
+                e.take_damage(99999.0); // no tag: environmental death
+            }
+        }
+        let xp0 = sim.players[&id].player.xp;
+        sim.set_input(id, input());
+        sim.step(1.0 / 30.0);
+        let inv = &sim.players[&id].inv;
+        let loot_total = inv.count(ItemKind::Food) + inv.count(ItemKind::Herb) + inv.count(ItemKind::Gold);
+        assert_eq!(loot_total, EnemyKind::Slime.drops().len() as u32, "spoils still drop");
+        assert_eq!(sim.players[&id].player.xp, xp0, "no XP without the tag");
+        assert_eq!(sim.slimes_killed, 0, "no quest credit without the tag");
     }
 
     #[test]
