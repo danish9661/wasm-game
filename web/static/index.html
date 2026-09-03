@@ -272,6 +272,7 @@
     window.upload_save_zip = upload_save_zip;
     window.get_frame_dump = get_frame_dump;
     window.do_attack = do_attack;
+    window.getMinimapData = () => { try { return get_minimap(); } catch (_) { return '{}'; } };
     window.step = step;
     window.set_analog = set_analog;
 
@@ -337,6 +338,24 @@
         masterGain = actx.createGain(); masterGain.connect(actx.destination);
         sfxGain = actx.createGain(); sfxGain.connect(masterGain);
         musicGain = actx.createGain(); musicGain.connect(masterGain);
+        // Test/verification tap: an analyser on the master bus so automated
+        // checks (and players) can confirm sound is actually flowing.
+        // `window.audioLevel()` -> { state, rms } (rms ~0 = silent).
+        try {
+          window.__audioAnalyser = actx.createAnalyser();
+          window.__audioAnalyser.fftSize = 2048;
+          window.__audioSamples = new Float32Array(window.__audioAnalyser.fftSize);
+          masterGain.connect(window.__audioAnalyser);
+        } catch (_) {}
+        window.audioLevel = () => {
+          try {
+            if (!actx || !window.__audioAnalyser) return { state: actx ? actx.state : 'none', rms: 0 };
+            window.__audioAnalyser.getFloatTimeDomainData(window.__audioSamples);
+            let sum = 0;
+            for (let i = 0; i < window.__audioSamples.length; i++) sum += window.__audioSamples[i] * window.__audioSamples[i];
+            return { state: actx.state, rms: Math.sqrt(sum / window.__audioSamples.length) };
+          } catch (_) { return { state: 'error', rms: 0 }; }
+        };
         // Ambient weather loop: looping white noise through a low-pass, gain
         // ramped by the page based on the current weather (rain / snow / clear).
         const noiseBuf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
@@ -418,10 +437,11 @@
         case 'door': tone(160, 0.18, 'square', 0.18); noise(0.12, 0.10, 700); break;
         case 'block': tone(1200, 0.06, 'square', 0.16); noise(0.06, 0.12, 3000); break;
         case 'codex': tone(880, 0.08, 'sine', 0.12); tone(1175, 0.10, 'sine', 0.10); break;
+        case 'splash': noise(0.22, 0.12, 900); tone(300, 0.14, 'sine', 0.08); break;
         case 'equip': tone(392, 0.07, 'triangle', 0.14); setTimeout(() => tone(587, 0.10, 'triangle', 0.14), 70); break;
         case 'thunder': noise(0.9, 0.22, 140); tone(55, 0.9, 'sawtooth', 0.20); tone(41, 1.1, 'sine', 0.16); break;
         case 'heartbeat': tone(58, 0.10, 'sine', 0.22); setTimeout(() => tone(52, 0.12, 'sine', 0.18), 160); break;
-        case 'step': noise(0.06, 0.05, 360); break;
+        case 'step': noise(0.06, 0.09, 360); break;
         case 'plant': tone(330, 0.08, 'triangle', 0.10); noise(0.06, 0.08, 1200); break;
         case 'spike': noise(0.10, 0.14, 300); tone(120, 0.10, 'square', 0.12); break;
         case 'rainstart': noise(0.5, 0.10, 600); break;

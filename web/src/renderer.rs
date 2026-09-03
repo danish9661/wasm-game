@@ -2743,6 +2743,8 @@ impl App {
             for e in &mut hits {
                 // Weak-point bonus: the Bestiary tells you which weapon a foe fears.
                 let dmg = self.player.weapon_damage() * e.kind.weakness_to(w);
+                // Tag the victim: only player-earned kills pay XP/quests.
+                e.tagged = true;
                 e.take_damage(dmg);
                 // Knock the struck enemy back along the player->enemy vector.
                 let dx = e.x - self.player.x;
@@ -2872,13 +2874,13 @@ impl App {
 
     /// Resolve kills: drop loot and start respawn timers.
     fn sweep_dead(&mut self) {
-        let drops: Vec<((i32, i32), f32, f32, EnemyKind, Vec<ItemKind>, f32)> = self
+        let drops: Vec<((i32, i32), f32, f32, EnemyKind, bool, Vec<ItemKind>, f32)> = self
             .enemies
             .iter_mut_with_key()
             .filter(|(_, e)| !e.alive())
-            .map(|((tx, ty), e)| ((tx, ty), e.x, e.y, e.kind, e.drops(), e.elite))
+            .map(|((tx, ty), e)| ((tx, ty), e.x, e.y, e.kind, e.tagged, e.drops(), e.elite))
             .collect();
-        for ((tx, ty), ex, ey, kind, items, elite) in drops {
+        for ((tx, ty), ex, ey, kind, tagged, items, elite) in drops {
             play_sfx("enemydie");
             // Death puff: a quick scatter of loot-colored sparks so kills read
             // clearly. Raiders (the nocturnal raiders) burst red, with a second
@@ -2905,54 +2907,65 @@ impl App {
                 });
             }
             match kind {
-                EnemyKind::Slime => self.slimes_killed += 1,
+                EnemyKind::Slime => {
+                    if tagged {
+                        self.slimes_killed += 1;
+                    }
+                }
                 EnemyKind::Boss => {
-                    self.boss_killed += 1;
-                    play_sfx("victory");
+                    if tagged {
+                        self.boss_killed += 1;
+                        play_sfx("victory");
+                    }
                 }
                 EnemyKind::Colossus => {
-                    self.colossus_killed += 1;
-                    play_sfx("victory");
+                    if tagged {
+                        self.colossus_killed += 1;
+                        play_sfx("victory");
+                    }
                 }
                 _ => {}
             }
             // Crown Fragment guardians each guard one of the five fragments. On
             // defeat, record which fragment was recovered (idempotent) and surface
-            // a line of the lost empire's lore.
-            if let Some(bit) = kind.fragment_bit() {
-                if self.fragments & (1 << bit) == 0 {
-                    self.fragments |= 1 << bit;
-                    let got = self.fragments.count_ones();
-                    play_sfx("victory");
-                    toast(&format!(
-                        "Crown Fragment recovered! ({}/5) — {}",
-                        got,
-                        fragment_lore(bit)
-                    ));
+            // a line of the lost empire's lore — player-earned kills only, so
+            // guard/turret kills can't progress the campaign while idle.
+            if tagged {
+                if let Some(bit) = kind.fragment_bit() {
+                    if self.fragments & (1 << bit) == 0 {
+                        self.fragments |= 1 << bit;
+                        let got = self.fragments.count_ones();
+                        play_sfx("victory");
+                        toast(&format!(
+                            "Crown Fragment recovered! ({}/5) — {}",
+                            got,
+                            fragment_lore(bit)
+                        ));
+                    }
                 }
-            }
-            // Experience + level-up for the player (elite enemies pay out more).
-            let lvl_before = self.player.level;
-            self.player.add_xp((kind.xp() as f32 * elite) as u32);
-            if self.player.level > lvl_before {
-                play_sfx("levelup");
-                toast(&format!("Level up! You are now level {}", self.player.level));
+                // Experience + level-up for the player (elite enemies pay out more).
+                let lvl_before = self.player.level;
+                self.player.add_xp((kind.xp() as f32 * elite) as u32);
+                if self.player.level > lvl_before {
+                    play_sfx("levelup");
+                    toast(&format!("Level up! You are now level {}", self.player.level));
+                }
+                // Occasional weapon drop: a findable weapon on the ground. Heavier
+                // weapons are rarer (handled in roll_drop_with).
+                let roll = (((ex * 53.0 + ey * 31.0 + self.debug_attacks as f32 * 7.0) as i32) as u32) % 100;
+                if let Some(wk) = game::weapons::WeaponKind::roll_drop_with(roll) {
+                    self.weapon_loot.push(WeaponDrop {
+                        kind: wk,
+                        x: ex,
+                        y: ey,
+                        ttl: 90.0,
+                        phase: (ex + ey).fract().abs() * std::f32::consts::TAU,
+                    });
+                }
             }
             // bosses never respawn; slimes return after 15s
             let respawn = if matches!(kind, EnemyKind::Boss | EnemyKind::Colossus) { f32::MAX } else { 15.0 };
             self.enemies.kill(tx, ty, respawn);
-            // Occasional weapon drop: a findable weapon on the ground. Heavier
-            // weapons are rarer (handled in roll_drop_with).
-            let roll = (((ex * 53.0 + ey * 31.0 + self.debug_attacks as f32 * 7.0) as i32) as u32) % 100;
-            if let Some(wk) = game::weapons::WeaponKind::roll_drop_with(roll) {
-                self.weapon_loot.push(WeaponDrop {
-                    kind: wk,
-                    x: ex,
-                    y: ey,
-                    ttl: 90.0,
-                    phase: (ex + ey).fract().abs() * std::f32::consts::TAU,
-                });
-            }
         }
     }
 
@@ -4242,7 +4255,10 @@ impl App {
                     if let Some((_, ex, ey)) = best {
                         let (dx, dy) = (ex - cx, ey - cy);
                         let len = (dx * dx + dy * dy).sqrt().max(1e-4);
-                        self.arrows.push(Arrow::new(cx, cy, dx / len, dy / len));
+                        // Turret shots share spoils but earn no credit.
+                        let mut ta = Arrow::new(cx, cy, dx / len, dy / len);
+                        ta.tagged = false;
+                        self.arrows.push(ta);
                         *cd = TURRET_CD;
                     }
                 }
@@ -4360,6 +4376,10 @@ impl App {
                 for (_key, e) in self.enemies.iter_mut_with_key() {
                     if arrow_hits(a, std::iter::once(&*e)).is_some() {
                         e.take_damage(a.damage);
+                        // Player arrows tag; turret arrows (tagged=false) don't.
+                        if a.tagged {
+                            e.tagged = true;
+                        }
                         hit_pos.push((e.x, e.y));
                         play_sfx("hit");
                         self.hitstop = 0.06;
@@ -4457,10 +4477,16 @@ impl App {
         self.speed = if dt > 0.0 { moved / dt } else { 0.0 };
 
         // Footstep SFX: while actually moving, tick on a cadence scaled by speed
-        // (faster = quicker steps). Suppressed during a dodge roll.
+        // (faster = quicker steps). Suppressed during a dodge roll. Wading
+        // steps splash + ripple instead of thudding.
         self.step_timer -= dt;
         if self.speed > 0.6 && self.player.dodge_timer <= 0.0 && self.step_timer <= 0.0 {
-            play_sfx("step");
+            if wade {
+                play_sfx("splash");
+                self.spawn_particles(self.player.x, self.player.y, [0.55, 0.75, 0.9], 4, 1.6, 0.5, 2.6);
+            } else {
+                play_sfx("step");
+            }
             self.step_timer = (0.42 - (self.speed * 0.02).min(0.18)).max(0.18);
         }
 
@@ -4634,6 +4660,7 @@ impl App {
                 life: 3.0,
                 from_player: a.from_player,
                 damage: ARROW_DAMAGE,
+                tagged: a.from_player,
             })
             .collect();
         self.time_of_day = snap.time_of_day;
