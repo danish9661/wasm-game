@@ -93,8 +93,8 @@
         <span class="k">B</span><span class="d">Build a bed</span>
         <span class="k">N</span><span class="d">Build an anvil</span>
         <span class="k">H</span><span class="d">Build a well (blocks movement)</span>
-        <span class="k">J / K</span><span class="d">Attack with your equipped weapon (swing or loose an arrow)</span>
-        <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Sword → Axe → Spear → Hammer → Bow)</span>
+        <span class="k">J / K</span><span class="d">Attack (swing or loose). HOLD to charge a heavy finisher (1.5–2.5x). Strike mid-dodge for a dash attack. Hit foes from behind for backstab bonus (daggers 2.5x)</span>
+        <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Dagger → Sword → Axe → Spear → Hammer → Bow → Crossbow)</span>
         <span class="k">Weapon bar</span><span class="d">Tap / click an owned weapon to equip it directly — locked slots are dimmed. Hold Shift to raise your shield (🛡 BLOCK chip); tap FPS to collapse the debug row</span>        <span class="k">C</span><span class="d">Eat food to restore hunger</span>
         <span class="k">T</span><span class="d">Drink at a well / shoreline (restores thirst)</span>
         <span class="k">Shift</span><span class="d">Hold to block (raises guard, cuts incoming damage)</span>
@@ -441,6 +441,7 @@
         case 'equip': tone(392, 0.07, 'triangle', 0.14); setTimeout(() => tone(587, 0.10, 'triangle', 0.14), 70); break;
         case 'thunder': noise(0.9, 0.22, 140); tone(55, 0.9, 'sawtooth', 0.20); tone(41, 1.1, 'sine', 0.16); break;
         case 'heartbeat': tone(58, 0.10, 'sine', 0.22); setTimeout(() => tone(52, 0.12, 'sine', 0.18), 160); break;
+        case 'heavy': noise(0.25, 0.22, 300); tone(95, 0.3, 'sawtooth', 0.24); tone(64, 0.35, 'sine', 0.2); break;
         case 'step': noise(0.06, 0.09, 360); break;
         case 'plant': tone(330, 0.08, 'triangle', 0.10); noise(0.06, 0.08, 1200); break;
         case 'spike': noise(0.10, 0.14, 300); tone(120, 0.10, 'square', 0.12); break;
@@ -753,12 +754,14 @@
           // ---- Weapon bar ------------------------------------------------
           // Mirrors game/src/weapons.rs: (slot, icon, label, dmg, reach, speed).
           const WEAPONS = [
-            { icon: '✊', label: 'Fists',  sub: '4 dmg · fast' },
-            { icon: '🗡', label: 'Sword',  sub: '10 dmg · 3.2 reach' },
-            { icon: '🪓', label: 'Axe',    sub: '15 dmg · 1-shots packs' },
-            { icon: '🔱', label: 'Spear',  sub: '9 dmg · 4.4 reach' },
-            { icon: '🔨', label: 'Hammer', sub: '24 dmg · stuns' },
-            { icon: '🏹', label: 'Bow',    sub: '12 dmg · ranged' },
+            { icon: '✊', label: 'Fists',    sub: '4 dmg · fast' },
+            { icon: '🗡', label: 'Sword',    sub: '10 dmg · 3.2 reach' },
+            { icon: '🪓', label: 'Axe',      sub: '15 dmg · 1-shots packs' },
+            { icon: '🔱', label: 'Spear',    sub: '9 dmg · 4.4 reach' },
+            { icon: '🔨', label: 'Hammer',   sub: '24 dmg · stuns' },
+            { icon: '🏹', label: 'Bow',      sub: '12 dmg · ranged' },
+            { icon: '🔪', label: 'Dagger',   sub: '6 dmg · flurry + backstab' },
+            { icon: '🎯', label: 'Crossbow', sub: '14 dmg · piercing bolts' },
           ];
           const wbar = document.getElementById('weaponbar');
           WEAPONS.forEach((w, i) => {
@@ -825,7 +828,11 @@
             el('hud-biome').style.display = 'inline-block';
             el('hud-biome').textContent = '🌍 ' + stats.biome.replace(/([A-Z])/g, ' $1').trim();
               el('hud-weapon').style.display = 'inline-block';
-              el('hud-weapon').textContent = '🗡 ' + (stats.weapon || 'Fists') + (stats.enchant > 0 ? ' ' + '★'.repeat(stats.enchant) : '');
+              {
+                const wmeta = WEAPONS.find((w) => w.label.toLowerCase() === (stats.weapon || 'fists').toLowerCase());
+                const wicon = wmeta ? wmeta.icon : '🗡';
+                el('hud-weapon').textContent = `${wicon} ${(stats.weapon || 'Fists')}${stats.enchant > 0 ? ' ' + '★'.repeat(stats.enchant) : ''}`;
+              }
 
               // Block shield indicator: visible only while holding block.
               el('hud-block').style.display = stats.block === 1 ? 'inline-block' : 'none';

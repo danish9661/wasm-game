@@ -1024,6 +1024,9 @@ pub struct App {
     net_eat: bool,
     net_shoot: bool,
     net_build: Option<(StructureKind, i32, i32)>,
+    /// Heavy-attack charge: anim-clock time of the current J/K press, if the
+    /// button is still held. Releasing after 0.35s looses a charged finisher.
+    charge_start: Option<f32>,
 }
 
 impl App {
@@ -1748,6 +1751,7 @@ impl App {
             net_eat: false,
             net_shoot: false,
             net_build: None,
+            charge_start: None,
         };
 
         // Multiplayer: `?mp=ws://host:port[&name=Alias][&token=abc]` joins a
@@ -1803,7 +1807,7 @@ impl App {
         Ok(app)
     }
 
-    pub fn set_key(&mut self, code: &str, down: bool) {
+    pub fn set_key(&mut self, code: &str, down: bool, repeat: bool) {
         self.key_evt += 1;
         self.key_dbg = code.to_string();
         let mv = match code {
@@ -1828,7 +1832,9 @@ impl App {
                 "KeyE" => self.harvest(),
                 "KeyF" => self.build(StructureKind::Campfire),
                 "KeyV" => self.build(StructureKind::Wall),
-                "KeyT" => self.build(StructureKind::Torch),
+                // NOTE: KeyT is drink (see below) — an earlier duplicate arm
+                // built Torches here and shadowed it. Torches live in the
+                // Q build menu.
                 "KeyG" => self.build(StructureKind::Fence),
                 "KeyB" => self.build(StructureKind::Bed),
                 "KeyN" => self.build(StructureKind::Anvil),
@@ -1840,10 +1846,13 @@ impl App {
                     self.player.cycle_weapon();
                     toast(&format!("Equipped {}", self.player.weapon.name()));
                 }
-                "KeyJ" => {
-                    self.attack();
-                }
-                "KeyK" => {
+                "KeyJ" | "KeyK" => {
+                    // OS key-repeat while held must not machine-gun swings;
+                    // the hold instead charges a heavy (released on keyup).
+                    if repeat {
+                        return;
+                    }
+                    self.charge_start = Some(self.anim_clock);
                     self.attack();
                 }
                 "KeyC" => {
@@ -1905,6 +1914,14 @@ impl App {
                     toast(&format!("Zoom {:.0}%", self.zoom * 100.0));
                 }
                 _ => {}
+            }
+        } else if code == "KeyJ" || code == "KeyK" {
+            // Release after a hold looses the charged heavy finisher.
+            if let Some(t0) = self.charge_start.take() {
+                let held = self.anim_clock - t0;
+                if held >= 0.35 {
+                    self.heavy_attack((held - 0.35).min(1.0));
+                }
             }
         }
     }
@@ -2019,6 +2036,8 @@ impl App {
             WeaponKind::Spear,
             WeaponKind::Hammer,
             WeaponKind::Bow,
+            WeaponKind::Dagger,
+            WeaponKind::Crossbow,
         ];
         let Some(kind) = order.get(idx).copied() else {
             return false;
@@ -2079,9 +2098,11 @@ impl App {
         let order = [
             WeaponKind::Sword,
             WeaponKind::Axe,
+            WeaponKind::Dagger,
             WeaponKind::Spear,
             WeaponKind::Hammer,
             WeaponKind::Bow,
+            WeaponKind::Crossbow,
         ];
         let target = order.iter().find(|&&k| !self.player.has_weapon(k));
         let k = match target {
@@ -2706,23 +2727,32 @@ impl App {
     }
 
     /// Attack with the equipped weapon. Melee weapons swing (hits everything in
-    /// reach); ranged weapons (Bow) loose an arrow instead. Honors the weapon's
-    /// cooldown so heavier weapons swing slower.
+    /// reach); ranged weapons loose an arrow instead (crossbows fire piercing
+    /// bolts). Honors the weapon's cooldown so heavier weapons swing slower.
+    /// Attacking mid-dodge-roll performs a dashing strike (+2 reach, x1.2).
+    /// Strikes from behind the victim's facing earn the backstab bonus.
     pub fn attack(&mut self) {
         if self.swing_cd > 0.0 {
             return;
         }
         let w = self.player.weapon;
         self.swing_cd = w.cooldown();
+        // Dodge-strike: lunging out of a roll extends the blow.
+        let dashing = self.player.dodge_timer > 0.0;
         if w.ranged() {
             self.net_shoot = true;
             if !self.player.spend_stamina(4.0) {
                 return;
             }
             self.debug_shots += 1;
-            let mut a = Arrow::new(self.player.x, self.player.y, self.player.facing.0, self.player.facing.1);
-            a.damage = self.player.weapon_damage();
-            self.arrows.push(a);
+            if w.piercing() {
+                let a = Arrow::bolt(self.player.x, self.player.y, self.player.facing.0, self.player.facing.1, self.player.weapon_damage());
+                self.arrows.push(a);
+            } else {
+                let mut a = Arrow::new(self.player.x, self.player.y, self.player.facing.0, self.player.facing.1);
+                a.damage = self.player.weapon_damage();
+                self.arrows.push(a);
+            }
             play_sfx("shoot");
             // small recoil puff
             let (fx, fy) = self.player.facing;
@@ -2737,12 +2767,23 @@ impl App {
             }
             play_sfx("swing");
             self.debug_attacks += 1;
-            let mut hits = swing_hits(&self.player, self.enemies.enemies_mut(), w.reach());
+            let reach = w.reach() + if dashing { 2.0 } else { 0.0 };
+            let dash_mult = if dashing { 1.2 } else { 1.0 };
+            let mut hits = swing_hits(&self.player, self.enemies.enemies_mut(), reach);
             self.debug_swing_hits += hits.len() as u32;
             let mut sparks = Vec::new();
+            let mut stabbed = false;
             for e in &mut hits {
                 // Weak-point bonus: the Bestiary tells you which weapon a foe fears.
-                let dmg = self.player.weapon_damage() * e.kind.weakness_to(w);
+                // Backstab bonus: striking from behind the victim's facing.
+                let bs = game::combat::backstab_mult(
+                    (self.player.x, self.player.y),
+                    (e.x, e.y),
+                    e.facing,
+                    w,
+                );
+                stabbed |= bs > 1.0;
+                let dmg = self.player.weapon_damage() * e.kind.weakness_to(w) * bs * dash_mult;
                 // Tag the victim: only player-earned kills pay XP/quests.
                 e.tagged = true;
                 e.take_damage(dmg);
@@ -2757,7 +2798,7 @@ impl App {
                     e.flash = 1.0;
                     e.windup = e.windup.max(0.55);
                 }
-                sparks.push((e.x, e.y));
+                sparks.push((e.x, e.y, bs));
             }
             if !hits.is_empty() {
                 play_sfx("hit");
@@ -2770,8 +2811,15 @@ impl App {
                 (tint[1] * 0.5 + 0.5).min(1.0),
                 (tint[2] * 0.5 + 0.5).min(1.0),
             ];
-            for (x, y) in sparks {
+            // Backstabs burst gold so the positioning payoff reads instantly.
+            for (x, y, bs) in sparks {
                 self.spawn_particles(x, y, spark, 7, 55.0, 0.35, 3.5);
+                if bs > 1.0 {
+                    self.spawn_particles(x, y, [1.0, 0.85, 0.3], 5, 40.0, 0.3, 2.5);
+                }
+            }
+            if stabbed {
+                play_sfx("chime");
             }
             // Per-weapon sweep: each weapon reads differently — quick light
             // weapons flick a fast thin arc, heavy ones a slow wide shockwave.
@@ -2780,17 +2828,77 @@ impl App {
                 WeaponKind::Fists => (4, 45.0, 0.15, 2.0),
                 WeaponKind::Sword => (8, 70.0, 0.22, 2.2),
                 WeaponKind::Axe => (5, 45.0, 0.30, 3.6),
+                WeaponKind::Dagger => (12, 85.0, 0.16, 1.6),
                 WeaponKind::Spear => (4, 60.0, 0.20, 2.0),
                 WeaponKind::Hammer => (10, 35.0, 0.45, 4.5),
                 WeaponKind::Bow => (3, 30.0, 0.15, 2.0),
+                WeaponKind::Crossbow => (3, 30.0, 0.15, 2.0),
             };
             let (fx, fy) = self.player.facing;
             let flen = (fx * fx + fy * fy).sqrt().max(0.01);
-            let cx = self.player.x + fx / flen * w.reach() * 0.5;
-            let cy = self.player.y + fy / flen * w.reach() * 0.5;
+            let cx = self.player.x + fx / flen * reach * 0.5;
+            let cy = self.player.y + fy / flen * reach * 0.5;
             self.spawn_particles(cx, cy, tint, n, spd, life, size);
             self.sweep_dead();
         }
+    }
+
+    /// Charged heavy finisher, loosed on J/K release after a hold. Melee only:
+    /// damage scales 1.5x-2.5x with charge, reach stretches, victims stagger,
+    /// and the impact stops the world briefly. Costs extra stamina.
+    pub fn heavy_attack(&mut self, charge: f32) {
+        let w = self.player.weapon;
+        if w.ranged() {
+            return;
+        }
+        if !self.player.spend_stamina(10.0) {
+            return;
+        }
+        // Cancel a tap-swing's cooldown so the finisher always lands.
+        self.swing_cd = w.cooldown() + 0.2;
+        self.net_atk = true;
+        let mult = 1.5 + charge.clamp(0.0, 1.0);
+        let reach = w.reach() * 1.2;
+        play_sfx("heavy");
+        self.debug_attacks += 1;
+        let mut hits = swing_hits(&self.player, self.enemies.enemies_mut(), reach);
+        self.debug_swing_hits += hits.len() as u32;
+        for e in &mut hits {
+            let bs = game::combat::backstab_mult(
+                (self.player.x, self.player.y),
+                (e.x, e.y),
+                e.facing,
+                w,
+            );
+            e.tagged = true;
+            e.take_damage(self.player.weapon_damage() * mult * bs);
+            let dx = e.x - self.player.x;
+            let dy = e.y - self.player.y;
+            let len = (dx * dx + dy * dy).sqrt().max(0.01);
+            e.x += dx / len * 0.6;
+            e.y += dy / len * 0.6;
+            // Heavies stagger any victim, interrupting wind-ups.
+            e.flash = 1.0;
+            e.windup = e.windup.max(0.45);
+        }
+        if !hits.is_empty() {
+            play_sfx("hit");
+            self.hitstop = 0.12;
+            self.shake = (self.shake + 0.6).min(1.5);
+        }
+        drop(hits);
+        let (fx, fy) = self.player.facing;
+        let flen = (fx * fx + fy * fy).sqrt().max(0.01);
+        self.spawn_particles(
+            self.player.x + fx / flen * reach * 0.5,
+            self.player.y + fy / flen * reach * 0.5,
+            w.color(),
+            14,
+            50.0,
+            0.4,
+            4.0,
+        );
+        self.sweep_dead();
     }
 
     /// Recompute the HUD compass target: the nearest still-hostile Crown
@@ -3566,6 +3674,7 @@ impl App {
         self.crafted_iron = false;
         self.loot.clear();
         self.weapon_loot.clear();
+        self.charge_start = None;
     }
 
     // ---- Save / Load ------------------------------------------------------
@@ -4373,18 +4482,37 @@ impl App {
                 return false;
             }
             if a.from_player {
+                // Piercing bolts damage every foe in their path (once each —
+                // struck tiles are remembered); normal arrows stop at the
+                // first victim.
+                let mut struck_any = false;
                 for (_key, e) in self.enemies.iter_mut_with_key() {
-                    if arrow_hits(a, std::iter::once(&*e)).is_some() {
-                        e.take_damage(a.damage);
-                        // Player arrows tag; turret arrows (tagged=false) don't.
-                        if a.tagged {
-                            e.tagged = true;
+                    if arrow_hits(a, std::iter::once(&*e)).is_none() {
+                        continue;
+                    }
+                    if a.piercing {
+                        let et = (e.x.floor() as i32, e.y.floor() as i32);
+                        if a.struck.contains(&et) {
+                            continue;
                         }
-                        hit_pos.push((e.x, e.y));
+                        a.struck.push(et);
+                    }
+                    e.take_damage(a.damage);
+                    // Player arrows tag; turret arrows (tagged=false) don't.
+                    if a.tagged {
+                        e.tagged = true;
+                    }
+                    hit_pos.push((e.x, e.y));
+                    struck_any = true;
+                    if !a.piercing {
                         play_sfx("hit");
                         self.hitstop = 0.06;
                         return false;
                     }
+                }
+                if struck_any {
+                    play_sfx("hit");
+                    self.hitstop = 0.06;
                 }
             } else {
                 // enemy arrow: hits the player (NG+ scales like contact damage)
@@ -4486,8 +4614,38 @@ impl App {
                 self.spawn_particles(self.player.x, self.player.y, [0.55, 0.75, 0.9], 4, 1.6, 0.5, 2.6);
             } else {
                 play_sfx("step");
+                // Kicked-up dust while running on land (not while wading).
+                if self.speed > 3.0 {
+                    self.spawn_particles(
+                        self.player.x,
+                        self.player.y,
+                        [0.62, 0.55, 0.42],
+                        1,
+                        1.2,
+                        0.45,
+                        2.2,
+                    );
+                }
             }
             self.step_timer = (0.42 - (self.speed * 0.02).min(0.18)).max(0.18);
+        }
+
+        // Charged heavy telegraph: golden sparks gather around the player
+        // while J/K is held past the tap window (melee only).
+        if let Some(t0) = self.charge_start {
+            let held = self.anim_clock - t0;
+            if held > 0.35 && !self.player.weapon.ranged() && self.player.alive {
+                let k = ((held - 0.35).min(1.0) * 0.5 + 0.5).min(1.0);
+                self.spawn_particles(
+                    self.player.x,
+                    self.player.y,
+                    [1.0, 0.75 + 0.2 * k, 0.3],
+                    2,
+                    12.0,
+                    0.3,
+                    2.0 + 1.5 * k,
+                );
+            }
         }
 
         // authoritative FPS from real sim steps
@@ -4661,6 +4819,8 @@ impl App {
                 from_player: a.from_player,
                 damage: ARROW_DAMAGE,
                 tagged: a.from_player,
+                piercing: a.piercing,
+                struck: Vec::new(),
             })
             .collect();
         self.time_of_day = snap.time_of_day;

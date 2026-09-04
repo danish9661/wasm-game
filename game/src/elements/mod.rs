@@ -114,6 +114,8 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
         crate::weapons::WeaponKind::Spear,
         crate::weapons::WeaponKind::Hammer,
         crate::weapons::WeaponKind::Bow,
+        crate::weapons::WeaponKind::Dagger,
+        crate::weapons::WeaponKind::Crossbow,
     ] {
         add(
             &mut out,

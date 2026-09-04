@@ -219,12 +219,13 @@ html, body {
 #weaponbar {
   position: fixed;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   z-index: 11;
   user-select: none;
 }
 /* Desktop: under the HUD bars, top-left. Mobile: bottom-center above touch. */
-body.desktop #weaponbar { top: 150px; left: 12px; }
+body.desktop #weaponbar { top: 150px; left: 12px; max-width: 200px; }
 body.mobile #weaponbar {
   left: 50%;
   transform: translateX(-50%);

@@ -5,19 +5,25 @@ use serde::{Deserialize, Serialize};
 /// ranged volley. Fists are the always-available fallback.
 ///
 /// Balance (base DPS = damage / cooldown, before enchant/weak-points):
-/// | weapon | dmg | cd   | dps  | reach  | niche                              |
-/// |--------|-----|------|------|--------|------------------------------------|
-/// | Fists  |   4 | 0.34 | 11.8 |    2.4 | fallback                           |
-/// | Sword  |  10 | 0.30 | 33.3 |    3.2 | best sustained dps (duelist)       |
-/// | Axe    |  15 | 0.50 | 30.0 |    3.0 | one-shots swarm (12-14 HP packs)   |
-/// | Spear  |   9 | 0.38 | 23.7 |    4.4 | longest reach (safe kiting)        |
-/// | Hammer |  24 | 0.75 | 32.0 |    2.8 | burst king (fewest boss swings)    |
-/// | Bow    |  12 | 0.60 | 20.0 | ranged | safe at range (ranged tax)         |
+/// | weapon   | dmg | cd   | dps  | reach  | niche                              |
+/// |----------|-----|------|------|--------|------------------------------------|
+/// | Fists    |   4 | 0.34 | 11.8 |    2.4 | fallback                           |
+/// | Sword    |  10 | 0.30 | 33.3 |    3.2 | best sustained dps (duelist)       |
+/// | Axe      |  15 | 0.50 | 30.0 |    3.0 | one-shots swarm (12-14 HP packs)   |
+/// | Dagger   |   6 | 0.22 | 27.3 |    2.0 | blinding flurry + 2.5x backstabs   |
+/// | Spear    |   9 | 0.38 | 23.7 |    4.4 | longest reach (safe kiting)        |
+/// | Hammer   |  24 | 0.75 | 32.0 |    2.8 | burst king (fewest boss swings)    |
+/// | Bow      |  12 | 0.60 | 20.0 | ranged | safe at range (ranged tax)         |
+/// | Crossbow |  14 | 0.90 | 15.6 | ranged | piercing line shot (hits all)      |
 ///
 /// Sword wins sustained dps; hammer wins burst (fewest hits = least exposure)
-/// plus stagger; axe clears 12-14 HP packs in one swing; spear outranges
-/// every contact attack; bow trades dps for safety. Weak-points (1.5x) and
+/// plus stagger; axe clears 12-14 HP packs in one swing; dagger trades reach
+/// for speed and unmatched backstabs; spear outranges every contact attack;
+/// bow/xbow trade dps for safety, xbow piercing ranks. Weak-points (1.5x) and
 /// enchant (+15%/level) stack on top.
+///
+/// NOTE: variants are bitmask-indexed into a `u8` (`unlocked`), so 8 is the
+/// hard cap without a save/network migration — a 9th weapon needs that first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WeaponKind {
     Fists,
@@ -26,6 +32,8 @@ pub enum WeaponKind {
     Spear,
     Hammer,
     Bow,
+    Dagger,
+    Crossbow,
 }
 
 impl WeaponKind {
@@ -38,6 +46,8 @@ impl WeaponKind {
             WeaponKind::Spear => "Spear",
             WeaponKind::Hammer => "Hammer",
             WeaponKind::Bow => "Bow",
+            WeaponKind::Dagger => "Dagger",
+            WeaponKind::Crossbow => "Crossbow",
         }
     }
 
@@ -50,10 +60,12 @@ impl WeaponKind {
             WeaponKind::Spear => 9.0,
             WeaponKind::Hammer => 24.0,
             WeaponKind::Bow => 12.0,
+            WeaponKind::Dagger => 6.0,
+            WeaponKind::Crossbow => 14.0,
         }
     }
 
-    /// Melee reach in tiles (bow ignores this and fires a projectile).
+    /// Melee reach in tiles (bows ignore this and fire a projectile).
     pub fn reach(self) -> f32 {
         match self {
             WeaponKind::Fists => 2.4,
@@ -62,6 +74,8 @@ impl WeaponKind {
             WeaponKind::Spear => 4.4,
             WeaponKind::Hammer => 2.8,
             WeaponKind::Bow => 0.0,
+            WeaponKind::Dagger => 2.0,
+            WeaponKind::Crossbow => 0.0,
         }
     }
 
@@ -74,12 +88,20 @@ impl WeaponKind {
             WeaponKind::Spear => 0.38,
             WeaponKind::Hammer => 0.75,
             WeaponKind::Bow => 0.6,
+            WeaponKind::Dagger => 0.22,
+            WeaponKind::Crossbow => 0.9,
         }
     }
 
     /// True for ranged weapons (fire an arrow instead of a melee swing).
     pub fn ranged(self) -> bool {
-        matches!(self, WeaponKind::Bow)
+        matches!(self, WeaponKind::Bow | WeaponKind::Crossbow)
+    }
+
+    /// True for piercing shots: the bolt damages every foe in its path
+    /// instead of stopping at the first.
+    pub fn piercing(self) -> bool {
+        matches!(self, WeaponKind::Crossbow)
     }
 
     /// Arrow speed multiplier for ranged weapons (1.0 = base arrow speed).
@@ -99,6 +121,8 @@ impl WeaponKind {
             WeaponKind::Spear => [0.80, 0.72, 0.40],
             WeaponKind::Hammer => [0.70, 0.70, 0.78],
             WeaponKind::Bow => [0.55, 0.40, 0.22],
+            WeaponKind::Dagger => [0.45, 0.47, 0.52],
+            WeaponKind::Crossbow => [0.50, 0.32, 0.18],
         }
     }
 
@@ -107,9 +131,11 @@ impl WeaponKind {
         &[
             WeaponKind::Sword,
             WeaponKind::Axe,
+            WeaponKind::Dagger,
             WeaponKind::Spear,
             WeaponKind::Hammer,
             WeaponKind::Bow,
+            WeaponKind::Crossbow,
         ]
     }
 
@@ -124,17 +150,19 @@ impl WeaponKind {
     }
 
     /// Roll a drop given a `roll` in 0..100. ~30% chance to drop; the rarer the
-    /// weapon the higher the roll needed.
+    /// weapon the higher the roll needed. Daggers are common, crossbows rare.
     pub fn roll_drop_with(roll: u32) -> Option<WeaponKind> {
         if roll >= 70 {
             return None;
         }
         match roll % 10 {
             0 | 1 => Some(WeaponKind::Sword),
-            2 | 3 => Some(WeaponKind::Axe),
-            4 | 5 => Some(WeaponKind::Spear),
+            2 => Some(WeaponKind::Axe),
+            3 | 4 => Some(WeaponKind::Dagger),
+            5 => Some(WeaponKind::Spear),
             6 => Some(WeaponKind::Hammer),
-            _ => Some(WeaponKind::Bow),
+            7 | 8 => Some(WeaponKind::Bow),
+            _ => Some(WeaponKind::Crossbow),
         }
     }
 
@@ -152,8 +180,24 @@ impl WeaponKind {
             3 => WeaponKind::Spear,
             4 => WeaponKind::Hammer,
             5 => WeaponKind::Bow,
+            6 => WeaponKind::Dagger,
+            7 => WeaponKind::Crossbow,
             _ => WeaponKind::Fists,
         }
+    }
+
+    /// Cycle order for the P key / weapon bar: story order, ranged tier last.
+    pub fn cycle_order() -> &'static [WeaponKind] {
+        &[
+            WeaponKind::Fists,
+            WeaponKind::Dagger,
+            WeaponKind::Sword,
+            WeaponKind::Axe,
+            WeaponKind::Spear,
+            WeaponKind::Hammer,
+            WeaponKind::Bow,
+            WeaponKind::Crossbow,
+        ]
     }
 
     /// Resource cost to craft this weapon at an anvil. Fists can't be crafted.
@@ -163,9 +207,11 @@ impl WeaponKind {
             WeaponKind::Fists => None,
             WeaponKind::Sword => Some((5, 3, 0)),
             WeaponKind::Axe => Some((6, 1, 0)),
+            WeaponKind::Dagger => Some((4, 2, 0)),
             WeaponKind::Spear => Some((4, 2, 0)),
             WeaponKind::Hammer => Some((2, 8, 0)),
             WeaponKind::Bow => Some((5, 0, 1)),
+            WeaponKind::Crossbow => Some((7, 3, 1)),
         }
     }
 
@@ -188,8 +234,8 @@ mod tests {
 
     #[test]
     fn dps_order_matches_design() {
-        // Sword: best sustained dps. Hammer second (burst). Axe close third.
-        // Spear/bow trade dps for reach/safety. Fists last.
+        // Sword: best sustained dps. Hammer second (burst). Axe close third,
+        // dagger fourth (reach tax), then spear, bow, crossbow, fists.
         let mut v = [
             WeaponKind::Fists,
             WeaponKind::Sword,
@@ -197,6 +243,8 @@ mod tests {
             WeaponKind::Spear,
             WeaponKind::Hammer,
             WeaponKind::Bow,
+            WeaponKind::Dagger,
+            WeaponKind::Crossbow,
         ];
         v.sort_by(|a, b| b.dps().partial_cmp(&a.dps()).unwrap());
         assert_eq!(
@@ -205,8 +253,10 @@ mod tests {
                 WeaponKind::Sword,
                 WeaponKind::Hammer,
                 WeaponKind::Axe,
+                WeaponKind::Dagger,
                 WeaponKind::Spear,
                 WeaponKind::Bow,
+                WeaponKind::Crossbow,
                 WeaponKind::Fists,
             ],
             "dps order is the balance contract"
@@ -263,9 +313,36 @@ mod tests {
                 WeaponKind::Spear.as_u8(),
                 WeaponKind::Hammer.as_u8(),
                 WeaponKind::Bow.as_u8(),
+                WeaponKind::Dagger.as_u8(),
+                WeaponKind::Crossbow.as_u8(),
             ],
-            [0, 1, 2, 3, 4, 5]
+            [0, 1, 2, 3, 4, 5, 6, 7]
         );
         assert_eq!(WeaponKind::from_u8(99), WeaponKind::Fists);
+    }
+
+    #[test]
+    fn backstab_pays_positioning() {
+        use crate::combat::backstab_mult;
+        // Victim facing +x; attacker directly behind (at -x).
+        let behind = backstab_mult((-2.0, 0.0), (0.0, 0.0), (1.0, 0.0), WeaponKind::Sword);
+        assert_eq!(behind, 1.5);
+        let dagger = backstab_mult((-2.0, 0.0), (0.0, 0.0), (1.0, 0.0), WeaponKind::Dagger);
+        assert_eq!(dagger, 2.5, "daggers live for the backstab");
+        // Face-to-face: no bonus.
+        let front = backstab_mult((2.0, 0.0), (0.0, 0.0), (1.0, 0.0), WeaponKind::Dagger);
+        assert_eq!(front, 1.0);
+        // Degenerate geometry never pays.
+        assert_eq!(backstab_mult((0.0, 0.0), (0.0, 0.0), (1.0, 0.0), WeaponKind::Sword), 1.0);
+    }
+
+    #[test]
+    fn crossbow_bolts_piece_but_bows_dont() {
+        assert!(WeaponKind::Crossbow.piercing());
+        assert!(WeaponKind::Crossbow.ranged());
+        assert!(!WeaponKind::Bow.piercing());
+        let bolt = crate::combat::Arrow::bolt(0.0, 0.0, 1.0, 0.0, 14.0);
+        assert!(bolt.piercing && bolt.from_player && bolt.tagged);
+        assert!(bolt.life < crate::combat::Arrow::new(0.0, 0.0, 1.0, 0.0).life);
     }
 }

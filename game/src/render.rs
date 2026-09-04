@@ -316,6 +316,11 @@ struct Draw {
     weapon: WeaponKind,
     /// True while holding block: a shield is raised in front of the figure.
     blocking: bool,
+    /// False while dead (respawn timer): the figure fades to a lingering soul.
+    alive: bool,
+    /// World position (player only): drives water reflections.
+    wx: f32,
+    wy: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -418,6 +423,9 @@ pub fn build_tile_mesh(
             enchant: 0,
             weapon: WeaponKind::Fists,
             blocking: false,
+            alive: true,
+            wx: 0.0,
+            wy: 0.0,
         });
     }
 
@@ -459,6 +467,9 @@ pub fn build_tile_mesh(
             enchant: 0,
             weapon: WeaponKind::Fists,
             blocking: false,
+            alive: true,
+            wx: 0.0,
+            wy: 0.0,
         });
     }
 
@@ -495,6 +506,9 @@ pub fn build_tile_mesh(
             enchant: p.enchant,
             weapon: p.weapon,
             blocking: p.blocking,
+            alive: p.alive,
+            wx: p.x,
+            wy: p.y,
         });
     }
 
@@ -681,11 +695,23 @@ pub fn build_tile_mesh(
                 }
 
                 push_shadow(out, d.sx, gy, HALF_W * 1.05, HALF_H * 1.05);
+                // The fallen linger as a translucent soul until respawn.
+                let presence = if d.alive { 1.0 } else { 0.45 };
+                // Shallow-water sheen underfoot while wading.
+                if crate::world::tile_at(world, cache, d.wx.floor() as i32, d.wy.floor() as i32).wadable() {
+                    rasterize(
+                        &[crate::elements::prim::Part::diamond(
+                            d.sx, gy, 15.0, 5.5, 0.0,
+                            [0.62, 0.80, 0.95], 0.18 * presence, false,
+                        )],
+                        out,
+                    );
+                }
                 let parts = crate::elements::humanoid::build(
                     d.sx,
                     gy,
                     tunic,
-                    1.0,
+                    presence,
                     d.facing,
                     d.walk,
                     anim_time,
@@ -697,9 +723,10 @@ pub fn build_tile_mesh(
                 // arm lunge, extended by the strike curve. Flash applies too.
                 if d.weapon != WeaponKind::Fists {
                     let (ox, oy) = facing_offset(d.facing, 5.0 + d.attack * 8.0);
-                    // The bow rests nocked while idle and empties the instant a
-                    // shot is loosed (attack curve > 0 through the cooldown).
-                    let nocked = d.weapon == WeaponKind::Bow && d.attack < 0.05;
+                    // Bows rest spanned while idle and empty the instant a shot
+                    // is loosed (attack curve > 0 through the cooldown).
+                    let nocked = (d.weapon == WeaponKind::Bow || d.weapon == WeaponKind::Crossbow)
+                        && d.attack < 0.05;
                     let wparts = crate::elements::weapon::build(
                         d.weapon,
                         d.sx + ox,
@@ -708,14 +735,39 @@ pub fn build_tile_mesh(
                         d.attack,
                         d.enchant,
                         nocked,
-                        1.0,
+                        presence,
                     );
                     rasterize(&crate::elements::prim::flashed(&wparts, d.flash), out);
+                    // Rendered slash arc while the strike is travelling: a fan
+                    // of fading diamonds along the facing, tinted by the steel.
+                    if d.attack > 0.05 {
+                        let tint = d.weapon.color();
+                        let (fx, fy) = facing_offset(d.facing, 1.0);
+                        let fl = (fx * fx + fy * fy).sqrt().max(1e-4);
+                        let (ux, uy) = (fx / fl, fy / fl);
+                        let radius = 24.0 + d.weapon.reach() * 7.0;
+                        let fade = (1.0 - d.attack) * 0.5 * presence;
+                        let mut arc = Vec::with_capacity(5);
+                        for i in -2..=2 {
+                            let f = i as f32;
+                            arc.push(crate::elements::prim::Part::diamond(
+                                d.sx + ox + ux * radius - uy * f * 7.0 - ux * f.abs() * 3.0,
+                                gy - 24.0 + oy + uy * radius + ux * f * 7.0 - uy * f.abs() * 3.0,
+                                4.5 - f.abs() * 0.8,
+                                3.5 - f.abs() * 0.6,
+                                0.0,
+                                tint,
+                                fade,
+                                false,
+                            ));
+                        }
+                        rasterize(&arc, out);
+                    }
                 }
                 // Raised block shield while holding block (drawn over weapon).
                 if d.blocking {
                     let sparts =
-                        crate::elements::weapon::block_shield(d.sx, gy, d.facing, 0.95);
+                        crate::elements::weapon::block_shield(d.sx, gy, d.facing, 0.95 * presence);
                     rasterize(&sparts, out);
                 }
 

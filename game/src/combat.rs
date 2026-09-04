@@ -10,7 +10,7 @@ pub const SWING_DAMAGE: f32 = 5.0;
 pub const ARROW_SPEED: f32 = 14.0;
 pub const ARROW_DAMAGE: f32 = 8.0;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Arrow {
     pub x: f32,
     pub y: f32,
@@ -26,6 +26,12 @@ pub struct Arrow {
     /// true = loosed by the player (tags the victim for XP/quest credit).
     /// Turret and trap arrows leave this false: shared spoils, no credit.
     pub tagged: bool,
+    /// true = crossbow bolt: damages every foe in its path instead of
+    /// stopping at the first (shorter-lived to balance the line AoE).
+    pub piercing: bool,
+    /// Tiles already struck (piercing only): each foe is wounded once per
+    /// pass even across ticks. Not serialized (flight-local state).
+    pub struck: Vec<(i32, i32)>,
 }
 
 impl Arrow {
@@ -41,6 +47,8 @@ impl Arrow {
             damage: ARROW_DAMAGE,
             from_player: true,
             tagged: true,
+            piercing: false,
+            struck: Vec::new(),
         }
     }
 
@@ -49,6 +57,16 @@ impl Arrow {
         let mut a = Self::new(x, y, dx, dy);
         a.from_player = false;
         a.tagged = false;
+        a
+    }
+
+    /// Crossbow bolt: piercing line shot with a shorter life (the AoE
+    /// balances the reach — it cannot snipe across the map).
+    pub fn bolt(x: f32, y: f32, dx: f32, dy: f32, damage: f32) -> Self {
+        let mut a = Self::new(x, y, dx, dy);
+        a.life = 1.1;
+        a.damage = damage;
+        a.piercing = true;
         a
     }
 
@@ -91,6 +109,35 @@ pub fn arrow_hits<'a>(arrow: &Arrow, mut enemies: impl Iterator<Item = &'a Enemy
         let dy = e.y - arrow.y;
         dx * dx + dy * dy <= 0.8 * 0.8
     })
+}
+
+/// Backstab multiplier for a melee/ranged strike: striking from behind the
+/// victim's facing (dot > 0.6) pays 1.5x, or 2.5x for a dagger — the rogue's
+/// whole game is positioning. 1.0 otherwise (including zero-length edges).
+pub fn backstab_mult(
+    attacker: (f32, f32),
+    victim: (f32, f32),
+    victim_facing: (f32, f32),
+    weapon: crate::weapons::WeaponKind,
+) -> f32 {
+    let dx = victim.0 - attacker.0;
+    let dy = victim.1 - attacker.1;
+    let dist = (dx * dx + dy * dy).sqrt();
+    if dist < 1e-4 {
+        return 1.0;
+    }
+    let fl = (victim_facing.0 * victim_facing.0 + victim_facing.1 * victim_facing.1).sqrt();
+    if fl < 1e-4 {
+        return 1.0;
+    }
+    let behind = (dx / dist) * (victim_facing.0 / fl) + (dy / dist) * (victim_facing.1 / fl);
+    if behind <= 0.6 {
+        1.0
+    } else if weapon == crate::weapons::WeaponKind::Dagger {
+        2.5
+    } else {
+        1.5
+    }
 }
 
 #[cfg(test)]

@@ -145,6 +145,9 @@ pub struct ArrowSnapshot {
     pub dx: f32,
     pub dy: f32,
     pub from_player: bool,
+    /// Crossbow bolts render thicker client-side. Defaults false for v2 peers.
+    #[serde(default)]
+    pub piercing: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -301,6 +304,10 @@ struct NetPlayer {
     dodge_cd: f32,
     shoot_cd: f32,
     respawn_timer: f32,
+    /// Previous tick's attack held-state (rising-edge swings).
+    prev_attack: bool,
+    /// Seconds J/K has been held (heavy finisher past 0.35s on release).
+    charge_t: f32,
 }
 
 pub struct Simulation {
@@ -408,6 +415,8 @@ impl Simulation {
                 dodge_cd: 0.0,
                 shoot_cd: 0.0,
                 respawn_timer: 0.0,
+                prev_attack: false,
+                charge_t: 0.0,
             },
         );
         id
@@ -644,23 +653,70 @@ fn step_player(
         }
     }
 
-    if np.input.attack && np.attack_cd <= 0.0 {
+    // Rising edge -> normal swing (tap). A sustained hold charges instead of
+    // machine-gunning: on release past 0.35s a heavy finisher lands.
+    // (Client mirrors this exactly; the input shape is unchanged.)
+    let atk_now = np.input.attack;
+    if atk_now && !np.prev_attack && np.attack_cd <= 0.0 {
         np.attack_cd = 0.4;
         let w = np.player.weapon;
-        let mut hits = crate::combat::swing_hits(&np.player, enemies.enemies_mut(), w.reach());
+        // Dodge-strike: lunging out of a roll extends the blow.
+        let dashing = np.player.dodge_timer > 0.0;
+        let reach = w.reach() + if dashing { 2.0 } else { 0.0 };
+        let dash_mult = if dashing { 1.2 } else { 1.0 };
+        let mut hits = crate::combat::swing_hits(&np.player, enemies.enemies_mut(), reach);
         for e in hits.iter_mut() {
+            let bs = crate::combat::backstab_mult(
+                (np.player.x, np.player.y),
+                (e.x, e.y),
+                e.facing,
+                w,
+            );
             e.tagged = true;
-            e.take_damage(np.player.weapon_damage());
+            e.take_damage(np.player.weapon_damage() * e.kind.weakness_to(w) * bs * dash_mult);
+            if w == WeaponKind::Hammer {
+                e.flash = 1.0;
+                e.windup = e.windup.max(0.55);
+            }
         }
     }
+    if atk_now {
+        np.charge_t += dt;
+    } else {
+        if np.charge_t >= 0.35 && !np.player.weapon.ranged() {
+            // Heavy finisher: 1.5x-2.5x by charge, stretched reach, stagger.
+            let w = np.player.weapon;
+            let mult = 1.5 + (np.charge_t - 0.35).min(1.0);
+            let mut hits =
+                crate::combat::swing_hits(&np.player, enemies.enemies_mut(), w.reach() * 1.2);
+            for e in hits.iter_mut() {
+                let bs = crate::combat::backstab_mult(
+                    (np.player.x, np.player.y),
+                    (e.x, e.y),
+                    e.facing,
+                    w,
+                );
+                e.tagged = true;
+                e.take_damage(np.player.weapon_damage() * mult * bs);
+                e.flash = 1.0;
+                e.windup = e.windup.max(0.45);
+            }
+        }
+        np.charge_t = 0.0;
+    }
+    np.prev_attack = atk_now;
 
     if np.input.shoot && np.shoot_cd <= 0.0 {
         let w = np.player.weapon;
         let (fx, fy) = np.player.facing;
         if w.ranged() && (fx * fx + fy * fy) > 1e-4 {
-            let mut a = Arrow::new(np.player.x, np.player.y, fx, fy);
-            a.damage = np.player.weapon_damage();
-            arrows.push(a);
+            if w.piercing() {
+                arrows.push(Arrow::bolt(np.player.x, np.player.y, fx, fy, np.player.weapon_damage()));
+            } else {
+                let mut a = Arrow::new(np.player.x, np.player.y, fx, fy);
+                a.damage = np.player.weapon_damage();
+                arrows.push(a);
+            }
             np.shoot_cd = 0.5;
         }
     }
@@ -841,6 +897,7 @@ fn step_player(
                     }
                 }
                 if let Some((pid, _)) = best {
+                    eprintln!("DBG sweep: kind={:?} tagged={} pid={pid}", e.kind, e.tagged);
                     // Loot is shared spoils (any death feeds the crew), but XP
                     // and campaign credit require the player's tag — idling
                     // behind guards/turrets can't farm progression.
@@ -957,20 +1014,29 @@ fn step_player(
                 continue;
             }
             if a.from_player {
-                let mut hit = false;
-                // (tile, x, y, kind, tagged, drops): `take_damage` returns true
-                // on any hit, so death must be detected via the alive() edge —
-                // and the corpse removed here, or next tick's sweep would loot
-                // it a second time.
+                // Piercing bolts wound every foe in their path (once each —
+                // struck tiles are remembered); normal arrows stop at the
+                // first victim. Corpses are removed at once (no double-loot).
                 let mut loot: Vec<(i32, i32, f32, f32, EnemyKind, bool, Vec<ItemKind>)> = Vec::new();
+                let mut consumed = false;
                 for e in self.enemies.enemies_mut() {
-                    if (e.x - a.x).hypot(e.y - a.y) < 0.8 {
-                        let was_alive = e.alive();
-                        e.take_damage(a.damage);
-                        if was_alive && !e.alive() {
-                            loot.push((e.x.floor() as i32, e.y.floor() as i32, e.x, e.y, e.kind, a.tagged, e.drops()));
+                    if (e.x - a.x).hypot(e.y - a.y) >= 0.8 {
+                        continue;
+                    }
+                    if a.piercing {
+                        let et = (e.x.floor() as i32, e.y.floor() as i32);
+                        if a.struck.contains(&et) {
+                            continue;
                         }
-                        hit = true;
+                        a.struck.push(et);
+                    }
+                    let was_alive = e.alive();
+                    e.take_damage(a.damage);
+                    if was_alive && !e.alive() {
+                        loot.push((e.x.floor() as i32, e.y.floor() as i32, e.x, e.y, e.kind, a.tagged, e.drops()));
+                    }
+                    if !a.piercing {
+                        consumed = true;
                         break;
                     }
                 }
@@ -988,7 +1054,7 @@ fn step_player(
                     }
                     self.enemies.kill(tx, ty, RESPAWN_SECS);
                 }
-                if !hit {
+                if a.piercing || !consumed {
                     alive.push(a);
                 }
             } else {
@@ -1122,6 +1188,7 @@ fn step_player(
                 dx: a.dx,
                 dy: a.dy,
                 from_player: a.from_player,
+                piercing: a.piercing,
             })
             .collect();
 
@@ -1219,21 +1286,124 @@ mod tests {
             let p = &sim.players[&id].player;
             (p.x, p.y)
         };
-        // Drop a slime right next to the hero.
-        sim.enemies
-            .get(px as i32 + 1, py as i32, EnemyKind::Slime, 0.0);
+        // Drop a slime right next to the hero, facing them (no backstab —
+        // freshly spawned foes look east, which would read as "behind").
+        let gx = px.floor() as i32 + 1;
+        let gy = py.floor() as i32;
+        sim.enemies.get(gx, gy, EnemyKind::Slime, 0.0);
+        for e in sim.enemies.enemies_mut() {
+            if e.kind == EnemyKind::Slime {
+                e.facing = (-1.0, 0.0);
+            }
+        }
 
+        // Tap attack (rising edges, spaced past the 0.4s cooldown): three
+        // fists swings (4 dmg) fell the 12 HP slime.
         let start_xp = sim.players[&id].player.xp;
-        for _ in 0..60 {
+        for _ in 0..4 {
             let mut i = input();
             i.attack = true;
             sim.set_input(id, i);
             sim.step(1.0 / 30.0);
+            for _ in 0..14 {
+                sim.set_input(id, input());
+                sim.step(1.0 / 30.0);
+            }
         }
         let p = &sim.players[&id].player;
         assert!(p.xp > start_xp, "slaying the slime should grant XP");
     }
 
+    #[test]
+    fn holding_attack_swings_once_then_charges() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        // Sword for legible numbers: tap 10, heavy 10 x 1.65 after 0.5s hold.
+        sim.players.get_mut(&id).unwrap().player.weapon = WeaponKind::Sword;
+        sim.players.get_mut(&id).unwrap().player.unlocked = 0b11;
+        let (px, py) = {
+            let p = &sim.players[&id].player;
+            (p.x, p.y)
+        };
+        sim.enemies
+            .get(px.floor() as i32 + 1, py.floor() as i32, EnemyKind::Slime, 0.0);
+        for e in sim.enemies.enemies_mut() {
+            if e.kind == EnemyKind::Slime {
+                e.facing = (-1.0, 0.0); // face the hero: neutral math, no backstab
+            }
+        }
+        // Hold for 15 ticks: exactly one tap-swing (10 dmg), then charging.
+        for _ in 0..15 {
+            let mut i = input();
+            i.attack = true;
+            i.weapon = WeaponKind::Sword.as_u8();
+            i.weapon_unlocked = 0b11;
+            sim.set_input(id, i);
+            sim.step(1.0 / 30.0);
+        }
+        let slime_hp = sim.enemies.enemies().map(|e| e.hp).fold(f32::MAX, f32::min);
+        assert!((slime_hp - 2.0).abs() < 1e-3, "hold must swing exactly once, hp={slime_hp}");
+        // Release: the charged heavy (10 x 1.65) finishes the slime.
+        sim.set_input(id, input());
+        sim.step(1.0 / 30.0);
+        assert_eq!(sim.slimes_killed, 1, "release must loose the heavy finisher");
+    }
+
+    #[test]
+    fn sim_backstab_matches_combat_math() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("rogue".into(), None);
+        // Sword rogue behind an east-facing slime: 10 x 1.5 = 15 >= 12 HP.
+        sim.players.get_mut(&id).unwrap().player.weapon = WeaponKind::Sword;
+        sim.players.get_mut(&id).unwrap().player.unlocked = 0b11;
+        let (px, py) = sim.player_pos(id).unwrap();
+        let gx = px.floor() as i32 + 1;
+        let gy = py.floor() as i32;
+        sim.enemies.get(gx, gy, EnemyKind::Slime, 0.0);
+        for e in sim.enemies.enemies_mut() {
+            if e.kind == EnemyKind::Slime {
+                e.x = gx as f32 + 0.5;
+                e.y = gy as f32 + 0.5;
+                e.facing = (1.0, 0.0); // looking away: player is behind
+                e.tagged = true;
+            }
+        }
+        let mut i = input();
+        i.attack = true;
+        i.weapon = WeaponKind::Sword.as_u8();
+        i.weapon_unlocked = 0b11;
+        sim.set_input(id, i);
+        sim.step(1.0 / 30.0);
+        assert_eq!(sim.slimes_killed, 1, "backstab must one-shot the slime");
+    }
+
+    #[test]
+    fn piercing_bolt_wounds_a_rank() {
+        use crate::combat::Arrow;
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("xbow".into(), None);
+        let (px, py) = sim.player_pos(id).unwrap();
+        let gy = py.floor() as i32;
+        // Two slimes in a row on the bolt's path (distinct tiles).
+        for k in 0..2 {
+            sim.enemies.get(px.floor() as i32 + 1 + k, gy, EnemyKind::Slime, 0.0);
+        }
+        let mut a = Arrow::bolt(px.floor() + 0.5, py, 1.0, 0.0, 500.0);
+        sim.arrows.push(a);
+        sim.set_input(id, input());
+        for _ in 0..10 {
+            sim.step(1.0 / 30.0);
+        }
+        // Both corpses cleared (no double-loot), both counted.
+        assert!(sim.enemies.enemies().all(|e| e.alive()));
+        assert_eq!(sim.slimes_killed, 2, "piercing must kill the whole rank");
+    }
+
+
+    
+
+
+    
     #[test]
     fn quest_advances_when_resources_gathered() {
         let mut sim = Simulation::new(1337);

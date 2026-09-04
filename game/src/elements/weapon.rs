@@ -131,6 +131,32 @@ pub fn build(
                 v.push(Part::diamond(nx + ux * 8.0, ny + uy * 8.0, 1.6, 2.2, 0.0, steel(), alpha, false));
             }
         }
+        WeaponKind::Dagger => {
+            // Short, quick blade: small guard, stubby steel with a wicked tip.
+            v.push(Part::vquad(hx - 1.6, hy - 5.0, 1.6, 9.0, wood(), alpha, false));
+            let gx = hx + ux * (lunge * 0.4);
+            let gy = hy + uy * (lunge * 0.4);
+            v.push(Part::diamond(gx, gy, 4.6, 2.2, 0.0, brass(), alpha, false));
+            let bx = hx + ux * (lunge * 0.4 + 8.0);
+            let by = hy + uy * (lunge * 0.4 + 8.0);
+            v.push(Part::vquad(bx - 2.0, by - 8.0, 2.0, 14.0, edge, alpha, true));
+            v.push(Part::diamond(bx + ux * 7.0, by + uy * 7.0, 2.2, 3.2, 0.0, edge, alpha, false));
+        }
+        WeaponKind::Crossbow => {
+            // Heavy tiller stock along the facing, steel bow arms across, and
+            // a fat tail. A bolt sits in the groove while spanned (nocked).
+            let sx = hx + ux * (lunge * 0.3 + 4.0);
+            let sy = hy + uy * (lunge * 0.3 + 4.0);
+            v.push(Part::vquad(sx - 2.0, sy - 3.0, 2.0, 17.0, wood(), alpha, true));
+            v.push(Part::diamond(sx + ux * 8.0, sy + uy * 8.0, 2.2, 2.2, 0.0, brass(), alpha, false));
+            let bow = 10.0 + a * 2.0;
+            v.push(Part::diamond(sx + ux * 6.0 + px * bow, sy + uy * 6.0 + py * bow, 2.6, 3.0, 0.0, steel(), alpha, true));
+            v.push(Part::diamond(sx + ux * 6.0 - px * bow, sy + uy * 6.0 - py * bow, 2.6, 3.0, 0.0, steel(), alpha, true));
+            if nocked {
+                v.push(Part::vquad(sx + ux * 4.0 - 1.2, sy + uy * 4.0 - 1.2, 1.2, 16.0, [0.80, 0.72, 0.55], alpha, false));
+                v.push(Part::diamond(sx + ux * 13.0, sy + uy * 13.0, 2.0, 2.6, 0.0, edge, alpha, false));
+            }
+        }
     }
     v
 }
@@ -160,15 +186,17 @@ mod tests {
             WeaponKind::Spear,
             WeaponKind::Hammer,
             WeaponKind::Bow,
+            WeaponKind::Dagger,
+            WeaponKind::Crossbow,
         ];
         let counts: Vec<usize> = kinds
             .iter()
-            .map(|k| build(*k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0).len())
+            .map(|k| build(*k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, true, 1.0).len())
             .collect();
-        // Fists draw nothing; every real weapon draws 3-4 parts.
+        // Fists draw nothing; every real weapon draws 3-6 parts.
         assert_eq!(build(WeaponKind::Fists, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0).len(), 0);
         for (k, n) in kinds.iter().zip(counts.iter()) {
-            assert!((3..=4).contains(n), "{k:?} should draw 3-4 parts, drew {n}");
+            assert!((3..=6).contains(n), "{k:?} should draw 3-6 parts, drew {n}");
         }
     }
 

@@ -675,11 +675,11 @@ try {
 
   // 30-33. weapon bar + defense HUD + dynamic form factor (fresh NG+ run).
   {
-    // 30. weapon bar renders all 6 slots; a fresh NG+ run owns Fists only.
+    // 30. weapon bar renders all 8 slots; a fresh NG+ run owns Fists only.
     const slots = await evaluate(`document.querySelectorAll('#weaponbar .wslot').length`);
-    slots === 6 ? ok('weapon bar renders 6 slots') : bad(`weapon bar slots=${slots}`);
+    slots === 8 ? ok('weapon bar renders 8 slots') : bad(`weapon bar slots=${slots}`);
     const locked = await evaluate(`document.querySelectorAll('#weaponbar .wslot.locked').length`);
-    locked === 5 ? ok('fresh run locks 5 weapon slots (Fists owned)') : bad(`locked slots=${locked}`);
+    locked === 7 ? ok('fresh run locks 7 weapon slots (Fists owned)') : bad(`locked slots=${locked}`);
     // 31. stats carry the HUD wiring keys for owned-weapons + blocking.
     // (getStat lives in the Chapter-2 block scope; match inline here.)
     const wownRaw = await evaluate(`window.__m.get_stats()`);
@@ -694,8 +694,9 @@ try {
     (blockHidden === 'none' && blockShown === 'inline-block')
       ? ok('BLOCK chip follows Shift hold')
       : bad(`block chip hidden=${blockHidden} shown=${blockShown}`);
-    // 33. equip binding rejects locked slots (hammer, idx 4, unowned here).
-    const equipLocked = await evaluate(`window.__m.equip_weapon_slot(4)`);
+    // 33. equip binding rejects locked slots (hammer idx 4 / crossbow idx
+    // 7, both unowned on a fresh run).
+    const equipLocked = await evaluate(`window.__m.equip_weapon_slot(7)`);
     equipLocked === false ? ok('equip rejects locked slot') : bad(`equip_locked=${equipLocked}`);
     // 34. narrow viewport flips the dynamic mobile HUD.
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });

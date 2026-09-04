@@ -131,16 +131,11 @@ impl Player {
 
     /// Cycle to the next owned weapon (wraps around). No-op if only Fists owned.
     pub fn cycle_weapon(&mut self) {
-        let order = [
-            WeaponKind::Fists,
-            WeaponKind::Sword,
-            WeaponKind::Axe,
-            WeaponKind::Spear,
-            WeaponKind::Hammer,
-            WeaponKind::Bow,
-        ];
+        // NOTE: cycle position, not the discriminant — order and as_u8 differ.
+        let order = WeaponKind::cycle_order();
+        let pos = order.iter().position(|&k| k == self.weapon).unwrap_or(0);
         for i in 1..order.len() {
-            let idx = (self.weapon as usize + i) % order.len();
+            let idx = (pos + i) % order.len();
             if self.has_weapon(order[idx]) {
                 self.weapon = order[idx];
                 return;

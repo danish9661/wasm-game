@@ -433,7 +433,7 @@ fn install_input_handlers(window: web_sys::Window, document: web_sys::Document) 
         Closure::<dyn FnMut(KeyboardEvent)>::wrap(Box::new(|e: KeyboardEvent| {
             APP.with(|cell| {
                 if let Some(app) = cell.borrow_mut().as_mut() {
-                    app.set_key(e.code().as_str(), true);
+                    app.set_key(e.code().as_str(), true, e.repeat());
                 }
             });
             e.prevent_default();
@@ -448,7 +448,7 @@ fn install_input_handlers(window: web_sys::Window, document: web_sys::Document) 
         Closure::<dyn FnMut(KeyboardEvent)>::wrap(Box::new(|e: KeyboardEvent| {
             APP.with(|cell| {
                 if let Some(app) = cell.borrow_mut().as_mut() {
-                    app.set_key(e.code().as_str(), false);
+                    app.set_key(e.code().as_str(), false, false);
                 }
             });
         }))
