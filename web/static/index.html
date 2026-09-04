@@ -94,7 +94,7 @@
         <span class="k">N</span><span class="d">Build an anvil</span>
         <span class="k">H</span><span class="d">Build a well (blocks movement)</span>
         <span class="k">J / K</span><span class="d">Attack (swing or loose). HOLD to charge a heavy finisher (1.5–2.5x). Strike mid-dodge for a dash attack. Hit foes from behind for backstab bonus (daggers 2.5x)</span>
-        <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Dagger → Sword → Axe → Spear → Hammer → Bow → Crossbow)</span>
+        <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Dagger → Sword → Axe → Spear → Hammer → Mace → Bow → Crossbow)</span>
         <span class="k">Weapon bar</span><span class="d">Tap / click an owned weapon to equip it directly — locked slots are dimmed. Hold Shift to raise your shield (🛡 BLOCK chip); tap FPS to collapse the debug row</span>        <span class="k">C</span><span class="d">Eat food to restore hunger</span>
         <span class="k">T</span><span class="d">Drink at a well / shoreline (restores thirst)</span>
         <span class="k">Shift</span><span class="d">Hold to block (raises guard, cuts incoming damage)</span>
@@ -762,6 +762,7 @@
             { icon: '🏹', label: 'Bow',      sub: '12 dmg · ranged' },
             { icon: '🔪', label: 'Dagger',   sub: '6 dmg · flurry + backstab' },
             { icon: '🎯', label: 'Crossbow', sub: '14 dmg · piercing bolts' },
+            { icon: '🏏', label: 'Mace',     sub: '16 dmg · cracks armor' },
           ];
           const wbar = document.getElementById('weaponbar');
           WEAPONS.forEach((w, i) => {

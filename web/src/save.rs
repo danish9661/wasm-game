@@ -2,7 +2,7 @@ use game::building::Structure;
 use game::enemy::EnemyKind;
 use game::items::ItemKind;
 use game::resources::ResourceKind;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// Bump this when `SaveState`'s layout changes. Loads from a different version
 /// are rejected so an old save can never silently corrupt a new build.
@@ -21,6 +21,31 @@ pub struct PlayerSave {
     pub xp: u32,
     #[serde(default)]
     pub level: u32,
+}
+
+/// Accept a `u8` (v1 saves) or `u16` (v2+) for the weapon bitmask so old
+/// save files keep loading after the roster grew past 8 slots.
+fn u16_from_u8_or_u16<'de, D>(d: D) -> Result<u16, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct Wide;
+    impl<'de> serde::de::Visitor<'de> for Wide {
+        type Value = u16;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a u8 or u16 weapon bitmask")
+        }
+        fn visit_u8<E: serde::de::Error>(self, v: u8) -> Result<u16, E> {
+            Ok(v as u16)
+        }
+        fn visit_u16<E: serde::de::Error>(self, v: u16) -> Result<u16, E> {
+            Ok(v)
+        }
+        fn visit_u64<E: serde::de::Error>(self, v: u64) -> Result<u16, E> {
+            Ok(v as u16)
+        }
+    }
+    d.deserialize_any(Wide)
 }
 
 /// Everything needed to resume a run exactly where the player left off.
@@ -67,9 +92,11 @@ pub struct SaveState {
     /// Equipped weapon (WeaponKind index) so it survives a reload.
     #[serde(default)]
     pub weapon: u8,
-    /// Bitmask of owned weapons (mirrors `Player::unlocked`).
-    #[serde(default)]
-    pub weapon_unlocked: u8,
+    /// Bitmask of owned weapons (mirrors `Player::unlocked`). Stored wide
+    /// (`u16`) since the Mace took the roster to 9; v1 saves stored a `u8`,
+    /// which the custom deserializer below still accepts.
+    #[serde(default, deserialize_with = "u16_from_u8_or_u16")]
+    pub weapon_unlocked: u16,
     /// Enchantment level of the equipped weapon (mirrors `Player::enchant`).
     #[serde(default)]
     pub enchant: u8,

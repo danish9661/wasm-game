@@ -27,9 +27,10 @@ const TURRET_RANGE: f32 = 9.0;
 const TURRET_CD: f32 = 1.1;
 
 /// Wire protocol version. Bumped 1 -> 2 for binary frames + deltas, 2 -> 3
-/// for the `ng_cycle` campaign field. JSON text frames remain accepted so old
-/// clients keep working; new clients send/receive bincode `Binary` frames.
-pub const PROTOCOL_VERSION: u32 = 3;
+/// for the `ng_cycle` campaign field, 3 -> 4 for the 9-weapon `u16` unlock
+/// bitmask. JSON text frames remain accepted so old clients keep working;
+/// new clients send/receive bincode `Binary` frames.
+pub const PROTOCOL_VERSION: u32 = 4;
 /// Ticks between authoritative full snapshots. Ticks in between carry
 /// `SimDelta` (dynamic entities + optionally changed statics), so the ~200
 /// static village/town structures are not re-sent 30x/sec.
@@ -89,7 +90,9 @@ pub struct PlayerInput {
     /// the player's real damage/reach instead of flat constants.
     pub weapon: u8,
     /// Bitmask of owned weapons, so the sim can validate/permit weapon use.
-    pub weapon_unlocked: u8,
+    /// `u16`: the roster holds 9 weapons (v4 protocol; v3 peers send 8 bits
+    /// and validate the low byte — Mace stays locked for them).
+    pub weapon_unlocked: u16,
     /// Enchantment level of the equipped weapon (raises its damage). Sent by the
     /// client; the server trusts it (co-op is collaborative, not competitive).
     pub enchant: u8,
@@ -612,7 +615,7 @@ fn step_player(
     // actually unlocked (bitmask) — stops a tampered client from wielding gear
     // it shouldn't have in co-op.
     let w = WeaponKind::from_u8(np.input.weapon);
-    if (np.input.weapon_unlocked & (1u8 << (w as u8))) != 0 {
+    if (np.input.weapon_unlocked & (1u16 << (w as u16))) != 0 {
         np.player.weapon = w;
         np.player.unlocked = np.input.weapon_unlocked;
     }

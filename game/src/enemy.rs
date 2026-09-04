@@ -250,6 +250,15 @@ impl EnemyKind {
             (EnemyKind::FrostGolem | EnemyKind::Colossus, WeaponKind::Hammer) => 1.5,
             (EnemyKind::ToadKing, WeaponKind::Axe) => 1.5,
             (EnemyKind::OceanLeviathan, WeaponKind::Spear) => 1.5,
+            // Mace cracks armor: stone brutes, golems and plated raiders.
+            (
+                EnemyKind::Ogre
+                | EnemyKind::FrostGolem
+                | EnemyKind::Colossus
+                | EnemyKind::Stoneslinger
+                | EnemyKind::Raider,
+                WeaponKind::Mace,
+            ) => 1.5,
             _ => 1.0,
         }
     }

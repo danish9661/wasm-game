@@ -157,6 +157,21 @@ pub fn build(
                 v.push(Part::diamond(sx + ux * 13.0, sy + uy * 13.0, 2.0, 2.6, 0.0, edge, alpha, false));
             }
         }
+        WeaponKind::Mace => {
+            // Flanged mace: stout shaft, bronze knob ringed by four steel
+            // flanges that catch the light on the swing.
+            let sx = hx + ux * (lunge * 0.4 + 5.0);
+            let sy = hy + uy * (lunge * 0.4 + 5.0);
+            v.push(Part::vquad(sx - 1.8, sy - 8.0, 1.8, 15.0, wood(), alpha, true));
+            v.push(Part::diamond(sx - ux * 5.0, sy - uy * 5.0, 2.4, 2.4, 0.0, brass(), alpha, false));
+            let hxp = sx + ux * 8.0;
+            let hyp = sy + uy * 8.0;
+            v.push(Part::diamond(hxp, hyp, 5.2, 5.2, 0.0, [0.72, 0.55, 0.28], alpha, true));
+            for s in [-1.0, 1.0] {
+                v.push(Part::diamond(hxp + px * 5.4 * s, hyp + py * 5.4 * s, 2.0, 3.4, 0.0, edge, alpha, true));
+                v.push(Part::diamond(hxp - px * 5.4 * s, hyp - py * 5.4 * s, 2.0, 3.4, 0.0, edge, alpha, true));
+            }
+        }
     }
     v
 }
@@ -188,15 +203,16 @@ mod tests {
             WeaponKind::Bow,
             WeaponKind::Dagger,
             WeaponKind::Crossbow,
+            WeaponKind::Mace,
         ];
         let counts: Vec<usize> = kinds
             .iter()
             .map(|k| build(*k, 0.0, 0.0, (1.0, 0.0), 0.5, 0, true, 1.0).len())
             .collect();
-        // Fists draw nothing; every real weapon draws 3-6 parts.
+        // Fists draw nothing; every real weapon draws a handful of parts.
         assert_eq!(build(WeaponKind::Fists, 0.0, 0.0, (1.0, 0.0), 0.5, 0, false, 1.0).len(), 0);
         for (k, n) in kinds.iter().zip(counts.iter()) {
-            assert!((3..=6).contains(n), "{k:?} should draw 3-6 parts, drew {n}");
+            assert!((3..=7).contains(n), "{k:?} should draw 3-7 parts, drew {n}");
         }
     }
 

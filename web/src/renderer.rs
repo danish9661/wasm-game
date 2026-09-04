@@ -2038,6 +2038,7 @@ impl App {
             WeaponKind::Bow,
             WeaponKind::Dagger,
             WeaponKind::Crossbow,
+            WeaponKind::Mace,
         ];
         let Some(kind) = order.get(idx).copied() else {
             return false;
@@ -2831,6 +2832,7 @@ impl App {
                 WeaponKind::Dagger => (12, 85.0, 0.16, 1.6),
                 WeaponKind::Spear => (4, 60.0, 0.20, 2.0),
                 WeaponKind::Hammer => (10, 35.0, 0.45, 4.5),
+                WeaponKind::Mace => (7, 42.0, 0.32, 4.0),
                 WeaponKind::Bow => (3, 30.0, 0.15, 2.0),
                 WeaponKind::Crossbow => (3, 30.0, 0.15, 2.0),
             };

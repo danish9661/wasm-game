@@ -52,7 +52,9 @@ pub struct Player {
     /// the attack fires a projectile (Bow).
     pub weapon: WeaponKind,
     /// Bitmask of weapons the player owns (bit `k as usize`; Fists is always set).
-    pub unlocked: u8,
+    /// `u16` (not `u8`): the roster outgrew 8 slots with the Mace, and widening
+    /// keeps old v1 saves loading (see the save compat shim).
+    pub unlocked: u16,
     /// Enchantment level of the equipped weapon (0 = none). Each level adds +15%
     /// damage and a faint glow. Gems spent at an Enchanting Table raise it.
     pub enchant: u8,
@@ -121,12 +123,12 @@ impl Player {
 
     /// Mark a weapon as owned (Fists is always owned via the initial bitmask).
     pub fn unlock_weapon(&mut self, k: WeaponKind) {
-        self.unlocked |= 1u8 << (k as usize);
+        self.unlocked |= 1u16 << (k as usize);
     }
 
     /// Whether the player owns a given weapon.
     pub fn has_weapon(&self, k: WeaponKind) -> bool {
-        (self.unlocked & (1u8 << (k as usize))) != 0
+        (self.unlocked & (1u16 << (k as usize))) != 0
     }
 
     /// Cycle to the next owned weapon (wraps around). No-op if only Fists owned.

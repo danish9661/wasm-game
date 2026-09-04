@@ -15,15 +15,16 @@ use serde::{Deserialize, Serialize};
 /// | Hammer   |  24 | 0.75 | 32.0 |    2.8 | burst king (fewest boss swings)    |
 /// | Bow      |  12 | 0.60 | 20.0 | ranged | safe at range (ranged tax)         |
 /// | Crossbow |  14 | 0.90 | 15.6 | ranged | piercing line shot (hits all)      |
+/// | Mace     |  16 | 0.60 | 26.7 |    2.6 | anti-armor (1.5x vs stone/plate)    |
 ///
 /// Sword wins sustained dps; hammer wins burst (fewest hits = least exposure)
 /// plus stagger; axe clears 12-14 HP packs in one swing; dagger trades reach
-/// for speed and unmatched backstabs; spear outranges every contact attack;
-/// bow/xbow trade dps for safety, xbow piercing ranks. Weak-points (1.5x) and
-/// enchant (+15%/level) stack on top.
+/// for speed and unmatched backstabs; mace cracks armored foes; spear
+/// outranges every contact attack; bow/xbow trade dps for safety, xbow
+/// piercing ranks. Weak-points (1.5x) and enchant (+15%/level) stack on top.
 ///
-/// NOTE: variants are bitmask-indexed into a `u8` (`unlocked`), so 8 is the
-/// hard cap without a save/network migration — a 9th weapon needs that first.
+/// NOTE: variants are bitmask-indexed into a `u16` (`unlocked`) — v1 saves
+/// stored a `u8` and still load via the save compat shim.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WeaponKind {
     Fists,
@@ -34,6 +35,7 @@ pub enum WeaponKind {
     Bow,
     Dagger,
     Crossbow,
+    Mace,
 }
 
 impl WeaponKind {
@@ -48,6 +50,7 @@ impl WeaponKind {
             WeaponKind::Bow => "Bow",
             WeaponKind::Dagger => "Dagger",
             WeaponKind::Crossbow => "Crossbow",
+            WeaponKind::Mace => "Mace",
         }
     }
 
@@ -62,6 +65,7 @@ impl WeaponKind {
             WeaponKind::Bow => 12.0,
             WeaponKind::Dagger => 6.0,
             WeaponKind::Crossbow => 14.0,
+            WeaponKind::Mace => 16.0,
         }
     }
 
@@ -76,6 +80,7 @@ impl WeaponKind {
             WeaponKind::Bow => 0.0,
             WeaponKind::Dagger => 2.0,
             WeaponKind::Crossbow => 0.0,
+            WeaponKind::Mace => 2.6,
         }
     }
 
@@ -90,6 +95,7 @@ impl WeaponKind {
             WeaponKind::Bow => 0.6,
             WeaponKind::Dagger => 0.22,
             WeaponKind::Crossbow => 0.9,
+            WeaponKind::Mace => 0.6,
         }
     }
 
@@ -123,6 +129,7 @@ impl WeaponKind {
             WeaponKind::Bow => [0.55, 0.40, 0.22],
             WeaponKind::Dagger => [0.45, 0.47, 0.52],
             WeaponKind::Crossbow => [0.50, 0.32, 0.18],
+            WeaponKind::Mace => [0.72, 0.55, 0.28],
         }
     }
 
@@ -134,6 +141,7 @@ impl WeaponKind {
             WeaponKind::Dagger,
             WeaponKind::Spear,
             WeaponKind::Hammer,
+            WeaponKind::Mace,
             WeaponKind::Bow,
             WeaponKind::Crossbow,
         ]
@@ -150,19 +158,22 @@ impl WeaponKind {
     }
 
     /// Roll a drop given a `roll` in 0..100. ~30% chance to drop; the rarer the
-    /// weapon the higher the roll needed. Daggers are common, crossbows rare.
+    /// weapon the higher the roll needed. Daggers are common, crossbows and
+    /// maces rare.
     pub fn roll_drop_with(roll: u32) -> Option<WeaponKind> {
         if roll >= 70 {
             return None;
         }
-        match roll % 10 {
+        match roll % 12 {
             0 | 1 => Some(WeaponKind::Sword),
             2 => Some(WeaponKind::Axe),
             3 | 4 => Some(WeaponKind::Dagger),
             5 => Some(WeaponKind::Spear),
             6 => Some(WeaponKind::Hammer),
             7 | 8 => Some(WeaponKind::Bow),
-            _ => Some(WeaponKind::Crossbow),
+            9 => Some(WeaponKind::Mace),
+            10 => Some(WeaponKind::Crossbow),
+            _ => Some(WeaponKind::Bow),
         }
     }
 
@@ -182,6 +193,7 @@ impl WeaponKind {
             5 => WeaponKind::Bow,
             6 => WeaponKind::Dagger,
             7 => WeaponKind::Crossbow,
+            8 => WeaponKind::Mace,
             _ => WeaponKind::Fists,
         }
     }
@@ -195,6 +207,7 @@ impl WeaponKind {
             WeaponKind::Axe,
             WeaponKind::Spear,
             WeaponKind::Hammer,
+            WeaponKind::Mace,
             WeaponKind::Bow,
             WeaponKind::Crossbow,
         ]
@@ -212,6 +225,7 @@ impl WeaponKind {
             WeaponKind::Hammer => Some((2, 8, 0)),
             WeaponKind::Bow => Some((5, 0, 1)),
             WeaponKind::Crossbow => Some((7, 3, 1)),
+            WeaponKind::Mace => Some((3, 6, 0)),
         }
     }
 
@@ -235,7 +249,8 @@ mod tests {
     #[test]
     fn dps_order_matches_design() {
         // Sword: best sustained dps. Hammer second (burst). Axe close third,
-        // dagger fourth (reach tax), then spear, bow, crossbow, fists.
+        // dagger fourth (reach tax), mace fifth, then spear, bow, crossbow,
+        // fists.
         let mut v = [
             WeaponKind::Fists,
             WeaponKind::Sword,
@@ -245,6 +260,7 @@ mod tests {
             WeaponKind::Bow,
             WeaponKind::Dagger,
             WeaponKind::Crossbow,
+            WeaponKind::Mace,
         ];
         v.sort_by(|a, b| b.dps().partial_cmp(&a.dps()).unwrap());
         assert_eq!(
@@ -254,6 +270,7 @@ mod tests {
                 WeaponKind::Hammer,
                 WeaponKind::Axe,
                 WeaponKind::Dagger,
+                WeaponKind::Mace,
                 WeaponKind::Spear,
                 WeaponKind::Bow,
                 WeaponKind::Crossbow,
@@ -315,8 +332,9 @@ mod tests {
                 WeaponKind::Bow.as_u8(),
                 WeaponKind::Dagger.as_u8(),
                 WeaponKind::Crossbow.as_u8(),
+                WeaponKind::Mace.as_u8(),
             ],
-            [0, 1, 2, 3, 4, 5, 6, 7]
+            [0, 1, 2, 3, 4, 5, 6, 7, 8]
         );
         assert_eq!(WeaponKind::from_u8(99), WeaponKind::Fists);
     }
@@ -334,6 +352,25 @@ mod tests {
         assert_eq!(front, 1.0);
         // Degenerate geometry never pays.
         assert_eq!(backstab_mult((0.0, 0.0), (0.0, 0.0), (1.0, 0.0), WeaponKind::Sword), 1.0);
+    }
+
+    #[test]
+    fn mace_cracks_armor() {
+        for foe in [
+            EnemyKind::Ogre,
+            EnemyKind::FrostGolem,
+            EnemyKind::Colossus,
+            EnemyKind::Stoneslinger,
+            EnemyKind::Raider,
+        ] {
+            assert_eq!(foe.weakness_to(WeaponKind::Mace), 1.5, "{foe:?} is armored");
+        }
+        assert_eq!(EnemyKind::Slime.weakness_to(WeaponKind::Mace), 1.0);
+        // Mace sits between dagger and spear on raw dps.
+        assert!(WeaponKind::Mace.dps() < WeaponKind::Dagger.dps());
+        assert!(WeaponKind::Mace.dps() > WeaponKind::Spear.dps());
+        // ...but out-damages the sword against plate.
+        assert!(16.0 * 1.5 > WeaponKind::Sword.damage());
     }
 
     #[test]

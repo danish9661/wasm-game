@@ -675,11 +675,11 @@ try {
 
   // 30-33. weapon bar + defense HUD + dynamic form factor (fresh NG+ run).
   {
-    // 30. weapon bar renders all 8 slots; a fresh NG+ run owns Fists only.
+    // 30. weapon bar renders all 9 slots; a fresh NG+ run owns Fists only.
     const slots = await evaluate(`document.querySelectorAll('#weaponbar .wslot').length`);
-    slots === 8 ? ok('weapon bar renders 8 slots') : bad(`weapon bar slots=${slots}`);
+    slots === 9 ? ok('weapon bar renders 9 slots') : bad(`weapon bar slots=${slots}`);
     const locked = await evaluate(`document.querySelectorAll('#weaponbar .wslot.locked').length`);
-    locked === 7 ? ok('fresh run locks 7 weapon slots (Fists owned)') : bad(`locked slots=${locked}`);
+    locked === 8 ? ok('fresh run locks 8 weapon slots (Fists owned)') : bad(`locked slots=${locked}`);
     // 31. stats carry the HUD wiring keys for owned-weapons + blocking.
     // (getStat lives in the Chapter-2 block scope; match inline here.)
     const wownRaw = await evaluate(`window.__m.get_stats()`);
