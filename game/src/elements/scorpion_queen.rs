@@ -9,6 +9,7 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     _facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let body = color;
@@ -16,9 +17,11 @@ pub(crate) fn build(
     let claw = shade(body, 1.15);
     let stinger = [0.95, 0.85, 0.20];
     let seed = anim_seed(cx, cy);
-    let pulse = (anim_time * 4.0 + seed).sin() * 0.5 + 0.5;
+    let w = walk.clamp(0.0, 1.0);
+    // Venom pulse + claws snap wider while charging.
+    let pulse = (anim_time * (3.0 + 4.0 * w) + seed).sin() * 0.5 + 0.5;
     // Claws swing slightly
-    let claw_swing = (anim_time * 2.0 + seed).sin() * 2.0;
+    let claw_swing = (anim_time * (2.0 + 3.0 * w) + seed).sin() * (1.0 + 2.5 * w);
 
     let mut parts = vec![
         // Wide segmented body — three overlapping horizontal diamonds

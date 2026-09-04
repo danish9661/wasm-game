@@ -3,7 +3,9 @@ use crate::weapons::WeaponKind;
 use crate::world::{ChunkCache, TileKind, WorldGen, tile_at};
 
 /// Tiles per second when walking (screen-up is (-1,-1) in world coords).
-pub const PLAYER_SPEED: f32 = 5.2;
+/// Deliberate survival pace: all movement (player, enemies, NPCs) is scaled
+/// to ~85% of twitch speed so fights read and kiting takes commitment.
+pub const PLAYER_SPEED: f32 = 4.4;
 /// Camera follow responsiveness (1/toward-player per second).
 pub const CAMERA_FOLLOW: f32 = 10.0;
 /// Max hit points; damage taken is subtracted from this.

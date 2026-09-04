@@ -1025,7 +1025,7 @@ fn push_styled_sprite(
         SpriteStyle::Altar => rasterize(&altar::build(cx, cy, color, alpha, facing, anim_time), out),
         SpriteStyle::Arrow => arrow::draw(out, cx, cy, color, alpha, facing),
         SpriteStyle::Slime => {
-            let parts = slime::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = slime::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Humanoid => {
@@ -1075,41 +1075,41 @@ fn push_styled_sprite(
         }
         SpriteStyle::Statue => rasterize(&statue::build(cx, cy, color, alpha, facing, anim_time), out),
         // Enemies (humanoid foes render via SpriteStyle::Humanoid above)
-        SpriteStyle::Bat => rasterize(&bat::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Spider => rasterize(&spider::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Wraith => rasterize(&wraith::build(cx, cy, color, alpha, facing, anim_time), out),
-        SpriteStyle::Colossus => rasterize(&colossus::build(cx, cy, color, alpha, facing, anim_time), out),
+        SpriteStyle::Bat => rasterize(&bat::build(cx, cy, color, alpha, facing, walk, anim_time), out),
+        SpriteStyle::Spider => rasterize(&spider::build(cx, cy, color, alpha, facing, walk, anim_time), out),
+        SpriteStyle::Imp => rasterize(&imp::build(cx, cy, color, alpha, facing, walk, anim_time), out),
+        SpriteStyle::Wraith => rasterize(&wraith::build(cx, cy, color, alpha, facing, walk, anim_time), out),
+        SpriteStyle::Colossus => rasterize(&colossus::build(cx, cy, color, alpha, facing, walk, anim_time), out),
         SpriteStyle::ScorpionQueen => {
-            let parts = scorpion_queen::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = scorpion_queen::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::ToadKing => {
-            let parts = toad_king::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = toad_king::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Brute => {
-            let parts = brute::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = brute::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Stormcaller => {
-            let parts = stormcaller::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = stormcaller::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::OceanLeviathan => {
-            let parts = ocean_leviathan::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = ocean_leviathan::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Wolf => {
-            let parts = wolf::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = wolf::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Archer => {
-            let parts = archer::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = archer::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Raider => {
-            let parts = raider::build(cx, cy, color, alpha, facing, anim_time);
+            let parts = raider::build(cx, cy, color, alpha, facing, walk, anim_time);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Car => {

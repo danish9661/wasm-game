@@ -132,8 +132,8 @@ fn build_montage(imgs: &[(String, usize, usize, Vec<u8>)]) -> (usize, usize, Vec
     for (i, (_, iw, ih, data)) in imgs.iter().enumerate() {
         let col = i % cols;
         let row = i / cols;
-        let ox = col * cell + (cell - *iw) / 2;
-        let oy = row * cell + (cell - *ih) / 2;
+        let ox = col * cell + (cell.saturating_sub(*iw)) / 2;
+        let oy = row * cell + (cell.saturating_sub(*ih)) / 2;
         for y in 0..*ih {
             for x in 0..*iw {
                 let sa = data[(y * *iw + x) * 4 + 3] as f32 / 255.0;

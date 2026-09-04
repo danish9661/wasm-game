@@ -122,7 +122,7 @@ impl Npc {
             let nx = dx / d;
             let ny = dy / d;
             self.facing = (nx, ny);
-            let sp = 1.6 * dt; // slow stroll
+            let sp = 1.35 * dt; // slow stroll (global survival pace)
             let nx2 = self.x + nx * sp;
             let ny2 = self.y + ny * sp;
             if !is_blocked(nx2, ny2) {

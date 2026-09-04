@@ -14,7 +14,7 @@ use crate::quest::QuestLog;
 use crate::resources::{resource_on, NodeRegistry, ResourceKind};
 use crate::world::{tile_at, ChunkCache, WorldGen, TileKind};
 
-const MOVE_SPEED: f32 = 4.0;
+const MOVE_SPEED: f32 = player::PLAYER_SPEED;
 const CONTACT_RANGE: f32 = 1.3;
 const SPIKE_DPS: f32 = 14.0;
 const RESPAWN_SECS: f32 = 15.0;

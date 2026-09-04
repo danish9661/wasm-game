@@ -10,13 +10,16 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     _facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let body = color;
     let pale = shade(color, 1.25);
     let glow = [0.85, 1.0, 0.9];
     let seed = (cx * 1.7 + cy * 2.3).fract().abs();
-    let drift = (anim_time * 1.6 + seed * 6.28).sin() * 2.0;
+    let w = walk.clamp(0.0, 1.0);
+    // Wisp trails stream harder while drifting after prey.
+    let drift = (anim_time * (1.2 + 1.2 * w) + seed * 6.28).sin() * (1.2 + 2.2 * w);
     // Tapering body: wide near the middle, narrowing to a wisp at the bottom.
     let mut parts = vec![
         Part::diamond(cx, cy - 2.0, 11.0, 9.0, 0.0, body, alpha, true),

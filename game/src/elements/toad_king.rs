@@ -9,6 +9,7 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     _facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let body = color;
@@ -17,11 +18,12 @@ pub(crate) fn build(
     let eye = [0.90, 0.85, 0.20];
     let tongue = [0.85, 0.20, 0.20];
     let seed = anim_seed(cx, cy);
-    // Breathing pulse — the body swells gently
-    let breath = (anim_time * 2.0 + seed).sin() * 1.5;
-    // Tongue flicks out occasionally
+    let w = walk.clamp(0.0, 1.0);
+    // Breathing pulse — the body swells gently, harder on the move.
+    let breath = (anim_time * (2.0 + 2.0 * w) + seed).sin() * (0.8 + 1.4 * w);
+    // Tongue flicks out occasionally (more often while hunting).
     let tongue_out = {
-        let t = (anim_time * 0.8 + seed).fract();
+        let t = (anim_time * (0.6 + 1.0 * w) + seed).fract();
         if t < 0.15 { (t / 0.15) } else if t < 0.3 { (1.0 - (t - 0.15) / 0.15) } else { 0.0 }
     };
 

@@ -8,6 +8,7 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let skin = [0.75, 0.58, 0.45];
@@ -16,11 +17,13 @@ pub(crate) fn build(
     let legs = [0.20, 0.15, 0.12];
     let (hx, hy) = facing_offset(facing, 3.0);
     let seed = anim_seed(cx, cy);
-    let phase = anim_time * 6.0 + seed;
-    let swing = (phase).sin() * 0.3;
-    let bob = (phase * 2.0).sin().abs() * 0.8;
+    let w = walk.clamp(0.0, 1.0);
+    // Skulking stride quickens on the hunt; cloak streams behind.
+    let phase = anim_time * (5.0 + 5.0 * w) + seed;
+    let swing = (phase).sin() * (0.15 + 0.45 * w);
+    let bob = (phase * 2.0).sin().abs() * (0.3 + 1.0 * w);
     // Cloak flutters
-    let flutter = (anim_time * 4.0 + seed).sin() * 1.5;
+    let flutter = (anim_time * 4.0 + seed).sin() * (0.8 + 1.4 * w);
     let (ax, ay) = facing_offset(facing, 2.0);
 
     let mut parts = vec![

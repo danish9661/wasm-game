@@ -37,12 +37,21 @@ fn cottage(
     anim_time: f32,
 ) -> Vec<Part> {
     // (wall_w, wall_h, roof_h, roof_col, door_w, windows_per_floor, floors)
+    // Roofs run dark against brightened walls so each house reads as wall +
+    // lid instead of one mud slab; shutters below pick out each home's color.
     let (wall_w, wall_h, roof_h, roof_col, door_w, win_per, floors) = match kind {
-        0 => (92.0, 110.0, 67.0, [0.40, 0.27, 0.19], 19.0, 2, 2),
-        1 => (74.0, 88.0, 56.0, [0.45, 0.28, 0.16], 15.0, 1, 1),
-        2 => (56.0, 65.0, 45.0, [0.55, 0.45, 0.22], 11.0, 1, 1),
+        0 => (92.0, 110.0, 67.0, [0.30, 0.19, 0.13], 19.0, 2, 2),
+        1 => (74.0, 88.0, 56.0, [0.34, 0.20, 0.11], 15.0, 1, 1),
+        2 => (56.0, 65.0, 45.0, [0.46, 0.34, 0.15], 11.0, 1, 1),
         // Inn: a broad, warm two-storey tavern.
-        _ => (110.0, 102.0, 50.0, [0.34, 0.20, 0.16], 22.0, 2, 2),
+        _ => (110.0, 102.0, 50.0, [0.26, 0.15, 0.12], 22.0, 2, 2),
+    };
+    // Shutter / door accent per home, so houses tell apart at a glance.
+    let accent = match kind {
+        0 => [0.55, 0.18, 0.14], // house: deep red
+        1 => [0.20, 0.38, 0.20], // cabin: forest green
+        2 => [0.20, 0.35, 0.55], // hut: ocean blue
+        _ => [0.55, 0.38, 0.14], // inn: brass gold
     };
     let wall = color;
     let dark = shade(wall, 0.62);
@@ -83,12 +92,14 @@ fn cottage(
             false,
         ));
     }
-    // Lit windows per floor.
+    // Lit windows per floor, flanked by accent shutters.
     for f in 0..floors {
         let fy = cy - wall_h * (0.42 + f as f32 * 0.40);
         for _ in 0..win_per {
             for side in [-1.0, 1.0] {
                 let wx = cx + side * wall_w * 0.27;
+                parts.push(Part::vquad(wx - 7.5, fy - 4.0, 1.8, 8.0, accent, alpha, false));
+                parts.push(Part::vquad(wx + 5.7, fy - 4.0, 1.8, 8.0, accent, alpha, false));
                 parts.push(Part::vquad(wx - 4.0, fy - 4.0, 4.0, 8.0, [0.22, 0.16, 0.10], alpha, false));
                 parts.push(Part::vquad(wx - 3.0, fy - 3.0, 3.0, 6.0, lit, alpha, false));
                 parts.push(Part::vquad(wx - 0.4, fy - 3.0, 0.4, 6.0, [0.22, 0.16, 0.10], alpha, false));
@@ -96,7 +107,7 @@ fn cottage(
             }
         }
     }
-    // Glowing doorway with a hearth ember inside.
+    // Glowing doorway with an arched cap and a brighter hearth ember inside.
     let door_y = cy - door_w * 1.8;
     parts.push(Part::vquad(
         cx - door_w / 2.0,
@@ -107,22 +118,32 @@ fn cottage(
         alpha,
         true,
     ));
+    parts.push(Part::diamond(
+        cx,
+        door_y - 1.0,
+        door_w / 2.0 + 1.0,
+        4.0,
+        0.0,
+        shade(wall, 0.55),
+        alpha,
+        false,
+    ));
     parts.push(Part::vquad(
         cx - door_w / 2.0 + 1.5,
         door_y + 2.0,
         door_w / 2.0 - 1.5,
         door_w * 1.8 - 4.0,
-        [0.45, 0.30, 0.12],
+        [0.48, 0.32, 0.13],
         alpha * 0.9,
         false,
     ));
     parts.push(Part::diamond(
         cx,
         door_y + door_w * 0.9,
-        3.0,
-        3.0,
+        4.2,
+        4.2,
         0.0,
-        [1.0, 0.62, 0.22],
+        [1.0, 0.68, 0.26],
         alpha,
         false,
     ));
@@ -132,8 +153,18 @@ fn cottage(
         parts.push(Part::vquad(cx + wall_w / 2.0 + 1.0, cy - wall_h * 0.58, 9.0, 7.0, [0.45, 0.30, 0.18], alpha, true));
         parts.push(Part::vquad(cx + wall_w / 2.0 + 2.0, cy - wall_h * 0.55, 7.0, 2.0, [0.95, 0.80, 0.40], alpha, false));
     }
-    // Pitched roof.
+    // Pitched roof, set off from the wall by a deep eave shadow so the lid
+    // reads separately from the facade.
     let roof_base_y = cy - wall_h;
+    parts.push(Part::vquad(
+        cx - wall_w / 2.0 - 4.0,
+        roof_base_y - 1.0,
+        wall_w / 2.0 + 4.0,
+        5.0,
+        shade(wall, 0.35),
+        alpha,
+        false,
+    ));
     parts.push(Part::vquad(
         cx - wall_w / 2.0 - 5.0,
         roof_base_y - roof_h * 0.45,

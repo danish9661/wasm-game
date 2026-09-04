@@ -50,9 +50,10 @@ pub const KITE_MAX_FRAC: f32 = 0.9;
 /// How often (seconds) an enemy replans its A* path.
 pub const REPLAN_INTERVAL: f32 = 0.5;
 /// Enemy speed in tiles/second (slower than the player, so you can escape).
-pub const ENEMY_SPEED: f32 = 2.0;
+/// Scaled with the global ~85% survival pace (see PLAYER_SPEED).
+pub const ENEMY_SPEED: f32 = 1.7;
 /// Boss speed — slower than a slime, but it is a wall of hp you must kite.
-pub const BOSS_SPEED: f32 = 1.4;
+pub const BOSS_SPEED: f32 = 1.2;
 /// Boss aggro — it notices you from much further away.
 pub const BOSS_AGGRO_RANGE: f32 = 10.0;
 /// Boss melee reach — a wide reach so it cannot be trivially juked.

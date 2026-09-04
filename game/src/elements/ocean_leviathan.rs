@@ -9,6 +9,7 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     _facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let body = color;
@@ -17,11 +18,12 @@ pub(crate) fn build(
     let fin = shade(body, 0.85);
     let eye = [0.85, 0.95, 1.0];
     let seed = anim_seed(cx, cy);
-    // Serpentine undulation
-    let wave1 = (anim_time * 3.0 + seed).sin() * 2.5;
-    let wave2 = (anim_time * 3.0 + seed + 1.5).sin() * 2.0;
+    let w = walk.clamp(0.0, 1.0);
+    // Serpentine undulation, rolling harder while surging.
+    let wave1 = (anim_time * (2.5 + 3.0 * w) + seed).sin() * (1.2 + 2.6 * w);
+    let wave2 = (anim_time * (2.5 + 3.0 * w) + seed + 1.5).sin() * (1.0 + 2.0 * w);
     // Water trail shimmer
-    let shimmer = (anim_time * 6.0 + seed).sin().max(0.0);
+    let shimmer = (anim_time * (5.0 + 6.0 * w) + seed).sin().max(0.0);
 
     let mut parts = vec![
         // Serpentine body segments (4 segments, each offset by wave)

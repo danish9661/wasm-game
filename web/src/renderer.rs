@@ -4106,7 +4106,7 @@ impl App {
                     let dy = ey - n.y;
                     let len = d.max(1e-3);
                     n.facing = (dx / len, dy / len);
-                    let sp = 2.6 * dt; // guards move briskly when giving chase
+                    let sp = 2.2 * dt; // guards move briskly when giving chase (paced down with everything else)
                     if d > 1.2 {
                         let nx = n.x + dx / len * sp;
                         let ny = n.y + dy / len * sp;

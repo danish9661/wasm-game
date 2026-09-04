@@ -68,7 +68,16 @@ const VILLAGE_CANDIDATES: [(i32, i32); 12] = [
 ];
 
 /// Deterministic village sites for a seed (up to `count`). Each is placed on the
-/// first walkable candidate so hamlets never spawn in the sea.
+/// first walkable candidate so hamlets never spawn in the sea. Sites keep a
+/// minimum separation (`SETTLEMENT_GAP`) so hamlet house-rings (radius 12)
+/// can never overlap each other into merged roof blobs.
+pub const SETTLEMENT_GAP: i32 = 26;
+
+fn far_enough(out: &[(i32, i32)], tx: i32, ty: i32) -> bool {
+    out.iter()
+        .all(|(ox, oy)| (ox - tx).abs().max((oy - ty).abs()) >= SETTLEMENT_GAP)
+}
+
 pub fn village_sites(seed: u32, count: usize, mut is_walkable: impl FnMut(i32, i32) -> bool) -> Vec<(i32, i32)> {
     let mut out = Vec::new();
     let mut h = seed.wrapping_mul(40503).wrapping_add(0x9e37);
@@ -76,7 +85,7 @@ pub fn village_sites(seed: u32, count: usize, mut is_walkable: impl FnMut(i32, i
     while out.len() < count && i < VILLAGE_CANDIDATES.len() * 2 {
         h = h.wrapping_mul(1664525).wrapping_add(1013904223);
         let (tx, ty) = VILLAGE_CANDIDATES[(h >> 16) as usize % VILLAGE_CANDIDATES.len()];
-        if is_walkable(tx, ty) && !out.contains(&(tx, ty)) {
+        if is_walkable(tx, ty) && !out.contains(&(tx, ty)) && far_enough(&out, tx, ty) {
             out.push((tx, ty));
         }
         i += 1;
@@ -93,7 +102,7 @@ pub fn village_sites(seed: u32, count: usize, mut is_walkable: impl FnMut(i32, i
                     continue; // ring only
                 }
                 let (tx, ty) = (dx, dy);
-                if is_walkable(tx, ty) && !out.contains(&(tx, ty)) {
+                if is_walkable(tx, ty) && !out.contains(&(tx, ty)) && far_enough(&out, tx, ty) {
                     out.push((tx, ty));
                     if out.len() >= count {
                         return out;
@@ -263,8 +272,10 @@ pub fn poi_structures(seed: u32, world: &WorldGen, cache: &mut ChunkCache) -> Ve
         StructureKind::Watchtower,
     ];
     let mut bi = 0usize;
-    for gx in (tx0 - 10..=tx0 + 10).step_by(5) {
-        for gy in (ty0 - 10..=ty0 + 10).step_by(5) {
+    // Roomy 6-tile grid (house art runs ~200px tall — a 5-grid overlapped
+    // roofs). Skips the plaza and the rail row.
+    for gx in (tx0 - 10..=tx0 + 10).step_by(6) {
+        for gy in (ty0 - 10..=ty0 + 10).step_by(6) {
             if (gx - tx0).abs() <= 2 && (gy - ty0).abs() <= 2 {
                 continue;
             }
@@ -323,6 +334,52 @@ pub fn poi_structures(seed: u32, world: &WorldGen, cache: &mut ChunkCache) -> Ve
             }
         }
     }
+
+    // Spacing pass: drop house-kind structures that crowd another house-kind
+    // within 4 tiles (neighbouring hamlet rings, town edges) or a scattered
+    // decor home within 2. Merged oversized roofs read as one mud blob; a
+    // missing house reads as a garden. Village houses come first in the list
+    // so they win ties (spawn readability matters most).
+    let mut kept: Vec<(i32, i32)> = Vec::new();
+    structures.retain(|s| {
+        let (tx, ty, kind) = (s.tx, s.ty, s.kind);
+        if !matches!(
+            kind,
+            StructureKind::House
+                | StructureKind::Cabin
+                | StructureKind::Hut
+                | StructureKind::Inn
+                | StructureKind::Barn
+                | StructureKind::Watchtower
+        ) {
+            return true;
+        }
+        if kept
+            .iter()
+            .any(|(ox, oy)| (ox - tx).abs().max((oy - ty).abs()) < 4)
+        {
+            return false;
+        }
+        for dx in -2..=2 {
+            for dy in -2..=2 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                let (nx, ny) = (tx + dx, ty + dy);
+                let tile = tile_at(world, cache, nx, ny);
+                if matches!(
+                    crate::building::decor_on(nx, ny, tile),
+                    Some(StructureKind::House)
+                        | Some(StructureKind::Cabin)
+                        | Some(StructureKind::Hut)
+                ) {
+                    return false;
+                }
+            }
+        }
+        kept.push((tx, ty));
+        true
+    });
 
     structures
 }
@@ -395,6 +452,30 @@ mod tests {
         let mut seen = std::collections::HashSet::new();
         for s in &a {
             assert!(seen.insert((s.tx, s.ty, s.kind as u8)), "duplicate structure at ({},{})", s.tx, s.ty);
+        }
+        // House-kinds anywhere stand roomy: no two within 4 tiles, so
+        // oversized roofs never collide. (Cars may park closer; they are low.)
+        let houses: Vec<(i32, i32)> = a
+            .iter()
+            .filter(|s| {
+                matches!(
+                    s.kind,
+                    StructureKind::House
+                        | StructureKind::Cabin
+                        | StructureKind::Hut
+                        | StructureKind::Inn
+                        | StructureKind::Barn
+                        | StructureKind::Watchtower
+                )
+            })
+            .map(|s| (s.tx, s.ty))
+            .collect();
+        assert!(!houses.is_empty(), "world must contain buildings");
+        for (i, (ax, ay)) in houses.iter().enumerate() {
+            for (bx, by) in &houses[i + 1..] {
+                let d = (ax - bx).abs().max((ay - by).abs());
+                assert!(d >= 4, "houses too close: ({ax},{ay}) vs ({bx},{by})");
+            }
         }
     }
 }

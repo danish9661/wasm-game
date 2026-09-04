@@ -8,12 +8,16 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     _facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let wing = shade(color, 0.85);
     let body = color;
     let seed = anim_seed(cx, cy);
-    let flap = 0.85 + 0.15 * (anim_time * 9.0 + seed).sin();
+    let w = walk.clamp(0.0, 1.0);
+    // Wings beat faster and deeper in flight; folded-ish glide at rest.
+    let amp = 0.08 + 0.12 * w;
+    let flap = (1.0 - amp) + amp * (anim_time * (7.0 + 8.0 * w) + seed).sin();
     vec![
         Part::diamond(cx - 10.0 * flap, cy - 4.0, 10.0 * flap, 6.0, 0.0, wing, alpha, true),
         Part::diamond(cx + 10.0 * flap, cy - 4.0, 10.0 * flap, 6.0, 0.0, wing, alpha, true),

@@ -9,6 +9,7 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     _facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let robe = color;
@@ -16,10 +17,11 @@ pub(crate) fn build(
     let lightning = [0.70, 0.85, 1.0];
     let eye = [0.60, 0.80, 1.0];
     let seed = anim_seed(cx, cy);
-    // Floating bob
-    let bob = (anim_time * 2.5 + seed).sin() * 3.0;
+    let w = walk.clamp(0.0, 1.0);
+    // Floating bob, deeper while drifting; lightning crackles faster aloft.
+    let bob = (anim_time * (2.0 + 2.0 * w) + seed).sin() * (1.5 + 3.0 * w);
     // Lightning flicker
-    let flicker = (anim_time * 8.0 + seed).sin().max(0.0);
+    let flicker = (anim_time * (6.0 + 8.0 * w) + seed).sin().max(0.0);
 
     let mut parts = vec![
         // Tapered robe body (wide at bottom, narrow at shoulders)

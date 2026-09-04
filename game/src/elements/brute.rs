@@ -9,6 +9,7 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let skin = color;
@@ -16,13 +17,15 @@ pub(crate) fn build(
     let scar = shade(skin, 1.3);
     let seed = anim_seed(cx, cy);
     let (hx, hy) = facing_offset(facing, 2.0);
-    // Heavy breathing sway
-    let sway = (anim_time * 2.0 + seed).sin() * 1.0;
+    let w = walk.clamp(0.0, 1.0);
+    // Heavy breathing sway, widening on the move, plus a ponderous stomp.
+    let sway = (anim_time * 2.0 + seed).sin() * (0.5 + 1.5 * w);
+    let stomp = (anim_time * (2.5 + 3.5 * w) + seed).sin() * 3.0 * w;
 
     let mut parts = vec![
-        // Two thick, short legs
-        Part::vquad(cx - 7.0, cy - 2.0, 6.0, 12.0, dark, alpha, true),
-        Part::vquad(cx + 7.0, cy - 2.0, 6.0, 12.0, dark, alpha, true),
+        // Two thick, short legs (alternately stomping)
+        Part::vquad(cx - 7.0 - stomp, cy - 2.0, 6.0, 12.0, dark, alpha, true),
+        Part::vquad(cx + 7.0 + stomp, cy - 2.0, 6.0, 12.0, dark, alpha, true),
         // Massive barrel torso (wide, tall)
         Part::diamond(cx, cy - 16.0, 18.0, 14.0, 0.0, skin, alpha, true),
         // Darker belly band

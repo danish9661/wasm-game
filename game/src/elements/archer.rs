@@ -8,6 +8,7 @@ pub(crate) fn build(
     color: [f32; 3],
     alpha: f32,
     facing: (f32, f32),
+    walk: f32,
     anim_time: f32,
 ) -> Vec<Part> {
     let skin = [0.86, 0.66, 0.52];
@@ -16,11 +17,13 @@ pub(crate) fn build(
     let tunic = color;
     let (hx, hy) = facing_offset(facing, 3.0);
     let seed = anim_seed(cx, cy);
-    let phase = anim_time * 5.0 + seed;
-    let bob = (phase * 2.0).sin().abs() * 0.8;
+    let w = walk.clamp(0.0, 1.0);
+    // Marching bob; the bow steadies while moving.
+    let phase = anim_time * (4.0 + 4.0 * w) + seed;
+    let bob = (phase * 2.0).sin().abs() * (0.3 + 1.0 * w);
 
     // Bow bob — the bow sways slightly when idle
-    let bow_sway = (anim_time * 1.8 + seed).sin() * 1.5;
+    let bow_sway = (anim_time * 1.8 + seed).sin() * (0.8 + 1.4 * w);
     let (ax, ay) = facing_offset(facing, 1.0);
 
     vec![
