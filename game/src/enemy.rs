@@ -431,30 +431,30 @@ impl EnemyKind {
             EnemyKind::Wraith => (16.0, 23.0),
             EnemyKind::Stoneslinger => (16.0, 24.0),
             EnemyKind::Colossus => (35.0, 43.0),
-            EnemyKind::ScorpionQueen => (27.0, 27.0),
+            EnemyKind::ScorpionQueen => (30.0, 30.0),
             EnemyKind::FrostGolem => (38.0, 46.0),
-            EnemyKind::ToadKing => (32.0, 27.0),
-            EnemyKind::OceanLeviathan => (30.0, 24.0),
+            EnemyKind::ToadKing => (32.0, 32.0),
+            EnemyKind::OceanLeviathan => (30.0, 30.0),
             EnemyKind::Brute => (27.0, 30.0),
-            EnemyKind::Stormcaller => (19.0, 24.0),
+            EnemyKind::Stormcaller => (22.0, 30.0),
             EnemyKind::Wolf => (22.0, 16.0),
             EnemyKind::Archer => (19.0, 24.0),
             EnemyKind::Raider => (19.0, 24.0),
         };
         let style = match self {
             EnemyKind::Slime => SpriteStyle::Slime,
-            // The player and every humanoid foe share one consistent character
-            // rig (legs/torso/arms/head with a walk cycle), tinted per kind, so
-            // the cast reads as the same world. Creatures keep bespoke silhouettes.
+            // Humanoid foes share one rig core (limb math + walk cycle) with a
+            // per-kind variant (bulk/palette/extras), so the cast reads as the
+            // same world while silhouettes differ. Creatures keep bespoke art.
             EnemyKind::Boss => SpriteStyle::Humanoid,
-            EnemyKind::Skeleton => SpriteStyle::Humanoid,
-            EnemyKind::Goblin => SpriteStyle::Humanoid,
+            EnemyKind::Skeleton => SpriteStyle::Skeleton,
+            EnemyKind::Goblin => SpriteStyle::Goblin,
             EnemyKind::Bat => SpriteStyle::Bat,
             EnemyKind::Spider => SpriteStyle::Spider,
             EnemyKind::Imp => SpriteStyle::Imp,
-            EnemyKind::Ogre => SpriteStyle::Humanoid,
+            EnemyKind::Ogre => SpriteStyle::Ogre,
             EnemyKind::Wraith => SpriteStyle::Wraith,
-            EnemyKind::Stoneslinger => SpriteStyle::Humanoid,
+            EnemyKind::Stoneslinger => SpriteStyle::Stoneslinger,
             EnemyKind::Colossus => SpriteStyle::Colossus,
             EnemyKind::ScorpionQueen => SpriteStyle::ScorpionQueen,
             EnemyKind::FrostGolem => SpriteStyle::Colossus,

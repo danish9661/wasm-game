@@ -27,6 +27,11 @@ pub(crate) fn build(
         Part::diamond(cx, cy - 24.0, 15.0, 5.0, 0.0, shade(stone, 1.1), alpha, true),
         // Dark doorway opening
         Part::diamond(cx, cy - 10.0, 8.0, 10.0, 0.0, door, alpha, true),
+        // Light arch trim (jambs + lintel) so the opening reads as a
+        // doorway at distance instead of a solid dark block.
+        Part::diamond(cx - 8.0, cy - 14.0, 2.5, 5.0, 0.0, shade(stone, 1.6), alpha, true),
+        Part::diamond(cx + 8.0, cy - 14.0, 2.5, 5.0, 0.0, shade(stone, 1.6), alpha, true),
+        Part::diamond(cx, cy - 21.0, 9.0, 2.0, 0.0, shade(stone, 1.6), alpha, true),
         // Stone texture details
         Part::diamond(cx - 10.0, cy - 8.0, 2.0, 3.0, 0.0, dark, alpha, true),
         Part::diamond(cx + 10.0, cy - 14.0, 2.0, 3.0, 0.0, dark, alpha, true),

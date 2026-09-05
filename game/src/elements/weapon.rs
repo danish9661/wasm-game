@@ -120,7 +120,7 @@ pub fn build(
             // A nocked arrow rests on the grip while idle and vanishes the
             // instant the shot is loosed (re-nocking on cooldown end).
             v.push(Part::vquad(hx - 1.8, hy - 9.0, 1.8, 18.0, wood(), alpha, true));
-            let bow = 9.0 + a * 3.0; // limbs flex a touch on release
+            let bow = 8.0 + a * 5.0; // limbs splay visibly on release
             v.push(Part::diamond(hx + px * bow, hy + py * bow - 7.0, 2.4, 7.0, 0.0, wood(), alpha, false));
             v.push(Part::diamond(hx - px * bow, hy - py * bow + 7.0, 2.4, 7.0, 0.0, wood(), alpha, false));
             v.push(Part::diamond(hx + ux * 3.0, hy + uy * 3.0, 1.8, 1.8, 0.0, brass(), alpha, false));
@@ -176,16 +176,17 @@ pub fn build(
     v
 }
 
-/// Raised block shield: a steel-blue kite in front of the figure while the
-/// player holds block. Drawn over the weapon so defense reads instantly.
+/// Raised block shield: a heater with a flat top edge tapering to a bottom
+/// point — never a 45° diamond, so it can't read as a floor tile. Drawn over
+/// the weapon while the player holds block so defense reads instantly.
 pub fn block_shield(cx: f32, cy: f32, facing: (f32, f32), alpha: f32) -> Vec<Part> {
     let (ox, oy) = facing_offset(facing, 13.0);
     let sx = cx + ox;
     let sy = cy - 28.0 + oy;
     vec![
-        Part::diamond(sx, sy, 9.0, 11.5, 0.0, [0.45, 0.62, 0.85], alpha, true),
-        Part::diamond(sx, sy, 6.0, 8.0, 0.0, [0.62, 0.78, 0.96], alpha, false),
-        Part::diamond(sx, sy, 2.4, 2.4, 0.0, [0.90, 0.94, 1.0], alpha, false),
+        Part::vquad(sx, sy - 14.0, 7.0, 4.5, [0.40, 0.58, 0.85], alpha, true),
+        Part::diamond(sx, sy + 1.5, 7.0, 12.5, 0.0, [0.58, 0.75, 0.95], alpha, true),
+        Part::diamond(sx, sy - 2.0, 2.4, 3.0, 0.0, [0.90, 0.94, 1.0], alpha, false),
     ]
 }
 

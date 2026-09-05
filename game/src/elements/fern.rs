@@ -13,9 +13,12 @@ pub(crate) fn build(
     let f = color;
     let s = sway(cx, cy, anim_time, 1.8);
     vec![
-        Part::diamond(cx - 6.0 + s, cy - 7.0, 6.0, 5.0, 0.0, shade(f, 0.85), alpha, true),
-        Part::diamond(cx + 6.0 + s, cy - 7.0, 6.0, 5.0, 0.0, shade(f, 0.85), alpha, true),
-        Part::diamond(cx + s, cy - 12.0, 8.0, 8.0, 0.0, f, alpha, true),
+        // Wide arching side fronds + a tall center spike: spikier and taller
+        // than the round bush blob so the two never confuse at a glance.
+        Part::diamond(cx - 9.0 + s, cy - 7.0, 7.0, 5.0, 0.0, shade(f, 0.85), alpha, true),
+        Part::diamond(cx + 9.0 + s, cy - 7.0, 7.0, 5.0, 0.0, shade(f, 0.85), alpha, true),
+        Part::diamond(cx + s, cy - 14.0, 8.0, 9.0, 0.0, f, alpha, true),
         Part::diamond(cx + s, cy - 4.0, 5.0, 4.0, 0.0, shade(f, 1.1), alpha, true),
+        Part::vquad(cx + s, cy - 22.0, 1.5, 8.0, shade(f, 1.05), alpha, true),
     ]
 }

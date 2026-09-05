@@ -30,6 +30,14 @@ pub enum SpriteStyle {
     Altar,
     Slime,
     Humanoid,
+    /// Goblin: small green ambusher — eared variant of the humanoid rig.
+    Goblin,
+    /// Skeleton: gaunt undead — skull + ribs variant of the humanoid rig.
+    Skeleton,
+    /// Ogre: slow armored bruiser — bulked variant of the humanoid rig.
+    Ogre,
+    /// Stoneslinger: hooded rock-hurler — sling-stone variant of the humanoid rig.
+    Stoneslinger,
     /// Villager guard: armored figure with helmet, sword and shield.
     Guard,
     /// Stone golem protector: bulky, glowing eyes, heavy club.
@@ -92,9 +100,9 @@ pub enum SpriteStyle {
     Barn,
     Watchtower,
     // ---- Enemies ----------------------------------------------------------
-    // Humanoid foes (Skeleton, Goblin, Ogre, Brute, Stormcaller, Stoneslinger,
-    // Boss) all share SpriteStyle::Humanoid for a consistent cast; only the
-    // non-humanoid creatures below keep bespoke silhouettes.
+    // Humanoid foes (Skeleton, Goblin, Ogre, Stoneslinger) share the rig core
+    // with per-kind variants (see elements::humanoid::Variant); only the
+    // non-humanoid creatures below keep fully bespoke silhouettes.
     Bat,
     Spider,
     Imp,
@@ -139,6 +147,10 @@ pub fn style_label(s: SpriteStyle) -> &'static str {
         SpriteStyle::Altar => "A",
         SpriteStyle::Slime => "s",
         SpriteStyle::Humanoid => "P",
+        SpriteStyle::Goblin => "gb",
+        SpriteStyle::Skeleton => "sk",
+        SpriteStyle::Ogre => "Og",
+        SpriteStyle::Stoneslinger => "sl",
         SpriteStyle::Guard => "G",
         SpriteStyle::Golem => "O",
         SpriteStyle::HpBack => "_",
@@ -1082,6 +1094,22 @@ fn push_styled_sprite(
         }
         SpriteStyle::Humanoid => {
             let parts = humanoid::build(cx, cy, color, alpha, facing, walk, anim_time, attack);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Goblin => {
+            let parts = humanoid::build_variant(cx, cy, color, alpha, facing, walk, anim_time, attack, humanoid::Variant::Goblin);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Skeleton => {
+            let parts = humanoid::build_variant(cx, cy, color, alpha, facing, walk, anim_time, attack, humanoid::Variant::Skeleton);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Ogre => {
+            let parts = humanoid::build_variant(cx, cy, color, alpha, facing, walk, anim_time, attack, humanoid::Variant::Ogre);
+            rasterize_flash(&parts, out, flash);
+        }
+        SpriteStyle::Stoneslinger => {
+            let parts = humanoid::build_variant(cx, cy, color, alpha, facing, walk, anim_time, attack, humanoid::Variant::Slinger);
             rasterize_flash(&parts, out, flash);
         }
         SpriteStyle::Guard => {

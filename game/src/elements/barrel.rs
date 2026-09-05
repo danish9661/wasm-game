@@ -1,4 +1,7 @@
 //! Barrel: a wooden cask with two dark metal hoops — subtle creak sway.
+//! `color` is the wood tint (callers pass browns); hoops are shaded darker.
+//! Hoops are centered on the body and slightly wider so the silhouette stays
+//! symmetric on its tile (see CENTER-vquad convention).
 
 use crate::elements::prim::{anim_seed, shade, Part};
 
@@ -15,7 +18,7 @@ pub(crate) fn build(
     let creak = (anim_time * 0.8 + seed).sin() * 0.3;
     vec![
         Part::vquad(cx + creak, cy - 16.0, 8.0, 16.0, wood, alpha, true),
-        Part::vquad(cx - 8.0 + creak * 0.5, cy - 12.0, 8.0, 2.5, shade(wood, 0.7), alpha, true),
-        Part::vquad(cx - 8.0 + creak * 0.5, cy - 4.0, 8.0, 2.5, shade(wood, 0.7), alpha, true),
+        Part::vquad(cx + creak * 0.5, cy - 12.5, 8.7, 3.0, shade(wood, 0.55), alpha, true),
+        Part::vquad(cx + creak * 0.5, cy - 4.5, 8.7, 3.0, shade(wood, 0.55), alpha, true),
     ]
 }

@@ -17,6 +17,8 @@ pub(crate) fn build(
         // trunk (dark base, lit upper)
         Part::vquad(cx, cy - 4.0, 4.0, 4.0, shade(trunk, 0.7), alpha, true),
         Part::vquad(cx, cy - 18.0, 3.5, 14.0, trunk, alpha, true),
+        // exposed root flare so the trunk reads at the base, not all-canopy
+        Part::vquad(cx, cy + 4.0, 4.5, 5.0, shade(trunk, 0.85), alpha, true),
         // full, rounded crown built from four overlapping canopy tiers
         // (dark base tier blends the trunk into the foliage)
         Part::diamond(cx + s * 0.6, cy - 10.0, 22.0, 16.0, 0.0, shade(canopy, 0.55), alpha, true),

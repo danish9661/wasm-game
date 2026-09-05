@@ -90,6 +90,14 @@ pub(crate) mod dungeon;
 pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     use prim::{rasterize, Part};
     let color = [0.72, 0.74, 0.80];
+    // Representative in-game tints so previews match the live game (the pale
+    // paint above is only the neutral-rig fallback for the player figure).
+    use crate::building::StructureKind as SK;
+    use crate::enemy::EnemyKind as EK;
+    use crate::resources::ResourceKind as RK;
+    let rk = |k: RK| k.color();
+    let sk = |k: SK| k.color();
+    let ek = |k: EK| k.color();
     let alpha = 1.0;
     let facing = (1.0, 0.0);
     let t = 0.0;
@@ -99,14 +107,14 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
         rasterize(&parts, &mut verts);
         out.push((name.to_string(), verts));
     };
-    add(&mut out, "tree", tree::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "rock", rock::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "bush", bush::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "wall", wall::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "chest", chest::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "campfire", campfire::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "altar", altar::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "slime", slime::build(0.0, 0.0, color, alpha, facing, 0.0, t));
+    add(&mut out, "tree", tree::build(0.0, 0.0, rk(RK::Tree), alpha, facing, t));
+    add(&mut out, "rock", rock::build(0.0, 0.0, rk(RK::Rock), alpha, facing, t));
+    add(&mut out, "bush", bush::build(0.0, 0.0, rk(RK::Bush), alpha, facing, t));
+    add(&mut out, "wall", wall::build(0.0, 0.0, sk(SK::Wall), alpha, facing, t));
+    add(&mut out, "chest", chest::build(0.0, 0.0, sk(SK::Chest), alpha, facing, t));
+    add(&mut out, "campfire", campfire::build(0.0, 0.0, sk(SK::Campfire), alpha, facing, t));
+    add(&mut out, "altar", altar::build(0.0, 0.0, sk(SK::Altar), alpha, facing, t));
+    add(&mut out, "slime", slime::build(0.0, 0.0, ek(EK::Slime), alpha, facing, 0.0, t));
     add(&mut out, "humanoid", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     for k in [
         crate::weapons::WeaponKind::Sword,
@@ -126,59 +134,61 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     }
     add(&mut out, "block_shield", weapon::block_shield(0.0, 0.0, facing, alpha));
     add(&mut out, "bow_loosed", weapon::build(crate::weapons::WeaponKind::Bow, 0.0, 0.0, facing, 0.6, 0, false, alpha));
-    add(&mut out, "mushroom", mushroom::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "crystal", crystal::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "flower", flower::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "grass_tuft", grass_tuft::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "fern", fern::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "ore", ore::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "fence", fence::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "torch", torch::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "anvil", anvil::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "bed", bed::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "well", well::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "sign", sign::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "barrel", barrel::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "totem", totem::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "rock_pile", rock_pile::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "statue", statue::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "lantern", lantern::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "brazier", brazier::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "crate_box", crate_box::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "pillar", pillar::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "bone_pile", bone_pile::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "cactus", cactus::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "vines", vines::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "lilypad", lilypad::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "reed", reed::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "rubble", rubble::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "ruin_tower", ruin_tower::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "house", house::build(0, 0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "cabin", house::build(1, 0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "hut", house::build(2, 0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "inn", house::build(3, 0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "barn", house::build(4, 0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "watchtower", house::build(5, 0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "skeleton", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
-    add(&mut out, "goblin", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
-    add(&mut out, "bat", bat::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "spider", spider::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "imp", imp::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "ogre", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
-    add(&mut out, "wraith", wraith::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "stoneslinger", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
-    add(&mut out, "colossus", colossus::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "scorpion_queen", scorpion_queen::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "toad_king", toad_king::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "brute", brute::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "stormcaller", stormcaller::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "ocean_leviathan", ocean_leviathan::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "wolf", wolf::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "archer", archer::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "raider", raider::build(0.0, 0.0, color, alpha, facing, 0.0, t));
-    add(&mut out, "banner", banner::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "enchanting_table", enchanting_table::build(0.0, 0.0, color, alpha, facing, t));
-    add(&mut out, "dungeon", dungeon::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "mushroom", mushroom::build(0.0, 0.0, rk(RK::Mushroom), alpha, facing, t));
+    add(&mut out, "crystal", crystal::build(0.0, 0.0, rk(RK::Crystal), alpha, facing, t));
+    add(&mut out, "flower", flower::build(0.0, 0.0, rk(RK::Flower), alpha, facing, t));
+    add(&mut out, "grass_tuft", grass_tuft::build(0.0, 0.0, rk(RK::GrassTuft), alpha, facing, t));
+    add(&mut out, "fern", fern::build(0.0, 0.0, rk(RK::Fern), alpha, facing, t));
+    add(&mut out, "ore", ore::build(0.0, 0.0, rk(RK::Ore), alpha, facing, t));
+    add(&mut out, "fence", fence::build(0.0, 0.0, sk(SK::Fence), alpha, facing, t));
+    add(&mut out, "torch", torch::build(0.0, 0.0, sk(SK::Torch), alpha, facing, t));
+    add(&mut out, "anvil", anvil::build(0.0, 0.0, sk(SK::Anvil), alpha, facing, t));
+    add(&mut out, "bed", bed::build(0.0, 0.0, sk(SK::Bed), alpha, facing, t));
+    add(&mut out, "well", well::build(0.0, 0.0, sk(SK::Well), alpha, facing, t));
+    add(&mut out, "sign", sign::build(0.0, 0.0, sk(SK::Sign), alpha, facing, t));
+    // Barrel/crate take their wood tint from callers (in-game browns), so the
+    // previews pass the StructureKind tints to match the game.
+    add(&mut out, "barrel", barrel::build(0.0, 0.0, sk(SK::Barrel), alpha, facing, t));
+    add(&mut out, "totem", totem::build(0.0, 0.0, sk(SK::Totem), alpha, facing, t));
+    add(&mut out, "rock_pile", rock_pile::build(0.0, 0.0, sk(SK::RockPile), alpha, facing, t));
+    add(&mut out, "statue", statue::build(0.0, 0.0, sk(SK::Statue), alpha, facing, t));
+    add(&mut out, "lantern", lantern::build(0.0, 0.0, sk(SK::Lantern), alpha, facing, t));
+    add(&mut out, "brazier", brazier::build(0.0, 0.0, sk(SK::Brazier), alpha, facing, t));
+    add(&mut out, "crate_box", crate_box::build(0.0, 0.0, sk(SK::Crate), alpha, facing, t));
+    add(&mut out, "pillar", pillar::build(0.0, 0.0, sk(SK::Pillar), alpha, facing, t));
+    add(&mut out, "bone_pile", bone_pile::build(0.0, 0.0, sk(SK::BonePile), alpha, facing, t));
+    add(&mut out, "cactus", cactus::build(0.0, 0.0, sk(SK::Cactus), alpha, facing, t));
+    add(&mut out, "vines", vines::build(0.0, 0.0, sk(SK::Vines), alpha, facing, t));
+    add(&mut out, "lilypad", lilypad::build(0.0, 0.0, sk(SK::Lilypad), alpha, facing, t));
+    add(&mut out, "reed", reed::build(0.0, 0.0, sk(SK::Reed), alpha, facing, t));
+    add(&mut out, "rubble", rubble::build(0.0, 0.0, sk(SK::Rubble), alpha, facing, t));
+    add(&mut out, "ruin_tower", ruin_tower::build(0.0, 0.0, sk(SK::RuinTower), alpha, facing, t));
+    add(&mut out, "house", house::build(0, 0.0, 0.0, sk(SK::House), alpha, facing, t));
+    add(&mut out, "cabin", house::build(1, 0.0, 0.0, sk(SK::Cabin), alpha, facing, t));
+    add(&mut out, "hut", house::build(2, 0.0, 0.0, sk(SK::Hut), alpha, facing, t));
+    add(&mut out, "inn", house::build(3, 0.0, 0.0, sk(SK::Inn), alpha, facing, t));
+    add(&mut out, "barn", house::build(4, 0.0, 0.0, sk(SK::Barn), alpha, facing, t));
+    add(&mut out, "watchtower", house::build(5, 0.0, 0.0, sk(SK::Watchtower), alpha, facing, t));
+    add(&mut out, "skeleton", humanoid::build_variant(0.0, 0.0, ek(EK::Skeleton), alpha, facing, 0.0, t, 0.0, humanoid::Variant::Skeleton));
+    add(&mut out, "goblin", humanoid::build_variant(0.0, 0.0, ek(EK::Goblin), alpha, facing, 0.0, t, 0.0, humanoid::Variant::Goblin));
+    add(&mut out, "bat", bat::build(0.0, 0.0, ek(EK::Bat), alpha, facing, 0.0, t));
+    add(&mut out, "spider", spider::build(0.0, 0.0, ek(EK::Spider), alpha, facing, 0.0, t));
+    add(&mut out, "imp", imp::build(0.0, 0.0, ek(EK::Imp), alpha, facing, 0.0, t));
+    add(&mut out, "ogre", humanoid::build_variant(0.0, 0.0, ek(EK::Ogre), alpha, facing, 0.0, t, 0.0, humanoid::Variant::Ogre));
+    add(&mut out, "wraith", wraith::build(0.0, 0.0, ek(EK::Wraith), alpha, facing, 0.0, t));
+    add(&mut out, "stoneslinger", humanoid::build_variant(0.0, 0.0, ek(EK::Stoneslinger), alpha, facing, 0.0, t, 0.0, humanoid::Variant::Slinger));
+    add(&mut out, "colossus", colossus::build(0.0, 0.0, ek(EK::Colossus), alpha, facing, 0.0, t));
+    add(&mut out, "scorpion_queen", scorpion_queen::build(0.0, 0.0, ek(EK::ScorpionQueen), alpha, facing, 0.0, t));
+    add(&mut out, "toad_king", toad_king::build(0.0, 0.0, ek(EK::ToadKing), alpha, facing, 0.0, t));
+    add(&mut out, "brute", brute::build(0.0, 0.0, ek(EK::Brute), alpha, facing, 0.0, t));
+    add(&mut out, "stormcaller", stormcaller::build(0.0, 0.0, ek(EK::Stormcaller), alpha, facing, 0.0, t));
+    add(&mut out, "ocean_leviathan", ocean_leviathan::build(0.0, 0.0, ek(EK::OceanLeviathan), alpha, facing, 0.0, t));
+    add(&mut out, "wolf", wolf::build(0.0, 0.0, ek(EK::Wolf), alpha, facing, 0.0, t));
+    add(&mut out, "archer", archer::build(0.0, 0.0, ek(EK::Archer), alpha, facing, 0.0, t));
+    add(&mut out, "raider", raider::build(0.0, 0.0, ek(EK::Raider), alpha, facing, 0.0, t));
+    add(&mut out, "banner", banner::build(0.0, 0.0, sk(SK::Banner), alpha, facing, t));
+    add(&mut out, "enchanting_table", enchanting_table::build(0.0, 0.0, sk(SK::EnchantingTable), alpha, facing, t));
+    add(&mut out, "dungeon", dungeon::build(0.0, 0.0, sk(SK::Dungeon), alpha, facing, t));
     out
 }
 
@@ -217,6 +227,10 @@ mod tests {
             ("colossus", verts(super::colossus::build(0.0, 0.0, color, 1.0, facing, 0.0, t)), verts(super::colossus::build(0.0, 0.0, color, 1.0, facing, 1.0, t))),
             ("golem", verts(super::golem::build(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0)), verts(super::golem::build(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0))),
             ("humanoid", verts(super::humanoid::build(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0)), verts(super::humanoid::build(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0))),
+            ("goblin", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0, super::humanoid::Variant::Goblin)), verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0, super::humanoid::Variant::Goblin))),
+            ("skeleton", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0, super::humanoid::Variant::Skeleton)), verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0, super::humanoid::Variant::Skeleton))),
+            ("ogre", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0, super::humanoid::Variant::Ogre)), verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0, super::humanoid::Variant::Ogre))),
+            ("stoneslinger", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0, super::humanoid::Variant::Slinger)), verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0, super::humanoid::Variant::Slinger))),
         ];
         for (name, rest, stride) in pairs {
             // Flickering bits (toad tongue, storm wisps) may add/remove parts;
@@ -225,6 +239,61 @@ mod tests {
             assert!(n > 0, "{name} must emit geometry");
             let diffs = rest[..n].iter().zip(stride[..n].iter()).filter(|(a, b)| (*a - *b).abs() > 1e-4).count();
             assert!(diffs > 0, "{name} must change pose between rest and stride");
+        }
+    }
+
+    /// Foe-identity guard: the humanoid variants must rasterize to distinct
+    /// geometry (regression test for the ogre/stoneslinger/humanoid triple
+    /// duplicate — byte-identical previews for distinct foes).
+    #[test]
+    fn humanoid_variants_are_distinct() {
+        use super::humanoid::Variant;
+        let color = [0.72, 0.74, 0.80];
+        let facing = (1.0, 0.0);
+        let vs = [
+            ("civilian", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, 0.7, 0.0, Variant::Civilian))),
+            ("goblin", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, 0.7, 0.0, Variant::Goblin))),
+            ("skeleton", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, 0.7, 0.0, Variant::Skeleton))),
+            ("ogre", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, 0.7, 0.0, Variant::Ogre))),
+            ("slinger", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, 0.7, 0.0, Variant::Slinger))),
+        ];
+        for i in 0..vs.len() {
+            for j in (i + 1)..vs.len() {
+                assert!(vs[i].1 != vs[j].1, "{} and {} rasterize identically", vs[i].0, vs[j].0);
+            }
+        }
+    }
+
+    /// Boss-mass guard: every boss must rasterize to at least the Brute's
+    /// bbox area (regression test for the boss-hierarchy inversion where
+    /// four of five bosses read as minions next to the common Brute).
+    #[test]
+    fn bosses_outmass_the_brute() {
+        let color = [0.72, 0.74, 0.80];
+        let facing = (1.0, 0.0);
+        fn area(v: &[f32]) -> f32 {
+            let (mut minx, mut maxx, mut miny, mut maxy) =
+                (f32::INFINITY, f32::NEG_INFINITY, f32::INFINITY, f32::NEG_INFINITY);
+            for c in v.chunks(6) {
+                minx = minx.min(c[0]);
+                maxx = maxx.max(c[0]);
+                miny = miny.min(c[1]);
+                maxy = maxy.max(c[1]);
+            }
+            (maxx - minx) * (maxy - miny)
+        }
+        let br = area(&verts(super::brute::build(0.0, 0.0, color, 1.0, facing, 0.0, 0.7)));
+        assert!(br > 0.0, "brute must emit geometry");
+        let bosses = [
+            ("scorpion_queen", verts(super::scorpion_queen::build(0.0, 0.0, color, 1.0, facing, 0.0, 0.7))),
+            ("toad_king", verts(super::toad_king::build(0.0, 0.0, color, 1.0, facing, 0.0, 0.7))),
+            ("ocean_leviathan", verts(super::ocean_leviathan::build(0.0, 0.0, color, 1.0, facing, 0.0, 0.7))),
+            ("stormcaller", verts(super::stormcaller::build(0.0, 0.0, color, 1.0, facing, 0.0, 0.7))),
+            ("colossus", verts(super::colossus::build(0.0, 0.0, color, 1.0, facing, 0.0, 0.7))),
+        ];
+        for (name, v) in bosses {
+            let a = area(&v);
+            assert!(a >= br, "{name} bbox area {a:.0} must meet brute {br:.0}");
         }
     }
 

@@ -147,11 +147,12 @@ fn cottage(
         alpha,
         false,
     ));
-    // A hanging inn sign for kind 3.
+    // A hanging inn sign for kind 3: stout post, broad board with a gold
+    // fascia so it reads at distance; tucked close to the wall.
     if kind == 3 {
         parts.push(Part::vquad(cx + wall_w / 2.0 - 0.5, cy - wall_h * 0.62, 1.5, 10.0, [0.30, 0.20, 0.12], alpha, true));
-        parts.push(Part::vquad(cx + wall_w / 2.0 + 10.0, cy - wall_h * 0.58, 9.0, 7.0, [0.45, 0.30, 0.18], alpha, true));
-        parts.push(Part::vquad(cx + wall_w / 2.0 + 9.0, cy - wall_h * 0.55, 7.0, 2.0, [0.95, 0.80, 0.40], alpha, false));
+        parts.push(Part::vquad(cx + wall_w / 2.0 + 8.0, cy - wall_h * 0.58, 11.0, 9.0, [0.45, 0.30, 0.18], alpha, true));
+        parts.push(Part::vquad(cx + wall_w / 2.0 + 7.0, cy - wall_h * 0.55, 9.0, 2.5, [0.95, 0.80, 0.40], alpha, false));
     }
     // Pitched roof, set off from the wall by a deep eave shadow so the lid
     // reads separately from the facade.

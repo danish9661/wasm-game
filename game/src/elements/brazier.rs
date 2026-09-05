@@ -21,5 +21,7 @@ pub(crate) fn build(
         Part::diamond(cx, cy - 12.0, 12.0, 7.0, 0.0, bowl, alpha, true),
         Part::diamond(cx, cy - 18.0, 6.0, 8.0, 0.0, flame, alpha, true),
         Part::diamond(cx, cy - 22.0, 3.0, 5.0, 0.0, shade(flame, 1.3), alpha, true),
+        // Hot yellow core shared with the campfire so both read one fire ramp.
+        Part::diamond(cx, cy - 19.0, 3.0, 4.5, 0.0, shade([1.0, 0.85, 0.40], flick), alpha, true),
     ]
 }

@@ -24,8 +24,12 @@ pub(crate) fn build(
     let wy = 12.0 * (1.0 - 0.18 * (1.0 - hop)); // shorter when grounded
     let jx = cx + wob;
     let center_y = cy - wy + lift_y;
+    let eye = [0.10, 0.22, 0.12];
     vec![
         Part::diamond(jx, center_y, wx, wy, 0.0, body, alpha, true),
         Part::diamond(jx - 4.0, center_y - wy * 0.5, 5.0, 4.0, 0.0, shade(body, 1.4), alpha, true),
+        // Eyes ride the wobble/hop so the blob reads as a creature, not a tile.
+        Part::diamond(jx - 6.0, center_y - wy * 0.25, 2.2, 2.8, 0.0, eye, alpha, true),
+        Part::diamond(jx + 6.0, center_y - wy * 0.25, 2.2, 2.8, 0.0, eye, alpha, true),
     ]
 }

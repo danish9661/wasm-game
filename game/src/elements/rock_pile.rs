@@ -12,8 +12,12 @@ pub(crate) fn build(
 ) -> Vec<Part> {
     let r = color;
     vec![
-        Part::diamond(cx - 3.0, cy - 1.0, 8.0, 6.0, 0.0, shade(r, 0.7), alpha, true),
-        Part::diamond(cx + 4.0, cy - 3.0, 6.0, 5.0, 0.0, shade(r, 0.9), alpha, true),
-        Part::diamond(cx, cy - 6.0, 6.0, 4.0, 0.0, shade(r, 1.1), alpha, true),
+        // Three separated lobes with notches between them + a glint per lobe
+        // so the pile reads as a stack, not one single rock.
+        Part::diamond(cx - 7.0, cy - 1.0, 8.0, 6.0, 0.0, shade(r, 0.7), alpha, true),
+        Part::diamond(cx + 7.0, cy - 3.0, 7.0, 5.0, 0.0, shade(r, 0.9), alpha, true),
+        Part::diamond(cx, cy - 8.0, 6.0, 5.0, 0.0, shade(r, 1.1), alpha, true),
+        Part::diamond(cx - 9.0, cy - 3.0, 2.0, 2.0, 0.0, shade(r, 1.4), alpha, true),
+        Part::diamond(cx + 5.0, cy - 10.0, 2.0, 2.0, 0.0, shade(r, 1.4), alpha, true),
     ]
 }
