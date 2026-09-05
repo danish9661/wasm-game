@@ -1885,7 +1885,13 @@ impl App {
                 "KeyM" => self.craft_weapon(),
                 "KeyO" => self.talk_nearest_npc(),
                 "KeyL" => self.cook(),
-                "Enter" => self.toggle_interior(),
+                "Enter" => {
+                    // OS key-repeat while held must not strobe enter/leave;
+                    // a hold is one entry (or one exit), never a lottery.
+                    if !repeat {
+                        self.toggle_interior();
+                    }
+                }
                 "Space" => {
                     self.dodge();
                     play_sfx("dodge");
