@@ -156,6 +156,9 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "house", house::build(0, 0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "cabin", house::build(1, 0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "hut", house::build(2, 0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "inn", house::build(3, 0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "barn", house::build(4, 0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "watchtower", house::build(5, 0.0, 0.0, color, alpha, facing, t));
     add(&mut out, "skeleton", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     add(&mut out, "goblin", humanoid::build(0.0, 0.0, color, alpha, facing, 0.0, t, 0.0));
     add(&mut out, "bat", bat::build(0.0, 0.0, color, alpha, facing, 0.0, t));
@@ -271,6 +274,26 @@ mod tests {
             ("spike", verts(super::spike::build(0.0, 0.0, color, 1.0, facing, t))),
             ("farm_plot", verts(super::farm_plot::build(0.0, 0.0, color, 1.0, facing, t))),
             ("turret", verts(super::turret::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("barrel", verts(super::barrel::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("rock_pile", verts(super::rock_pile::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("bone_pile", verts(super::bone_pile::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("rubble", verts(super::rubble::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("wall", verts(super::wall::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("torch", verts(super::torch::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("lantern", verts(super::lantern::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("brazier", verts(super::brazier::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("ore", verts(super::ore::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("tree", verts(super::tree::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("bush", verts(super::bush::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("mushroom", verts(super::mushroom::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("crystal", verts(super::crystal::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("flower", verts(super::flower::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("grass_tuft", verts(super::grass_tuft::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("fern", verts(super::fern::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("banner", verts(super::banner::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("enchanting_table", verts(super::enchanting_table::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("dungeon", verts(super::dungeon::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("altar", verts(super::altar::build(0.0, 0.0, color, 1.0, facing, t))),
         ];
         let mut bad = Vec::new();
         for (name, v) in items {
