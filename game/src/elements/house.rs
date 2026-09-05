@@ -60,7 +60,7 @@ fn cottage(
 
     // Foundation plinth.
     parts.push(Part::vquad(
-        cx - wall_w / 2.0 - 2.0,
+        cx,
         cy - 5.0,
         wall_w / 2.0 + 2.0,
         5.0,
@@ -70,7 +70,7 @@ fn cottage(
     ));
     // Main wall block.
     parts.push(Part::vquad(
-        cx - wall_w / 2.0,
+        cx,
         cy - wall_h,
         wall_w / 2.0,
         wall_h,
@@ -83,7 +83,7 @@ fn cottage(
     for i in 1..courses {
         let yy = cy - wall_h + (wall_h * i as f32 / courses as f32);
         parts.push(Part::vquad(
-            cx - wall_w / 2.0 + 1.0,
+            cx,
             yy,
             wall_w / 2.0 - 1.0,
             1.6,
@@ -98,19 +98,19 @@ fn cottage(
         for _ in 0..win_per {
             for side in [-1.0, 1.0] {
                 let wx = cx + side * wall_w * 0.27;
-                parts.push(Part::vquad(wx - 7.5, fy - 4.0, 1.8, 8.0, accent, alpha, false));
+                parts.push(Part::vquad(wx - 5.7, fy - 4.0, 1.8, 8.0, accent, alpha, false));
                 parts.push(Part::vquad(wx + 5.7, fy - 4.0, 1.8, 8.0, accent, alpha, false));
-                parts.push(Part::vquad(wx - 4.0, fy - 4.0, 4.0, 8.0, [0.22, 0.16, 0.10], alpha, false));
-                parts.push(Part::vquad(wx - 3.0, fy - 3.0, 3.0, 6.0, lit, alpha, false));
-                parts.push(Part::vquad(wx - 0.4, fy - 3.0, 0.4, 6.0, [0.22, 0.16, 0.10], alpha, false));
-                parts.push(Part::vquad(wx - 3.0, fy - 0.4, 3.0, 0.4, [0.22, 0.16, 0.10], alpha, false));
+                parts.push(Part::vquad(wx, fy - 4.0, 4.0, 8.0, [0.22, 0.16, 0.10], alpha, false));
+                parts.push(Part::vquad(wx, fy - 3.0, 3.0, 6.0, lit, alpha, false));
+                parts.push(Part::vquad(wx, fy - 3.0, 0.4, 6.0, [0.22, 0.16, 0.10], alpha, false));
+                parts.push(Part::vquad(wx, fy - 0.4, 3.0, 0.4, [0.22, 0.16, 0.10], alpha, false));
             }
         }
     }
     // Glowing doorway with an arched cap and a brighter hearth ember inside.
     let door_y = cy - door_w * 1.8;
     parts.push(Part::vquad(
-        cx - door_w / 2.0,
+        cx,
         door_y,
         door_w / 2.0,
         door_w * 1.8,
@@ -129,7 +129,7 @@ fn cottage(
         false,
     ));
     parts.push(Part::vquad(
-        cx - door_w / 2.0 + 1.5,
+        cx,
         door_y + 2.0,
         door_w / 2.0 - 1.5,
         door_w * 1.8 - 4.0,
@@ -149,15 +149,15 @@ fn cottage(
     ));
     // A hanging inn sign for kind 3.
     if kind == 3 {
-        parts.push(Part::vquad(cx + wall_w / 2.0 - 2.0, cy - wall_h * 0.62, 1.5, 10.0, [0.30, 0.20, 0.12], alpha, true));
-        parts.push(Part::vquad(cx + wall_w / 2.0 + 1.0, cy - wall_h * 0.58, 9.0, 7.0, [0.45, 0.30, 0.18], alpha, true));
-        parts.push(Part::vquad(cx + wall_w / 2.0 + 2.0, cy - wall_h * 0.55, 7.0, 2.0, [0.95, 0.80, 0.40], alpha, false));
+        parts.push(Part::vquad(cx + wall_w / 2.0 - 0.5, cy - wall_h * 0.62, 1.5, 10.0, [0.30, 0.20, 0.12], alpha, true));
+        parts.push(Part::vquad(cx + wall_w / 2.0 + 10.0, cy - wall_h * 0.58, 9.0, 7.0, [0.45, 0.30, 0.18], alpha, true));
+        parts.push(Part::vquad(cx + wall_w / 2.0 + 9.0, cy - wall_h * 0.55, 7.0, 2.0, [0.95, 0.80, 0.40], alpha, false));
     }
     // Pitched roof, set off from the wall by a deep eave shadow so the lid
     // reads separately from the facade.
     let roof_base_y = cy - wall_h;
     parts.push(Part::vquad(
-        cx - wall_w / 2.0 - 4.0,
+        cx,
         roof_base_y - 1.0,
         wall_w / 2.0 + 4.0,
         5.0,
@@ -166,7 +166,7 @@ fn cottage(
         false,
     ));
     parts.push(Part::vquad(
-        cx - wall_w / 2.0 - 5.0,
+        cx,
         roof_base_y - roof_h * 0.45,
         wall_w / 2.0 + 5.0,
         roof_h * 0.45,
@@ -185,7 +185,7 @@ fn cottage(
         true,
     ));
     parts.push(Part::vquad(
-        cx - 1.0,
+        cx,
         roof_base_y - roof_h * 0.95,
         1.0,
         roof_h * 0.5,
@@ -196,7 +196,7 @@ fn cottage(
     // Chimney + drifting smoke.
     let chx = cx + wall_w * 0.22;
     let chy = roof_base_y - roof_h * 0.7;
-    parts.push(Part::vquad(chx - 3.0, chy - roof_h * 0.5, 3.0, roof_h * 0.5, [0.5, 0.3, 0.22], alpha, true));
+    parts.push(Part::vquad(chx, chy - roof_h * 0.5, 3.0, roof_h * 0.5, [0.5, 0.3, 0.22], alpha, true));
     for i in 0..3 {
         let t = (anim_time * 0.6 + i as f32 * 0.5).fract();
         let sy = chy - 6.0 - t * 18.0;
@@ -230,24 +230,24 @@ fn barn(
     let roof_col = [0.38, 0.16, 0.14];
     let mut parts = Vec::new();
 
-    parts.push(Part::vquad(cx - wall_w / 2.0 - 2.0, cy - 5.0, wall_w / 2.0 + 2.0, 5.0, dark, alpha, true));
-    parts.push(Part::vquad(cx - wall_w / 2.0, cy - wall_h, wall_w / 2.0, wall_h, wall, alpha, true));
+    parts.push(Part::vquad(cx, cy - 5.0, wall_w / 2.0 + 2.0, 5.0, dark, alpha, true));
+    parts.push(Part::vquad(cx, cy - wall_h, wall_w / 2.0, wall_h, wall, alpha, true));
     // White trim boards.
     parts.push(Part::vquad(cx - wall_w / 2.0, cy - wall_h, 2.0, wall_h, [0.92, 0.88, 0.82], alpha, false));
-    parts.push(Part::vquad(cx + wall_w / 2.0 - 2.0, cy - wall_h, 2.0, wall_h, [0.92, 0.88, 0.82], alpha, false));
+    parts.push(Part::vquad(cx + wall_w / 2.0, cy - wall_h, 2.0, wall_h, [0.92, 0.88, 0.82], alpha, false));
 
     // Big double doors.
     let dw = 25.0;
-    parts.push(Part::vquad(cx - dw / 2.0, cy - 36.0, dw / 2.0, 36.0, shade(wall, 0.5), alpha, true));
-    parts.push(Part::vquad(cx - dw / 2.0 + 2.0, cy - 34.0, dw / 2.0 - 2.0, 34.0, [0.40, 0.16, 0.14], alpha * 0.9, false));
-    parts.push(Part::vquad(cx - 0.8, cy - 36.0, 0.8, 36.0, [0.25, 0.10, 0.08], alpha, false));
+    parts.push(Part::vquad(cx, cy - 36.0, dw / 2.0, 36.0, shade(wall, 0.5), alpha, true));
+    parts.push(Part::vquad(cx, cy - 34.0, dw / 2.0 - 2.0, 34.0, [0.40, 0.16, 0.14], alpha * 0.9, false));
+    parts.push(Part::vquad(cx, cy - 36.0, 0.8, 36.0, [0.25, 0.10, 0.08], alpha, false));
     // Hayloft window.
-    parts.push(Part::vquad(cx - 5.5, cy - wall_h + 8.0, 5.5, 11.0, [0.22, 0.16, 0.10], alpha, false));
-    parts.push(Part::vquad(cx - 4.2, cy - wall_h + 9.5, 4.2, 8.5, [1.0, 0.86, 0.46], alpha, false));
+    parts.push(Part::vquad(cx, cy - wall_h + 8.0, 5.5, 11.0, [0.22, 0.16, 0.10], alpha, false));
+    parts.push(Part::vquad(cx, cy - wall_h + 9.5, 4.2, 8.5, [1.0, 0.86, 0.46], alpha, false));
 
     // Gambrel roof: an eave slab plus a wide apex diamond in barn-red.
     let roof_base_y = cy - wall_h;
-    parts.push(Part::vquad(cx - wall_w / 2.0 - 5.5, roof_base_y - 17.0, wall_w / 2.0 + 5.5, 17.0, roof_col, alpha, true));
+    parts.push(Part::vquad(cx, roof_base_y - 17.0, wall_w / 2.0 + 5.5, 17.0, roof_col, alpha, true));
     parts.push(Part::diamond(cx, roof_base_y - 36.0, wall_w / 2.0 + 7.0, 31.0, 0.0, roof_col, alpha, true));
     parts
 }
@@ -267,30 +267,30 @@ fn watchtower(
     let dark = shade(wall, 0.62);
     let mut parts = Vec::new();
 
-    parts.push(Part::vquad(cx - wall_w / 2.0 - 2.0, cy - 5.0, wall_w / 2.0 + 2.0, 5.0, dark, alpha, true));
-    parts.push(Part::vquad(cx - wall_w / 2.0, cy - wall_h, wall_w / 2.0, wall_h, wall, alpha, true));
+    parts.push(Part::vquad(cx, cy - 5.0, wall_w / 2.0 + 2.0, 5.0, dark, alpha, true));
+    parts.push(Part::vquad(cx, cy - wall_h, wall_w / 2.0, wall_h, wall, alpha, true));
     // Course bands.
     let courses = 9;
     for i in 1..courses {
         let yy = cy - wall_h + (wall_h * i as f32 / courses as f32);
-        parts.push(Part::vquad(cx - wall_w / 2.0 + 1.0, yy, wall_w / 2.0 - 1.0, 1.4, shade(wall, 0.82), alpha * 0.7, false));
+        parts.push(Part::vquad(cx, yy, wall_w / 2.0 - 1.0, 1.4, shade(wall, 0.82), alpha * 0.7, false));
     }
     // Arrow-slit windows up the shaft.
     for f in 0..3 {
         let fy = cy - wall_h * (0.30 + f as f32 * 0.22);
-        parts.push(Part::vquad(cx - 1.5, fy - 5.0, 1.5, 10.0, [0.20, 0.18, 0.16], alpha, false));
+        parts.push(Part::vquad(cx, fy - 5.0, 1.5, 10.0, [0.20, 0.18, 0.16], alpha, false));
     }
     // Stout door.
-    parts.push(Part::vquad(cx - 7.0, cy - 22.0, 7.0, 22.0, shade(wall, 0.45), alpha, true));
-    parts.push(Part::vquad(cx - 5.0, cy - 20.0, 5.0, 20.0, [0.35, 0.22, 0.14], alpha * 0.9, false));
+    parts.push(Part::vquad(cx, cy - 22.0, 7.0, 22.0, shade(wall, 0.45), alpha, true));
+    parts.push(Part::vquad(cx, cy - 20.0, 5.0, 20.0, [0.35, 0.22, 0.14], alpha * 0.9, false));
     // Battlements (merlons) at the top.
     let top_y = cy - wall_h;
     for m in 0..4 {
         let mx = cx - wall_w / 2.0 + 2.5 + m as f32 * (wall_w - 5.0) / 3.0;
-        parts.push(Part::vquad(mx - 2.5, top_y - 11.0, 2.5, 11.0, shade(wall, 1.1), alpha, true));
+        parts.push(Part::vquad(mx, top_y - 11.0, 2.5, 11.0, shade(wall, 1.1), alpha, true));
     }
     // Crenellated cap + glowing beacon.
-    parts.push(Part::vquad(cx - wall_w / 2.0 - 2.5, top_y - 8.5, wall_w / 2.0 + 2.5, 8.5, shade(wall, 0.9), alpha, true));
+    parts.push(Part::vquad(cx, top_y - 8.5, wall_w / 2.0 + 2.5, 8.5, shade(wall, 0.9), alpha, true));
     let beacon = (anim_time * 2.0).sin() * 0.5 + 0.5;
     parts.push(Part::diamond(cx, top_y - 17.0, 7.0, 8.5, 0.0, [1.0, 0.85, 0.45], alpha, false));
     parts.push(Part::diamond(cx, top_y - 17.0, 4.2 + beacon * 2.8, 5.6 + beacon * 2.8, 0.0, [1.0, 0.95, 0.7], alpha * (0.6 + 0.4 * beacon), false));

@@ -12,9 +12,9 @@ pub(crate) fn build(
 ) -> Vec<Part> {
     let wood = color;
     vec![
-        Part::vquad(cx - 10.0, cy - 12.0, 10.0, 12.0, wood, alpha, true),
-        Part::vquad(cx - 10.0, cy - 12.0, 10.0, 1.5, shade(wood, 0.7), alpha, true),
-        Part::vquad(cx - 10.0, cy - 2.0, 10.0, 1.5, shade(wood, 0.7), alpha, true),
-        Part::vquad(cx - 1.0, cy - 12.0, 1.0, 12.0, shade(wood, 0.7), alpha, true),
+        Part::vquad(cx, cy - 12.0, 10.0, 12.0, wood, alpha, true),
+        Part::vquad(cx, cy - 12.0, 10.0, 1.5, shade(wood, 0.7), alpha, true),
+        Part::vquad(cx, cy - 2.0, 10.0, 1.5, shade(wood, 0.7), alpha, true),
+        Part::vquad(cx, cy - 12.0, 1.0, 12.0, shade(wood, 0.7), alpha, true),
     ]
 }

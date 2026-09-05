@@ -224,4 +224,61 @@ mod tests {
             assert!(diffs > 0, "{name} must change pose between rest and stride");
         }
     }
+
+    fn bbox_center_x(v: &[f32]) -> f32 {
+        let mut minx = f32::INFINITY;
+        let mut maxx = f32::NEG_INFINITY;
+        for c in v.chunks(6) {
+            minx = minx.min(c[0]);
+            maxx = maxx.max(c[0]);
+        }
+        (minx + maxx) / 2.0
+    }
+
+    /// Centering audit: symmetric elements built at cx=0 must be centered
+    /// near x=0. Catches the classic `vquad(left-edge)` slip, where a part
+    /// intended centered at C is drawn centered at C-hw (the house-roof bug:
+    /// diamonds centered at cx while every wall sat half a width left).
+    /// Tolerance absorbs gentle sway phases; facing is neutral (0,0).
+    #[test]
+    fn symmetric_elements_center_on_tile() {
+        let color = [0.72, 0.74, 0.80];
+        let facing = (0.0, 0.0);
+        let t = 0.7;
+        let items: Vec<(&str, Vec<f32>)> = vec![
+            ("house", verts(super::house::build(0, 0.0, 0.0, color, 1.0, facing, t))),
+            ("cabin", verts(super::house::build(1, 0.0, 0.0, color, 1.0, facing, t))),
+            ("hut", verts(super::house::build(2, 0.0, 0.0, color, 1.0, facing, t))),
+            ("barn", verts(super::house::build(4, 0.0, 0.0, color, 1.0, facing, t))),
+            ("watchtower", verts(super::house::build(5, 0.0, 0.0, color, 1.0, facing, t))),
+            ("pillar", verts(super::pillar::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("crate", verts(super::crate_box::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("chest", verts(super::chest::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("anvil", verts(super::anvil::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("well", verts(super::well::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("bed", verts(super::bed::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("statue", verts(super::statue::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("totem", verts(super::totem::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("ruin_tower", verts(super::ruin_tower::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("rock", verts(super::rock::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("slime", verts(super::slime::build(0.0, 0.0, color, 1.0, facing, 0.0, t))),
+            ("barrel", verts(super::barrel::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("lantern", verts(super::lantern::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("brazier", verts(super::brazier::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("sign", verts(super::sign::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("altar", verts(super::altar::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("campfire", verts(super::campfire::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("spike", verts(super::spike::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("farm_plot", verts(super::farm_plot::build(0.0, 0.0, color, 1.0, facing, t))),
+            ("turret", verts(super::turret::build(0.0, 0.0, color, 1.0, facing, t))),
+        ];
+        let mut bad = Vec::new();
+        for (name, v) in items {
+            let c = bbox_center_x(&v);
+            if c.abs() > 6.0 {
+                bad.push(format!("{name}:{c:.1}"));
+            }
+        }
+        assert!(bad.is_empty(), "off-tile elements (vquad slip?): {}", bad.join(", "));
+    }
 }
