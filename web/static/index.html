@@ -256,7 +256,7 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot } from './wasm_game.js?v=20260901';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot, debug_enter_interior } from './wasm_game.js?v=20260901';
 
     const coopTagsEl = document.getElementById('coop-tags');
     const townTransitionEl = document.getElementById('town-transition');
@@ -271,6 +271,7 @@
     window.download_save_zip = download_save_zip;
     window.upload_save_zip = upload_save_zip;
     window.get_frame_dump = get_frame_dump;
+    window.debug_enter_interior = debug_enter_interior;
     window.do_attack = do_attack;
     window.getMinimapData = () => { try { return get_minimap(); } catch (_) { return '{}'; } };
     window.step = step;

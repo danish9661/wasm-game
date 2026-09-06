@@ -229,6 +229,17 @@ pub fn equip_weapon_slot(idx: usize) -> bool {
     })
 }
 
+/// Debug/test hook: enter the interior of a building kind directly
+/// (0=House … 6=Dungeon) without walking to one. Powers interior art audits.
+#[wasm_bindgen]
+pub fn debug_enter_interior(kind_idx: u8) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.debug_enter_interior(kind_idx);
+        }
+    })
+}
+
 /// JSON minimap data centered on the player (terrain grid + markers).
 #[wasm_bindgen]
 pub fn get_minimap() -> String {
