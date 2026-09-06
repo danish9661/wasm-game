@@ -1163,6 +1163,7 @@ impl App {
         let dump = serde_json::json!({
             "cam": { "x": cam.x, "y": cam.y },
             "interior": self.interior.is_some(),
+            "clock": self.anim_clock,
             "quest_text": self.quest.quest_text(self.fragments),
             "craft_hint": craft_hint,
             "quest_stage": self.quest.stage,
@@ -3897,6 +3898,19 @@ impl App {
         // While inside a building we run a separate, lighter simulation: just the
         // room walk + stairs. The world keeps ticking for remote players via the
         // network step below, but local combat/survival is paused indoors.
+        // Visual clocks run everywhere — even indoors — or rooms render frozen
+        // (no torch flicker, no walk cycle, entry particles hanging mid-air).
+        self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
+        // integrate + cull particles
+        for p in &mut self.particles {
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= 0.88;
+            p.vy *= 0.88;
+            p.life -= dt;
+            p.size *= 0.95;
+        }
+        self.particles.retain(|p| p.life > 0.0);
         if self.interior.is_some() {
             self.update_interior(dt);
             return;
@@ -3984,7 +3998,6 @@ impl App {
         self.ensure_visible();
         // NG+ runs a faster day/night cycle (see `ng_day_length`).
         self.time_of_day = (self.time_of_day + dt / self.ng_day_length()).rem_euclid(1.0);
-        self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
 
         // Portal trip: count down the "city is being built" loading overlay, then
         // arrive (teleport) and, on the first visit, begin the in-world build-in.
@@ -4552,17 +4565,6 @@ impl App {
             self.spawn_particles(x, y, [1.0, 0.92, 0.62], 5, 45.0, 0.35, 3.0);
         }
         self.sweep_dead();
-
-        // integrate + cull particles
-        for p in &mut self.particles {
-            p.x += p.vx * dt;
-            p.y += p.vy * dt;
-            p.vx *= 0.88;
-            p.vy *= 0.88;
-            p.life -= dt;
-            p.size *= 0.95;
-        }
-        self.particles.retain(|p| p.life > 0.0);
 
         let dir = if let Some((ax, ay)) = self.analog {
             let len = (ax * ax + ay * ay).sqrt();
