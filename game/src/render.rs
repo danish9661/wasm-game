@@ -458,7 +458,15 @@ pub fn build_tile_mesh(
         let tx = s.x.floor() as i32;
         let ty = s.y.floor() as i32;
         draws.push(Draw {
-            depth: (tx + ty) as f32 + 0.5,
+            depth: if s.style == SpriteStyle::Floor && tiles.is_empty() {
+                // Interior ground plane: always beneath furniture/walls/foes.
+                // Otherwise the stable depth sort buries everything north of
+                // room-center under the giant floor diamond (a room is many
+                // tiles wide but its floor is a single sprite).
+                f32::NEG_INFINITY
+            } else {
+                (tx + ty) as f32 + 0.5
+            },
             kind: DrawKind::Sprite,
             tx,
             ty,
@@ -1589,5 +1597,59 @@ mod tests {
         let (t1, b1) = y_extent(&m1);
         assert!(t0 < f32::MAX, "slime must be present in mesh");
         assert!(((t0 - t1).abs() + (b0 - b1).abs()) > 1.0, "slime blob must move between frames");
+    }
+
+    #[test]
+    fn interior_props_reach_the_mesh() {
+        // Regression test: north-half room props (altar slab, gold chest)
+        // must survive culling/sort and emit vertices with empty tiles —
+        // and the ground plane must draw FIRST so it never buries them.
+        let sprites = vec![
+            Sprite::new_center(0.0, 0.0, [0.10, 0.20, 0.30], 218.0, 109.0, 0.0)
+                .with_style(SpriteStyle::Floor),
+            Sprite::new_center(0.0, -1.5, [0.32, 0.29, 0.34], 30.0, 18.0, 0.0)
+                .with_style(SpriteStyle::Generic),
+            Sprite::new_center(0.0, -1.5, [0.95, 0.8, 0.3], 16.0, 18.0, 0.0)
+                .with_style(SpriteStyle::Chest),
+        ];
+        let world = WorldGen::new(1);
+        let mut cache = ChunkCache::new(64);
+        let mut out = Vec::new();
+        // Back the camera off exactly like the live game (see focus_target):
+        // without the offset the room sits half off-screen and the cull
+        // correctly drops it, which is not what this test is about.
+        let (ccx, ccy) = crate::iso::iso_to_world(
+            0.0 - 1280.0 / 2.0,
+            0.0 + crate::iso::HALF_H - 720.0 * 0.62,
+        );
+        let n = build_tile_mesh(
+            &world,
+            &mut cache,
+            Camera::new(ccx, ccy),
+            (1280.0, 720.0),
+            &[],
+            &sprites,
+            None,
+            &mut out,
+            0.0,
+            0.0,
+        );
+        assert!(n > 0, "room must emit quads");
+        let is_floor = |c: &[f32]| {
+            (c[2] - 0.10).abs() < 0.01 && (c[3] - 0.20).abs() < 0.01 && (c[4] - 0.30).abs() < 0.01
+        };
+        let is_gold = |c: &[f32]| c[2] > 0.75 && c[3] > 0.6 && c[4] < 0.5;
+        let last_floor = out
+            .chunks(6)
+            .rposition(|c| is_floor(c))
+            .expect("floor must reach the mesh");
+        let first_gold = out
+            .chunks(6)
+            .position(|c| is_gold(c))
+            .expect("chest gold must reach the mesh");
+        assert!(
+            last_floor < first_gold,
+            "ground plane must draw before the chest it sits under"
+        );
     }
 }

@@ -465,7 +465,6 @@
     // (Reflect.get(window, 'playSfx')) at gameplay moments (chops, pickups,
     // footsteps, enemy deaths).
     window.playSfx = playSfx;
-
     function startMusic() {
       if (!actx) return;
       const now = actx.currentTime;
@@ -736,6 +735,11 @@
             el('toasts').appendChild(t);
             setTimeout(() => t.remove(), 3200);
           };
+          // Expose toast on window: the Rust/WASM side calls it directly
+          // (Reflect.get(window, 'toast')) for pickup/equip/combat feedback.
+          // (Module scope doesn't attach `var` to window, so without this
+          // every gameplay toast was a silent no-op.)
+          window.toast = toast;
           // ---- Dynamic form factor --------------------------------------
           // `body.mobile` drives the compact HUD (touch phones AND narrow
           // desktop windows); `body.desktop` is the full HUD. Recomputed on

@@ -16,6 +16,7 @@ pub mod poi;
 pub mod weapons;
 pub mod npc;
 pub mod trade;
+pub mod dungeon;
 
 pub const TILE_WIDTH: f32 = 64.0;
 pub const TILE_HEIGHT: f32 = 32.0;

@@ -781,6 +781,8 @@ struct Interior {
     hazards: Vec<(i32, i32)>,
     /// True once the dungeon's vault loot has been claimed (one-time reward).
     loot_taken: bool,
+    /// Live dungeon foes in room coordinates (empty for safe houses).
+    foes: Vec<Enemy>,
 }
 
 /// A line of lore tied to each recovered Crown Fragment (Chapter 3 beats).
@@ -1385,6 +1387,20 @@ impl App {
     /// with its stats and behaviour. Returns a JSON array of objects.
     /// Human-readable name of the biome under the player (e.g. "Forest").
     pub fn biome_name(&self) -> String {
+        // Indoors the world tile under the room is meaningless (a dungeon by
+        // the shore is not "Shallow Water") — name the building instead.
+        if let Some(int) = self.interior.as_ref() {
+            return match int.kind {
+                StructureKind::House => "House",
+                StructureKind::Cabin => "Cabin",
+                StructureKind::Hut => "Hut",
+                StructureKind::Inn => "Inn",
+                StructureKind::Barn => "Barn",
+                StructureKind::Watchtower => "Watchtower",
+                _ => "Dungeon",
+            }
+            .to_string();
+        }
         format!("{:?}", self.cur_biome)
     }
 
@@ -1479,7 +1495,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={:?} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={}",
 
             self.quad_count(),
             self.frames(),
@@ -1521,7 +1537,7 @@ impl App {
             self.weather,
             self.ng_plus,
             self.world_seed,
-            self.cur_biome,
+            self.biome_name(),
             boss_hp,
             self.altar_tile
                 .map(|(ax, ay)| format!("({ax},{ay})"))
@@ -2327,6 +2343,16 @@ impl App {
         self.structures.pop();
     }
 
+    /// Spike-trap layout for a dungeon floor: the entry hall is trapped,
+    /// the vault floor is guarded by foes instead.
+    fn dungeon_hazards(kind: StructureKind, floor: u8) -> Vec<(i32, i32)> {
+        if kind == StructureKind::Dungeon && floor == 1 {
+            vec![(-1, -1), (1, 0), (0, 1), (-2, 1), (2, -1)]
+        } else {
+            Vec::new()
+        }
+    }
+
     /// Enter the building the player is standing next to, or leave the current
     /// interior. Bound to Enter.
     pub fn toggle_interior(&mut self) {
@@ -2371,13 +2397,10 @@ impl App {
                     StructureKind::Watchtower => "Watchtower",
                     _ => "Dungeon",
                 };
-                // Dungeons seed a few spike traps on the floor; the vault loot is
-                // claimed once when the player reaches the back wall.
-                let hazards = if is_dungeon {
-                    vec![(-1, -1), (1, 0), (0, 1), (-2, 1), (2, -1)]
-                } else {
-                    Vec::new()
-                };
+                // Dungeons: trapped entry hall (floor 1) patrolled by bats;
+                // the vault floor (2) is guarded. Hazards per floor; the
+                // vault loot is claimed once at the floor-2 back wall.
+                let hazards = Self::dungeon_hazards(kind, 1);
                 // Per-building interior dimensions match exterior footprint.
                 let (rw, rh) = match kind {
                     StructureKind::House => (4.0, 3.0),
@@ -2389,8 +2412,26 @@ impl App {
                     _ => (3.5, 2.5),
                 };
                 let max_floors = match kind {
-                    StructureKind::House | StructureKind::Inn | StructureKind::Watchtower => 2,
+                    StructureKind::House
+                    | StructureKind::Inn
+                    | StructureKind::Watchtower
+                    | StructureKind::Dungeon => 2,
                     _ => 1,
+                };
+                // Dungeon patrol spawns deterministically per dungeon tile.
+                let foes: Vec<Enemy> = if is_dungeon {
+                    game::dungeon::dungeon_foes(tx, ty, 1)
+                        .into_iter()
+                        .map(|(kind, x, y)| {
+                            let mut e = Enemy::new(x, y, kind);
+                            e.speed_mult =
+                                Enemy::speed_scale_for_level(self.player.level);
+                            self.discovered.insert(kind);
+                            e
+                        })
+                        .collect()
+                } else {
+                    Vec::new()
                 };
                 self.interior = Some(Interior {
                     kind,
@@ -2404,6 +2445,7 @@ impl App {
                     by: self.player.y,
                     hazards,
                     loot_taken: !first_visit,
+                    foes,
                 });
                 play_sfx("door");
                 // Interior loot: non-dungeon houses have a one-time pantry reward.
@@ -2457,6 +2499,8 @@ impl App {
         if len > 0.0 {
             mx /= len;
             my /= len;
+            // Attacks, slash arcs and held-weapon art aim with the facing.
+            self.player.facing = (mx, my);
         }
         let sp = player::PLAYER_SPEED * 0.5 * dt;
         let mx2 = (int.rw - 0.5).max(0.5);
@@ -2464,8 +2508,9 @@ impl App {
         int.px = (int.px + mx * sp).clamp(-mx2, mx2);
         int.py = (int.py + my * sp).clamp(-my2, my2);
         // Door on the right edge -> step out (ground floor only; upstairs,
-        // take the stairs down first).
-        if (int.px - mx2).abs() < 0.35 && int.py.abs() < 0.5 {
+        // take the stairs down first). Generous vertical tolerance: combat
+        // knockback shoves you around the room.
+        if (int.px - mx2).abs() < 0.35 && int.py.abs() < 0.8 {
             if int.floor > 1 {
                 toast("Take the stairs down first");
             } else {
@@ -2475,23 +2520,43 @@ impl App {
             }
         }
         // Stairs on the left edge -> change floors in either direction.
-        if (int.px + mx2).abs() < 0.35 && int.py.abs() < 0.5 {
-            if int.floor < int.max_floors {
-                int.floor += 1;
+        if (int.px + mx2).abs() < 0.35 && int.py.abs() < 0.8 {
+            let going_up = int.floor < int.max_floors;
+            let going_down = !going_up && int.floor > 1;
+            if going_up || going_down {
+                if going_up {
+                    int.floor += 1;
+                } else {
+                    int.floor -= 1;
+                }
                 int.px = 0.0;
                 int.py = 0.0;
+                // Dungeon floors restock: fresh patrol + traps per floor.
+                if int.kind == StructureKind::Dungeon {
+                    let (dtx, dty) = (int.bx.floor() as i32, int.by.floor() as i32);
+                    let fl = int.floor;
+                    let lvl = self.player.level;
+                    let fresh: Vec<Enemy> = game::dungeon::dungeon_foes(dtx, dty, fl)
+                        .into_iter()
+                        .map(|(kind, x, y)| {
+                            let mut e = Enemy::new(x, y, kind);
+                            e.speed_mult = Enemy::speed_scale_for_level(lvl);
+                            self.discovered.insert(kind);
+                            e
+                        })
+                        .collect();
+                    int.hazards = Self::dungeon_hazards(int.kind, fl);
+                    int.foes = fresh;
+                }
                 play_sfx("door");
-                toast(&format!("Climbed to floor {}", int.floor));
-            } else if int.floor > 1 {
-                int.floor -= 1;
-                int.px = 0.0;
-                int.py = 0.0;
-                play_sfx("door");
-                toast(&format!("Went down to floor {}", int.floor));
+                if going_up {
+                    toast(&format!("Climbed to floor {}", int.floor));
+                } else {
+                    toast(&format!("Went down to floor {}", int.floor));
+                }
             }
         }
-        // Dungeon hazards: standing on a spike tile deals contact damage, and
-        // reaching the back (left) wall center once cracks the vault for loot.
+        // Dungeon hazards: standing on a spike tile deals contact damage.
         if !int.hazards.is_empty() {
             let tx = int.px.round() as i32;
             let ty = int.py.round() as i32;
@@ -2508,25 +2573,90 @@ impl App {
                     self.player.alive = false;
                 }
             }
-            if !int.loot_taken && (int.px + mx2).abs() < 0.5 && int.py.abs() < 0.5 {
-                int.loot_taken = true;
-                let r = ((int.bx as u32) ^ (int.by as u32).wrapping_mul(2654435761)) % 5;
-                let reward: (ItemKind, u32) = match r {
-                    0 => (ItemKind::Gem, 2),
-                    1 => (ItemKind::Food, 4),
-                    2 => (ItemKind::Herb, 3),
-                    3 => (ItemKind::Wood, 6),
-                    _ => (ItemKind::Stone, 6),
-                };
-                self.inventory.add(reward.0, reward.1);
-                self.player.add_xp(25);
-                play_sfx("pickup");
-                toast(&format!(
-                    "You cracked the vault! +{} {} and +25xp",
-                    reward.1,
-                    reward.0.name()
-                ));
+        }
+        // Vault: reaching the back (left) wall of the vault floor cracks
+        // it for the one-time dungeon-grade reward.
+            if int.kind == StructureKind::Dungeon
+                && int.floor == 2
+                && !int.loot_taken
+                && (int.px + mx2).abs() < 0.5
+                && int.py.abs() < 0.8
+            {
+            int.loot_taken = true;
+            let (kind, n, xp) = game::dungeon::vault_loot(
+                int.bx.floor() as i32,
+                int.by.floor() as i32,
+            );
+            self.inventory.add(kind, n);
+            self.player.add_xp(xp);
+            play_sfx("pickup");
+            toast(&format!(
+                "You cracked the vault! +{} {} and +{xp}xp",
+                n,
+                kind.name()
+            ));
+        }
+        // Dungeon foes: same chase/windup AI as surface fights, driven in
+        // room coordinates. Room walls block pathing; knockback and charges
+        // never leave the room.
+        let ng_plus = self.ng_plus;
+        let (rw, rh) = (int.rw, int.rh);
+        let mut contact: Option<(f32, f32, f32)> = None;
+        for f in int.foes.iter_mut() {
+            f.speed_mult = Enemy::speed_scale_for_level(self.player.level);
+            if let Some(dmg) = f.update((int.px, int.py), dt, |tx, ty| {
+                tx.abs() > rw as i32 + 1 || ty.abs() > rh as i32 + 1
+            }) {
+                contact = Some((f.x, f.y, dmg));
             }
+            f.x = f.x.clamp(-rw + 0.3, rw - 0.3);
+            f.y = f.y.clamp(-rh + 0.3, rh - 0.3);
+        }
+        if let Some((ex, ey, dmg)) = contact {
+            // No day/night indoors: crafted armor and NG+ still apply, and
+            // blocking still parries (inside take_damage).
+            let dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.25 * ng_plus as f32);
+            // Player knockback in room coordinates (clamped to the room).
+            let dx = int.px - ex;
+            let dy = int.py - ey;
+            let len = (dx * dx + dy * dy).sqrt().max(0.01);
+            int.px = (int.px + dx / len * 0.3).clamp(-mx2, mx2);
+            int.py = (int.py + dy / len * 0.3).clamp(-my2, my2);
+            self.player.take_damage(dmg);
+            if dmg > 0.5 {
+                self.hitstop = 0.06;
+            }
+            play_sfx("hurt");
+            self.hurt_flash = 1.0;
+            if !self.player.alive {
+                play_sfx("death");
+            }
+        }
+        // Indoor upkeep the gated world tick would otherwise do: i-frames
+        // decay, stamina regen, swing cooldown + arm pose, hitstop and
+        // hurt-flash decay (a frozen cooldown would allow exactly one swing;
+        // a frozen hitstop would hang the room). Hunger/thirst stay paused.
+        self.player.hurt_timer = (self.player.hurt_timer - dt).max(0.0);
+        self.player.stamina = (self.player.stamina + dt * 12.0).min(player::MAX_STAMINA);
+        self.swing_cd = (self.swing_cd - dt).max(0.0);
+        let cd = self.player.weapon.cooldown().max(0.05);
+        self.player.swing_t = if self.swing_cd > 0.0 {
+            1.0 - self.swing_cd / cd
+        } else {
+            0.0
+        };
+        self.hitstop = (self.hitstop - dt).max(0.0);
+        self.hurt_flash = (self.hurt_flash * 0.86).max(0.0);
+        // Dying indoors wakes you outside the entrance (same instant
+        // respawn as the surface, repositioned to the dungeon door).
+        if !self.player.alive {
+            let (bx, by) = (int.bx, int.by);
+            self.player.respawn();
+            self.player.x = bx;
+            self.player.y = by;
+            self.interior = None;
+            toast("You stagger out of the dungeon...");
+            return;
         }
     }
 
@@ -2628,7 +2758,7 @@ impl App {
                 .with_style(SpriteStyle::Generic),
         );
         // Stairs (left middle) if the building has more floors, with a pale
-        // step leading up.
+        // step and flanking rails so they read as stairs, not a slab.
         if stairs_here {
             v.push(
                 Sprite::new_center(bx - int.rw, by, [0.55, 0.45, 0.28], 22.0, 24.0, 0.0)
@@ -2636,6 +2766,14 @@ impl App {
             );
             v.push(
                 Sprite::new_center(bx - int.rw + 0.8, by, [0.70, 0.60, 0.40], 8.0, 4.0, 0.0)
+                    .with_style(SpriteStyle::Generic),
+            );
+            v.push(
+                Sprite::new_center(bx - int.rw - 0.2, by - 0.7, [0.30, 0.20, 0.12], 2.5, 9.0, 0.0)
+                    .with_style(SpriteStyle::Generic),
+            );
+            v.push(
+                Sprite::new_center(bx - int.rw - 0.2, by + 0.7, [0.30, 0.20, 0.12], 2.5, 9.0, 0.0)
                     .with_style(SpriteStyle::Generic),
             );
             v.push(
@@ -2774,14 +2912,17 @@ impl App {
                 }
             }
             _ => {
-                // Dungeon: altar slab with the vault chest, iron spike traps,
-                // bone piles, cold-blue sconce, portcullis door, red cracks.
-                v.push(Sprite::new_center(bx, by - 1.5, [0.32, 0.29, 0.34], 30.0, 18.0, 0.0).with_style(SpriteStyle::Generic));
+                // Dungeon: altar slab with the vault chest (vault floor only),
+                // iron spike traps, bone piles, cold-blue sconce, portcullis
+                // door, red cracks, rubble.
+                if int.floor == 2 {
+                    v.push(Sprite::new_center(bx, by - 1.5, [0.32, 0.29, 0.34], 30.0, 18.0, 0.0).with_style(SpriteStyle::Generic));
+                }
                 for &(hx, hy) in &int.hazards {
                     v.push(Sprite::new_center(bx + hx as f32, by + hy as f32, [0.10, 0.09, 0.10], 16.0, 6.0, 0.0).with_style(SpriteStyle::Generic));
                     v.push(Sprite::new_center(bx + hx as f32, by + hy as f32, [0.40, 0.40, 0.46], 12.0, 14.0, 0.0).with_style(SpriteStyle::Spike));
                 }
-                if !int.loot_taken {
+                if !int.loot_taken && int.floor == 2 {
                     v.push(Sprite::new_center(bx, by - 1.5, [1.0, 0.85, 0.40], 32.0, 14.0, 0.0).with_style(SpriteStyle::Generic));
                     v.push(Sprite::new_center(bx, by - 1.5, [0.95, 0.8, 0.3], 16.0, 18.0, 0.0).with_style(SpriteStyle::Chest));
                 }
@@ -2792,11 +2933,25 @@ impl App {
                 v.push(Sprite::new_center(bx + 1.2, by - 0.6, [0.60, 0.15, 0.15], 8.0, 2.5, 0.0).with_style(SpriteStyle::Generic));
                 v.push(Sprite::new_center(bx + 1.8, by + 1.8, [0.40, 0.40, 0.44], 10.0, 5.0, 0.0).with_style(SpriteStyle::Generic));
                 v.push(Sprite::new_center(bx - 1.8, by + 0.2, [0.40, 0.40, 0.44], 10.0, 5.0, 0.0).with_style(SpriteStyle::Generic));
-                // Portcullis bars over the door gap (bright steel, not shadow).
+                // Portcullis bars over the door gap (bright steel) + lintel.
                 for oy in [-0.5, 0.0, 0.5] {
-                    v.push(Sprite::new_center(bx + int.rw, by + oy, [0.55, 0.57, 0.62], 2.2, 11.0, 0.0).with_style(SpriteStyle::Generic));
+                    v.push(Sprite::new_center(bx + int.rw, by + oy, [0.55, 0.57, 0.62], 3.0, 11.0, 0.0).with_style(SpriteStyle::Generic));
                 }
+                v.push(Sprite::new_center(bx + int.rw, by, [0.35, 0.33, 0.36], 10.0, 2.5, 0.0).with_style(SpriteStyle::Generic));
             }
+        }
+        // Dungeon patrol: foes in room coordinates with the same styles,
+        // walk cycles and hit-flash as surface fights.
+        for f in &int.foes {
+            let mut sp = f.kind.sprite(bx + f.x, by + f.y, 1.0, f.facing);
+            sp.walk = if f.state == AiState::Chase { 1.0 } else { 0.0 };
+            sp.flash = f.flash;
+            sp.attack = if f.windup > 0.0 {
+                telegraph_progress(f.windup)
+            } else {
+                0.0
+            };
+            v.push(sp);
         }
         // Player (sits on the floor — no lift).
         v.push(
@@ -2807,7 +2962,11 @@ impl App {
     }
 
     /// True when the player is next to a Well (or shoreline) to drink from.
+    /// Never indoors (you can't reach the world water from inside).
     pub fn near_water(&mut self) -> bool {
+        if self.interior.is_some() {
+            return false;
+        }
         let (px, py) = (self.player.x, self.player.y);
         if self.structures.iter().any(|s| {
             s.kind == StructureKind::Well
@@ -2944,6 +3103,11 @@ impl App {
     /// Attacking mid-dodge-roll performs a dashing strike (+2 reach, x1.2).
     /// Strikes from behind the victim's facing earn the backstab bonus.
     pub fn attack(&mut self) {
+        // Indoors: melee (or a ranged complaint) against room foes.
+        if self.interior.is_some() {
+            self.melee_indoors(1.0, false);
+            return;
+        }
         if self.swing_cd > 0.0 {
             return;
         }
@@ -3060,6 +3224,11 @@ impl App {
     /// damage scales 1.5x-2.5x with charge, reach stretches, victims stagger,
     /// and the impact stops the world briefly. Costs extra stamina.
     pub fn heavy_attack(&mut self, charge: f32) {
+        // Indoors: heavy finisher against room foes (ranged still refused).
+        if self.interior.is_some() {
+            self.melee_indoors(1.5 + charge.clamp(0.0, 1.0), true);
+            return;
+        }
         let w = self.player.weapon;
         if w.ranged() {
             return;
@@ -3112,6 +3281,133 @@ impl App {
             4.0,
         );
         self.sweep_dead();
+    }
+
+    /// Melee swing inside a building: same damage formula as surface swings
+    /// (weak points, backstabs, hammer stagger) against room-coordinate foes.
+    /// Ranged weapons cannot fire indoors. `mult` scales heavy finishers.
+    fn melee_indoors(&mut self, mult: f32, heavy: bool) {
+        let w = self.player.weapon;
+        if w.ranged() {
+            toast("No room to shoot indoors — get close!");
+            return;
+        }
+        if self.swing_cd > 0.0 {
+            return;
+        }
+        self.swing_cd = if heavy { w.cooldown() + 0.2 } else { w.cooldown() };
+        if !self.player.spend_stamina(if heavy { 10.0 } else { 6.0 }) {
+            return;
+        }
+        if heavy {
+            play_sfx("heavy");
+        } else {
+            play_sfx("swing");
+        }
+        self.debug_attacks += 1;
+        let reach = if heavy { w.reach() * 1.2 } else { w.reach() };
+        let int = match self.interior.as_mut() {
+            Some(i) => i,
+            None => return,
+        };
+        let (px, py) = (int.px, int.py);
+        let mut sparks = Vec::new();
+        let mut stabbed = false;
+        let mut hits = 0u32;
+        for f in int.foes.iter_mut() {
+            let dx = f.x - px;
+            let dy = f.y - py;
+            let dist = (dx * dx + dy * dy).sqrt();
+            if dist > reach || dist < 0.001 {
+                continue;
+            }
+            hits += 1;
+            let bs = game::combat::backstab_mult((px, py), (f.x, f.y), f.facing, w);
+            stabbed |= bs > 1.0;
+            let dmg = self.player.weapon_damage() * f.kind.weakness_to(w) * bs * mult;
+            f.tagged = true;
+            f.take_damage(dmg);
+            let kb = if heavy { 0.6 } else { 0.35 };
+            let len = dist.max(0.01);
+            f.x = (f.x + dx / len * kb).clamp(-int.rw + 0.3, int.rw - 0.3);
+            f.y = (f.y + dy / len * kb).clamp(-int.rh + 0.3, int.rh - 0.3);
+            if heavy || w == WeaponKind::Hammer {
+                f.flash = 1.0;
+                f.windup = f.windup.max(if heavy { 0.45 } else { 0.55 });
+            }
+            sparks.push((f.x, f.y, bs));
+        }
+        self.debug_swing_hits += hits;
+        if hits > 0 {
+            play_sfx("hit");
+            self.hitstop = if heavy { 0.12 } else { 0.06 };
+            if heavy {
+                self.shake = (self.shake + 0.6).min(1.5);
+            }
+        }
+        let tint = w.color();
+        let spark = [
+            (tint[0] * 0.5 + 0.5).min(1.0),
+            (tint[1] * 0.5 + 0.5).min(1.0),
+            (tint[2] * 0.5 + 0.5).min(1.0),
+        ];
+        // Sparks land in world space at the room anchor so they draw inside.
+        if self.interior.is_some() {
+            let (bx, by) = match self.interior.as_ref() {
+                Some(i) => (i.bx, i.by),
+                None => return,
+            };
+            for (x, y, bs) in sparks {
+                self.spawn_particles(bx + x, by + y, spark, 7, 55.0, 0.35, 3.5);
+                if bs > 1.0 {
+                    self.spawn_particles(bx + x, by + y, [1.0, 0.85, 0.3], 5, 40.0, 0.3, 2.5);
+                }
+            }
+            if stabbed {
+                play_sfx("chime");
+            }
+        }
+        self.sweep_dead_indoors();
+    }
+
+    /// Clear slain room foes: death sfx + puff, drops straight to inventory
+    /// (no ground system indoors) + XP. Always player-earned indoors.
+    fn sweep_dead_indoors(&mut self) {
+        let dead: Vec<(EnemyKind, f32, f32, Vec<ItemKind>, u32)> = {
+            let int = match self.interior.as_mut() {
+                Some(i) => i,
+                None => return,
+            };
+            int.foes
+                .iter()
+                .filter(|f| !f.alive())
+                .map(|f| (f.kind, f.x, f.y, f.drops(), f.kind.xp()))
+                .collect()
+        };
+        if dead.is_empty() {
+            return;
+        }
+        let (bx, by) = match self.interior.as_ref() {
+            Some(i) => (i.bx, i.by),
+            None => return,
+        };
+        let mut xp = 0u32;
+        let mut gains: Vec<String> = Vec::new();
+        for (kind, fx, fy, items, xp_each) in &dead {
+            play_sfx("enemydie");
+            self.spawn_particles(bx + fx, by + fy, [1.0, 0.85, 0.4], 6, 38.0, 0.28, 3.0);
+            xp += *xp_each;
+            gains.push(format!("Slew {}", kind.name()));
+            for it in items {
+                self.inventory.add(*it, 1);
+                gains.push(format!("+1 {}", it.name()));
+            }
+        }
+        self.player.add_xp(xp);
+        toast(&format!("{} (+{xp}xp)", gains.join(", ")));
+        if let Some(int) = self.interior.as_mut() {
+            int.foes.retain(|f| f.alive());
+        }
     }
 
     /// Recompute the HUD compass target: the nearest still-hostile Crown
