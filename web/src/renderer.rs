@@ -914,6 +914,11 @@ pub struct App {
     ending_pending: bool,
     /// 0 = Reign, 1 = Shatter, None = campaign not finished.
     ending: Option<u8>,
+    /// Victory lap timer: after a reforge the ending overlay shows while the
+    /// healed world keeps running; when this hits zero the NG+ world begins.
+    /// (Resetting synchronously inside reforge() used to wipe the victory
+    /// state in the same call, making stage 9 unobservable forever.)
+    victory_timer: f32,
     ng_plus: u32,
     spawn_point: (f32, f32),
     time_of_day: f32,
@@ -1262,7 +1267,10 @@ impl App {
                 "iron": self.inventory.count(ItemKind::Iron),
                 "ironplate": self.inventory.count(ItemKind::IronPlate),
                 "gold": self.inventory.count(ItemKind::Gold),
-                "fragment": self.inventory.count(ItemKind::Fragment),
+                // Authoritative fragment count is the kill bitmask, not the
+                // inventory souvenirs (a dropped Fragment can expire
+                // uncollected, which must never hide the finale prompt).
+                "fragment": self.fragments.count_ones(),
             },
             "recipes": recipes,
             "buildMode": self.build_mode.is_some(),
@@ -1730,6 +1738,7 @@ impl App {
             altar_hinted: false,
             ending_pending: false,
             ending: None,
+            victory_timer: 0.0,
             ng_plus: 0,
             fragments: 0,
             spawn_point: (px, py),
@@ -2174,6 +2183,7 @@ impl App {
                 self.inventory.remove(ItemKind::Stone, s);
                 self.inventory.remove(ItemKind::Herb, h);
                 self.craft_armor = 0.25;
+                self.crafted_iron = true;
                 play_sfx("craft");
                 toast("Forged Iron Plate! (-25% damage)");
                 return;
@@ -3041,11 +3051,12 @@ impl App {
 
     /// Consume a healing salve (R key): restores 40 HP if one is held.
     pub fn use_salve(&mut self) -> bool {
-        if self.salves == 0 || self.player.hp >= player::MAX_HP {
+        let max_hp = self.player.max_hp();
+        if self.salves == 0 || self.player.hp >= max_hp {
             return false;
         }
         self.salves -= 1;
-        self.player.hp = (self.player.hp + 40.0).min(player::MAX_HP);
+        self.player.hp = (self.player.hp + 40.0).min(max_hp);
         true
     }
 
@@ -3458,31 +3469,37 @@ impl App {
     /// Find a tile of the given fragment's home biome by sampling outward rings
     /// from the player (cheap: a handful of probes per ring, capped radius).
     fn biome_center(&mut self, bit: u8) -> Option<(f32, f32)> {
-        let tk = match bit {
-            0 => TileKind::Forest,
-            1 => TileKind::Desert,
-            2 => TileKind::Snow,
-            3 => TileKind::Swamp,
-            4 => TileKind::Water,
+        // Frost Golem roams Snow and Tundra alike: probe Snow first, then
+        // Tundra, so tundra-heavy worlds don't mis-point into the distance.
+        let kinds: &[TileKind] = match bit {
+            0 => &[TileKind::Forest],
+            1 => &[TileKind::Desert],
+            2 => &[TileKind::Snow, TileKind::Tundra],
+            3 => &[TileKind::Swamp],
+            4 => &[TileKind::Water],
             _ => return None,
         };
         let px = self.player.x;
         let py = self.player.y;
-        for r in (8..400).step_by(4) {
-            for (dx, dy) in [
-                (r, 0),
-                (-r, 0),
-                (0, r),
-                (0, -r),
-                (r, r),
-                (r, -r),
-                (-r, r),
-                (-r, -r),
-            ] {
-                let x = px + dx as f32;
-                let y = py + dy as f32;
-                if tile_at(&self.world, &mut self.chunks, x.floor() as i32, y.floor() as i32) == tk {
-                    return Some((x, y));
+        for tk in kinds {
+            for r in (8..400).step_by(4) {
+                for (dx, dy) in [
+                    (r, 0),
+                    (-r, 0),
+                    (0, r),
+                    (0, -r),
+                    (r, r),
+                    (r, -r),
+                    (-r, r),
+                    (-r, -r),
+                ] {
+                    let x = px + dx as f32;
+                    let y = py + dy as f32;
+                    if tile_at(&self.world, &mut self.chunks, x.floor() as i32, y.floor() as i32)
+                        == *tk
+                    {
+                        return Some((x, y));
+                    }
                 }
             }
         }
@@ -4135,8 +4152,9 @@ impl App {
         };
         self.ending = Some(ending);
         self.ng_plus += 1;
-        let seed = 1338 + (self.ng_plus - 1);
-        self.reset_world(seed);
+        // Victory lap first: the overlay + stage 9 need live frames to show.
+        // The NG+ world begins when victory_timer elapses in update().
+        self.victory_timer = 8.0;
     }
 
     /// New Game+ difficulty ("Shatter delivers a harder world, faster nights"):
@@ -4184,6 +4202,9 @@ impl App {
         self.loot.clear();
         self.weapon_loot.clear();
         self.charge_start = None;
+        // Fresh run = outside with unclaimed interiors (new world, new tiles).
+        self.interior = None;
+        self.looted_interiors.clear();
     }
 
     // ---- Save / Load ------------------------------------------------------
@@ -4217,6 +4238,7 @@ impl App {
             inv,
             structures: self.structures.clone(),
             opened_chests: self.opened_chests.iter().cloned().collect(),
+            looted_interiors: self.looted_interiors.iter().cloned().collect(),
             depleted_nodes: self.nodes.depleted_list(),
             enemies: self.enemies.enemies().map(|e| (e.kind, e.x, e.y, e.hp)).collect(),
             quest_stage: self.quest.stage,
@@ -4236,6 +4258,7 @@ impl App {
             craft_harvest: self.craft_harvest,
             craft_armor: self.craft_armor,
             salves: self.salves,
+            crafted_iron: self.crafted_iron,
             weapon: self.player.weapon.as_u8(),
             weapon_unlocked: self.player.unlocked,
             enchant: self.player.enchant,
@@ -4268,6 +4291,10 @@ impl App {
         }
         self.structures = s.structures.clone();
         self.opened_chests = s.opened_chests.iter().cloned().collect();
+        self.looted_interiors = s.looted_interiors.iter().cloned().collect();
+        // A load always resumes outside: a saved run never persists the
+        // room itself, so a stale interior would strand its foes and camera.
+        self.interior = None;
         self.reset_run_state();
 
         self.enemies = EnemyRegistry::new();
@@ -4302,6 +4329,7 @@ impl App {
         self.craft_harvest = s.craft_harvest;
         self.craft_armor = s.craft_armor;
         self.salves = s.salves;
+        self.crafted_iron = s.crafted_iron;
         self.player.weapon = game::weapons::WeaponKind::from_u8(s.weapon);
         self.player.unlocked = s.weapon_unlocked;
         self.player.enchant = s.enchant;
@@ -4313,6 +4341,9 @@ impl App {
         }
         self.respawn_timer = 0.0;
         self.arrows = Vec::new();
+        // A save taken during the post-reforge victory lap restores the
+        // overlay AND its countdown (which is not itself persisted).
+        self.victory_timer = if s.ending.is_some() { 8.0 } else { 0.0 };
         self.nodes = NodeRegistry::new();
         for (tx, ty, kind) in &s.depleted_nodes {
             self.nodes.restore_depleted(*tx, *ty, *kind);
@@ -4401,6 +4432,16 @@ impl App {
         // Visual clocks run everywhere — even indoors — or rooms render frozen
         // (no torch flicker, no walk cycle, entry particles hanging mid-air).
         self.anim_clock = (self.anim_clock + dt).rem_euclid(3600.0);
+        // Victory lap timer: after the NG+ countdown the fresh harder world
+        // begins (ng_plus survives reset_world; everything else restarts).
+        if self.victory_timer > 0.0 {
+            self.victory_timer -= dt;
+            if self.victory_timer <= 0.0 {
+                let seed = 1338 + self.ng_plus.saturating_sub(1);
+                self.reset_world(seed);
+                self.reset_run_state();
+            }
+        }
         // integrate + cull particles
         for p in &mut self.particles {
             p.x += p.vx * dt;
@@ -4675,11 +4716,12 @@ impl App {
             self.player
                 .tick(dt, temperature(self.time_of_day), warm, wet, biome, self.weather);
             // Resting by a fire (or inside a home) slowly mends wounds.
-            if warm && self.player.hp < 100.0 {
-                self.player.hp = (self.player.hp + dt * 3.0).min(100.0);
+            let max_hp = self.player.max_hp();
+            if warm && self.player.hp < max_hp {
+                self.player.hp = (self.player.hp + dt * 3.0).min(max_hp);
             }
-            if sheltered && self.player.hp < 100.0 {
-                self.player.hp = (self.player.hp + dt * 2.0).min(100.0);
+            if sheltered && self.player.hp < max_hp {
+                self.player.hp = (self.player.hp + dt * 2.0).min(max_hp);
             }
         } else {
             self.respawn_timer -= dt;
@@ -4944,7 +4986,15 @@ impl App {
             <= 4.0;
 
         // The Forest Warden spawns at the ruins once Chapter 1 is complete.
-        if self.quest.stage >= 5 && !self.boss_spawned {
+        // Re-arms if its fragment is still missing and no Warden lives
+        // (a stolen kill used to brick fragment 0 forever).
+        let warden_up = self
+            .enemies
+            .enemies()
+            .any(|e| e.kind == EnemyKind::Boss && e.alive());
+        if self.quest.stage >= 5
+            && (!self.boss_spawned || ((self.fragments & 1) == 0 && !warden_up))
+        {
             self.enemies.get(self.ruins.0, self.ruins.1, EnemyKind::Boss, dt);
             self.boss_spawned = true;
             play_sfx("roar");
@@ -6029,7 +6079,9 @@ impl App {
             drop(encoder);
         }
 
-        if self.frames % 120 == 0 {
+        // Heartbeat for smoke-testing live renders (once a minute, not once
+        // a second — console spam costs frames on some machines).
+        if self.frames % 3600 == 0 {
             glog(&format!(
                 "[gfx] heartbeat #{} quads={} backend={}",
                 self.frames,

@@ -218,19 +218,19 @@ impl Player {
     /// Eat one food item: restores 30 hunger.
     pub fn eat(&mut self, inv: &mut Inventory) -> bool {
         if inv.remove(ItemKind::Food, 1) {
-            self.hunger = (self.hunger + 30.0).min(MAX_HUNGER);
+            self.hunger = (self.hunger + 34.0).min(MAX_HUNGER);
             true
         } else {
             false
         }
     }
 
-    /// Drink from a water source (well or shoreline): restores 45 thirst.
+    /// Drink from a water source (well or shoreline): restores 50 thirst.
     pub fn drink_water(&mut self) -> bool {
         if self.thirst >= MAX_THIRST {
             return false;
         }
-        self.thirst = (self.thirst + 45.0).min(MAX_THIRST);
+        self.thirst = (self.thirst + 50.0).min(MAX_THIRST);
         true
     }
 
@@ -260,7 +260,8 @@ impl Player {
     /// stops starvation damage — the light/warmth loop the world hints at.
     /// `wet` (raining) halves stamina regen and makes the cold bite a little
     /// harder, so you want shelter when the storm rolls in.
-    /// Base drain ≈ 9 hunger/minute, so a full bar lasts ~11 minutes.
+    /// Base drain ≈ 5.4 hunger/minute, so a full bar lasts ~18 minutes
+    /// (cold nights and harsh biomes drain several times faster).
     /// `biome` is the tile under the player; the harsh Tundra/Desert biomes
     /// drain hunger faster and regenerate stamina slower (exposure).
     pub fn tick(
@@ -282,7 +283,9 @@ impl Player {
         );
         let storm = weather == 3;
         let heat = weather == 4;
-        let mut drain = if warm { 0.05 } else { 0.09 + 0.18 * cold };
+        // Cold bites, but no longer at triple base drain (retuned for the
+        // slower travel pace: a cold night costs roughly half a bar).
+        let mut drain = if warm { 0.05 } else { 0.09 + 0.12 * cold };
         if wet {
             drain += 0.02;
         }
@@ -304,7 +307,7 @@ impl Player {
         }
         // Thirst drains a little faster than hunger, and is punished hardest by
         // heat (Desert/Jungle) and rain. Dehydration is deadlier than starvation.
-        let mut tdrain = if warm { 0.06 } else { 0.11 + 0.20 * cold };
+        let mut tdrain = if warm { 0.06 } else { 0.11 + 0.13 * cold };
         if wet {
             tdrain += 0.04;
         }
@@ -312,7 +315,7 @@ impl Player {
             tdrain += 0.03;
         }
         if heat {
-            tdrain += 0.12;
+            tdrain += 0.09;
         }
         if matches!(biome, TileKind::Desert | TileKind::Jungle | TileKind::Volcanic) {
             tdrain += 0.10;
@@ -534,5 +537,41 @@ mod tests {
         let (x, y) = find_spawn(&world, &mut cache);
         let kind = tile_at(&world, &mut cache, x.floor() as i32, y.floor() as i32);
         assert!(kind.walkable(), "spawn tile must be walkable, got {kind:?}");
+    }
+
+    #[test]
+    fn cold_night_drain_is_pressuring_not_murderous() {
+        // Retuned for the slower travel pace: a full bar must survive a
+        // cold night with room to spare (old coefficients tripled it).
+        let mut p = Player::new(0.0, 0.0);
+        p.tick(60.0, -8.0, false, false, TileKind::Grass, 0);
+        // hunger: 0.09 + 0.12*0.8 = 0.186/s
+        assert!(
+            (p.hunger - (100.0 - 0.186 * 60.0)).abs() < 0.5,
+            "cold-night hunger drain wrong: {}",
+            p.hunger
+        );
+        // thirst: 0.11 + 0.13*0.8 = 0.214/s
+        assert!(
+            (p.thirst - (100.0 - 0.214 * 60.0)).abs() < 0.5,
+            "cold-night thirst drain wrong: {}",
+            p.thirst
+        );
+    }
+
+    #[test]
+    fn base_drain_and_restores() {
+        let mut p = Player::new(0.0, 0.0);
+        p.tick(60.0, 20.0, false, false, TileKind::Grass, 0);
+        assert!((p.hunger - (100.0 - 0.09 * 60.0)).abs() < 0.5);
+        assert!((p.thirst - (100.0 - 0.11 * 60.0)).abs() < 0.5);
+        let mut inv = crate::items::Inventory::new();
+        inv.add(crate::items::ItemKind::Food, 2);
+        p.hunger = 50.0;
+        assert!(p.eat(&mut inv));
+        assert!((p.hunger - 84.0).abs() < 1e-4, "meal restores 34 hunger");
+        p.thirst = 50.0;
+        assert!(p.drink_water());
+        assert!((p.thirst - 100.0).abs() < 1e-4, "drink restores 50 thirst");
     }
 }

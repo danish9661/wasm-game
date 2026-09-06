@@ -59,6 +59,10 @@ pub struct SaveState {
     pub inv: Vec<(ItemKind, u32)>,
     pub structures: Vec<Structure>,
     pub opened_chests: Vec<(i32, i32)>,
+    /// Buildings whose one-time interior pantry/vault reward was claimed,
+    /// so re-entering (or reloading) can't re-grant it.
+    #[serde(default)]
+    pub looted_interiors: Vec<(i32, i32)>,
     /// Harvested resource nodes so they stay depleted after a reload.
     #[serde(default)]
     pub depleted_nodes: Vec<(i32, i32, ResourceKind)>,
@@ -82,6 +86,9 @@ pub struct SaveState {
     pub ng_plus: u32,
     pub time_of_day: f32,
     pub spawn_point: (f32, f32),
+    /// Whether the stage-2 Iron Plate craft happened (quest gate).
+    #[serde(default)]
+    pub crafted_iron: bool,
     /// Crafting bonuses unlocked at an Anvil.
     #[serde(default)]
     pub craft_harvest: u32,

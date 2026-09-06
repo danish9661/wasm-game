@@ -133,6 +133,8 @@
       <button class="tbtn act" data-key="KeyQ" title="Build mode"><span class="tbtn-icon">🔨</span><span class="tbtn-label">Build</span></button>
       <button class="tbtn act" data-key="KeyI" title="Inventory"><span class="tbtn-icon">🎒</span><span class="tbtn-label">Inv</span></button>
       <button class="tbtn act" data-key="KeyL" title="Codex"><span class="tbtn-icon">📖</span><span class="tbtn-label">Codex</span></button>
+      <button class="tbtn act" data-key="KeyO" title="Talk to merchant"><span class="tbtn-icon">💬</span><span class="tbtn-label">Talk</span></button>
+      <button class="tbtn act" data-key="KeyZ" title="Sleep (near bed)"><span class="tbtn-icon">😴</span><span class="tbtn-label">Sleep</span></button>
       <button class="tbtn act" data-key="PrintScreen" title="Screenshot"><span class="tbtn-icon">📷</span><span class="tbtn-label"></span></button>
     </div>
     <div id="touch-build" class="hidden">BUILD MODE — tap ground to place · 🔨 to exit</div>
@@ -713,7 +715,7 @@
             'Open the ruins chest',
             'Hunt the Crown Fragment guardians (X/5 recovered)',
             'Carry all 5 fragments to the altar where you woke',
-            'Press E at the altar to reforge the Star Crown',
+            'Answer the altar (Y = Reign, N = Shatter)',
             'The Star Crown blazes - the world is healed',
           ];
           const el = (id) => document.getElementById(id);
@@ -951,6 +953,7 @@
               let txt = QUEST_TEXT[q];
               if (q === 6) txt = QUEST_TEXT[6].replace('X/5', stats.frag + '/5');
               else if (q === 8 && stats.colossus >= 1) txt = 'The Twin Star Crowns blaze - the world is whole (true ending)';
+              else if (q === 8) txt = 'Answer the altar (Y/N) - slay the Stone Colossus first for the true ending';
               el('quest').textContent = `📜 ${txt}`;
               lastQuest = q;
               lastFrag = stats.frag;
@@ -1236,10 +1239,11 @@
                   townTransitionEl.classList.add('hidden');
                 }
               } catch (_) {}
-              // PERF PROBE: isolate WASM step() cost from frame scheduling.
+              // PERF PROBE (?perf): isolate WASM step() cost from frame scheduling.
+              // Off by default — it console-spams every second in production.
               frame._acc = (frame._acc || 0) + stepMs;
               frame._n = (frame._n || 0) + 1;
-              if (t - (frame._plog || 0) >= 1000) {
+              if (location.search.includes('perf') && t - (frame._plog || 0) >= 1000) {
                 const fps = (frame._n * 1000) / (t - frame._plog);
                 console.log(`[perf] fps≈${fps.toFixed(0)} stepAvg=${ (frame._acc / frame._n).toFixed(1)}ms over ${frame._n} frames`);
                 frame._plog = t; frame._acc = 0; frame._n = 0;

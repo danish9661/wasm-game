@@ -77,7 +77,13 @@ impl QuestLog {
                 fragments.count_ones()
             ),
             7 => "Carry all 5 fragments to the altar where you woke".into(),
-            8 => "Press E at the altar to reforge the Star Crown".into(),
+            8 => {
+                if self.colossus_defeated {
+                    "Answer the altar (Y = Reign, N = Shatter)".into()
+                } else {
+                    "Answer the altar (Y/N) — slay the Stone Colossus first for the true ending".into()
+                }
+            }
             _ => {
                 if self.colossus_defeated {
                     "The Twin Star Crowns blaze - the world is whole (true ending)".into()

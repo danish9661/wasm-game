@@ -774,8 +774,8 @@ fn step_player(
             && (s.tx as f32 + 0.5 - np.player.x).hypot(s.ty as f32 + 0.5 - np.player.y) < 2.5
     });
     np.player.tick(dt, temp, warm, wet, biome, 0);
-    if warm && np.player.hp < player::MAX_HP {
-        np.player.hp = (np.player.hp + dt * 3.0).min(player::MAX_HP);
+    if warm && np.player.hp < np.player.max_hp() {
+        np.player.hp = (np.player.hp + dt * 3.0).min(np.player.max_hp());
     }
     crafted
 }
