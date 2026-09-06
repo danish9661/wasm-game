@@ -1160,10 +1160,31 @@ impl App {
             "No anvil nearby — build one (N) to craft".to_string()
         };
         let gold = self.inventory.count(ItemKind::Gold);
+        // Debug bounding box of the live vertex buffer (mesh sanity probe).
+        let (mut mminx, mut mmaxx, mut mminy, mut mmaxy) =
+            (f32::INFINITY, f32::NEG_INFINITY, f32::INFINITY, f32::NEG_INFINITY);
+        let mut mfinite = true;
+        for c in self.vertices.chunks(6) {
+            if c.len() < 2 {
+                continue;
+            }
+            if !c[0].is_finite() || !c[1].is_finite() {
+                mfinite = false;
+                break;
+            }
+            mminx = mminx.min(c[0]);
+            mmaxx = mmaxx.max(c[0]);
+            mminy = mminy.min(c[1]);
+            mmaxy = mmaxy.max(c[1]);
+        }
         let dump = serde_json::json!({
             "cam": { "x": cam.x, "y": cam.y },
             "interior": self.interior.is_some(),
             "clock": self.anim_clock,
+            "quads": self.quad_count,
+            "mesh_finite": mfinite,
+            "mesh_min": [mminx, mminy],
+            "mesh_max": [mmaxx, mmaxy],
             "quest_text": self.quest.quest_text(self.fragments),
             "craft_hint": craft_hint,
             "quest_stage": self.quest.stage,
@@ -3911,10 +3932,11 @@ impl App {
             p.size *= 0.95;
         }
         self.particles.retain(|p| p.life > 0.0);
+        // Indoors the world sim is skipped; the room walk runs here while the
+        // camera and mesh rebuild below run for both paths so rooms render live.
         if self.interior.is_some() {
             self.update_interior(dt);
-            return;
-        }
+        } else {
         self.frames += 1;
         self.hurt_flash = (self.hurt_flash * 0.86).max(0.0);
         self.swing_cd = (self.swing_cd - dt).max(0.0);
@@ -4667,6 +4689,7 @@ impl App {
             self.fps_time = 0.0;
         }
 
+        } // end outdoors-only world sim
         // camera look-ahead: lead the camera a little in the direction of
         // travel so the player sees what's coming, easing back to center.
         let vx = (self.player.x - self.last_px) / dt.max(1e-4);
@@ -4678,7 +4701,15 @@ impl App {
         self.cam_lead.0 += (lead_target.0 - self.cam_lead.0) * ka;
         self.cam_lead.1 += (lead_target.1 - self.cam_lead.1) * ka;
         let focus = if let Some(int) = &self.interior {
-            (int.bx + int.px, int.by + int.py)
+            // Center the room exactly like the player: back the camera off by
+            // the viewport offset (mirrors render::focus_target, whose
+            // PLAYER_SCREEN_Y is 0.62), or the room lands at the top-left
+            // screen corner instead of mid-screen.
+            let (sx, sy) = game::iso::world_to_iso(int.bx + int.px, int.by + int.py);
+            game::iso::iso_to_world(
+                sx - self.viewport[0] / 2.0,
+                sy + game::iso::HALF_H - self.viewport[1] * 0.62,
+            )
         } else {
             let f = render::focus_target(&self.player, (self.viewport[0], self.viewport[1]));
             (f.0 + self.cam_lead.0, f.1 + self.cam_lead.1)
@@ -4687,7 +4718,10 @@ impl App {
         self.ensure_visible();
         // Multiplayer: send our input and overlay the authoritative server
         // world on top of this frame's local (predictive) simulation.
-        self.net_sync();
+        // Paused indoors (as before): the room walk is local-only.
+        if self.interior.is_none() {
+            self.net_sync();
+        }
         let sprites = self.sprites();
         // While inside a building we draw only the interior sprites (the room) and
         // suppress terrain by passing an empty tile list.
