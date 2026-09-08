@@ -2645,7 +2645,7 @@ impl App {
         let by = int.by;
         let mut v = Vec::new();
         // Per-building floor + wall colours (each interior's material story).
-        let (floor_col, wall_col) = match int.kind {
+        let (mut floor_col, wall_col) = match int.kind {
             StructureKind::House => ([0.45, 0.33, 0.22], [0.58, 0.46, 0.34]),
             StructureKind::Cabin => ([0.30, 0.22, 0.15], [0.37, 0.27, 0.17]),
             StructureKind::Hut => ([0.52, 0.42, 0.26], [0.63, 0.53, 0.33]),
@@ -2654,6 +2654,11 @@ impl App {
             StructureKind::Watchtower => ([0.44, 0.44, 0.42], [0.58, 0.55, 0.50]),
             _ => ([0.20, 0.16, 0.15], [0.32, 0.27, 0.31]),
         };
+        if int.floor > 1 {
+            // Upper floors run cooler/darker so stacked rooms never read as
+            // the same room twice.
+            floor_col = [floor_col[0] * 0.82, floor_col[1] * 0.82, floor_col[2] * 0.88];
+        }
         // Floor: sized to contain the whole wall ring. Wall/furniture offsets
         // are world tiles but iso projection stretches them ((rw+rh) tiles
         // diagonally), so a floor of (rw+0.7)x(rh+0.7) leaves the ring and
@@ -2733,28 +2738,59 @@ impl App {
             Sprite::new_center(bx + int.rw - 0.4, by + gap, post_col, 5.0, 12.0, 0.0)
                 .with_style(SpriteStyle::Generic),
         );
-        // Stairs (left middle) if the building has more floors, with a pale
-        // step and flanking rails so they read as stairs, not a slab.
+        // Staircase pathway (left middle) if the building has more floors: a
+        // dark stairwell bed with three pale STONE treads and risers reaching
+        // toward the room center (clear of the ring silhouette), flanked by
+        // tall dark boards. Stone-gray reads constructed against the brown
+        // wood room. Walk onto the steps to change floors.
         if stairs_here {
             v.push(
                 Sprite::new_center(bx - int.rw, by, [0.55, 0.45, 0.28], 22.0, 24.0, 0.0)
                     .with_style(SpriteStyle::Floor),
             );
+            // Dark bed first so pale treads pop at any zoom.
             v.push(
-                Sprite::new_center(bx - int.rw + 0.8, by, [0.70, 0.60, 0.40], 8.0, 4.0, 0.0)
+                Sprite::new_center(bx - int.rw + 1.3, by, [0.16, 0.12, 0.09], 19.0, 17.0, 0.0)
                     .with_style(SpriteStyle::Generic),
             );
+            // Solid stepped blocks ascending toward the room (NOT flat
+            // diamonds — flat reads as floor clutter at game scale, proven
+            // across three review rounds). Real block height + top lighting
+            // + overlap = unmistakable stairs. Back-to-front for painter
+            // order. Stone tint is deliberately non-wood so the flight can't
+            // camouflage as ring.
+            let stone = [0.70, 0.68, 0.64];
             v.push(
-                Sprite::new_center(bx - int.rw - 0.2, by - 0.7, [0.30, 0.20, 0.12], 2.5, 9.0, 0.0)
-                    .with_style(SpriteStyle::Generic),
-            );
-            v.push(
-                Sprite::new_center(bx - int.rw - 0.2, by + 0.7, [0.30, 0.20, 0.12], 2.5, 9.0, 0.0)
-                    .with_style(SpriteStyle::Generic),
-            );
-            v.push(
-                Sprite::new_center(bx - int.rw, by, [0.7, 0.6, 0.4], 12.0, 18.0, 20.0)
+                Sprite::new_center(bx - int.rw + 0.7, by - 0.7, stone, 18.0, 44.0, 0.0)
                     .with_style(SpriteStyle::Wall),
+            );
+            v.push(
+                Sprite::new_center(bx - int.rw + 1.0, by, stone, 18.0, 44.0, 0.0)
+                    .with_style(SpriteStyle::Wall),
+            );
+            v.push(
+                Sprite::new_center(bx - int.rw + 1.3, by + 0.7, stone, 18.0, 44.0, 0.0)
+                    .with_style(SpriteStyle::Wall),
+            );
+            // Bright cap on the middle block catches the eye mid-flight.
+            v.push(
+                Sprite::new_center(bx - int.rw + 1.0, by, [0.88, 0.86, 0.80], 10.0, 5.0, 0.0)
+                    .with_style(SpriteStyle::Generic),
+            );
+            // Tall side boards silhouette the flight against the ring.
+            v.push(
+                Sprite::new_center(bx - int.rw + 0.3, by - 1.2, [0.22, 0.15, 0.10], 3.0, 19.0, 0.0)
+                    .with_style(SpriteStyle::Generic),
+            );
+            v.push(
+                Sprite::new_center(bx - int.rw + 0.3, by + 1.2, [0.22, 0.15, 0.10], 3.0, 19.0, 0.0)
+                    .with_style(SpriteStyle::Generic),
+            );
+            // Dark opening above the top step: stairs must lead somewhere or
+            // they read as floor decor. This is the cue that sells "up".
+            v.push(
+                Sprite::new_center(bx - int.rw + 1.1, by - 1.8, [0.08, 0.07, 0.08], 9.0, 7.0, 0.0)
+                    .with_style(SpriteStyle::Generic),
             );
         }
         // Per-building furniture.
@@ -2763,9 +2799,10 @@ impl App {
                 // Rug under spawn in both rooms.
                 v.push(Sprite::new_center(bx, by + 0.2, [0.48, 0.20, 0.14], 80.0, 34.0, 0.0).with_style(SpriteStyle::Generic));
                 if int.floor == 1 {
-                    // Ground-floor living room: bed NW, table + stool NE,
-                    // barrel SE, lantern SW, shelf S, banner N, planter W.
-                    v.push(Sprite::new_center(bx - 2.9, by - 1.9, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0).with_style(SpriteStyle::Bed));
+                    // Ground-floor living room: bed on the north wall (clear
+                    // of the stair opening), table + stool NE, barrel SE,
+                    // lantern SW, shelf S, banner N, planter E.
+                    v.push(Sprite::new_center(bx - 0.5, by - 2.2, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0).with_style(SpriteStyle::Bed));
                     v.push(Sprite::new_center(bx + 2.4, by - 1.7, [0.62, 0.48, 0.30], 16.0, 18.0, 0.0).with_style(SpriteStyle::Crate));
                     v.push(Sprite::new_center(bx + 2.4, by - 0.6, [0.45, 0.32, 0.18], 10.0, 6.0, 0.0).with_style(SpriteStyle::Generic));
                     v.push(Sprite::new_center(bx + 3.0, by + 2.0, [0.5, 0.4, 0.3], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
@@ -2773,9 +2810,11 @@ impl App {
                     v.push(Sprite::new_center(bx - 0.9, by + 2.3, [0.38, 0.26, 0.15], 16.0, 18.0, 0.0).with_style(SpriteStyle::Crate));
                     v.push(Sprite::new_center(bx - 1.1, by + 2.3, [0.70, 0.55, 0.30], 6.0, 3.0, 0.0).with_style(SpriteStyle::Generic));
                     v.push(Sprite::new_center(bx - 0.6, by + 2.3, [0.60, 0.20, 0.20], 5.0, 3.0, 0.0).with_style(SpriteStyle::Generic));
-                    v.push(Sprite::new_center(bx + 0.3, by - 2.4, [0.70, 0.20, 0.20], 12.0, 20.0, 0.0).with_style(SpriteStyle::Banner));
-                    v.push(Sprite::new_center(bx - 3.3, by + 0.9, [0.45, 0.30, 0.18], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
-                    v.push(Sprite::new_center(bx - 3.3, by + 0.9, [0.45, 0.62, 0.30], 12.0, 10.0, 0.0).with_style(SpriteStyle::Flower));
+                    v.push(Sprite::new_center(bx + 1.5, by - 2.5, [0.70, 0.20, 0.20], 12.0, 20.0, 0.0).with_style(SpriteStyle::Banner));
+                    v.push(Sprite::new_center(bx + 3.2, by - 0.9, [0.45, 0.30, 0.18], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
+                    v.push(Sprite::new_center(bx + 3.2, by - 0.9, [0.45, 0.62, 0.30], 12.0, 10.0, 0.0).with_style(SpriteStyle::Flower));
+                    // Runner rug leading west to the stair landing (kept clear).
+                    v.push(Sprite::new_center(bx - 2.2, by, [0.50, 0.22, 0.15], 30.0, 10.0, 0.0).with_style(SpriteStyle::Generic));
                 } else {
                     // Upstairs bedroom: double bed, treasure chest, nightstand.
                     v.push(Sprite::new_center(bx - 2.9, by - 1.9, [0.8, 0.75, 0.6], 18.0, 12.0, 0.0).with_style(SpriteStyle::Bed));
@@ -2868,11 +2907,12 @@ impl App {
             StructureKind::Watchtower => {
                 v.push(Sprite::new_center(bx, by + 0.3, [0.40, 0.40, 0.42], 40.0, 18.0, 0.0).with_style(SpriteStyle::Generic));
                 if int.floor == 1 {
-                    // Guardroom: weapon rack with sconces west, supply crate,
+                    // Guardroom: weapon rack with sconces on the EAST wall
+                    // (west landing stays clear for the stairs), supply crate,
                     // cot south, sandbag corners.
-                    v.push(Sprite::new_center(bx - 1.2, by - 1.0, [0.35, 0.25, 0.15], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
-                    v.push(Sprite::new_center(bx - 1.5, by - 1.5, [0.90, 0.45, 0.12], 8.0, 18.0, 0.0).with_style(SpriteStyle::Torch));
-                    v.push(Sprite::new_center(bx - 1.5, by + 0.0, [0.90, 0.45, 0.12], 8.0, 18.0, 0.0).with_style(SpriteStyle::Torch));
+                    v.push(Sprite::new_center(bx + 1.2, by - 1.0, [0.35, 0.25, 0.15], 14.0, 20.0, 0.0).with_style(SpriteStyle::Barrel));
+                    v.push(Sprite::new_center(bx + 1.5, by - 1.5, [0.90, 0.45, 0.12], 8.0, 18.0, 0.0).with_style(SpriteStyle::Torch));
+                    v.push(Sprite::new_center(bx + 1.5, by + 0.0, [0.90, 0.45, 0.12], 8.0, 18.0, 0.0).with_style(SpriteStyle::Torch));
                     v.push(Sprite::new_center(bx + 1.0, by - 2.6, [0.6, 0.45, 0.3], 14.0, 16.0, 0.0).with_style(SpriteStyle::Crate));
                     v.push(Sprite::new_center(bx + 0.7, by + 2.4, [0.7, 0.6, 0.45], 14.0, 8.0, 0.0).with_style(SpriteStyle::Bed));
                     v.push(Sprite::new_center(bx - 1.2, by + 3.0, [0.60, 0.52, 0.36], 12.0, 7.0, 0.0).with_style(SpriteStyle::Generic));
