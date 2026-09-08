@@ -27,14 +27,17 @@ pub fn dungeon_foes(bx: i32, by: i32, floor: u8) -> Vec<(EnemyKind, f32, f32)> {
             vec![(EnemyKind::Bat, x1, y1), (EnemyKind::Bat, x2, y2)]
         }
         _ => {
-            // Vault guard: two skeletons and a spider around the back wall.
+            // Vault guard: two skeletons and a spider around the back wall,
+            // plus a wraith drifting over the altar.
             let (x1, y1) = spot(3, -1.5, -0.5);
             let (x2, y2) = spot(4, -1.0, 0.8);
             let (x3, y3) = spot(5, -2.0, 0.2);
+            let (x4, y4) = spot(6, 0.0, -1.5);
             vec![
                 (EnemyKind::Skeleton, x1, y1),
                 (EnemyKind::Skeleton, x2, y2),
                 (EnemyKind::Spider, x3, y3),
+                (EnemyKind::Wraith, x4, y4),
             ]
         }
     }
@@ -66,8 +69,9 @@ mod tests {
         assert_eq!(a.len(), 2, "entry hall: two bats");
         assert!(a.iter().all(|(k, _, _)| *k == EnemyKind::Bat));
         let c = dungeon_foes(10, -20, 2);
-        assert_eq!(c.len(), 3, "vault floor: three guards");
+        assert_eq!(c.len(), 4, "vault floor: three guards + wraith");
         assert!(c.iter().any(|(k, _, _)| *k == EnemyKind::Skeleton));
+        assert!(c.iter().any(|(k, _, _)| *k == EnemyKind::Wraith));
         // Different tiles differ (the hash actually mixes).
         let d = dungeon_foes(-40, 60, 1);
         assert_ne!(a, d, "different dungeons patrol differently");
