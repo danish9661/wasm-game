@@ -31,11 +31,13 @@ pub(crate) fn build(
     // Thick arms.
     parts.push(Part::vquad(cx - 12.0 - swing, cy - 42.0, 3.5, 20.0, stone, alpha, true));
     parts.push(Part::vquad(cx + 9.0 + swing, cy - 42.0, 3.5, 20.0, stone, alpha, true));
-    // Stone head with glowing eyes.
-    parts.push(Part::diamond(cx, cy - 52.0, 7.0, 8.0, 0.0, stone, alpha, true));
+    // Stone head with glowing eyes, overlapping the torso so the neck
+    // never reads as a gap.
+    parts.push(Part::diamond(cx, cy - 50.0, 7.0, 8.0, 0.0, stone, alpha, true));
+    parts.push(Part::diamond(cx, cy - 44.0, 4.0, 3.0, 0.0, dark, alpha, false));
     let glow = (anim_time * 3.0).sin() * 0.3 + 0.7;
-    parts.push(Part::diamond(cx - 3.0, cy - 52.0, 1.5, 1.5, 0.0, [0.3, 0.9, 1.0], alpha * glow, false));
-    parts.push(Part::diamond(cx + 3.0, cy - 52.0, 1.5, 1.5, 0.0, [0.3, 0.9, 1.0], alpha * glow, false));
+    parts.push(Part::diamond(cx - 3.0, cy - 50.0, 1.5, 1.5, 0.0, [0.3, 0.9, 1.0], alpha * glow, false));
+    parts.push(Part::diamond(cx + 3.0, cy - 50.0, 1.5, 1.5, 0.0, [0.3, 0.9, 1.0], alpha * glow, false));
     // Heavy club in the right hand.
     let hx = cx + 9.0 + swing + fx;
     let hy = cy - 30.0 + fy;

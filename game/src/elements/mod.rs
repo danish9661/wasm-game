@@ -81,6 +81,10 @@ pub(crate) mod raider;
 pub(crate) mod banner;
 pub(crate) mod enchanting_table;
 pub(crate) mod dungeon;
+// Old-world vehicles (art extracted from the renderer dispatch)
+pub(crate) mod car;
+pub(crate) mod train;
+pub(crate) mod rail;
 
 /// Offline tooling hook: build every element into a flat vertex buffer so a
 /// `bin` in this package can rasterize and save PNGs. Each vertex is
@@ -189,6 +193,16 @@ pub fn preview_elements() -> Vec<(String, Vec<f32>)> {
     add(&mut out, "banner", banner::build(0.0, 0.0, sk(SK::Banner), alpha, facing, t));
     add(&mut out, "enchanting_table", enchanting_table::build(0.0, 0.0, sk(SK::EnchantingTable), alpha, facing, t));
     add(&mut out, "dungeon", dungeon::build(0.0, 0.0, sk(SK::Dungeon), alpha, facing, t));
+    add(&mut out, "guard", guard::build(0.0, 0.0, crate::npc::NpcKind::Guard.color(), alpha, facing, 0.0, t, 0.0));
+    add(&mut out, "golem", golem::build(0.0, 0.0, crate::npc::NpcKind::Golem.color(), alpha, facing, 0.0, t, 0.0));
+    add(&mut out, "turret", turret::build(0.0, 0.0, sk(SK::Turret), alpha, facing, t));
+    add(&mut out, "farm_plot", farm_plot::build(0.0, 0.0, sk(SK::FarmPlot), alpha, facing, t));
+    add(&mut out, "healing_totem", healing_totem::build(0.0, 0.0, color, alpha, facing, t));
+    add(&mut out, "portal", portal::build(0.0, 0.0, sk(SK::Portal), alpha, facing, t));
+    add(&mut out, "spike", spike::build(0.0, 0.0, sk(SK::Spike), alpha, facing, t));
+    add(&mut out, "car", car::build(0.0, 0.0, sk(SK::Car), alpha, facing, 16.0, 12.0));
+    add(&mut out, "train", train::build(0.0, 0.0, sk(SK::Train), alpha, facing, 20.0, 16.0));
+    add(&mut out, "rail", rail::build(0.0, 0.0, sk(SK::Rail), alpha, facing, 16.0, 6.0));
     out
 }
 
@@ -227,6 +241,7 @@ mod tests {
             ("colossus", verts(super::colossus::build(0.0, 0.0, color, 1.0, facing, 0.0, t)), verts(super::colossus::build(0.0, 0.0, color, 1.0, facing, 1.0, t))),
             ("golem", verts(super::golem::build(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0)), verts(super::golem::build(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0))),
             ("humanoid", verts(super::humanoid::build(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0)), verts(super::humanoid::build(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0))),
+            ("guard", verts(super::guard::build(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0)), verts(super::guard::build(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0))),
             ("goblin", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0, super::humanoid::Variant::Goblin)), verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0, super::humanoid::Variant::Goblin))),
             ("skeleton", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0, super::humanoid::Variant::Skeleton)), verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0, super::humanoid::Variant::Skeleton))),
             ("ogre", verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 0.0, t, 0.0, super::humanoid::Variant::Ogre)), verts(super::humanoid::build_variant(0.0, 0.0, color, 1.0, facing, 1.0, t, 0.0, super::humanoid::Variant::Ogre))),

@@ -2,7 +2,7 @@
 //! shield, so defenders read clearly as soldiers rather than plain townsfolk.
 
 use crate::elements::humanoid;
-use crate::elements::prim::{facing_offset, shade, Part};
+use crate::elements::prim::{anim_seed, facing_offset, shade, Part};
 
 pub(crate) fn build(
     cx: f32,
@@ -19,6 +19,10 @@ pub(crate) fn build(
     let (hx, hy) = facing_offset(facing, 4.0);
     let reach = attack.clamp(0.0, 1.0) * 6.0;
     let (fx, fy) = facing_offset(facing, reach);
+    // Track the walk-swung limbs so held gear never detaches: the right hand
+    // carries (cx + 4.7 - arm_swing), the left arm (cx - 8.0 + arm_swing).
+    let swing = ((anim_time * 7.0 + anim_seed(cx, cy)).sin()) * walk.clamp(0.0, 1.0);
+    let arm_swing = -swing * 4.0;
 
     // Helmet over the head.
     let head_cx = cx + hx;
@@ -27,16 +31,17 @@ pub(crate) fn build(
     parts.push(Part::vquad(head_cx - 4.0, head_cy + 1.0, 4.0, 1.6, [0.15, 0.16, 0.18], alpha, false));
 
     // Sword in the right hand, thrusting forward on a strike.
-    let handx = cx + 4.0 + hx;
+    let handx = cx + 4.0 + hx - arm_swing;
     let handy = cy - 16.0 + hy;
     parts.push(Part::vquad(handx - 1.0 + fx, handy - 18.0 + fy, 1.0, 18.0, steel, alpha, true));
     parts.push(Part::vquad(handx - 3.0 + fx, handy - 2.0 + fy, 3.0, 2.0, [0.55, 0.40, 0.18], alpha, true));
     parts.push(Part::vquad(handx - 1.0 + fx, handy + fy, 1.0, 4.0, [0.45, 0.30, 0.16], alpha, true));
 
-    // Shield on the left arm with a colored boss.
-    let shx = cx - 6.0 - hx + fx * 0.5;
+    // Shield on the left arm with a colored boss. Darkened well below the
+    // tunic so it separates at thumbnail scale.
+    let shx = cx - 6.0 - hx + fx * 0.5 + arm_swing * 0.5;
     let shy = cy - 22.0 + hy;
-    parts.push(Part::diamond(shx, shy, 5.0, 7.0, 0.0, shade(steel, 0.9), alpha, true));
+    parts.push(Part::diamond(shx, shy, 5.0, 7.0, 0.0, shade(steel, 0.65), alpha, true));
     parts.push(Part::diamond(shx, shy, 2.0, 3.0, 0.0, color, alpha, false));
     parts
 }
