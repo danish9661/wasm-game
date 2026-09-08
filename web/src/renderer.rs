@@ -1809,6 +1809,9 @@ impl App {
         // Multiplayer: `?mp=ws://host:port[&name=Alias][&token=abc]` joins a
         // co-op server. The server is authoritative; the client overlays the
         // synced world each frame on top of its local (predictive) sim.
+        // Values are percent-decoded: mpStart builds the URL with
+        // URLSearchParams (which encodes `://` etc.), and without decoding
+        // the address resolves as a relative path and the handshake fails.
         let query: Vec<(String, String)> = web_sys::window()
             .and_then(|w| w.location().search().ok())
             .map(|q| {
@@ -1818,7 +1821,11 @@ impl App {
                         let mut it = kv.splitn(2, '=');
                         let k = it.next()?;
                         let v = it.next().unwrap_or("");
-                        Some((k.to_string(), v.to_string()))
+                        let v = js_sys::decode_uri_component(v)
+                            .ok()
+                            .and_then(|s| s.as_string())
+                            .unwrap_or_else(|| v.to_string());
+                        Some((k.to_string(), v))
                     })
                     .collect()
             })

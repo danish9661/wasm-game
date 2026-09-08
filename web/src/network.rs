@@ -148,6 +148,11 @@ impl NetClient {
     }
 
     pub fn send_input(&self, input: &PlayerInput) {
+        // Skip dead sockets silently: without this guard every frame logs a
+        // native "already CLOSING or CLOSED" console error after disconnect.
+        if !self.connected() {
+            return;
+        }
         // Bincode binary at 30 Hz (~1/4 the bytes of JSON); fall back to a
         // JSON text frame if encoding ever fails so input never stalls.
         let bytes = encode_client(&ClientMsg::Input(*input));

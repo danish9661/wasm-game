@@ -136,13 +136,24 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
 
     let mut room_code: Option<String> = None;
     let mut player_id: Option<u32> = None;
-    while let Some(Ok(msg)) = source.next().await {
+    let mut clean_close = false;
+    while let Some(msg) = source.next().await {
+        let msg = match msg {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("[server] conn {conn_id} read error: {e}");
+                break;
+            }
+        };
         // Accept both wire formats: Binary (bincode, new clients) and Text
         // (JSON, legacy clients) so a mixed-version room still plays.
         let client: Option<ClientMsg> = match msg {
             Message::Binary(b) => decode_client_bin(&b),
             Message::Text(t) => serde_json::from_str(&t).ok(),
-            Message::Close(_) => break,
+            Message::Close(_) => {
+                clean_close = true;
+                break;
+            }
             _ => continue,
         };
         let client = match client {
@@ -213,6 +224,9 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
     }
 
     // Persist + clean up on disconnect.
+    eprintln!(
+        "[server] conn {conn_id} ended (clean_close={clean_close} room={room_code:?} player={player_id:?})"
+    );
     if let (Some(code), Some(id)) = (&room_code, player_id) {
         let mut sim_guard = shared.rooms.lock().await;
         if let Some(room) = sim_guard.get(&code.clone()) {
