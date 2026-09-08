@@ -1,6 +1,6 @@
 //! Cactus: a green column with two raised arms. Sways faintly in desert wind.
 
-use crate::elements::prim::{anim_seed, sway, Part};
+use crate::elements::prim::{sway, Part};
 
 pub(crate) fn build(
     cx: f32,

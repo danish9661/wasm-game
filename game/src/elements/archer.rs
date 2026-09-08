@@ -1,6 +1,6 @@
 //! Archer: a ranged humanoid marksman with a drawn bow and quiver.
 
-use crate::elements::prim::{anim_seed, facing_offset, shade, Part};
+use crate::elements::prim::{anim_seed, facing_offset, Part};
 
 pub(crate) fn build(
     cx: f32,
@@ -24,7 +24,8 @@ pub(crate) fn build(
 
     // Bow bob — the bow sways slightly when idle
     let bow_sway = (anim_time * 1.8 + seed).sin() * (0.8 + 1.4 * w);
-    let (ax, ay) = facing_offset(facing, 1.0);
+    // Horizontal facing lean only; the bow stays vertical by design.
+    let (ax, _ay) = facing_offset(facing, 1.0);
 
     vec![
         // Legs

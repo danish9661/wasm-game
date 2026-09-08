@@ -1,4 +1,4 @@
-use crate::elements::prim::{facing_offset, flashed, rasterize, rasterize_flash, sway, Part};
+use crate::elements::prim::{facing_offset, rasterize, rasterize_flash, sway, Part};
 use crate::iso::{depth_order, iso_to_world, world_to_iso, HALF_H, HALF_W};
 use crate::player::Player;
 use crate::weapons::WeaponKind;
@@ -635,15 +635,15 @@ pub fn build_tile_mesh(
                 // solid blocks with real depth. Walls drop to the neighbour's
                 // height, so a hill shows its side and lower ground shows beneath.
                 let z = tile_height_at(world, cache, d.tx, d.ty) as f32 * crate::world::HEIGHT_STEP;
-                let zE = tile_height_at(world, cache, d.tx + 1, d.ty) as f32 * crate::world::HEIGHT_STEP;
-                let zS = tile_height_at(world, cache, d.tx, d.ty + 1) as f32 * crate::world::HEIGHT_STEP;
+                let z_east = tile_height_at(world, cache, d.tx + 1, d.ty) as f32 * crate::world::HEIGHT_STEP;
+                let z_south = tile_height_at(world, cache, d.tx, d.ty + 1) as f32 * crate::world::HEIGHT_STEP;
                 let mut wall_col = base;
                 for c in wall_col.iter_mut() { *c = (*c * 0.62).clamp(0.0, 1.0); }
-                if zE < z {
-                    push_wall(out, d.sx + HALF_W, d.sy + HALF_H, d.sx, d.sy + TILE_HEIGHT, z, zE, wall_col);
+                if z_east < z {
+                    push_wall(out, d.sx + HALF_W, d.sy + HALF_H, d.sx, d.sy + TILE_HEIGHT, z, z_east, wall_col);
                 }
-                if zS < z {
-                    push_wall(out, d.sx, d.sy + TILE_HEIGHT, d.sx - HALF_W, d.sy + HALF_H, z, zS, wall_col);
+                if z_south < z {
+                    push_wall(out, d.sx, d.sy + TILE_HEIGHT, d.sx - HALF_W, d.sy + HALF_H, z, z_south, wall_col);
                 }
                 push_quad_blended(out, d.sx, d.sy, z, c_n, c_e, c_s, c_w);
                 if !matches!(kind, TileKind::Water | TileKind::DeepWater | TileKind::ShallowWater) {

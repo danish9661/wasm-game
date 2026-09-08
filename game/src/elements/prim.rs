@@ -26,7 +26,7 @@ pub struct Part {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub(crate) enum Shape {
+pub enum Shape {
     /// Isometric diamond (matches the old `push_center_quad`).
     Diamond,
     /// Axis-aligned vertical rectangle (matches the old `push_vquad`).

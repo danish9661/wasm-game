@@ -38,7 +38,6 @@ struct Room {
     /// Delta-compression state per player id (M2) — the last (culled)
     /// snapshot we sent them, so the next tick can be a small delta.
     sender: Mutex<HashMap<u32, SenderState>>,
-    seed: i32,
 }
 
 fn save_path(token: &str) -> PathBuf {
@@ -173,7 +172,6 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
                             sim: Mutex::new(Simulation::new(shared.default_seed as u32)),
                             clients: Arc::new(Mutex::new(HashMap::new())),
                             sender: Mutex::new(HashMap::new()),
-                            seed: shared.default_seed,
                         });
                         let id = entry
                             .sim

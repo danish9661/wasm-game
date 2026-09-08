@@ -336,50 +336,11 @@ const RES_LEVELS: [(u32, u32); 6] = [
     (384, 216),
 ];
 
-fn readback_from_data(data: &[u8], width: u32, height: u32, bytes_per_row: u32) -> String {
-    if data.is_empty() {
-        return String::from("empty readback");
-    }
-    let bytes_per_row = bytes_per_row as usize;
-    let (mut r_acc, mut g_acc, mut b_acc) = (0u64, 0u64, 0u64);
-    let mut distinct = std::collections::HashSet::new();
-    let mut nonbg = 0u64;
-    let mut samples = 0u64;
-    for y in (0..height).step_by(2) {
-        let row = y as usize * bytes_per_row;
-        for x in (0..width).step_by(7) {
-            let i = row + x as usize * 4;
-            if i + 3 >= data.len() {
-                continue;
-            }
-            let (b, g, r) = (data[i], data[i + 1], data[i + 2]);
-            r_acc += r as u64;
-            g_acc += g as u64;
-            b_acc += b as u64;
-            distinct.insert((r, g, b));
-            if r + g + b > 48 {
-                nonbg += 1;
-            }
-            samples += 1;
-        }
-    }
-    let avg = |v: u64| (v / samples.max(1)) as f32 / 255.0;
-    format!(
-        "avg=({:.2},{:.2},{:.2}) distinct={} nonbg={:.2}% w={width} h={height}",
-        avg(r_acc),
-        avg(g_acc),
-        avg(b_acc),
-        distinct.len(),
-        nonbg as f32 / samples.max(1) as f32 * 100.0,
-    )
-}
-
 /// Copy an Rgba8Unorm (row-padded) readback into a visible 2D `<canvas id="blit">`.
 /// Used as the display path when the WebGPU canvas can't be composited to the
 /// screen (e.g. SwiftShader-Vulkan in headed Chrome: the surface renders fine
 /// but the headed compositor never shows it). A 2D canvas always composites.
 struct BlitCache {
-    canvas: HtmlCanvasElement,
     ctx: CanvasRenderingContext2d,
     buf: Vec<u8>,
     w: u32,
@@ -443,7 +404,6 @@ fn blit_to_2d_canvas(
                 }
             };
             *cache = Some(BlitCache {
-                canvas,
                 ctx,
                 buf: Vec::with_capacity(width as usize * height as usize * 4),
                 w: width,
@@ -513,7 +473,7 @@ fn draw_atmosphere(
         let x = (((r1 * w + aclock as f64 * speed * (0.3 + r2)) % w) + w) % w;
         let y = (((r2 * h + aclock as f64 * speed * 0.45) % h) + h) % h;
         let blink = 0.5 + 0.5 * (aclock as f64 * 2.0 + fi).sin();
-        let (a, color) = if night > 0.35 {
+        let (_, color) = if night > 0.35 {
             let a = (0.25 + 0.55 * blink) * night;
             (a, format!("rgba(255,228,120,{a:.3})"))
         } else {
@@ -521,7 +481,7 @@ fn draw_atmosphere(
             (a, format!("rgba(245,245,210,{a:.3})"))
         };
         let radius = 1.0 + r3 * 1.5;
-        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(&color));
+        ctx.set_fill_style_str(&color);
         let _ = ctx.begin_path();
         let _ = ctx.arc(x, y, radius, 0.0, std::f64::consts::TAU);
         let _ = ctx.fill();
@@ -533,7 +493,7 @@ fn draw_atmosphere(
         let heat = weather == 4;
         if storm {
             // Storm: heavy, near-vertical rain driven on the wind + a dark veil.
-            ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(150,175,205,0.5)"));
+            ctx.set_stroke_style_str("rgba(150,175,205,0.5)");
             ctx.set_line_width(1.5);
             let cols = 150u32;
             let fall = (aclock as f64 * 520.0) % h;
@@ -546,23 +506,23 @@ fn draw_atmosphere(
                 ctx.line_to(x - 7.0, y + 22.0);
                 ctx.stroke();
             }
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(70,85,110,0.22)"));
+            ctx.set_fill_style_str("rgba(70,85,110,0.22)");
             ctx.fill_rect(0.0, 0.0, w, h);
         } else if heat {
             // Heat wave: a warm, shimmering veil that tints the world amber.
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,170,70,0.12)"));
+            ctx.set_fill_style_str("rgba(255,170,70,0.12)");
             ctx.fill_rect(0.0, 0.0, w, h);
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,210,120,0.06)"));
+            ctx.set_fill_style_str("rgba(255,210,120,0.06)");
             for i in 0..40u32 {
                 let fi = i as f64;
                 let x = (((fi * 91.3 + aclock as f64 * 18.0) % w) + w) % w;
                 let y = (((fi * 47.1 - aclock as f64 * 12.0) % h) + h) % h;
                 ctx.begin_path();
-                ctx.arc(x, y, 2.0 + (fi * 3.0).fract() * 2.0, 0.0, std::f64::consts::TAU);
+                let _ = ctx.arc(x, y, 2.0 + (fi * 3.0).fract() * 2.0, 0.0, std::f64::consts::TAU);
                 ctx.fill();
             }
         } else if snow {
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(255,255,255,0.85)"));
+            ctx.set_fill_style_str("rgba(255,255,255,0.85)");
             let cols = 110u32;
             let fall = (aclock as f64 * 90.0) % h;
             for i in 0..cols {
@@ -571,13 +531,13 @@ fn draw_atmosphere(
                 let y = (((fi * 19.7 + fall) % h) + h) % h;
                 let r = 1.0 + (fi * 7.0).fract() * 1.6;
                 ctx.begin_path();
-                ctx.arc(x, y, r, 0.0, std::f64::consts::PI * 2.0);
+                let _ = ctx.arc(x, y, r, 0.0, std::f64::consts::PI * 2.0);
                 ctx.fill();
             }
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(200,215,235,0.08)"));
+            ctx.set_fill_style_str("rgba(200,215,235,0.08)");
             ctx.fill_rect(0.0, 0.0, w, h);
         } else {
-            ctx.set_stroke_style(&wasm_bindgen::JsValue::from_str("rgba(170,200,230,0.35)"));
+            ctx.set_stroke_style_str("rgba(170,200,230,0.35)");
             ctx.set_line_width(1.0);
             let cols = 90u32;
             let fall = (aclock as f64 * 380.0) % h;
@@ -590,7 +550,7 @@ fn draw_atmosphere(
                 ctx.line_to(x - 4.0, y + 14.0);
                 ctx.stroke();
             }
-            ctx.set_fill_style(&wasm_bindgen::JsValue::from_str("rgba(120,140,170,0.10)"));
+            ctx.set_fill_style_str("rgba(120,140,170,0.10)");
             ctx.fill_rect(0.0, 0.0, w, h);
         }
     }
@@ -608,7 +568,7 @@ fn draw_atmosphere(
         ) {
             let _ = grad.add_color_stop(0.0, "rgba(0,0,10,0)");
             let _ = grad.add_color_stop(1.0, &format!("rgba(0,0,12,{})", 0.55 * night));
-            ctx.set_fill_style(grad.as_ref());
+            ctx.set_fill_style_canvas_gradient(&grad);
             ctx.fill_rect(0.0, 0.0, w, h);
         }
     }
@@ -625,16 +585,16 @@ fn draw_atmosphere(
         ) {
             let _ = grad.add_color_stop(0.0, "rgba(150,0,0,0)");
             let _ = grad.add_color_stop(1.0, &format!("rgba(150,0,0,{})", a));
-            ctx.set_fill_style(grad.as_ref());
+            ctx.set_fill_style_canvas_gradient(&grad);
             ctx.fill_rect(0.0, 0.0, w, h);
         }
     }
     // Instant red flash on taking a hit (decays quickly via hurt01).
     if hurt01 > 0.001 {
-        ctx.set_fill_style(&wasm_bindgen::JsValue::from_str(&format!(
+        ctx.set_fill_style_str(&format!(
             "rgba(190,10,10,{})",
             0.32 * hurt01
-        )));
+        ));
         ctx.fill_rect(0.0, 0.0, w, h);
     }
 }
@@ -941,7 +901,6 @@ pub struct App {
     vertices: Vec<f32>,
     quad_count: u32,
     frames: u64,
-    player_in_mesh: bool,
     readback_buffer: Option<wgpu::Buffer>,
     capture_requested: bool,
     using_blit: bool,
@@ -963,8 +922,6 @@ pub struct App {
     fps_time: f32,
     /// Player's current movement speed in tiles/second (0 while idle).
     speed: f32,
-    prev_px: f32,
-    prev_py: f32,
     /// World position the HUD compass should point at (nearest unrecovered
     /// fragment's guardian, or the altar once all five are in hand). None hides
     /// the compass. Recomputed periodically, not every frame.
@@ -1054,10 +1011,6 @@ impl App {
 
     pub fn player_y(&self) -> f32 {
         self.player.y
-    }
-
-    pub fn player_in_mesh(&self) -> bool {
-        self.player_in_mesh
     }
 
     /// JSON payload for the Inventory & Crafting / Build panel:
@@ -1603,10 +1556,6 @@ impl App {
         }
     }
 
-    pub fn fps_of(dt: f32) -> f32 {
-        (1.0 / dt.max(0.0001)).min(999.0)
-    }
-
     pub async fn new(canvas: HtmlCanvasElement) -> Result<Self, String> {
         glog("[gfx] Instance::new");
         // IMPORTANT: size the canvas BEFORE obtaining the WebGPU context.
@@ -1768,7 +1717,6 @@ impl App {
             vertices: Vec::with_capacity(64 * 1024 * 6),
             quad_count: 0,
             frames: 0,
-            player_in_mesh: false,
             readback_buffer: None,
             capture_requested: false,
             using_blit: false,
@@ -1782,8 +1730,6 @@ impl App {
             fps_acc: 0,
             fps_time: 0.0,
             speed: 0.0,
-            prev_px: 0.0,
-            prev_py: 0.0,
             objective: None,
             obj_timer: 0.0,
             readback_busy: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
@@ -3113,7 +3059,7 @@ impl App {
         let base = (x * 12.9898 + y * 78.233).fract().abs() * std::f32::consts::TAU;
         for i in 0..count {
             let ang = base + (i as f32 / count.max(1) as f32) * std::f32::consts::TAU;
-            let jitter = ((x * 3.1 + y * 1.7 + i as f32 * 0.37).fract().abs());
+            let jitter = (x * 3.1 + y * 1.7 + i as f32 * 0.37).fract().abs();
             let sp = speed * (0.45 + 0.55 * jitter);
             self.particles.push(Particle {
                 x,
@@ -3710,7 +3656,7 @@ impl App {
         // without walking the long distances.
         let ptx = self.player.x.floor() as i32;
         let pty = self.player.y.floor() as i32;
-        let mut dests: Vec<(i32, i32, String)> = self
+        let dests: Vec<(i32, i32, String)> = self
             .villages
             .iter()
             .cloned()
@@ -4907,7 +4853,6 @@ impl App {
         self.collect_loot(dt);
 
         // Farm plots regrow their crops over time.
-        const FARM_GROW: f32 = 30.0;
         for s in self.structures.iter() {
             if s.kind == StructureKind::FarmPlot {
                 let cd = self.farm_cd.entry((s.tx, s.ty)).or_insert(0.0);
@@ -5308,9 +5253,7 @@ impl App {
             }
         }
         // The player quad is always emitted while `player` is Some (it is, in
-        // the live loop), so scanning the whole vertex buffer every frame to
-        // rediscover it is wasted work.
-        self.player_in_mesh = mesh_player.is_some();
+        // the live loop).
     }
 
     /// Synchronize with the multiplayer server: send this frame's input and
@@ -5590,7 +5533,7 @@ impl App {
             // Attack lunge: ramps up as the wind-up completes (the strike lands
             // when windup reaches 0), so melee foes visibly lunge on contact.
             sp.attack = if e.windup > 0.0 {
-                (1.0 - (e.windup / WINDUP).clamp(0.0, 1.0))
+                1.0 - (e.windup / WINDUP).clamp(0.0, 1.0)
             } else {
                 0.0
             };
@@ -5810,7 +5753,9 @@ impl App {
     /// Campfire point lights in screen pixels: [x, y, intensity, radius, r, g, b, 0] per slot.
     fn light_data(&self) -> [f32; LIGHT_FLOATS] {
         let mut data = [0.0f32; LIGHT_FLOATS];
-        let mut n = 0;
+        // Slot 0 is reserved for the player's lantern-like aura (see below);
+        // world lights fill the remaining slots.
+        let mut n = 1;
         // The player carries a soft, cool lantern-like aura so they stay
         // readable at night and exploring feels atmospheric. Slot 0 is reserved
         // for it; world lights fill the remaining slots.
@@ -5822,7 +5767,6 @@ impl App {
             let pflick = 0.9 + 0.1 * (self.anim_clock * 6.0).sin();
             data[0..4].copy_from_slice(&[sx, sy, 0.32 * pflick, 66.0]);
             data[4..8].copy_from_slice(&[0.85, 0.78, 0.55, 0.0]);
-            n = 1;
         }
         for s in self
             .structures

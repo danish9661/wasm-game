@@ -22,7 +22,7 @@ pub(crate) fn build(
     let sway = (anim_time * 2.0 + seed).sin() * (0.5 + 1.5 * w);
     let stomp = (anim_time * (2.5 + 3.5 * w) + seed).sin() * 3.0 * w;
 
-    let mut parts = vec![
+    let parts = vec![
         // Two thick, short legs (alternately stomping)
         Part::vquad(cx - 7.0 - stomp, cy - 2.0, 6.0, 12.0, dark, alpha, true),
         Part::vquad(cx + 7.0 + stomp, cy - 2.0, 6.0, 12.0, dark, alpha, true),

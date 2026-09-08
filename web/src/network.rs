@@ -53,8 +53,6 @@ fn decode_frame(data: &JsValue) -> Option<ServerMsg> {
 /// movement looks continuous.
 pub struct NetClient {
     ws: WebSocket,
-    /// Merge base: last full snapshot with all received deltas applied.
-    base: Rc<RefCell<Option<SimSnapshot>>>,
     /// Most recent snapshot + the wall-clock time it arrived.
     curr: Rc<RefCell<Option<(SimSnapshot, f64)>>>,
     /// The snapshot before `curr`, for interpolation.
@@ -144,7 +142,7 @@ impl NetClient {
             on_open.forget();
         }
 
-        Ok(NetClient { ws, base, curr, prev, id })
+        Ok(NetClient { ws, curr, prev, id })
     }
 
     pub fn send_input(&self, input: &PlayerInput) {

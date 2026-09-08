@@ -87,7 +87,6 @@ pub struct WorldGen {
     elevation: Fbm<Perlin>,
     moisture: Fbm<Perlin>,
     temperature: Fbm<Perlin>,
-    river: Fbm<Perlin>,
 }
 
 /// LRU-ish chunk cache: generates chunks on demand, clears wholesale when
@@ -166,14 +165,11 @@ impl WorldGen {
         moisture.frequency = 0.015;
         let mut temperature = Fbm::<Perlin>::new(seed ^ 0x85EBCA6B);
         temperature.frequency = 0.006;
-        let mut river = Fbm::<Perlin>::new(seed ^ 0xC2B2AE35);
-        river.frequency = 0.012;
         Self {
             seed,
             elevation,
             moisture,
             temperature,
-            river,
         }
     }
 
