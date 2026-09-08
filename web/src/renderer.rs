@@ -1170,6 +1170,15 @@ impl App {
             "No anvil nearby — build one (N) to craft".to_string()
         };
         let gold = self.inventory.count(ItemKind::Gold);
+        // Campaign-finale test surface: bitmask count, altar presence and
+        // proximity, ending code (-1 = unfinished).
+        let near_altar = match self.altar_tile {
+            Some((ax, ay)) => {
+                (self.player.x - (ax as f32 + 0.5)).abs().max((self.player.y - (ay as f32 + 0.5)).abs())
+                    <= game::building::CHEST_RANGE
+            }
+            None => false,
+        };
         // Debug bounding box of the live vertex buffer (mesh sanity probe).
         let (mut mminx, mut mmaxx, mut mminy, mut mmaxy) =
             (f32::INFINITY, f32::NEG_INFINITY, f32::INFINITY, f32::NEG_INFINITY);
@@ -1200,6 +1209,10 @@ impl App {
             "craft_hint": craft_hint,
             "quest_stage": self.quest.stage,
             "gold": gold,
+            "frag": self.fragments.count_ones(),
+            "altar": self.altar_placed as u8,
+            "nearaltar": near_altar as u8,
+            "ending": self.ending.map(|e| e as i32).unwrap_or(-1),
             "player": {
                 "x": self.player.x,
                 "y": self.player.y,
@@ -1536,7 +1549,7 @@ impl App {
             near,
             boss_alive,
             self.colossus_killed,
-            self.inventory.count(ItemKind::Fragment),
+            self.fragments.count_ones(),
             self.altar_placed as u8,
             self.near_altar as u8,
             self.near_anvil() as u8,
