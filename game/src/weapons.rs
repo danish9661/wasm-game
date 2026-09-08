@@ -16,13 +16,14 @@ use serde::{Deserialize, Serialize};
 /// | Bow      |  12 | 0.60 | 20.0 | ranged | safe at range (ranged tax)         |
 /// | Crossbow |  14 | 0.90 | 15.6 | ranged | piercing line shot (hits all)      |
 /// | Mace     |  16 | 0.60 | 26.7 |    2.6 | anti-armor (1.5x vs stone/plate)    |
+/// | Scythe   |  13 | 0.48 | 27.1 |    3.6 | reaps life (25% lifesteal) +1.5x undead |
 ///
 /// Sword wins sustained dps; hammer wins burst (fewest hits = least exposure)
 /// plus stagger; axe clears 12-14 HP packs in one swing; dagger trades reach
-/// for speed and unmatched backstabs; mace cracks armored foes; spear
-/// outranges every contact attack; bow/xbow trade dps for safety, xbow
-/// piercing ranks. Weak-points (1.5x) and enchant (+15%/level) stack on top.
-///
+/// for speed and unmatched backstabs; mace cracks armored foes; scythe reaps
+/// life back and fears the undead; spear outranges every contact attack;
+/// bow/xbow trade dps for safety, xbow piercing ranks. Weak-points (1.5x)
+/// and enchant (+15%/level) stack on top.
 /// NOTE: variants are bitmask-indexed into a `u16` (`unlocked`) — v1 saves
 /// stored a `u8` and still load via the save compat shim.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,6 +37,8 @@ pub enum WeaponKind {
     Dagger,
     Crossbow,
     Mace,
+    /// Appended last: earlier discriminants are frozen for saves + network.
+    Scythe,
 }
 
 impl WeaponKind {
@@ -51,6 +54,7 @@ impl WeaponKind {
             WeaponKind::Dagger => "Dagger",
             WeaponKind::Crossbow => "Crossbow",
             WeaponKind::Mace => "Mace",
+            WeaponKind::Scythe => "Scythe",
         }
     }
 
@@ -66,6 +70,7 @@ impl WeaponKind {
             WeaponKind::Dagger => 6.0,
             WeaponKind::Crossbow => 14.0,
             WeaponKind::Mace => 16.0,
+            WeaponKind::Scythe => 13.0,
         }
     }
 
@@ -81,6 +86,7 @@ impl WeaponKind {
             WeaponKind::Dagger => 2.0,
             WeaponKind::Crossbow => 0.0,
             WeaponKind::Mace => 2.6,
+            WeaponKind::Scythe => 3.6,
         }
     }
 
@@ -96,6 +102,7 @@ impl WeaponKind {
             WeaponKind::Dagger => 0.22,
             WeaponKind::Crossbow => 0.9,
             WeaponKind::Mace => 0.6,
+            WeaponKind::Scythe => 0.48,
         }
     }
 
@@ -130,6 +137,7 @@ impl WeaponKind {
             WeaponKind::Dagger => [0.45, 0.47, 0.52],
             WeaponKind::Crossbow => [0.50, 0.32, 0.18],
             WeaponKind::Mace => [0.72, 0.55, 0.28],
+            WeaponKind::Scythe => [0.55, 0.45, 0.60],
         }
     }
 
@@ -144,6 +152,7 @@ impl WeaponKind {
             WeaponKind::Mace,
             WeaponKind::Bow,
             WeaponKind::Crossbow,
+            WeaponKind::Scythe,
         ]
     }
 
@@ -158,13 +167,13 @@ impl WeaponKind {
     }
 
     /// Roll a drop given a `roll` in 0..100. ~30% chance to drop; the rarer the
-    /// weapon the higher the roll needed. Daggers are common, crossbows and
-    /// maces rare.
+    /// weapon the higher the roll needed. Daggers are common, crossbows, maces
+    /// and the scythe are rare.
     pub fn roll_drop_with(roll: u32) -> Option<WeaponKind> {
         if roll >= 70 {
             return None;
         }
-        match roll % 12 {
+        match roll % 13 {
             0 | 1 => Some(WeaponKind::Sword),
             2 => Some(WeaponKind::Axe),
             3 | 4 => Some(WeaponKind::Dagger),
@@ -173,6 +182,7 @@ impl WeaponKind {
             7 | 8 => Some(WeaponKind::Bow),
             9 => Some(WeaponKind::Mace),
             10 => Some(WeaponKind::Crossbow),
+            11 => Some(WeaponKind::Scythe),
             _ => Some(WeaponKind::Bow),
         }
     }
@@ -194,6 +204,7 @@ impl WeaponKind {
             6 => WeaponKind::Dagger,
             7 => WeaponKind::Crossbow,
             8 => WeaponKind::Mace,
+            9 => WeaponKind::Scythe,
             _ => WeaponKind::Fists,
         }
     }
@@ -208,6 +219,7 @@ impl WeaponKind {
             WeaponKind::Spear,
             WeaponKind::Hammer,
             WeaponKind::Mace,
+            WeaponKind::Scythe,
             WeaponKind::Bow,
             WeaponKind::Crossbow,
         ]
@@ -226,6 +238,7 @@ impl WeaponKind {
             WeaponKind::Bow => Some((5, 0, 1)),
             WeaponKind::Crossbow => Some((7, 3, 1)),
             WeaponKind::Mace => Some((3, 6, 0)),
+            WeaponKind::Scythe => Some((5, 3, 2)),
         }
     }
 
@@ -249,8 +262,8 @@ mod tests {
     #[test]
     fn dps_order_matches_design() {
         // Sword: best sustained dps. Hammer second (burst). Axe close third,
-        // dagger fourth (reach tax), mace fifth, then spear, bow, crossbow,
-        // fists.
+        // dagger fourth (reach tax), scythe fifth, mace sixth, then spear,
+        // bow, crossbow, fists.
         let mut v = [
             WeaponKind::Fists,
             WeaponKind::Sword,
@@ -261,6 +274,7 @@ mod tests {
             WeaponKind::Dagger,
             WeaponKind::Crossbow,
             WeaponKind::Mace,
+            WeaponKind::Scythe,
         ];
         v.sort_by(|a, b| b.dps().partial_cmp(&a.dps()).unwrap());
         assert_eq!(
@@ -270,6 +284,7 @@ mod tests {
                 WeaponKind::Hammer,
                 WeaponKind::Axe,
                 WeaponKind::Dagger,
+                WeaponKind::Scythe,
                 WeaponKind::Mace,
                 WeaponKind::Spear,
                 WeaponKind::Bow,
@@ -333,9 +348,11 @@ mod tests {
                 WeaponKind::Dagger.as_u8(),
                 WeaponKind::Crossbow.as_u8(),
                 WeaponKind::Mace.as_u8(),
+                WeaponKind::Scythe.as_u8(),
             ],
-            [0, 1, 2, 3, 4, 5, 6, 7, 8]
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         );
+        assert_eq!(WeaponKind::from_u8(9), WeaponKind::Scythe);
         assert_eq!(WeaponKind::from_u8(99), WeaponKind::Fists);
     }
 
@@ -371,6 +388,22 @@ mod tests {
         assert!(WeaponKind::Mace.dps() > WeaponKind::Spear.dps());
         // ...but out-damages the sword against plate.
         assert!(16.0 * 1.5 > WeaponKind::Sword.damage());
+    }
+
+    #[test]
+    fn scythe_reaps_and_fears_undead() {
+        // Long curved blade: second-longest reach, mid-pack dps, 1.5x vs
+        // Skeleton and Wraith, craftable mid-game.
+        assert!((WeaponKind::Scythe.dps() - 13.0 / 0.48).abs() < 1e-4);
+        assert_eq!(WeaponKind::Scythe.reach(), 3.6);
+        assert!(!WeaponKind::Scythe.ranged());
+        assert_eq!(WeaponKind::Scythe.craft_cost(), Some((5, 3, 2)));
+        assert_eq!(EnemyKind::Skeleton.weakness_to(WeaponKind::Scythe), 1.5);
+        assert_eq!(EnemyKind::Wraith.weakness_to(WeaponKind::Scythe), 1.5);
+        assert_eq!(EnemyKind::Slime.weakness_to(WeaponKind::Scythe), 1.0);
+        // One-shots bats (4 HP), two-shots skeletons (8 HP).
+        assert_eq!(WeaponKind::Scythe.swings_to_kill(4.0), 1);
+        assert_eq!(WeaponKind::Scythe.swings_to_kill(8.0), 1);
     }
 
     #[test]

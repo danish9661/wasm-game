@@ -250,6 +250,8 @@ impl EnemyKind {
             (EnemyKind::FrostGolem, WeaponKind::Hammer) => 1.5,
             (EnemyKind::ToadKing, WeaponKind::Axe) => 1.5,
             (EnemyKind::OceanLeviathan, WeaponKind::Spear) => 1.5,
+            // Scythe reaps the undead: skeletons and wraiths.
+            (EnemyKind::Skeleton | EnemyKind::Wraith, WeaponKind::Scythe) => 1.5,
             // Mace cracks armor: stone brutes, golems and plated raiders.
             (
                 EnemyKind::Ogre

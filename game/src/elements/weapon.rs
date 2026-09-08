@@ -172,6 +172,23 @@ pub fn build(
                 v.push(Part::diamond(hxp - px * 5.4 * s, hyp - py * 5.4 * s, 2.0, 3.4, 0.0, edge, alpha, true));
             }
         }
+        WeaponKind::Scythe => {
+            // Reaper's scythe: thick lighter shaft, chunky brass collar, and
+            // one continuous violet crescent hooking hard sideways then down.
+            // Heavy overlap fuses the diamonds into a single blade mass.
+            let sx = hx + ux * (lunge * 0.5 + 9.0);
+            let sy = hy + uy * (lunge * 0.5 + 9.0);
+            v.push(Part::vquad(sx - 2.4, sy - 16.0, 2.4, 30.0, [0.60, 0.42, 0.22], alpha, true));
+            let tx = sx + ux * 15.0;
+            let ty = sy + uy * 15.0;
+            v.push(Part::diamond(tx, ty, 4.2, 4.2, 0.0, [0.85, 0.62, 0.25], alpha, true));
+            let violet = [0.52, 0.38, 0.68];
+            v.push(Part::diamond(tx + px * 7.0, ty + py * 7.0, 4.2, 4.6, 0.0, violet, alpha, true));
+            v.push(Part::diamond(tx + px * 14.0, ty + py * 14.0, 4.0, 4.2, 0.0, violet, alpha, true));
+            v.push(Part::diamond(tx + px * 20.0 - ux * 2.0, ty + py * 20.0 - uy * 2.0, 3.6, 3.8, 0.0, violet, alpha, true));
+            v.push(Part::diamond(tx + px * 25.0 - ux * 5.0, ty + py * 25.0 - uy * 5.0, 3.2, 3.4, 0.0, violet, alpha, true));
+            v.push(Part::diamond(tx + px * 27.0 - ux * 10.0, ty + py * 27.0 - uy * 10.0, 2.6, 3.0, 0.0, edge, alpha, true));
+        }
     }
     v
 }
@@ -205,6 +222,7 @@ mod tests {
             WeaponKind::Dagger,
             WeaponKind::Crossbow,
             WeaponKind::Mace,
+            WeaponKind::Scythe,
         ];
         let counts: Vec<usize> = kinds
             .iter()
@@ -246,7 +264,7 @@ mod tests {
             }
             (x0, x1)
         };
-        for k in [WeaponKind::Sword, WeaponKind::Spear, WeaponKind::Hammer] {
+        for k in [WeaponKind::Sword, WeaponKind::Spear, WeaponKind::Hammer, WeaponKind::Scythe] {
             let rest = build(k, 0.0, 0.0, (1.0, 0.0), 0.0, 0, false, 1.0);
             let strike = build(k, 0.0, 0.0, (1.0, 0.0), 1.0, 0, false, 1.0);
             let (r0, r1) = bbox(&rest);

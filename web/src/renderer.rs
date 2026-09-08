@@ -2063,6 +2063,7 @@ impl App {
             WeaponKind::Dagger,
             WeaponKind::Crossbow,
             WeaponKind::Mace,
+            WeaponKind::Scythe,
         ];
         let Some(kind) = order.get(idx).copied() else {
             return false;
@@ -2128,6 +2129,7 @@ impl App {
             WeaponKind::Hammer,
             WeaponKind::Bow,
             WeaponKind::Crossbow,
+            WeaponKind::Scythe,
         ];
         let target = order.iter().find(|&&k| !self.player.has_weapon(k));
         let k = match target {
@@ -3166,6 +3168,7 @@ impl App {
             self.debug_swing_hits += hits.len() as u32;
             let mut sparks = Vec::new();
             let mut stabbed = false;
+            let mut leeched = 0.0;
             for e in &mut hits {
                 // Weak-point bonus: the Bestiary tells you which weapon a foe fears.
                 // Backstab bonus: striking from behind the victim's facing.
@@ -3180,6 +3183,7 @@ impl App {
                 // Tag the victim: only player-earned kills pay XP/quests.
                 e.tagged = true;
                 e.take_damage(dmg);
+                leeched += dmg;
                 // Knock the struck enemy back along the player->enemy vector.
                 let dx = e.x - self.player.x;
                 let dy = e.y - self.player.y;
@@ -3198,6 +3202,12 @@ impl App {
                 self.hitstop = 0.06;
             }
             drop(hits);
+            // Scythe reaps life: a quarter of the dealt damage returns as HP.
+            if w == WeaponKind::Scythe && leeched > 0.0 && self.player.alive {
+                let max_hp = self.player.max_hp();
+                self.player.hp = (self.player.hp + leeched * 0.25).min(max_hp);
+                self.spawn_particles(self.player.x, self.player.y, [0.45, 0.95, 0.45], 6, 30.0, 0.4, 2.4);
+            }
             let tint = w.color();
             let spark = [
                 (tint[0] * 0.5 + 0.5).min(1.0),
@@ -3225,6 +3235,7 @@ impl App {
                 WeaponKind::Spear => (4, 60.0, 0.20, 2.0),
                 WeaponKind::Hammer => (10, 35.0, 0.45, 4.5),
                 WeaponKind::Mace => (7, 42.0, 0.32, 4.0),
+                WeaponKind::Scythe => (6, 55.0, 0.30, 3.2),
                 WeaponKind::Bow => (3, 30.0, 0.15, 2.0),
                 WeaponKind::Crossbow => (3, 30.0, 0.15, 2.0),
             };
@@ -3260,9 +3271,10 @@ impl App {
         let reach = w.reach() * 1.2;
         play_sfx("heavy");
         self.debug_attacks += 1;
-        let mut hits = swing_hits(&self.player, self.enemies.enemies_mut(), reach);
-        self.debug_swing_hits += hits.len() as u32;
-        for e in &mut hits {
+            let mut hits = swing_hits(&self.player, self.enemies.enemies_mut(), reach);
+            self.debug_swing_hits += hits.len() as u32;
+            let mut leeched = 0.0;
+            for e in &mut hits {
             let bs = game::combat::backstab_mult(
                 (self.player.x, self.player.y),
                 (e.x, e.y),
@@ -3270,7 +3282,9 @@ impl App {
                 w,
             );
             e.tagged = true;
-            e.take_damage(self.player.weapon_damage() * mult * bs);
+            let dmg = self.player.weapon_damage() * mult * bs;
+            e.take_damage(dmg);
+            leeched += dmg;
             let dx = e.x - self.player.x;
             let dy = e.y - self.player.y;
             let len = (dx * dx + dy * dy).sqrt().max(0.01);
@@ -3286,6 +3300,11 @@ impl App {
             self.shake = (self.shake + 0.6).min(1.5);
         }
         drop(hits);
+        if w == WeaponKind::Scythe && leeched > 0.0 && self.player.alive {
+            let max_hp = self.player.max_hp();
+            self.player.hp = (self.player.hp + leeched * 0.25).min(max_hp);
+            self.spawn_particles(self.player.x, self.player.y, [0.45, 0.95, 0.45], 6, 30.0, 0.4, 2.4);
+        }
         let (fx, fy) = self.player.facing;
         let flen = (fx * fx + fy * fy).sqrt().max(0.01);
         self.spawn_particles(
@@ -3331,6 +3350,7 @@ impl App {
         let mut sparks = Vec::new();
         let mut stabbed = false;
         let mut hits = 0u32;
+        let mut leeched = 0.0;
         for f in int.foes.iter_mut() {
             let dx = f.x - px;
             let dy = f.y - py;
@@ -3344,6 +3364,7 @@ impl App {
             let dmg = self.player.weapon_damage() * f.kind.weakness_to(w) * bs * mult;
             f.tagged = true;
             f.take_damage(dmg);
+            leeched += dmg;
             let kb = if heavy { 0.6 } else { 0.35 };
             let len = dist.max(0.01);
             f.x = (f.x + dx / len * kb).clamp(-int.rw + 0.3, int.rw - 0.3);
@@ -3370,8 +3391,8 @@ impl App {
         ];
         // Sparks land in world space at the room anchor so they draw inside.
         if self.interior.is_some() {
-            let (bx, by) = match self.interior.as_ref() {
-                Some(i) => (i.bx, i.by),
+            let (bx, by, px, py) = match self.interior.as_ref() {
+                Some(i) => (i.bx, i.by, i.px, i.py),
                 None => return,
             };
             for (x, y, bs) in sparks {
@@ -3382,6 +3403,11 @@ impl App {
             }
             if stabbed {
                 play_sfx("chime");
+            }
+            if w == WeaponKind::Scythe && leeched > 0.0 && self.player.alive {
+                let max_hp = self.player.max_hp();
+                self.player.hp = (self.player.hp + leeched * 0.25).min(max_hp);
+                self.spawn_particles(bx + px, by + py, [0.45, 0.95, 0.45], 6, 30.0, 0.4, 2.4);
             }
         }
         self.sweep_dead_indoors();
