@@ -11,4 +11,5 @@ tools/vcheck*.png
 tools/house_*.png
 tools/ht_*.png
 tools/house_*/
+tools/house/
 tools/house_test_*/

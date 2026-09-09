@@ -233,7 +233,12 @@ function runChecks(dump, dump2, dump3) {
     } catch (e) { return false; }
   }, { timeout: 20000 });
   // Start a new game programmatically so the world + player exist and update().
-  await page.evaluate(() => window.new_game());
+  // Use a fixed seed when available so the audit world is deterministic;
+  // new_game() picks a time-based seed which makes the interior walk flaky.
+  await page.evaluate(() => {
+    if (window.new_game_with_seed) window.new_game_with_seed(1337);
+    else window.new_game();
+  });
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   await sleep(2000);
   // Wait until the new game has a player (so movement/attack can be tested).
@@ -270,20 +275,46 @@ function runChecks(dump, dump2, dump3) {
 
   // interior: walk up to the nearest house (it blocks movement, so we stop
   // adjacent) and press Enter to go inside; verify the interior scene loads.
-  const houses = dump1.sprites.filter(s => ['H', 'C', 'U'].includes(s.label));
+  // Robust navigation: the world seed is fixed above, but the movement test
+  // above displaces the player, so re-read the CURRENT player pos (not dump1)
+  // and closed-loop re-aim in short legs. Entry radius is 4 tiles (d2<16), so
+  // stopping within ~3.5 tiles is enough; trying the 2 nearest houses covers
+  // the case where one is walled off by water/props.
   let interiorDump = null;
-  if (houses.length && dump1.player) {
-    const target = houses
-      .map(s => ({ s, d: Math.hypot(s.x - dump1.player.x, s.y - dump1.player.y) }))
-      .sort((a, b) => a.d - b.d)[0].s;
-    const dx = target.x - dump1.player.x, dy = target.y - dump1.player.y;
-    const len = Math.hypot(dx, dy) || 1;
-    await page.evaluate(([x, y]) => window.set_analog(x, y), [dx / len, dy / len]);
-    await stepN(180, 0.03);
-    await page.evaluate(() => window.set_analog(0, 0));
-    await page.keyboard.press('Enter');
-    await stepN(12, 0.03);
-    interiorDump = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+  {
+    const cur0 = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+    const allHouses = (cur0.sprites || []).filter(s => ['H', 'C', 'U'].includes(s.label));
+    // Fall back to dump1 houses if culling hid them this frame (same world).
+    const housePool = allHouses.length
+      ? allHouses
+      : dump1.sprites.filter(s => ['H', 'C', 'U'].includes(s.label));
+    const ranked = housePool
+      .map(s => ({ s, d: Math.hypot(s.x - cur0.player.x, s.y - cur0.player.y) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 2);
+    for (const { s: target } of ranked) {
+      for (let leg = 0; leg < 8; leg++) {
+        const cur = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+        if (cur.interior) { interiorDump = cur; break; }
+        const dx = target.x - cur.player.x, dy = target.y - cur.player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 3.5) break;
+        const len = dist || 1;
+        await page.evaluate(([x, y]) => window.set_analog(x, y), [dx / len, dy / len]);
+        await stepN(30, 0.03);
+        await page.evaluate(() => window.set_analog(0, 0));
+      }
+      if (interiorDump) break;
+      await page.keyboard.press('Enter');
+      await stepN(12, 0.03);
+      const after = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+      if (after.interior) { interiorDump = after; break; }
+      // If Enter didn't take (still outside), try the next house candidate.
+      // A second Enter while outside is harmless (toasts "Stand next to...").
+    }
+    if (!interiorDump) {
+      interiorDump = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+    }
   }
 
   const checks = runChecks(dump1, dump2, dump3);

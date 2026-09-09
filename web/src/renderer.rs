@@ -2364,8 +2364,15 @@ impl App {
             Some((_, kind, tx, ty)) => {
                 // Pantry/vault rewards are per-building: re-entering a looted
                 // house grants nothing (and its vault chest stays taken).
-                let first_visit = self.looted_interiors.insert((tx, ty));
+                // Dungeons claim the vault at the back wall, not on entry, so
+                // scouting one must NOT mark it looted (else the reward is
+                // forfeited without ever touching the chest).
                 let is_dungeon = kind == StructureKind::Dungeon;
+                let first_visit = if is_dungeon {
+                    !self.looted_interiors.contains(&(tx, ty))
+                } else {
+                    self.looted_interiors.insert((tx, ty))
+                };
                 let name = match kind {
                     StructureKind::House => "House",
                     StructureKind::Cabin => "Cabin",
@@ -2552,48 +2559,57 @@ impl App {
                 }
             }
         }
-        // Vault: reaching the back (left) wall of the vault floor cracks
-        // it for the one-time dungeon-grade reward.
-            if int.kind == StructureKind::Dungeon
-                && int.floor == 2
-                && !int.loot_taken
-                && (int.px + mx2).abs() < 0.5
-                && int.py.abs() < 0.8
-            {
+        // Vault: reaching the back (north) wall of the vault floor cracks
+        // it for the one-time dungeon-grade reward. The chest is drawn at
+        // the north wall (bx, by-1.5); the old west-wall trigger shared the
+        // stairs zone, so claiming meant threading a 0.15-tile sliver
+        // without going back downstairs.
+        if int.kind == StructureKind::Dungeon
+            && int.floor == 2
+            && !int.loot_taken
+            && (int.py + my2).abs() < 0.5
+            && int.px.abs() < 1.5
+        {
             int.loot_taken = true;
-            let (kind, n, xp) = game::dungeon::vault_loot(
-                int.bx.floor() as i32,
-                int.by.floor() as i32,
-            );
+            let (dtx, dty) = (int.bx.floor() as i32, int.by.floor() as i32);
+            self.looted_interiors.insert((dtx, dty));
+            let (kind, n, xp) = game::dungeon::vault_loot(dtx, dty);
             self.inventory.add(kind, n);
-            self.player.add_xp(xp);
+            let gained = self.player.add_xp(xp);
             play_sfx("pickup");
             toast(&format!(
                 "You cracked the vault! +{} {} and +{xp}xp",
                 n,
                 kind.name()
             ));
+            if gained > 0 {
+                play_sfx("levelup");
+                toast(&format!("Level up! You are now level {}", self.player.level));
+            }
         }
         // Dungeon foes: same chase/windup AI as surface fights, driven in
         // room coordinates. Room walls block pathing; knockback and charges
         // never leave the room.
         let ng_plus = self.ng_plus;
         let (rw, rh) = (int.rw, int.rh);
-        let mut contact: Option<(f32, f32, f32)> = None;
+        // Every foe whose windup connects this frame lands (a 4-foe vault
+        // guard keeping only the last hit would visibly under-damage).
+        let mut contacts: Vec<(f32, f32, f32)> = Vec::new();
         for f in int.foes.iter_mut() {
             f.speed_mult = Enemy::speed_scale_for_level(self.player.level);
             if let Some(dmg) = f.update((int.px, int.py), dt, |tx, ty| {
                 tx.abs() > rw as i32 + 1 || ty.abs() > rh as i32 + 1
             }) {
-                contact = Some((f.x, f.y, dmg));
+                contacts.push((f.x, f.y, dmg));
             }
             f.x = f.x.clamp(-rw + 0.3, rw - 0.3);
             f.y = f.y.clamp(-rh + 0.3, rh - 0.3);
         }
-        if let Some((ex, ey, dmg)) = contact {
+        let mut any_hit = false;
+        for (ex, ey, raw) in contacts {
             // No day/night indoors: crafted armor and NG+ still apply, and
             // blocking still parries (inside take_damage).
-            let dmg = dmg * (1.0 - self.craft_armor) * (1.0 + 0.25 * ng_plus as f32);
+            let dmg = raw * (1.0 - self.craft_armor) * (1.0 + 0.25 * ng_plus as f32);
             // Player knockback in room coordinates (clamped to the room).
             let dx = int.px - ex;
             let dy = int.py - ey;
@@ -2604,6 +2620,12 @@ impl App {
             if dmg > 0.5 {
                 self.hitstop = 0.06;
             }
+            any_hit = true;
+            if !self.player.alive {
+                break;
+            }
+        }
+        if any_hit {
             play_sfx("hurt");
             self.hurt_flash = 1.0;
             if !self.player.alive {
@@ -3445,9 +3467,25 @@ impl App {
                 self.inventory.add(*it, 1);
                 gains.push(format!("+1 {}", it.name()));
             }
+            // Weapon drops mirror the surface (roll_drop_with): no ground
+            // system indoors, so finds go straight to the rack.
+            let roll = (((fx * 53.0 + fy * 31.0 + self.debug_attacks as f32 * 7.0)
+                as i32) as u32)
+                % 100;
+            if let Some(wk) = game::weapons::WeaponKind::roll_drop_with(roll) {
+                if !self.player.has_weapon(wk) {
+                    self.player.equip_weapon(wk);
+                    gains.push(format!("Found {}!", wk.name()));
+                    play_sfx("pickup");
+                }
+            }
         }
-        self.player.add_xp(xp);
+        let gained = self.player.add_xp(xp);
         toast(&format!("{} (+{xp}xp)", gains.join(", ")));
+        if gained > 0 {
+            play_sfx("levelup");
+            toast(&format!("Level up! You are now level {}", self.player.level));
+        }
         if let Some(int) = self.interior.as_mut() {
             int.foes.retain(|f| f.alive());
         }
