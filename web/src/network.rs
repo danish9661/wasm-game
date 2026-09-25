@@ -146,6 +146,12 @@ impl NetClient {
     }
 
     pub fn send_input(&self, input: &PlayerInput) {
+        self.send_msg(&ClientMsg::Input(*input));
+    }
+
+    /// Send any client message (enter/exit/attack): bincode `Binary` first,
+    /// JSON text fallback, silent on dead sockets — same rules as input.
+    pub fn send_msg(&self, msg: &ClientMsg) {
         // Skip dead sockets silently: without this guard every frame logs a
         // native "already CLOSING or CLOSED" console error after disconnect.
         if !self.connected() {
@@ -153,13 +159,13 @@ impl NetClient {
         }
         // Bincode binary at 30 Hz (~1/4 the bytes of JSON); fall back to a
         // JSON text frame if encoding ever fails so input never stalls.
-        let bytes = encode_client(&ClientMsg::Input(*input));
+        let bytes = encode_client(msg);
         if !bytes.is_empty() {
             if self.ws.send_with_u8_array(&bytes).is_ok() {
                 return;
             }
         }
-        if let Ok(t) = serde_json::to_string(&ClientMsg::Input(*input)) {
+        if let Ok(t) = serde_json::to_string(msg) {
             let _ = self.ws.send_with_str(&t);
         }
     }

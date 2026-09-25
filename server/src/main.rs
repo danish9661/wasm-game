@@ -217,6 +217,35 @@ async fn handle_conn(stream: tokio::net::TcpStream, shared: Arc<Shared>, conn_id
                             }
                         }
                     }
+                    ClientMsg::EnterInterior { tx, ty } => {
+                        if let (Some(code), Some(id)) = (&room_code, player_id) {
+                            if let Some(room) = shared.rooms.lock().await.get(&code.clone()) {
+                                let ok = room.sim.lock().await.enter_interior(id, tx, ty);
+                                eprintln!("[server] player {id} enter ({tx},{ty}) -> {ok}");
+                            }
+                        }
+                    }
+                    ClientMsg::ExitInterior => {
+                        if let (Some(code), Some(id)) = (&room_code, player_id) {
+                            if let Some(room) = shared.rooms.lock().await.get(&code.clone()) {
+                                room.sim.lock().await.exit_interior(id);
+                            }
+                        }
+                    }
+                    ClientMsg::RoomAttack { spot, fx, fy, mult } => {
+                        if let (Some(code), Some(id)) = (&room_code, player_id) {
+                            if let Some(room) = shared.rooms.lock().await.get(&code.clone()) {
+                                room.sim.lock().await.room_attack(id, spot, fx, fy, mult);
+                            }
+                        }
+                    }
+                    ClientMsg::SoundHorn => {
+                        if let (Some(code), Some(id)) = (&room_code, player_id) {
+                            if let Some(room) = shared.rooms.lock().await.get(&code.clone()) {
+                                room.sim.lock().await.sound_horn(id);
+                            }
+                        }
+                    }
                     ClientMsg::Leave => break,
                 }
     }

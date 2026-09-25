@@ -62,6 +62,11 @@ pub struct Player {
     pub xp: u32,
     /// Current level; each level raises max HP and partially heals on level-up.
     pub level: u32,
+    /// Bitmask of work tools owned (bit `ToolKind as u8`). Tools never
+    /// stack, so wear lives beside the bits instead of in the inventory.
+    pub tools: u8,
+    /// Uses left per tool slot (index `ToolKind as usize`). Hits zero → snaps.
+    pub tool_hp: [u16; 4],
     /// Attack animation progress in [0,1] driven by the renderer from the swing
     /// cooldown. 0 = idle, ramps to 1 as a melee swing lands; the world renderer
     /// uses it to lunge the player's torso/arms forward on a strike.
@@ -89,6 +94,8 @@ impl Player {
             enchant: 0,
             xp: 0,
             level: 1,
+            tools: 0, // bare hands until the anvil sings
+            tool_hp: [0; 4],
             swing_t: 0.0,
         }
     }
@@ -149,6 +156,53 @@ impl Player {
     pub fn equip_weapon(&mut self, k: WeaponKind) {
         self.unlock_weapon(k);
         self.weapon = k;
+    }
+
+    /// Whether the player owns a work tool.
+    pub fn has_tool(&self, k: crate::tools::ToolKind) -> bool {
+        (self.tools & k.bit()) != 0
+    }
+
+    /// Forge a tool: set its bit and fill its uses. Re-forging a snapped
+    /// tool repairs it to full.
+    pub fn unlock_tool(&mut self, k: crate::tools::ToolKind) {
+        self.tools |= k.bit();
+        self.tool_hp[k as usize] = k.max_hp();
+    }
+
+    /// Chops per E-press on `kind` nodes (axes for wood, picks for rock,
+    /// 1 by hand).
+    pub fn chop_power(&self, kind: crate::resources::ResourceKind) -> u32 {
+        crate::tools::ToolKind::power_owned(self.tools, crate::tools::ToolKind::is_rock(kind))
+    }
+
+    /// The owned tool doing the work, if any (for wear).
+    pub fn work_tool(&self, kind: crate::resources::ResourceKind) -> Option<crate::tools::ToolKind> {
+        crate::tools::ToolKind::used_tool(self.tools, crate::tools::ToolKind::is_rock(kind))
+    }
+
+    /// Extra stone per dig from the best owned pick (0 by hand).
+    pub fn dig_bonus(&self) -> u32 {
+        crate::tools::ToolKind::pick_bonus_owned(self.tools)
+    }
+
+    /// The owned pick doing the digging, if any.
+    pub fn dig_tool(&self) -> Option<crate::tools::ToolKind> {
+        crate::tools::ToolKind::used_tool(self.tools, true)
+    }
+
+    /// Spend one use of `k`. Returns false exactly when it snaps (bit
+    /// cleared) so the caller can toast the break.
+    pub fn wear_tool(&mut self, k: crate::tools::ToolKind) -> bool {
+        let hp = &mut self.tool_hp[k as usize];
+        if *hp > 0 {
+            *hp -= 1;
+        }
+        if *hp == 0 {
+            self.tools &= !k.bit();
+            return false;
+        }
+        true
     }
 
     /// Damage of the currently equipped weapon including the enchant bonus
@@ -573,5 +627,22 @@ mod tests {
         p.thirst = 50.0;
         assert!(p.drink_water());
         assert!((p.thirst - 100.0).abs() < 1e-4, "drink restores 50 thirst");
+    }
+
+    #[test]
+    fn tools_wear_and_snap() {
+        use crate::tools::ToolKind;
+        let mut p = Player::new(0.0, 0.0);
+        assert_eq!(p.chop_power(crate::resources::ResourceKind::Tree), 1, "bare hands");
+        p.unlock_tool(ToolKind::StoneAxe);
+        assert!(p.has_tool(ToolKind::StoneAxe));
+        assert_eq!(p.chop_power(crate::resources::ResourceKind::Tree), 2);
+        assert_eq!(p.chop_power(crate::resources::ResourceKind::Rock), 1, "axe skips rock");
+        // Wear down to the last use: true until the snap.
+        p.tool_hp[ToolKind::StoneAxe as usize] = 2;
+        assert!(p.wear_tool(ToolKind::StoneAxe));
+        assert!(!p.wear_tool(ToolKind::StoneAxe), "snaps at zero");
+        assert!(!p.has_tool(ToolKind::StoneAxe));
+        assert_eq!(p.chop_power(crate::resources::ResourceKind::Tree), 1, "back to hands");
     }
 }

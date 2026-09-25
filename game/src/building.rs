@@ -418,6 +418,87 @@ fn raw_decor(tx: i32, ty: i32, tile: TileKind) -> Option<StructureKind> {
     }
 }
 
+/// Radius (tiles) around a light source inside which hostile spawns are
+/// suppressed — a lit home is a safe home (the Minecraft torch rule).
+/// Torches cost stone, so the bubble is earned, not free.
+pub const LIGHT_SAFE_RADIUS: f32 = 8.0;
+
+/// True when a light-emitting structure stands within `radius` tiles of tile
+/// `(tx, ty)` (tile centers compared). Used to suppress spawns near homes
+/// and to validate housed rooms.
+pub fn lit_within(structures: &[Structure], tx: i32, ty: i32, radius: f32) -> bool {
+    let (cx, cy) = (tx as f32 + 0.5, ty as f32 + 0.5);
+    structures.iter().any(|s| {
+        s.kind.emits_light()
+            && (s.tx as f32 + 0.5 - cx).hypot(s.ty as f32 + 0.5 - cy) <= radius
+    })
+}
+
+/// Radius (tiles) within which a Bed and a light source claim a house for
+/// the player (the Terraria room rule, simplified for the iso grid).
+/// World-gen never places beds, so a bed near a house means the player
+/// moved in — no buildable-house tech needed.
+pub const CLAIM_RADIUS: f32 = 6.0;
+
+/// True when the house at `(tx, ty)` counts as claimed player housing: a
+/// House/Cabin/Hut/Inn/Barn/Watchtower tile with a Bed and a light source
+/// nearby. Claimed houses attract merchant settlers.
+pub fn house_claimed(structures: &[Structure], tx: i32, ty: i32) -> bool {
+    let is_house = structures.iter().any(|s| {
+        s.tx == tx
+            && s.ty == ty
+            && matches!(
+                s.kind,
+                StructureKind::House
+                    | StructureKind::Cabin
+                    | StructureKind::Hut
+                    | StructureKind::Inn
+                    | StructureKind::Barn
+                    | StructureKind::Watchtower
+            )
+    });
+    if !is_house {
+        return false;
+    }
+    let bed = structures.iter().any(|s| {
+        s.kind == StructureKind::Bed
+            && (s.tx as f32 + 0.5 - (tx as f32 + 0.5))
+                .hypot(s.ty as f32 + 0.5 - (ty as f32 + 0.5))
+                <= CLAIM_RADIUS
+    });
+    bed && lit_within(structures, tx, ty, CLAIM_RADIUS)
+}
+
+/// Interior room dimensions for an enterable building: half-extents
+/// (rw, rh) plus floor count. Single source of truth for the client's room
+/// renderer and the co-op server's room simulation (they must agree).
+pub fn interior_dims(kind: StructureKind) -> (f32, f32, u8) {
+    match kind {
+        StructureKind::House => (4.0, 3.0, 2),
+        StructureKind::Cabin => (3.2, 2.5, 1),
+        StructureKind::Hut => (2.5, 2.0, 1),
+        StructureKind::Inn => (5.0, 3.5, 2),
+        StructureKind::Barn => (5.5, 3.0, 1),
+        StructureKind::Watchtower => (2.2, 4.0, 2),
+        _ => (3.5, 2.5, 2), // Dungeon
+    }
+}
+
+/// One-time pantry reward for entering a non-dungeon interior.
+/// Dungeons pay at the vault instead (see `dungeon::vault_loot`).
+pub fn pantry_loot(kind: StructureKind) -> Option<(crate::items::ItemKind, u32)> {
+    use crate::items::ItemKind;
+    match kind {
+        StructureKind::House => Some((ItemKind::Wood, 3)),
+        StructureKind::Cabin => Some((ItemKind::Wood, 2)),
+        StructureKind::Hut => Some((ItemKind::Food, 2)),
+        StructureKind::Inn => Some((ItemKind::Food, 3)),
+        StructureKind::Barn => Some((ItemKind::Wood, 4)),
+        StructureKind::Watchtower => Some((ItemKind::Stone, 3)),
+        _ => None,
+    }
+}
+
 /// A placed structure at a tile.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Structure {
@@ -567,6 +648,10 @@ mod size_tests {
     use crate::elements::prim::Part;
     use crate::enemy::EnemyKind;
     use super::StructureKind;
+    use super::{lit_within, Structure, LIGHT_SAFE_RADIUS};
+    use super::{house_claimed, CLAIM_RADIUS};
+    use super::{interior_dims, pantry_loot};
+    use crate::items::ItemKind;
 
     /// Axis-aligned bounding box (width, height) of a list of drawn parts, in the
     /// same screen-pixel space the renderer uses. This is what we compare to make
@@ -739,5 +824,59 @@ mod size_tests {
         let max_base = parts.iter().map(|p| p.color[0].max(p.color[1]).max(p.color[2])).fold(0.0f32, f32::max);
         let max_flash = flashed_parts.iter().map(|p| p.color[0].max(p.color[1]).max(p.color[2])).fold(0.0f32, f32::max);
         assert!(max_flash > max_base, "flash should brighten the figure");
+    }
+
+    #[test]
+    fn lit_bubble_covers_home_but_not_far_field() {
+        let torch = Structure { tx: 0, ty: 0, kind: StructureKind::Torch };
+        let wall = Structure { tx: 0, ty: 0, kind: StructureKind::Wall };
+        // Same tile and mid-range tiles are lit; a wall never lights.
+        assert!(lit_within(&[torch], 0, 0, LIGHT_SAFE_RADIUS));
+        assert!(lit_within(&[torch], 5, 0, LIGHT_SAFE_RADIUS));
+        assert!(!lit_within(&[wall], 0, 0, LIGHT_SAFE_RADIUS));
+        assert!(!lit_within(&[], 0, 0, LIGHT_SAFE_RADIUS));
+        // Beyond the bubble the field stays dangerous.
+        assert!(!lit_within(&[torch], 20, 0, LIGHT_SAFE_RADIUS));
+        // Campfires and lanterns count too.
+        let fire = Structure { tx: 10, ty: 10, kind: StructureKind::Campfire };
+        assert!(lit_within(&[fire], 12, 10, LIGHT_SAFE_RADIUS));
+    }
+
+    #[test]
+    fn claimed_house_needs_bed_and_light() {
+        let house = Structure { tx: 0, ty: 0, kind: StructureKind::House };
+        let bed = Structure { tx: 2, ty: 1, kind: StructureKind::Bed };
+        let torch = Structure { tx: -2, ty: 0, kind: StructureKind::Torch };
+        // Furnished + lit: claimed.
+        assert!(house_claimed(&[house, bed, torch], 0, 0));
+        // No bed: just a ruin. No light: just a crash pad.
+        assert!(!house_claimed(&[house, torch], 0, 0));
+        assert!(!house_claimed(&[house, bed], 0, 0));
+        // A bed in the far field claims nothing; walls never count.
+        assert!(!house_claimed(&[house, bed, torch], 20, 20));
+        let wall = Structure { tx: 5, ty: 5, kind: StructureKind::Wall };
+        assert!(!house_claimed(&[wall, bed, torch], 5, 5));
+        // A bed beyond CLAIM_RADIUS is too far to count as moved-in.
+        let far_bed = Structure { tx: 0, ty: 7, kind: StructureKind::Bed };
+        assert!(!house_claimed(&[house, far_bed, torch], 0, 0));
+        assert!(CLAIM_RADIUS >= 6.0, "claim bubble must cover a room");
+    }
+
+    #[test]
+    fn interior_tables_match_the_client_rooms() {
+        // Dimensions + floors must equal the rooms the renderer draws
+        // (single source of truth for client and co-op server).
+        assert_eq!(interior_dims(StructureKind::House), (4.0, 3.0, 2));
+        assert_eq!(interior_dims(StructureKind::Cabin), (3.2, 2.5, 1));
+        assert_eq!(interior_dims(StructureKind::Hut), (2.5, 2.0, 1));
+        assert_eq!(interior_dims(StructureKind::Inn), (5.0, 3.5, 2));
+        assert_eq!(interior_dims(StructureKind::Barn), (5.5, 3.0, 1));
+        assert_eq!(interior_dims(StructureKind::Watchtower), (2.2, 4.0, 2));
+        assert_eq!(interior_dims(StructureKind::Dungeon), (3.5, 2.5, 2));
+        // Pantry pays once per house; dungeons pay at the vault instead.
+        assert_eq!(pantry_loot(StructureKind::House), Some((ItemKind::Wood, 3)));
+        assert_eq!(pantry_loot(StructureKind::Inn), Some((ItemKind::Food, 3)));
+        assert_eq!(pantry_loot(StructureKind::Watchtower), Some((ItemKind::Stone, 3)));
+        assert_eq!(pantry_loot(StructureKind::Dungeon), None);
     }
 }

@@ -60,7 +60,7 @@
   </div>
   <div id="weaponbar" title="Tap / click to equip an owned weapon"></div>
   <div id="quest">Gathering supplies…</div>
-  <div id="toasts"></div>
+  <div id="toasts" aria-live="polite"></div>
   <div id="altar-prompt" class="hidden">All five Crown Fragments blaze in your pack. Press <b>Y</b> to Reign · <b>N</b> to Shatter</div>
   <div id="compass" class="hidden" title="Points to the next Crown Fragment / altar">
     <div id="compass-needle"></div>
@@ -80,21 +80,24 @@
       <h2>CONTROLS</h2>
       <div class="help-grid">
         <span class="k">W A S D / ↑ ↓ ← →</span><span class="d">Move (the world scrolls; your character travels in the pressed direction)</span>
-        <span class="k">E</span><span class="d">Harvest wood/stone · open chest · step through the village portal</span>
+        <span class="k">E</span><span class="d">Harvest wood/stone · dig stone tiles to earth when nothing grows nearby · open chest · step through the village portal</span>
         <span class="k">Portal</span><span class="d">Each village has a glowing gate — stand on it and press E to travel to the walled town (built as you arrive)</span>
         <span class="k">I</span><span class="d">Open inventory &amp; crafting (shows recipes + costs)</span>
         <span class="k">Q</span><span class="d">Toggle build mode — then move the cursor and click the ground (or press the structure's key) to place it</span>
         <span class="k">F</span><span class="d">Build a campfire</span>
         <span class="k">V</span><span class="d">Build a wall (blocks movement)</span>
         <span class="k">O</span><span class="d">Talk to a nearby villager, guard or merchant — hand in quests or sell resources for gold</span>
+        <span class="k">🏠</span><span class="d">Claim a house: place a Bed + light (torch/lantern) by any house, cabin or hut and a merchant settler moves in (O to trade)</span>
+        <span class="k">🌙</span><span class="d">Every 4th night is a Shattered Night — elite hunters roam till dawn. Fight or stay inside the lamplight</span>
         <span class="k">L</span><span class="d">Cook a hot meal at a campfire (2 food → +25 HP, +hunger)</span>
         <span class="k">🗺</span><span class="d">Carry a treasure map to reveal buried caches (X) on the minimap; dig them with E</span>
         <span class="k">G</span><span class="d">Build a fence (blocks movement)</span>
-        <span class="k">B</span><span class="d">Build a bed</span>
+        <span class="k">B</span><span class="d">Build a bed (sleep in it to move your respawn home)</span>
         <span class="k">N</span><span class="d">Build an anvil</span>
         <span class="k">H</span><span class="d">Build a well (blocks movement)</span>
+        <span class="k">Y</span><span class="d">Pack a stone block on the faced tile (2 stone — walls like a wall; dig it back with E)</span>
         <span class="k">J / K</span><span class="d">Attack (swing or loose). HOLD to charge a heavy finisher (1.5–2.5x). Strike mid-dodge for a dash attack. Hit foes from behind for backstab bonus (daggers 2.5x)</span>
-        <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Dagger → Sword → Axe → Spear → Hammer → Mace → Bow → Crossbow)</span>
+        <span class="k">P</span><span class="d">Cycle equipped weapon (Fists → Dagger → Sword → Axe → Spear → Hammer → Mace → Bow → Crossbow → Scythe)</span>
         <span class="k">Weapon bar</span><span class="d">Tap / click an owned weapon to equip it directly — locked slots are dimmed. Hold Shift to raise your shield (🛡 BLOCK chip); tap FPS to collapse the debug row</span>        <span class="k">C</span><span class="d">Eat food to restore hunger</span>
         <span class="k">T</span><span class="d">Drink at a well / shoreline (restores thirst)</span>
         <span class="k">Shift</span><span class="d">Hold to block (raises guard, cuts incoming damage)</span>
@@ -135,6 +138,7 @@
       <button class="tbtn act" data-key="KeyL" title="Codex"><span class="tbtn-icon">📖</span><span class="tbtn-label">Codex</span></button>
       <button class="tbtn act" data-key="KeyO" title="Talk to merchant"><span class="tbtn-icon">💬</span><span class="tbtn-label">Talk</span></button>
       <button class="tbtn act" data-key="KeyZ" title="Sleep (near bed)"><span class="tbtn-icon">😴</span><span class="tbtn-label">Sleep</span></button>
+      <button class="tbtn act" data-key="KeyY" title="Pack stone block (2 stone)"><span class="tbtn-icon">🧱</span><span class="tbtn-label">Block</span></button>
       <button class="tbtn act" data-key="PrintScreen" title="Screenshot"><span class="tbtn-icon">📷</span><span class="tbtn-label"></span></button>
     </div>
     <div id="touch-build" class="hidden">BUILD MODE — tap ground to place · 🔨 to exit</div>

@@ -1,4 +1,5 @@
 use noise::{Fbm, NoiseFn, Perlin};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::building::{decor_on, StructureKind};
@@ -7,7 +8,7 @@ use crate::resources::{resource_on, ResourceKind};
 pub const CHUNK_SIZE: i32 = 32;
 pub const RENDER_RADIUS: i32 = 4;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum TileKind {
     DeepWater,
     Water,
@@ -26,6 +27,11 @@ pub enum TileKind {
     /// Scorched volcanic highlands: cracked basalt and lava seams. A hostile
     /// biome that slowly burns the player unless they keep moving or shelter.
     Volcanic,
+    /// Player-dug earth (E on a stone tile). Walkable, spawns nothing.
+    Dug,
+    /// Player-packed stone blockwork (Y key, 2 stone). Solid: blocks movement
+    /// and sight-lines like a wall, spawns nothing.
+    Built,
 }
 
 impl TileKind {
@@ -44,11 +50,16 @@ impl TileKind {
             TileKind::Desert => [0.91, 0.80, 0.50],
             TileKind::Jungle => [0.16, 0.40, 0.18],
             TileKind::Volcanic => [0.22, 0.10, 0.09],
+            TileKind::Dug => [0.42, 0.30, 0.18],
+            TileKind::Built => [0.55, 0.53, 0.50],
         }
     }
 
     pub fn walkable(self) -> bool {
-        !matches!(self, TileKind::DeepWater | TileKind::Water)
+        !matches!(
+            self,
+            TileKind::DeepWater | TileKind::Water | TileKind::Built
+        )
     }
 
     /// True for the crossable shallow water (wading) tiles.
@@ -148,6 +159,27 @@ impl ChunkCache {
 pub fn tile_at(world: &WorldGen, cache: &mut ChunkCache, tx: i32, ty: i32) -> TileKind {
     let chunk = cache.get(world, tx, ty);
     chunk.tiles[ty.rem_euclid(CHUNK_SIZE) as usize][tx.rem_euclid(CHUNK_SIZE) as usize].kind
+}
+
+/// Player-worked tiles (dig/place) layered over the generated world. Held
+/// beside the world (never inside the generator) so a fresh `WorldGen` is
+/// always pristine and evicted chunks re-apply cleanly.
+pub type TileEdits = HashMap<(i32, i32), TileKind>;
+
+/// Effective tile: a player edit wins, otherwise the generated tile.
+/// Temperature/biome logic keeps using the base tile; movement, spawning,
+/// building and rendering use this.
+pub fn edited_tile(
+    edits: &TileEdits,
+    world: &WorldGen,
+    cache: &mut ChunkCache,
+    tx: i32,
+    ty: i32,
+) -> TileKind {
+    edits
+        .get(&(tx, ty))
+        .copied()
+        .unwrap_or_else(|| tile_at(world, cache, tx, ty))
 }
 
 /// Terrain height level at a world tile coordinate (generates the chunk on
@@ -336,5 +368,27 @@ mod tests {
         assert!(TileKind::ShallowWater.walkable());
         assert!(TileKind::ShallowWater.wadable());
         assert!(!TileKind::Water.walkable(), "open water stays impassable");
+    }
+
+    #[test]
+    fn worked_tiles_override_generation() {
+        let world = WorldGen::new(1337);
+        let mut cache = ChunkCache::new(256);
+        let empty: TileEdits = HashMap::new();
+        // Untouched ground reads generated; worked ground reads the edit.
+        let base = tile_at(&world, &mut cache, 5, 5);
+        assert_eq!(edited_tile(&empty, &world, &mut cache, 5, 5), base);
+        let mut edits: TileEdits = HashMap::new();
+        edits.insert((5, 5), TileKind::Built);
+        assert_eq!(edited_tile(&edits, &world, &mut cache, 5, 5), TileKind::Built);
+        assert_eq!(edited_tile(&edits, &world, &mut cache, 6, 5), tile_at(&world, &mut cache, 6, 5));
+        // Worked-ground rules: dug earth walks, blockwork walls.
+        assert!(TileKind::Dug.walkable());
+        assert!(!TileKind::Built.walkable(), "packed blocks wall like a wall");
+        // Nothing spawns or grows on worked ground.
+        assert!(crate::enemy::spawner_on(0, 0, TileKind::Dug).is_none());
+        assert!(crate::enemy::spawner_on(0, 0, TileKind::Built).is_none());
+        assert!(crate::resources::resource_on(0, 0, TileKind::Dug).is_none());
+        assert!(crate::resources::resource_on(0, 0, TileKind::Built).is_none());
     }
 }

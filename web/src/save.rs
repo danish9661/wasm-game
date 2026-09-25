@@ -115,4 +115,21 @@ pub struct SaveState {
     /// only plays on the very first arrival).
     #[serde(default)]
     pub town_visited: bool,
+    /// Claimed houses that already attracted a merchant settler, so the
+    /// settlers are respawned (not duplicated) after a reload.
+    #[serde(default)]
+    pub housed: Vec<(i32, i32)>,
+    /// Player-worked tiles (dug earth / packed blockwork) so quarries and
+    /// walls survive a reload.
+    #[serde(default)]
+    pub tile_edits: Vec<((i32, i32), game::world::TileKind)>,
+    /// Owned work tools bitmask (mirrors `Player::tools`).
+    #[serde(default)]
+    pub tools: u8,
+    /// Uses left per tool (mirrors `Player::tool_hp`).
+    #[serde(default)]
+    pub tool_hp: [u16; 4],
+    /// Days survived (midnight crossings) for the Shattered Night schedule.
+    #[serde(default)]
+    pub day_count: u32,
 }

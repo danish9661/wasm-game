@@ -397,6 +397,7 @@ pub fn visible_tiles(camera: Camera, viewport: (f32, f32)) -> Vec<(i32, i32)> {
 pub fn build_tile_mesh(
     world: &WorldGen,
     cache: &mut ChunkCache,
+    edits: &crate::world::TileEdits,
     camera: Camera,
     viewport: (f32, f32),
     tiles: &[(i32, i32)],
@@ -537,7 +538,7 @@ pub fn build_tile_mesh(
     for d in draws {
         match d.kind {
             DrawKind::Tile => {
-                let kind = tile_kind_at(world, cache, d.tx, d.ty);
+                let kind = tile_kind_at(edits, world, cache, d.tx, d.ty);
                 let mut base = kind.color();
                 // Per-tile value variation so grass/forest/spawned-detail don't
                 // read as a flat uniform sheet. Extra jitter on grass/forest.
@@ -563,10 +564,10 @@ pub fn build_tile_mesh(
                 }
                 // Sample the 4 cardinal neighbours and blend each tile corner
                 // toward them so biome boundaries become smooth gradients.
-                let nk = tile_kind_at(world, cache, d.tx, d.ty - 1);
-                let ek = tile_kind_at(world, cache, d.tx + 1, d.ty);
-                let sk = tile_kind_at(world, cache, d.tx, d.ty + 1);
-                let wk = tile_kind_at(world, cache, d.tx - 1, d.ty);
+                let nk = tile_kind_at(edits, world, cache, d.tx, d.ty - 1);
+                let ek = tile_kind_at(edits, world, cache, d.tx + 1, d.ty);
+                let sk = tile_kind_at(edits, world, cache, d.tx, d.ty + 1);
+                let wk = tile_kind_at(edits, world, cache, d.tx - 1, d.ty);
                 let mut c_n = corner_blend(base, kind, nk);
                 let mut c_e = corner_blend(base, kind, ek);
                 let mut c_s = corner_blend(base, kind, sk);
@@ -651,8 +652,10 @@ pub fn build_tile_mesh(
                 }
             }
             DrawKind::Sprite => {
-                // Fake 2.5D: ground shadow first — offset southeast for tall
-                // buildings so roofs cast a readable shadow.
+                // Fake 2.5D: ground shadow first — tall buildings throw one
+                // long soft mass southeast (roof overhang reads as depth)
+                // instead of two stacked diamonds that double-darken the
+                // lawn into a muddy ellipse.
                 let is_building = matches!(
                     d.style,
                     SpriteStyle::House
@@ -663,12 +666,9 @@ pub fn build_tile_mesh(
                         | SpriteStyle::Watchtower
                 );
                 if is_building {
-                    // Larger, offset shadow for depth; alpha scales with height.
-                    let ox = d.half_h * 0.22;
-                    let oy = d.half_h * 0.14;
-                    push_shadow(out, d.sx + ox, d.sy + oy, d.half_w * 1.35, d.half_h * 0.85);
-                    // Second soft shadow for roof overhang.
-                    push_shadow_soft(out, d.sx + ox * 0.6, d.sy + oy * 0.6, d.half_w * 0.9, d.half_h * 0.6);
+                    let ox = d.half_h * 0.24;
+                    let oy = d.half_h * 0.15;
+                    push_shadow_soft(out, d.sx + ox, d.sy + oy, d.half_w * 1.45, d.half_h * 0.9);
                 } else {
                     push_shadow(out, d.sx, d.sy, d.half_w, d.half_h);
                 }
@@ -813,11 +813,14 @@ pub fn build_tile_mesh(
     (out.len() / (6 * VERTEX_FLOATS)) as u32
 }
 
-fn tile_kind_at(world: &WorldGen, cache: &mut ChunkCache, tx: i32, ty: i32) -> crate::world::TileKind {
-    let chunk = cache.get(world, tx, ty);
-    chunk.tiles[ty.rem_euclid(crate::world::CHUNK_SIZE) as usize]
-        [tx.rem_euclid(crate::world::CHUNK_SIZE) as usize]
-        .kind
+fn tile_kind_at(
+    edits: &crate::world::TileEdits,
+    world: &WorldGen,
+    cache: &mut ChunkCache,
+    tx: i32,
+    ty: i32,
+) -> crate::world::TileKind {
+    crate::world::edited_tile(edits, world, cache, tx, ty)
 }
 
 /// Terrain height level at a tile (mirrors `world::tile_height`).
@@ -1043,6 +1046,22 @@ fn tile_detail(out: &mut Vec<f32>, kind: TileKind, sx: f32, sy: f32, z: f32, tx:
             let gx = cx + ((h % 21) as f32 - 10.0);
             let flick = 0.6 + 0.4 * (anim_time * 3.0 + (h % 7) as f32).sin().max(0.0);
             parts.push(Part::diamond(gx, cy - 2.0, 2.4, 1.4, 0.0, [1.0 * flick, 0.4 * flick, 0.08], 1.0, false));
+        }
+        TileKind::Dug => {
+            // Turned earth: dark clods scattered on the brown.
+            let n = 3 + (h % 2);
+            for i in 0..n {
+                let r1 = (((h >> (i * 4)) & 15) as f32) / 15.0;
+                let r2 = (((h >> (i * 4 + 2)) & 15) as f32) / 15.0;
+                let ox = (r1 - 0.5) * (HALF_W * 1.1);
+                let oy = (r2 - 0.5) * (HALF_H * 0.9);
+                parts.push(Part::diamond(cx + ox, cy + oy, 1.4, 0.9, 0.0, [0.25, 0.17, 0.10], 1.0, false));
+            }
+        }
+        TileKind::Built => {
+            // Packed blockwork: pale mortar seams crossing the stone.
+            parts.push(Part::vquad(cx - HALF_W * 0.5, cy - 1.0, HALF_W, 1.2, [0.72, 0.70, 0.68], 1.0, false));
+            parts.push(Part::vquad(cx - 1.0, cy - HALF_H * 0.5, 1.2, HALF_H, [0.70, 0.68, 0.66], 1.0, false));
         }
         _ => {}
     }
@@ -1289,7 +1308,7 @@ mod tests {
         let world = WorldGen::new(1);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0, 0.0);
+        let quads = build_tile_mesh(&world, &mut cache, &crate::world::TileEdits::default(), cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0, 0.0);
         assert!(quads > 0);
         // Tile (0,0) is lifted by its terrain height.
         let z0 = tile_height_at(&world, &mut cache, 0, 0) as f32 * crate::world::HEIGHT_STEP;
@@ -1318,7 +1337,7 @@ mod tests {
         let world = WorldGen::new(7);
         let mut cache = ChunkCache::new(64);
         let mut mesh = Vec::new();
-        let quads = build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0, 0.0);
+        let quads = build_tile_mesh(&world, &mut cache, &crate::world::TileEdits::default(), cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut mesh, 0.0, 0.0);
         assert_eq!(mesh.len(), quads as usize * 6 * VERTEX_FLOATS);
         for i in (2..mesh.len()).step_by(VERTEX_FLOATS) {
             assert!((0.0..=1.0).contains(&mesh[i]), "r out of range at {i}");
@@ -1377,6 +1396,7 @@ mod tests {
         let quads = build_tile_mesh(
             &world,
             &mut cache,
+            &crate::world::TileEdits::default(),
             cam(),
             (640.0, 360.0),
             &visible_tiles(cam(), (640.0, 360.0)),
@@ -1386,19 +1406,26 @@ mod tests {
             0.0,
             0.0,
         );
-        // player branch emits: ground shadow (1) + humanoid (2 legs, torso, 2
-        // arms, 2 hands, head, hair = 9 parts) each drawn as bright + dark-skirt
-        // + bright = 9*3 + 1 = 28 quads
+        // player branch emits: ground shadow (1) + humanoid rig (18 parts:
+        // 2 feet, 2 legs, torso + shade + belt + collar, 2 arms, 2 cuffs,
+        // 2 hands, head, jaw, eye, hair cap). `rasterize` emits a bright pass
+        // for all parts, a dark-skirt pass for the 11 skirted parts, then a
+        // second bright pass: 18 + 11 + 18 = 47, + 1 shadow = 48 quads.
         let mut plain = Vec::new();
         let plain_quads =
-            build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut plain, 0.0, 0.0);
-        assert_eq!(quads, plain_quads + 28);
+            build_tile_mesh(&world, &mut cache, &crate::world::TileEdits::default(), cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[], None, &mut plain, 0.0, 0.0);
+        assert_eq!(quads, plain_quads + 48);
 
-        // find the player quad (warm orange color)
+        // find the player quad (torso tint; the rig clamps it just under white
+        // so the hit-flash can always brighten it).
+        let torso_col = crate::elements::humanoid::civilian_tunic(PLAYER_COLOR);
         let mut player_quad = None;
         for i in 0..quads as usize {
             let v = quad_vertices(&mesh, i);
-            if v[2] == PLAYER_COLOR[0] && v[3] == PLAYER_COLOR[1] && v[4] == PLAYER_COLOR[2] {
+            if (v[2] - torso_col[0]).abs() < 1e-4
+                && (v[3] - torso_col[1]).abs() < 1e-4
+                && (v[4] - torso_col[2]).abs() < 1e-4
+            {
                 player_quad = Some(v);
                 break;
             }
@@ -1418,7 +1445,10 @@ mod tests {
         let mut idx = 0;
         for i in 0..quads as usize {
             let q = quad_vertices(&mesh, i);
-            if q[2] == PLAYER_COLOR[0] {
+            if (q[2] - torso_col[0]).abs() < 1e-4
+                && (q[3] - torso_col[1]).abs() < 1e-4
+                && (q[4] - torso_col[2]).abs() < 1e-4
+            {
                 idx = i;
                 break;
             }
@@ -1445,6 +1475,7 @@ mod tests {
         let quads = build_tile_mesh(
             &world,
             &mut cache,
+            &crate::world::TileEdits::default(),
             cam(),
             (640.0, 360.0),
             &visible_tiles(cam(), (640.0, 360.0)),
@@ -1493,6 +1524,7 @@ mod tests {
         let quads = build_tile_mesh(
             &world,
             &mut cache,
+            &crate::world::TileEdits::default(),
             cam(),
             (640.0, 360.0),
             &visible_tiles(cam(), (640.0, 360.0)),
@@ -1538,9 +1570,9 @@ mod tests {
         let slime = Sprite::new(0, 0, [0.30, 0.78, 0.36], 14.0, 14.0, 2.0).with_style(SpriteStyle::Slime);
 
         let mut m0 = Vec::new();
-        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m0, 0.0, 0.0);
+        build_tile_mesh(&world, &mut cache, &crate::world::TileEdits::default(), cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m0, 0.0, 0.0);
         let mut m1 = Vec::new();
-        build_tile_mesh(&world, &mut cache, cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m1, 0.3, 0.0);
+        build_tile_mesh(&world, &mut cache, &crate::world::TileEdits::default(), cam(), (640.0, 360.0), &visible_tiles(cam(), (640.0, 360.0)), &[slime], None, &mut m1, 0.3, 0.0);
 
         // slime green signature
         let is_slime = |v: &[f32]| v[2] > 0.25 && v[2] < 0.45 && v[3] > 0.7 && v[4] < 0.45;
@@ -1591,6 +1623,7 @@ mod tests {
         let n = build_tile_mesh(
             &world,
             &mut cache,
+            &crate::world::TileEdits::default(),
             Camera::new(ccx, ccy),
             (1280.0, 720.0),
             &[],

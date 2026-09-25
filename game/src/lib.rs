@@ -12,6 +12,7 @@ pub mod poi;
  pub mod render;
  pub mod resources;
  pub mod sim;
+pub mod tools;
  pub mod world;
 pub mod weapons;
 pub mod npc;

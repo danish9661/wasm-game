@@ -206,7 +206,7 @@ mod tests {
     // player while respecting the hurt-timer i-frames.
     #[test]
     fn player_swing_damages_enemy() {
-        let mut p = Player::new(0.0, 0.0);
+        let p = Player::new(0.0, 0.0);
         let mut e = Enemy::new(0.8, 0.0, EnemyKind::Skeleton);
         let max = e.hp;
         let dmg = p.weapon_damage();

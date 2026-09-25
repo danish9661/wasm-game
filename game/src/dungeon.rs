@@ -5,6 +5,7 @@
 //! drives them with the regular `Enemy::update` (chase/windup/contact), so
 //! dungeon fights feel exactly like surface fights in miniature.
 
+use crate::building::StructureKind;
 use crate::enemy::EnemyKind;
 use crate::items::ItemKind;
 
@@ -40,6 +41,17 @@ pub fn dungeon_foes(bx: i32, by: i32, floor: u8) -> Vec<(EnemyKind, f32, f32)> {
                 (EnemyKind::Wraith, x4, y4),
             ]
         }
+    }
+}
+
+/// Spike-trap layout for a dungeon floor: the entry hall is trapped,
+/// the vault floor is guarded by foes instead. Shared by the client's
+/// room renderer and the co-op server's room simulation.
+pub fn dungeon_hazards(kind: StructureKind, floor: u8) -> Vec<(i32, i32)> {
+    if kind == StructureKind::Dungeon && floor == 1 {
+        vec![(-1, -1), (1, 0), (0, 1), (-2, 1), (2, -1)]
+    } else {
+        Vec::new()
     }
 }
 

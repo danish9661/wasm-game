@@ -506,7 +506,8 @@ pub struct Enemy {
     /// Seconds until this enemy may fire again (ranged kinds only).
     shoot_timer: f32,
     /// Brute only: seconds left in the current charge dash (0 = not charging).
-    charge_t: f32,
+    /// Public so the renderer can lean the walk cycle into the dash.
+    pub charge_t: f32,
     /// Brute only: cooldown until the next charge can start.
     charge_cd: f32,
     /// Set during `update` when the enemy fires: a unit direction toward the

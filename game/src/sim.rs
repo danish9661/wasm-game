@@ -1,8 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use serde::{Deserialize, Serialize};
 
-use crate::building::{Structure, StructureKind, try_build};
+use crate::building::{Structure, StructureKind, lit_within, try_build, LIGHT_SAFE_RADIUS};
 use crate::combat::Arrow;
 use crate::daynight::{daylight, temperature, DAY_LENGTH};
 use crate::weapons::WeaponKind;
@@ -12,7 +12,7 @@ use crate::player::{self, Player};
 use crate::poi::{ruins_at, village_sites};
 use crate::quest::QuestLog;
 use crate::resources::{resource_on, NodeRegistry, ResourceKind};
-use crate::world::{tile_at, ChunkCache, WorldGen, TileKind};
+use crate::world::{edited_tile, tile_at, ChunkCache, TileEdits, WorldGen, TileKind};
 
 const MOVE_SPEED: f32 = player::PLAYER_SPEED;
 const CONTACT_RANGE: f32 = 1.3;
@@ -28,9 +28,12 @@ const TURRET_CD: f32 = 1.1;
 
 /// Wire protocol version. Bumped 1 -> 2 for binary frames + deltas, 2 -> 3
 /// for the `ng_cycle` campaign field, 3 -> 4 for the 9-weapon `u16` unlock
-/// bitmask. JSON text frames remain accepted so old clients keep working;
-/// new clients send/receive bincode `Binary` frames.
-pub const PROTOCOL_VERSION: u32 = 4;
+/// bitmask, 4 -> 5 for shared interiors (`room` input, enter/attack
+/// messages, `rooms` snapshots). JSON text frames remain accepted so old
+/// clients keep working; new clients send/receive bincode `Binary` frames.
+/// v4 `Input` still decodes (stale tabs keep moving); v4 clients simply
+/// never see rooms.
+pub const PROTOCOL_VERSION: u32 = 5;
 /// Ticks between authoritative full snapshots. Ticks in between carry
 /// `SimDelta` (dynamic entities + optionally changed statics), so the ~200
 /// static village/town structures are not re-sent 30x/sec.
@@ -55,6 +58,23 @@ pub enum ClientMsg {
     },
     Input(PlayerInput),
     Leave,
+    /// Step into a building interior (the server materializes the shared
+    /// room, spawns its foes and pays the pantry once). v5+.
+    EnterInterior { tx: i32, ty: i32 },
+    /// Leave the current interior. v5+.
+    ExitInterior,
+    /// A melee swing inside a room: building tile + room-space swing origin
+    /// and facing. Weapon/enchant come from the synced `PlayerInput`; `mult`
+    /// carries the heavy-finisher multiplier. v5+.
+    RoomAttack {
+        spot: RoomSpot,
+        fx: f32,
+        fy: f32,
+        mult: f32,
+    },
+    /// Sound the Challenge Horn: the next unrecovered fragment guardian
+    /// hunts the caller down (or a brutal elite when none remain). v5+.
+    SoundHorn,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -99,6 +119,24 @@ pub struct PlayerInput {
     /// Craft request: an `ItemKind::as_u8` value to craft at a nearby Anvil this
     /// tick, or `None`. Consumed (taken) by the sim so it fires once per press.
     pub craft: Option<u8>,
+    /// Room-space position while inside a building interior (v5+; `None`
+    /// outdoors and for v4 peers). Lets the server simulate shared room
+    /// foes around the occupants.
+    pub room: Option<RoomSpot>,
+}
+
+/// Where a co-op player stands inside a building, in room coordinates
+/// (relative to the room center, like the client's `Interior::px/py`).
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct RoomSpot {
+    /// Building tile (matches a world `Structure`).
+    pub bx: i32,
+    pub by: i32,
+    /// Room floor (dungeons stack two).
+    pub floor: u8,
+    /// Player position within the room.
+    pub x: f32,
+    pub y: f32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -124,6 +162,42 @@ pub struct EnemySnapshot {
     pub state: AiState,
     pub windup: f32,
     pub flash: f32,
+}
+
+/// Something worth a toast/XP happened inside a shared room. Sequenced per
+/// room (`seq`); clients apply each `seq` once and ignore replays from full
+/// snapshots. XP and drops resolve client-side from the kind (see
+/// `EnemyKind::xp` and the vault/pantry tables), so events stay tiny.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum RoomEvent {
+    /// A foe fell: the killer earns its XP + drops.
+    Kill {
+        seq: u32,
+        killer: u32,
+        kind: EnemyKind,
+        x: f32,
+        y: f32,
+    },
+    /// Pantry/vault claimed: the claimer grants the loot locally.
+    Claim {
+        seq: u32,
+        claimer: u32,
+        item: ItemKind,
+        n: u32,
+        xp: u32,
+    },
+}
+
+/// Authoritative state of one entered building for one tick.
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct RoomSnapshot {
+    pub bx: i32,
+    pub by: i32,
+    pub floor: u8,
+    pub loot_taken: bool,
+    pub foes: Vec<EnemySnapshot>,
+    /// Recent kill/claim events (last few, sequenced).
+    pub events: Vec<RoomEvent>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -171,6 +245,11 @@ pub struct SimSnapshot {
     /// talking to a v2 peer that omits it.
     #[serde(default)]
     pub ng_cycle: u32,
+    /// Shared building interiors the viewer stands in (usually 0-1 rooms):
+    /// authoritative foe roster, loot flags and recent kill/claim events.
+    /// v5+; older snapshots simply omit it.
+    #[serde(default)]
+    pub rooms: Vec<RoomSnapshot>,
 }
 
 /// Incremental world update. Carries everything dynamic every tick
@@ -191,6 +270,9 @@ pub struct SimDelta {
     pub quest_stage: u8,
     pub iron_crafted: bool,
     pub ng_cycle: u32,
+    /// Shared interiors (full send every tick; tiny — only entered rooms
+    /// exist server-side).
+    pub rooms: Vec<RoomSnapshot>,
 }
 
 impl SimSnapshot {
@@ -229,6 +311,7 @@ impl SimSnapshot {
             quest_stage: self.quest_stage,
             iron_crafted: self.iron_crafted,
             ng_cycle: self.ng_cycle,
+            rooms: self.rooms.clone(),
         }
     }
 
@@ -253,6 +336,7 @@ impl SimSnapshot {
         self.quest_stage = d.quest_stage;
         self.iron_crafted = d.iron_crafted;
         self.ng_cycle = d.ng_cycle;
+        self.rooms = d.rooms;
     }
 }
 
@@ -262,8 +346,67 @@ pub fn encode_client(msg: &ClientMsg) -> Vec<u8> {
     bincode::serialize(msg).unwrap_or_default()
 }
 
+/// v4 `PlayerInput` (no trailing `room` field): stale tabs keep moving
+/// after the v5 upgrade instead of being dropped.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
+struct PlayerInputV4 {
+    move_x: f32,
+    move_y: f32,
+    dodge: bool,
+    attack: bool,
+    harvest: bool,
+    eat: bool,
+    shoot: bool,
+    build: Option<(StructureKind, i32, i32)>,
+    weapon: u8,
+    weapon_unlocked: u16,
+    enchant: u8,
+    craft: Option<u8>,
+}
+
+/// v4 wire messages (no interior variants): byte-compatible prefix of v5,
+/// so a v4 `Input` still decodes after the upgrade.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+enum ClientMsgV4 {
+    Join {
+        name: String,
+        token: Option<String>,
+        room: String,
+    },
+    Input(PlayerInputV4),
+    Leave,
+}
+
+impl ClientMsgV4 {
+    fn upgrade(self) -> ClientMsg {
+        match self {
+            ClientMsgV4::Join { name, token, room } => ClientMsg::Join { name, token, room },
+            ClientMsgV4::Input(i) => ClientMsg::Input(PlayerInput {
+                move_x: i.move_x,
+                move_y: i.move_y,
+                dodge: i.dodge,
+                attack: i.attack,
+                harvest: i.harvest,
+                eat: i.eat,
+                shoot: i.shoot,
+                build: i.build,
+                weapon: i.weapon,
+                weapon_unlocked: i.weapon_unlocked,
+                enchant: i.enchant,
+                craft: i.craft,
+                room: None,
+            }),
+            ClientMsgV4::Leave => ClientMsg::Leave,
+        }
+    }
+}
+
 pub fn decode_client_bin(bytes: &[u8]) -> Option<ClientMsg> {
-    bincode::deserialize(bytes).ok()
+    if let Ok(m) = bincode::deserialize::<ClientMsg>(bytes) {
+        return Some(m);
+    }
+    // Stale v4 tab: same enum prefix, shorter `Input` payload.
+    bincode::deserialize::<ClientMsgV4>(bytes).ok().map(|m| m.upgrade())
 }
 
 pub fn encode_server(msg: &ServerMsg) -> Vec<u8> {
@@ -312,12 +455,44 @@ struct NetPlayer {
     charge_t: f32,
 }
 
+/// One shared building interior on the server: the authoritative foe
+/// roster and loot flags for a (building tile, floor) room. Positions stay
+/// in room coordinates; occupants are tracked in `Simulation::inside`.
+struct ServerRoom {
+    kind: StructureKind,
+    floor: u8,
+    foes: Vec<Enemy>,
+    loot_taken: bool,
+    /// Monotonic event counter (see `RoomEvent::seq`).
+    seq: u32,
+    /// Recent kill/claim events (capped; clients dedupe by `seq`).
+    events: std::collections::VecDeque<RoomEvent>,
+}
+
+impl ServerRoom {
+    fn push_event(&mut self, ev: RoomEvent) {
+        self.events.push_back(ev);
+        while self.events.len() > 8 {
+            self.events.pop_front();
+        }
+    }
+}
+
 pub struct Simulation {
     world: WorldGen,
     cache: ChunkCache,
     nodes: NodeRegistry,
     enemies: EnemyRegistry,
     structures: Vec<Structure>,
+    /// Player-worked tiles (dig/place). Spawning, blocking and harvesting
+    /// read the edited tile; temperature/biome keep the base tile.
+    edits: TileEdits,
+    /// Shared building interiors, keyed by (building tile, floor). Created
+    /// on first entry; loot flags persist while the room lives.
+    rooms: HashMap<(i32, i32, u8), ServerRoom>,
+    /// Which building each player currently stands in (room coordinates,
+    /// refreshed every tick from `PlayerInput::room`).
+    inside: HashMap<u32, RoomSpot>,
     arrows: Vec<Arrow>,
     players: HashMap<u32, NetPlayer>,
     next_id: u32,
@@ -341,6 +516,15 @@ pub struct Simulation {
     /// cycle can be earned). Scales enemy damage (+25%/cycle) and day length
     /// (-17%/cycle) — the same formulas as single-player `ng_plus`.
     ng_cycle: u32,
+    /// Days survived (midnight crossings) for the Shattered Night schedule.
+    day_count: u32,
+    /// Whether tonight's bonus hunting pack already spawned (reset at dawn).
+    shatter_pack: bool,
+    /// Seconds until the next roaming elite / night-raider band. The
+    /// server runs these because co-op has no client spawning them (and
+    /// snapshots would wipe client-side spawns anyway).
+    elite_timer: f32,
+    raider_timer: f32,
 }
 
 impl Simulation {
@@ -376,6 +560,9 @@ impl Simulation {
             nodes: NodeRegistry::new(),
             enemies: EnemyRegistry::new(),
             structures,
+            edits: TileEdits::default(),
+            rooms: HashMap::new(),
+            inside: HashMap::new(),
             arrows: Vec::new(),
             players: HashMap::new(),
             next_id: 1,
@@ -394,6 +581,10 @@ impl Simulation {
             altar_used: false,
             colossus_defeated: false,
             ng_cycle: 0,
+            day_count: 0,
+            shatter_pack: false,
+            elite_timer: 60.0,
+            raider_timer: 75.0,
         }
     }
 
@@ -458,11 +649,183 @@ impl Simulation {
 
     pub fn remove_player(&mut self, id: u32) {
         self.players.remove(&id);
+        self.inside.remove(&id);
     }
 
     pub fn set_input(&mut self, id: u32, input: PlayerInput) {
         if let Some(p) = self.players.get_mut(&id) {
             p.input = input;
+        }
+    }
+
+    /// Step into a building interior: materialize the shared room (spawning
+    /// its dungeon patrol on first entry) and pay house pantries once per
+    /// building. Returns false for non-enterable tiles.
+    pub fn enter_interior(&mut self, id: u32, tx: i32, ty: i32) -> bool {
+        use crate::building::pantry_loot;
+        let kind = match self.structures.iter().find(|s| s.tx == tx && s.ty == ty) {
+            Some(s)
+                if matches!(
+                    s.kind,
+                    StructureKind::House
+                        | StructureKind::Cabin
+                        | StructureKind::Hut
+                        | StructureKind::Inn
+                        | StructureKind::Barn
+                        | StructureKind::Watchtower
+                        | StructureKind::Dungeon
+                ) =>
+            {
+                s.kind
+            }
+            _ => return false,
+        };
+        self.inside.insert(
+            id,
+            RoomSpot { bx: tx, by: ty, floor: 1, x: 0.0, y: 0.0 },
+        );
+        self.materialize_room(tx, ty, 1);
+        let is_dungeon = kind == StructureKind::Dungeon;
+        let room = match self.rooms.get_mut(&(tx, ty, 1)) {
+            Some(r) => r,
+            None => return false,
+        };
+        // Pantries pay on entry, once per building. Dungeons pay at the
+        // vault instead (see `step_rooms`).
+        if !is_dungeon && !room.loot_taken {
+            if let Some((item, n)) = pantry_loot(kind) {
+                room.loot_taken = true;
+                room.seq += 1;
+                let seq = room.seq;
+                room.push_event(RoomEvent::Claim { seq, claimer: id, item, n, xp: 0 });
+            }
+        }
+        true
+    }
+
+    /// Leave the current interior (also implied when `PlayerInput::room`
+    /// goes `None`).
+    pub fn exit_interior(&mut self, id: u32) {
+        self.inside.remove(&id);
+    }
+
+    /// Get-or-spawn the room for a (building, floor): stairs arrivals land
+    /// here with no loot events (fresh patrol on first visit, persistence
+    /// after — the stair-hop farm stays closed).
+    fn materialize_room(&mut self, bx: i32, by: i32, floor: u8) {
+        if self.rooms.contains_key(&(bx, by, floor)) {
+            return;
+        }
+        let kind = match self.structures.iter().find(|s| s.tx == bx && s.ty == by) {
+            Some(s)
+                if matches!(
+                    s.kind,
+                    StructureKind::House
+                        | StructureKind::Cabin
+                        | StructureKind::Hut
+                        | StructureKind::Inn
+                        | StructureKind::Barn
+                        | StructureKind::Watchtower
+                        | StructureKind::Dungeon
+                ) =>
+            {
+                s.kind
+            }
+            _ => return,
+        };
+        let foes = if kind == StructureKind::Dungeon {
+            crate::dungeon::dungeon_foes(bx, by, floor)
+                .into_iter()
+                .map(|(k, x, y)| Enemy::new(x, y, k))
+                .collect()
+        } else {
+            Vec::new()
+        };
+        self.rooms.insert(
+            (bx, by, floor),
+            ServerRoom { kind, floor, foes, loot_taken: false, seq: 0, events: VecDeque::new() },
+        );
+    }
+
+    /// Resolve a melee swing inside a room: authenticated weapon, shared
+    /// foe HP, kill events for XP/drops, scythe lifesteal. Stairs floors
+    /// materialize on demand (fresh patrol, like a first visit).
+    pub fn room_attack(&mut self, id: u32, spot: RoomSpot, fx: f32, fy: f32, mult: f32) {
+        // The swing must come from inside the room being hit.
+        match self.inside.get(&id) {
+            Some(cur) if cur.bx == spot.bx && cur.by == spot.by => {}
+            _ => return,
+        }
+        if let Some(cur) = self.inside.get_mut(&id) {
+            cur.x = spot.x;
+            cur.y = spot.y;
+            cur.floor = spot.floor;
+        }
+        let (weapon, enchant) = match self.players.get(&id) {
+            Some(np) => {
+                let w = WeaponKind::from_u8(np.input.weapon);
+                if (np.input.weapon_unlocked & (1u16 << (w as u16))) == 0 {
+                    return;
+                }
+                (w, np.input.enchant)
+            }
+            None => return,
+        };
+        let key = (spot.bx, spot.by, spot.floor);
+        // Stairs floors materialize on demand (see `materialize_room`).
+        self.materialize_room(spot.bx, spot.by, spot.floor);
+        let (dealt, scythe) = {
+            let room = match self.rooms.get_mut(&key) {
+                Some(r) => r,
+                None => return,
+            };
+            // Scratch attacker so the shared swing test applies in room space.
+            // Heavy finishers reach further and hit harder (client parity).
+            let mut dummy = Player::new(spot.x, spot.y);
+            dummy.facing = (fx, fy);
+            let reach = if mult > 1.0 { weapon.reach() * 1.2 } else { weapon.reach() };
+            let hits = crate::combat::swing_hits(&dummy, room.foes.iter_mut(), reach);
+            let mut dealt = 0.0f32;
+            let mut kills = Vec::new();
+            for foe in hits {
+                if !foe.alive() {
+                    continue;
+                }
+                let bs = crate::combat::backstab_mult(
+                    (spot.x, spot.y),
+                    (foe.x, foe.y),
+                    foe.facing,
+                    weapon,
+                );
+                let dmg = weapon.damage()
+                    * (1.0 + 0.15 * enchant as f32)
+                    * foe.kind.weakness_to(weapon)
+                    * bs
+                    * mult;
+                foe.tagged = true;
+                foe.take_damage(dmg);
+                foe.flash = 1.0;
+                dealt += dmg;
+                if !foe.alive() {
+                    kills.push((foe.kind, foe.x, foe.y));
+                }
+            }
+            room.foes.retain(|f| f.alive());
+            for (kind, x, y) in kills {
+                room.seq += 1;
+                let seq = room.seq;
+                room.push_event(RoomEvent::Kill { seq, killer: id, kind, x, y });
+            }
+            (dealt, weapon == WeaponKind::Scythe)
+        };
+        // Reaper's due, server-side (client HP is adopted from snapshots).
+        if scythe && dealt > 0.0 {
+            if let Some(np) = self.players.get_mut(&id) {
+                if np.player.alive {
+                    let max = np.player.max_hp();
+                    np.player.hp = (np.player.hp + dealt * 0.25).min(max);
+                }
+            }
         }
     }
 
@@ -490,9 +853,233 @@ impl Simulation {
         }
     }
 
+    /// Simulate shared interiors: foe AI around the occupants, spike
+    /// hazards, vault claims, death ejection. Mirrors the client's room
+    /// rules (`App::update_interior`) so solo and co-op converge.
+    fn step_rooms(&mut self, dt: f32) {
+        use crate::building::interior_dims;
+        use crate::dungeon::{dungeon_hazards, vault_loot};
+        // Living occupants by room.
+        let mut occ: HashMap<(i32, i32, u8), Vec<(u32, f32, f32)>> = HashMap::new();
+        for (id, spot) in &self.inside {
+            if self.players.get(id).map_or(false, |p| p.player.alive) {
+                occ.entry((spot.bx, spot.by, spot.floor))
+                    .or_default()
+                    .push((*id, spot.x, spot.y));
+            }
+        }
+        let mut dead: Vec<u32> = Vec::new();
+        for (key, members) in &occ {
+            let (bx, by, _floor) = *key;
+            let room = match self.rooms.get_mut(key) {
+                Some(r) => r,
+                None => continue,
+            };
+            let (rw, rh, _) = interior_dims(room.kind);
+            // Pace follows the strongest occupant (parity with the client).
+            let lvl = members
+                .iter()
+                .filter_map(|(id, _, _)| self.players.get(id))
+                .map(|p| p.player.level)
+                .max()
+                .unwrap_or(1);
+            for foe in room.foes.iter_mut() {
+                if !foe.alive() {
+                    continue;
+                }
+                foe.speed_mult = Enemy::speed_scale_for_level(lvl);
+                let (oid, tx, ty) = members
+                    .iter()
+                    .map(|(id, x, y)| (*id, *x, *y))
+                    .min_by(|a, b| {
+                        let da = (a.1 - foe.x).hypot(a.2 - foe.y);
+                        let db = (b.1 - foe.x).hypot(b.2 - foe.y);
+                        da.total_cmp(&db)
+                    })
+                    .unwrap();
+                if let Some(dmg) = foe.update((tx, ty), dt, |x, y| {
+                    x.abs() > rw as i32 + 1 || y.abs() > rh as i32 + 1
+                }) {
+                    // Crafted armor is client-side state the sim never sees;
+                    // rooms use raw contact damage (documented).
+                    if let Some(np) = self.players.get_mut(&oid) {
+                        np.player.take_damage(dmg);
+                        if !np.player.alive {
+                            dead.push(oid);
+                        }
+                    }
+                }
+                foe.x = foe.x.clamp(-rw + 0.3, rw - 0.3);
+                foe.y = foe.y.clamp(-rh + 0.3, rh - 0.3);
+            }
+            // Spike hazards sting occupants standing on them (flat drain, no
+            // i-frame gate — parity with the client's room rules).
+            if room.kind == StructureKind::Dungeon {
+                for (hx, hy) in dungeon_hazards(room.kind, room.floor) {
+                    for (oid, px, py) in members.iter().map(|(a, b, c)| (*a, *b, *c)) {
+                        if px.round() as i32 == hx && py.round() as i32 == hy {
+                            if let Some(np) = self.players.get_mut(&oid) {
+                                np.player.hp = (np.player.hp - 12.0 * dt).max(0.0);
+                                np.player.hurt_timer = 0.3;
+                                if np.player.hp <= 0.0 {
+                                    np.player.alive = false;
+                                    dead.push(oid);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Vault: the north-wall zone of floor 2 pays once per dungeon.
+            if room.kind == StructureKind::Dungeon && room.floor == 2 && !room.loot_taken {
+                let my2 = rh - 0.5;
+                let claimer = members
+                    .iter()
+                    .find(|(_, px, py)| (py + my2).abs() < 0.5 && px.abs() < 1.5)
+                    .map(|(id, _, _)| *id);
+                if let Some(oid) = claimer {
+                    let (item, n, xp) = vault_loot(bx, by);
+                    room.loot_taken = true;
+                    room.seq += 1;
+                    let seq = room.seq;
+                    room.push_event(RoomEvent::Claim { seq, claimer: oid, item, n, xp });
+                }
+            }
+        }
+        for id in dead {
+            self.inside.remove(&id);
+        }
+    }
+
+    /// Next unrecovered Crown Fragment guardian (campaign order), if any.
+    fn next_guardian(&self) -> Option<EnemyKind> {
+        const ORDER: [(u8, EnemyKind); 5] = [
+            (0, EnemyKind::Boss),
+            (1, EnemyKind::ScorpionQueen),
+            (2, EnemyKind::FrostGolem),
+            (3, EnemyKind::ToadKing),
+            (4, EnemyKind::OceanLeviathan),
+        ];
+        ORDER
+            .iter()
+            .find(|(b, _)| self.fragments_recovered & (1 << b) == 0)
+            .map(|(_, k)| *k)
+    }
+
+    /// Walkable tile 14-20 tiles from (px, py), deterministic per tick.
+    fn wilds_spot(&mut self, px: f32, py: f32, salt: f32) -> Option<(i32, i32)> {
+        let ang = (self.tick as f32 * 0.37 + salt + px * 0.7).fract()
+            * std::f32::consts::TAU;
+        let dist = 14.0 + (self.tick as f32 * 0.53 + salt).fract() * 6.0;
+        let tx = (px + ang.cos() * dist).floor() as i32;
+        let ty = (py + ang.sin() * dist).floor() as i32;
+        let tile = edited_tile(&self.edits, &self.world, &mut self.cache, tx, ty);
+        tile.walkable().then_some((tx, ty))
+    }
+
+    /// Sound the Challenge Horn for a player: guardian (or brutal elite).
+    pub fn sound_horn(&mut self, id: u32) {
+        let (px, py) = match self.players.get(&id) {
+            Some(p) if p.player.alive => (p.player.x, p.player.y),
+            _ => return,
+        };
+        let (kind, elite) = match self.next_guardian() {
+            Some(k) => (k, 1.0),
+            None => (EnemyKind::Brute, 3.0),
+        };
+        if let Some((tx, ty)) = self.wilds_spot(px, py, 1.7) {
+            self.enemies
+                .spawn_elite(kind, tx as f32 + 0.5, ty as f32 + 0.5, elite);
+        }
+    }
+
+    /// Roaming elites + night raiders (parity with the client's pressure
+    /// systems — snapshots would wipe client-side spawns, so the server
+    /// runs these itself; darkness doubles the pace on both sides).
+    fn step_events(&mut self, dt: f32) {
+        use crate::daynight::{daylight, NIGHTFALL};
+        let night = daylight(self.time_of_day) < NIGHTFALL;
+        let pace = if night { 2.0 } else { 1.0 };
+        self.elite_timer -= dt * pace;
+        if self.elite_timer <= 0.0 {
+            self.elite_timer = 70.0 + (self.tick as f32 * 0.37).fract() * 70.0;
+            let ids: Vec<u32> = self
+                .players
+                .iter()
+                .filter(|(_, p)| p.player.alive)
+                .map(|(id, _)| *id)
+                .collect();
+            if !ids.is_empty() {
+                let id = ids[(self.tick as usize) % ids.len()];
+                self.sound_horn(id);
+            }
+        }
+        self.raider_timer -= dt * pace;
+        if self.raider_timer <= 0.0 {
+            self.raider_timer = 55.0 + (self.tick as f32 * 0.53).fract() * 45.0;
+            if night && !self.structures.is_empty() {
+                let idx = (self.tick as usize) % self.structures.len();
+                let (sx, sy) = {
+                    let s = &self.structures[idx];
+                    (s.tx, s.ty)
+                };
+                for i in 0..2 {
+                    let ang = (self.tick as f32 * 0.71 + i as f32 * 3.1).fract()
+                        * std::f32::consts::TAU;
+                    let tx = (sx as f32 + ang.cos() * 4.0) as i32;
+                    let ty = (sy as f32 + ang.sin() * 4.0) as i32;
+                    let tile =
+                        edited_tile(&self.edits, &self.world, &mut self.cache, tx, ty);
+                    if tile.walkable() {
+                        self.enemies.spawn_elite(
+                            EnemyKind::Raider,
+                            tx as f32 + 0.5,
+                            ty as f32 + 0.5,
+                            1.0,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     pub fn step(&mut self, dt: f32) {
         self.tick += 1;
-        self.time_of_day = (self.time_of_day + dt / self.ng_day_length()).rem_euclid(1.0);
+        let nt = (self.time_of_day + dt / self.ng_day_length()).rem_euclid(1.0);
+        if nt < self.time_of_day {
+            // Midnight crossing: new day, tonight's pack slate resets.
+            self.day_count += 1;
+            self.shatter_pack = false;
+        }
+        self.time_of_day = nt;
+        // Shattered Nights: every 4th night a bonus hunting pack stalks a
+        // random player till dawn (mirrors the client's schedule).
+        if !self.shatter_pack
+            && crate::daynight::shattered_night(self.day_count, self.seed)
+            && crate::daynight::daylight(self.time_of_day) < crate::daynight::NIGHTFALL
+        {
+            if let Some(id) = self.players.keys().next().copied() {
+                let (px, py) = {
+                    let p = &self.players[&id];
+                    (p.player.x, p.player.y)
+                };
+                let mut spawned = false;
+                for (i, kind) in [EnemyKind::Raider, EnemyKind::Wolf].into_iter().enumerate() {
+                    let ang = (self.tick as f32 * 0.37 + i as f32 * 2.4).fract()
+                        * std::f32::consts::TAU;
+                    let tx = (px + ang.cos() * 16.0).floor() as i32;
+                    let ty = (py + ang.sin() * 16.0).floor() as i32;
+                    let tile = edited_tile(&self.edits, &self.world, &mut self.cache, tx, ty);
+                    if tile.walkable() {
+                        // Pace is re-scaled per frame in `step_enemies`, like
+                        // every other foe.
+                        self.enemies.spawn_elite(kind, tx as f32 + 0.5, ty as f32 + 0.5, 1.5);
+                        spawned = true;
+                    }
+                }
+                self.shatter_pack = spawned;
+            }
+        }
         self.weather_timer -= dt;
         if self.weather_timer <= 0.0 {
             let r = (self.time_of_day * 311.0 + self.tick as f32 * 0.013).fract();
@@ -510,6 +1097,36 @@ impl Simulation {
         let temp = temperature(self.time_of_day);
         let wet = self.weather == 1;
 
+        // Room presence follows the clients' per-tick room spots. Occupants
+        // keep ticking survival but don't walk, swing, harvest or build on
+        // the surface while inside (their room body is simulated below).
+        let spots: Vec<(u32, Option<RoomSpot>)> = self
+            .players
+            .iter()
+            .map(|(id, np)| (*id, np.input.room))
+            .collect();
+        for (id, spot) in spots {
+            match spot {
+                Some(s) => {
+                    self.inside.insert(id, s);
+                    // Stairs arrivals land here: the floor room must exist
+                    // before `step_rooms` runs (vault zones pay on presence).
+                    self.materialize_room(s.bx, s.by, s.floor);
+                    if let Some(np) = self.players.get_mut(&id) {
+                        np.input.move_x = 0.0;
+                        np.input.move_y = 0.0;
+                        np.input.attack = false;
+                        np.input.harvest = false;
+                        np.input.dodge = false;
+                        np.input.build = None;
+                    }
+                }
+                None => {
+                    self.inside.remove(&id);
+                }
+            }
+        }
+
         self.spawn_near_players(dt);
 
         let spawn = self.spawn_point;
@@ -518,6 +1135,7 @@ impl Simulation {
                 p,
                 &self.world,
                 &mut self.cache,
+                &self.edits,
                 &mut self.enemies,
                 &mut self.structures,
                 &mut self.nodes,
@@ -533,6 +1151,8 @@ impl Simulation {
         }
 
         self.step_enemies(dt);
+        self.step_rooms(dt);
+        self.step_events(dt);
         self.step_arrows(dt);
         self.step_structures(dt);
     }
@@ -549,10 +1169,15 @@ impl Simulation {
                     if !seen.insert((tx, ty)) {
                         continue;
                     }
-                    let tile = tile_at(&self.world, &mut self.cache, tx, ty);
+                    let tile = edited_tile(&self.edits, &self.world, &mut self.cache, tx, ty);
                     if let Some(kind) = spawner_on(tx, ty, tile) {
                         // Nocturnal enemies only emerge after dark.
                         if kind.nocturnal() && daylight(self.time_of_day) > 0.5 {
+                            continue;
+                        }
+                        // Lit ground is safe ground: light around a home
+                        // suppresses spawns (the Minecraft torch rule).
+                        if lit_within(&self.structures, tx, ty, LIGHT_SAFE_RADIUS) {
                             continue;
                         }
                         self.enemies.get(tx, ty, kind, dt);
@@ -565,12 +1190,13 @@ impl Simulation {
 fn tile_blocked(
     world: &WorldGen,
     cache: &mut ChunkCache,
+    edits: &TileEdits,
     structures: &[Structure],
     nodes: &NodeRegistry,
     tx: i32,
     ty: i32,
 ) -> bool {
-    let tile = tile_at(world, cache, tx, ty);
+    let tile = edited_tile(edits, world, cache, tx, ty);
     if !tile.walkable() {
         return true;
     }
@@ -593,6 +1219,7 @@ fn step_player(
     np: &mut NetPlayer,
     world: &WorldGen,
     cache: &mut ChunkCache,
+    edits: &TileEdits,
     enemies: &mut EnemyRegistry,
     structures: &mut Vec<Structure>,
     nodes: &mut NodeRegistry,
@@ -637,12 +1264,12 @@ fn step_player(
         let step = MOVE_SPEED * dt;
         let tx = np.player.x + nx * step;
         let ty = np.player.y + ny * step;
-        if !Self::tile_blocked(world, cache, structures, nodes, tx as i32, ty as i32) {
+        if !Self::tile_blocked(world, cache, edits, structures, nodes, tx as i32, ty as i32) {
             np.player.x = tx;
             np.player.y = ty;
-        } else if !Self::tile_blocked(world, cache, structures, nodes, tx as i32, np.player.y as i32) {
+        } else if !Self::tile_blocked(world, cache, edits, structures, nodes, tx as i32, np.player.y as i32) {
             np.player.x = tx;
-        } else if !Self::tile_blocked(world, cache, structures, nodes, np.player.x as i32, ty as i32) {
+        } else if !Self::tile_blocked(world, cache, edits, structures, nodes, np.player.x as i32, ty as i32) {
             np.player.y = ty;
         }
         np.player.facing = (nx, ny);
@@ -723,9 +1350,23 @@ fn step_player(
     }
 
     if np.input.harvest && np.harvest_cd <= 0.0 {
-        if let Some((tx, ty, kind)) = Self::node_in_range(world, cache, nodes, np.player.x, np.player.y) {
-            if let Some(item) = nodes.chop(tx, ty, kind) {
-                np.inv.add(item, 1);
+        if let Some((tx, ty, kind)) = Self::node_in_range(world, cache, edits, nodes, np.player.x, np.player.y) {
+            // Work tools bite deeper here too (parity with the client).
+            let power = np.player.chop_power(kind);
+            let tool = np.player.work_tool(kind);
+            let mut hit = false;
+            for _ in 0..power {
+                if let Some(item) = nodes.chop(tx, ty, kind) {
+                    np.inv.add(item, 1);
+                    hit = true;
+                } else {
+                    break;
+                }
+            }
+            if hit {
+                if let Some(t) = tool {
+                    np.player.wear_tool(t);
+                }
                 np.harvest_cd = 0.35;
             }
         }
@@ -781,6 +1422,7 @@ fn step_player(
     fn node_in_range(
         world: &WorldGen,
         cache: &mut ChunkCache,
+        edits: &TileEdits,
         nodes: &NodeRegistry,
         x: f32,
         y: f32,
@@ -792,7 +1434,7 @@ fn step_player(
             for dy in -r..=r {
                 let tx = cx + dx;
                 let ty = cy + dy;
-                let tile = tile_at(world, cache, tx, ty);
+                let tile = edited_tile(edits, world, cache, tx, ty);
                 if let Some(kind) = resource_on(tx, ty, tile) {
                     if !nodes.is_depleted(tx, ty) {
                         return Some((tx, ty, kind));
@@ -808,10 +1450,11 @@ fn step_player(
             self.players.values().map(|p| (p.player.x, p.player.y)).collect();
         let world = &self.world;
         let cache = &mut self.cache;
+        let edits = &self.edits;
         let structs = &self.structures;
         let nodes = &self.nodes;
         let mut blocked = |tx: i32, ty: i32| -> bool {
-            let tile = tile_at(world, cache, tx, ty);
+            let tile = edited_tile(edits, world, cache, tx, ty);
             if !tile.walkable() {
                 return true;
             }
@@ -1205,6 +1848,8 @@ fn step_player(
             quest_stage: self.quest.stage,
             iron_crafted: self.iron_crafted,
             ng_cycle: self.ng_cycle,
+            // `snapshot_for` fills the viewer's rooms after culling.
+            rooms: Vec::new(),
         }
     }
 
@@ -1234,7 +1879,38 @@ fn step_player(
             let (sx, sy) = (res.tx as f32 + 0.5, res.ty as f32 + 0.5);
             (sx - vx).powi(2) + (sy - vy).powi(2) <= r2
         });
+        // Occupants get their room: authoritative foes, loot flags, events.
+        if let Some(spot) = self.inside.get(&viewer) {
+            if let Some(room) = self.rooms.get(&(spot.bx, spot.by, spot.floor)) {
+                snap.rooms.push(room_snapshot(room, spot.bx, spot.by, spot.floor));
+            }
+        }
         snap
+    }
+}
+
+/// Flatten one server room for the wire (see `RoomSnapshot`).
+fn room_snapshot(room: &ServerRoom, bx: i32, by: i32, floor: u8) -> RoomSnapshot {
+    RoomSnapshot {
+        bx,
+        by,
+        floor,
+        loot_taken: room.loot_taken,
+        foes: room
+            .foes
+            .iter()
+            .map(|e| EnemySnapshot {
+                x: e.x,
+                y: e.y,
+                kind: e.kind,
+                hp: e.hp,
+                facing: e.facing,
+                state: e.state,
+                windup: e.windup,
+                flash: e.flash,
+            })
+            .collect(),
+        events: room.events.iter().cloned().collect(),
     }
 }
 
@@ -1276,6 +1952,7 @@ mod tests {
             weapon_unlocked: 1, // Fists
             enchant: 0,
             craft: None,
+            room: None,
         }
     }
 
@@ -1389,7 +2066,7 @@ mod tests {
         for k in 0..2 {
             sim.enemies.get(px.floor() as i32 + 1 + k, gy, EnemyKind::Slime, 0.0);
         }
-        let mut a = Arrow::bolt(px.floor() + 0.5, py, 1.0, 0.0, 500.0);
+        let a = Arrow::bolt(px.floor() + 0.5, py, 1.0, 0.0, 500.0);
         sim.arrows.push(a);
         sim.set_input(id, input());
         for _ in 0..10 {
@@ -1755,5 +2432,280 @@ mod tests {
         let mut merged = full;
         merged.apply_delta(d);
         assert_eq!(merged.ng_cycle, 3, "delta merge must preserve the cycle");
+    }
+
+    #[test]
+    fn shattered_night_sends_one_hunting_pack() {
+        use crate::enemy::EnemyKind;
+        // Seed 1337 shatters on day 2: dusk brings exactly one bonus pack.
+        let mut sim = Simulation::new(1337);
+        sim.add_player("hero".into(), None);
+        sim.day_count = 2;
+        sim.time_of_day = 0.0; // deep night
+        fn pack(sim: &Simulation) -> usize {
+            sim.enemies
+                .enemies()
+                .filter(|e| {
+                    matches!(e.kind, EnemyKind::Raider | EnemyKind::Wolf) && e.elite > 1.0
+                })
+                .count()
+        }
+        for _ in 0..400 {
+            sim.step(1.0 / 30.0);
+            if pack(&sim) == 2 {
+                break;
+            }
+        }
+        assert_eq!(pack(&sim), 2, "one Raider + one Wolf elite, once per night");
+        for _ in 0..100 {
+            sim.step(1.0 / 30.0);
+        }
+        assert_eq!(pack(&sim), 2, "no second pack the same night");
+    }
+
+    #[test]
+    fn server_sends_elites_raiders_and_horn_answers() {
+        // Roaming elite fires when its timer lapses: the first unrecovered
+        // guardian hunts (elite 1.0 bosses are the summons, not brutes).
+        let mut sim = Simulation::new(1337);
+        sim.add_player("hero".into(), None);
+        sim.elite_timer = 0.01;
+        for _ in 0..5 {
+            sim.step(1.0 / 30.0);
+        }
+        assert!(
+            sim.enemies.enemies().any(|e| e.kind == EnemyKind::Boss),
+            "the Forest Warden roams first"
+        );
+        // Night raiders muster around structures after dark.
+        let mut sim = Simulation::new(1337);
+        sim.add_player("hero".into(), None);
+        sim.time_of_day = 0.0;
+        for _ in 0..40 {
+            sim.raider_timer = 0.01;
+            sim.step(1.0 / 30.0);
+            if sim.enemies.enemies().any(|e| e.kind == EnemyKind::Raider) {
+                break;
+            }
+        }
+        assert!(
+            sim.enemies
+                .enemies()
+                .any(|e| e.kind == EnemyKind::Raider),
+            "raiders muster at night"
+        );
+        // The horn answers with the first unrecovered guardian.
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        sim.sound_horn(id);
+        assert!(
+            sim.enemies
+                .enemies()
+                .any(|e| e.kind == EnemyKind::Boss),
+            "the Forest Warden answers first"
+        );
+        // Unknown ids summon nothing (and panic nothing).
+        sim.sound_horn(9999);
+        assert!(sim.enemies.enemies().count() >= 1);
+    }
+
+    #[test]
+    fn co_op_rooms_share_foes_and_pay_once() {
+        use crate::building::Structure;
+        let mut sim = Simulation::new(1337);
+        let a = sim.add_player("a".into(), None);
+        let b = sim.add_player("b".into(), None);
+        sim.structures.push(Structure { tx: 100, ty: 100, kind: StructureKind::Dungeon });
+        sim.structures.push(Structure { tx: 104, ty: 100, kind: StructureKind::House });
+        // Bare ground rejects entry.
+        assert!(!sim.enter_interior(a, 0, 0));
+        // Dungeon entry spawns the floor-1 patrol once, shared by late joiners.
+        assert!(sim.enter_interior(a, 100, 100));
+        assert_eq!(sim.rooms.get(&(100, 100, 1)).map(|r| r.foes.len()), Some(2));
+        assert!(sim.enter_interior(b, 100, 100));
+        assert_eq!(sim.rooms.get(&(100, 100, 1)).map(|r| r.foes.len()), Some(2));
+        // Fists (4 dmg x2 swings) fell the 8 HP bats from room center.
+        // (The stock `input()` carries the Fists unlock bit the stock
+        // default lacks — same as a real client's first sync.)
+        sim.set_input(a, input());
+        let spot = RoomSpot { bx: 100, by: 100, floor: 1, x: 0.0, y: 0.0 };
+        sim.room_attack(a, spot, 1.0, 0.0, 1.0);
+        sim.room_attack(a, spot, 1.0, 0.0, 1.0); // bats carry 8 HP, fists hit 4
+        assert_eq!(
+            sim.rooms.get(&(100, 100, 1)).map(|r| r.foes.len()),
+            Some(0),
+            "shared roster: one swing clears for everyone"
+        );
+        // B sees the shared empty roster plus both kill events naming A.
+        let snap_b = sim.snapshot_for(b);
+        assert_eq!(snap_b.rooms.len(), 1);
+        assert!(snap_b.rooms[0].foes.is_empty());
+        assert_eq!(snap_b.rooms[0].events.len(), 2);
+        assert!(matches!(
+            snap_b.rooms[0].events[0],
+            RoomEvent::Kill { killer, .. } if killer == a
+        ));
+        // House pantry pays once across players.
+        assert!(sim.enter_interior(a, 104, 100));
+        assert_eq!(sim.rooms.get(&(104, 100, 1)).map(|r| r.events.len()), Some(1));
+        assert!(sim.enter_interior(b, 104, 100));
+        assert_eq!(
+            sim.rooms.get(&(104, 100, 1)).map(|r| r.events.len()),
+            Some(1),
+            "second entry must not re-pay the pantry"
+        );
+    }
+
+    #[test]
+    fn co_op_vault_claims_once_at_the_back_wall() {
+        use crate::building::Structure;
+        let mut sim = Simulation::new(1337);
+        let a = sim.add_player("a".into(), None);
+        let b = sim.add_player("b".into(), None);
+        sim.structures.push(Structure { tx: 100, ty: 100, kind: StructureKind::Dungeon });
+        assert!(sim.enter_interior(a, 100, 100));
+        assert!(sim.enter_interior(b, 100, 100));
+        // A climbs to the vault back wall (dungeon rh 2.5 -> my2 2.0).
+        let mut i = input();
+        i.room = Some(RoomSpot { bx: 100, by: 100, floor: 2, x: 0.0, y: -1.6 });
+        sim.set_input(a, i);
+        sim.step(1.0 / 30.0);
+        let room = sim.rooms.get(&(100, 100, 2)).expect("stairs floor materializes");
+        assert!(room.loot_taken, "vault claims on zone entry");
+        assert_eq!(room.events.len(), 1);
+        assert!(matches!(
+            room.events[0],
+            RoomEvent::Claim { claimer, xp: 60, .. } if claimer == a
+        ));
+        // B walks the same wall: nothing re-pays.
+        let mut j = input();
+        j.room = Some(RoomSpot { bx: 100, by: 100, floor: 2, x: 0.5, y: -1.6 });
+        sim.set_input(b, j);
+        for _ in 0..5 {
+            sim.step(1.0 / 30.0);
+        }
+        assert_eq!(
+            sim.rooms.get(&(100, 100, 2)).map(|r| r.events.len()),
+            Some(1),
+            "vault pays once per dungeon"
+        );
+    }
+
+    #[test]
+    fn torchlight_suppresses_nearby_spawns() {
+        use crate::building::{lit_within, Structure, LIGHT_SAFE_RADIUS};
+        // Locate a spawner tile within the light bubble of the spawn plaza.
+        let mut probe = Simulation::new(1337);
+        let (px, py) = probe.spawn_point;
+        let mut target = None;
+        for dx in -14..=14 {
+            for dy in -14..=14 {
+                let tx = px.floor() as i32 + dx;
+                let ty = py.floor() as i32 + dy;
+                let tile = tile_at(&probe.world, &mut probe.cache, tx, ty);
+                if let Some(kind) = spawner_on(tx, ty, tile) {
+                    // Skip ground the village lamps already keep safe: the
+                    // test needs a tile that hydrates on bare ground.
+                    if lit_within(&probe.structures, tx, ty, LIGHT_SAFE_RADIUS) {
+                        continue;
+                    }
+                    target = Some((tx, ty, kind));
+                    break;
+                }
+            }
+            if target.is_some() {
+                break;
+            }
+        }
+        let (tx, ty, _) = target.expect("seed 1337 needs a spawner near spawn");
+        let near = |sim: &Simulation| {
+            sim.enemies.enemies().any(|e| {
+                (e.x - (tx as f32 + 0.5)).hypot(e.y - (ty as f32 + 0.5)) < 1.5
+            })
+        };
+        // Bare ground at night: the tile hydrates a foe.
+        let mut bare = Simulation::new(1337);
+        bare.add_player("a".into(), None);
+        bare.time_of_day = 0.0;
+        for _ in 0..10 {
+            bare.step(1.0 / 30.0);
+        }
+        for e in bare.enemies.enemies() {
+            println!("DBG foe {:?} at ({:.1},{:.1})", e.kind, e.x, e.y);
+        }
+        assert!(near(&bare), "spawner tile should hydrate without light");
+        // Same seed with a torch on the tile: nothing spawns near it.
+        let mut lit = Simulation::new(1337);
+        lit.add_player("b".into(), None);
+        lit.time_of_day = 0.0;
+        lit.structures.push(Structure { tx, ty, kind: StructureKind::Torch });
+        assert!(lit_within(&lit.structures, tx, ty, LIGHT_SAFE_RADIUS));
+        for _ in 0..10 {
+            lit.step(1.0 / 30.0);
+        }
+        assert!(!near(&lit), "torchlight must suppress the spawner tile");
+    }
+
+    #[test]
+    fn v5_wire_round_trips_through_bincode() {
+        // Every new v5 message shape must survive the real binary wire
+        // (browsers fall back to JSON, so a bincode-only skew would hide).
+        let spot = RoomSpot { bx: 6, by: 5, floor: 2, x: 1.5, y: -1.5 };
+        for msg in [
+            ClientMsg::EnterInterior { tx: 6, ty: 5 },
+            ClientMsg::ExitInterior,
+            ClientMsg::RoomAttack { spot, fx: 1.0, fy: 0.0, mult: 1.5 },
+            ClientMsg::Input(PlayerInput { room: Some(spot), ..input() }),
+            ClientMsg::Leave,
+        ] {
+            let bytes = encode_client(&msg);
+            let back = decode_client_bin(&bytes).expect("v5 msg must decode");
+            let re = encode_client(&back);
+            assert_eq!(bytes, re, "message must round-trip byte-identically");
+        }
+        // A stale v4 tab (shorter `Input`) still decodes, roomless.
+        let old = ClientMsgV4::Input(PlayerInputV4 {
+            move_x: 1.0,
+            move_y: 0.0,
+            dodge: false,
+            attack: true,
+            harvest: false,
+            eat: false,
+            shoot: false,
+            build: None,
+            weapon: 0,
+            weapon_unlocked: 1,
+            enchant: 0,
+            craft: None,
+        });
+        let bytes = bincode::serialize(&old).expect("v4 encodes");
+        match decode_client_bin(&bytes).expect("v4 input must decode") {
+            ClientMsg::Input(i) => {
+                assert_eq!(i.move_x, 1.0);
+                assert!(i.attack);
+                assert_eq!(i.room, None);
+            }
+            other => panic!("v4 input upgraded wrong: {other:?}"),
+        }
+        // Snapshots carrying rooms survive both directions.
+        let mut sim = Simulation::new(1337);
+        let a = sim.add_player("a".into(), None);
+        sim.structures.push(crate::building::Structure {
+            tx: 100,
+            ty: 100,
+            kind: crate::building::StructureKind::Dungeon,
+        });
+        assert!(sim.enter_interior(a, 100, 100));
+        let mut i = input();
+        i.room = Some(RoomSpot { bx: 100, by: 100, floor: 1, x: 0.0, y: 0.0 });
+        sim.set_input(a, i);
+        sim.step(1.0 / 30.0);
+        let snap = sim.snapshot_for(a);
+        assert_eq!(snap.rooms.len(), 1, "occupant sees their room");
+        assert_eq!(snap.rooms[0].foes.len(), 2, "patrol rides the snapshot");
+        let bytes = encode_server(&ServerMsg::Snapshot(snap));
+        let back = decode_server_bin(&bytes).expect("snapshot must decode");
+        let re = encode_server(&back);
+        assert_eq!(bytes, re, "snapshot must round-trip byte-identically");
     }
 }
