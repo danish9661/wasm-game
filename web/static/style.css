@@ -114,7 +114,7 @@ a:focus-visible {
   gap: 8px;
 }
 
-.hud-row:first-child {
+.hud-row.hud-vitals {
   flex-direction: column;
   align-items: stretch;
   gap: 5px;
@@ -268,7 +268,32 @@ a:focus-visible {
   background: var(--sf-dim);
 }
 #fps, #hud-weapon, #hud-room { pointer-events: auto; cursor: pointer; }
-body.hide-debug #hud .hud-row:last-child { display: none; }
+
+/* Details tab: collapses the chip field + debug row into vitals only.
+   Desktop keeps the old FPS-tap shortcut working through the same class. */
+#hud-toggle {
+  display: none;
+  position: absolute;
+  right: -13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 44px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sf-ember);
+  background: var(--sf-panel-solid);
+  border: 1px solid var(--sf-line-gold);
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 12;
+}
+body.hud-collapsed #hud-chips,
+body.hud-collapsed #hud-debug { display: none; }
+body.hide-debug #hud-debug { display: none; }
 
 /* ============================================================
    Quest ribbon — top center oath
@@ -1085,50 +1110,228 @@ body.mobile .wslot { min-width: 52px; min-height: 52px; }
 /* ============================================================
    Responsive + motion preferences
    ============================================================ */
+/* Legacy narrow-window tweaks, superseded by the phone system below.
+   Kept so small desktop windows still collapse gracefully. */
 body.mobile #hud { min-width: 0; max-width: 62vw; padding: 8px 10px; font-size: 11px; }
 body.mobile .hud-row.inv-row { max-width: 58vw; }
 body.mobile #hud-coords, body.mobile #hud-mobs { display: none; }
 
-@media (max-width: 700px) {
-  #hud { min-width: 0; max-width: 60vw; gap: 6px; }
-  .bar { grid-template-columns: 34px 1fr 26px; }
-  .inv-chip { font-size: 10px; padding: 1px 5px; }
-  #hud .hud-row:last-child { display: none; }
-  body.mobile #hud .hud-row:last-child { display: none; }
+/* ============================================================
+   Responsive: the phone keeps vitals + quest + one-tap actions;
+   everything else docks out of the way. Touch targets stay >= 44px.
+   ============================================================ */
+body.mobile #hud {
+  min-width: 0;
+  width: min(300px, 64vw);
+  max-width: 64vw;
+  padding: 8px 10px;
+  font-size: 11px;
+  gap: 6px;
+}
+body.mobile .hud-row.inv-row { max-width: 100%; gap: 4px; }
+body.mobile #hud-coords, body.mobile #hud-mobs, body.mobile #hud-seed { display: none; }
+/* Phones get the collapse tab; tablets in landscape keep full detail. */
+body.mobile #hud-toggle { display: block; }
+/* Coarse pointers: collapse chips by default is the JS default; CSS just
+   makes the collapsed tablet read clean at phone widths. */
+body.mobile.hud-collapsed #hud { width: auto; min-width: 0; }
 
-  #invbtn, #codexbtn, #help, #gear { width: 42px; height: 42px; top: 10px; }
-  #gear { right: 10px; }
-  #help { right: 58px; }
-  #invbtn { right: 106px; }
-  #codexbtn { right: 154px; }
+@media (max-width: 700px) and (orientation: portrait) {
+  /* Portrait phones (the landscape dock below overrides for short +
+     wide screens). */
+  #hud {
+    min-width: 0;
+    width: min(280px, calc(100vw - 116px));
+    max-width: calc(100vw - 116px);
+    gap: 6px;
+    padding: 8px 32px 8px 10px;
+    box-sizing: border-box;
+  }
+  #hud-toggle { display: block; }
+  .bar { grid-template-columns: 34px 1fr 26px; gap: 6px; }
+  .bar-track { height: 10px; }
+  .bar-label { font-size: 9px; }
+  .bar-num { font-size: 11px; width: 26px; }
+  .inv-chip { font-size: 11px; padding: 3px 7px; }
+  .inv-clock { font-size: 11px; }
 
-  #quest { top: 60px; font-size: 12px; max-width: calc(100vw - 32px); }
-  #minimap { width: 88px; height: 88px; top: 58px; right: 10px; }
+  /* Right dock: single left-hand column, clear of the touch deck and
+     the weapon belt. Bottom-anchored so it never collides with the
+     top HUD tablet or the minimap on short screens. */
+  #invbtn, #codexbtn, #help, #gear {
+    top: auto;
+    left: 12px;
+    right: auto;
+    width: 48px;
+    height: 48px;
+    font-size: 19px;
+    border-radius: 12px;
+  }
+  #gear { bottom: calc(300px + env(safe-area-inset-bottom, 0px)); }
+  #help { bottom: calc(244px + env(safe-area-inset-bottom, 0px)); }
+  #invbtn { bottom: calc(188px + env(safe-area-inset-bottom, 0px)); }
+  #codexbtn { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+
+  #quest {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: auto;
+    right: 10px;
+    transform: none;
+    width: 76px;
+    max-width: 76px;
+    font-size: 10px;
+    text-align: center;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    padding: 6px 8px;
+  }
+  #minimap { width: 76px; height: 76px; top: auto; bottom: calc(300px + env(safe-area-inset-bottom, 0px)); right: 10px; }
   .mm-legend { display: none; }
   #compass { display: none !important; }
-  #inventory { width: 210px; top: 58px; right: 10px; max-height: calc(100vh - 260px); }
-  #overlay-box, .overlay #overlay-box { padding: 20px 18px; }
+  #inventory {
+    top: auto;
+    bottom: calc(200px + env(safe-area-inset-bottom, 0px));
+    right: 10px;
+    left: auto;
+    width: min(300px, calc(100vw - 20px));
+    max-height: 44vh;
+    font-size: 13px;
+  }
+  .recipe { padding: 9px 10px; }
+  .recipe .rl { font-size: 13px; }
+  #overlay-box, .overlay #overlay-box {
+    width: calc(100vw - 20px);
+    max-height: 86vh;
+    padding: 20px 18px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .menu-btns { gap: 10px; }
+  .menu-btn { font-size: 14px; padding: 12px 16px; min-height: 44px; }
+  .menu-btn.small { font-size: 13px; padding: 10px 14px; min-height: 44px; }
   #bootmenu h2 { font-size: 30px; }
-  #buildhint { bottom: 140px; font-size: 12px; }
-  #altar-prompt { bottom: 140px; font-size: 12px; }
-  #anvil-prompt, #water-prompt { bottom: 190px; font-size: 12px; }
-  #joystick { width: 100px; height: 100px; left: 14px; bottom: 14px; }
-  #joy-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
-  .touch-actions { gap: 5px; }
-  .tbtn { width: 48px; height: 48px; }
+  #bootmenu .menu-btns .menu-btn { flex: 1 1 40%; }
+  #help-panel .help-grid { grid-template-columns: 1fr; gap: 2px; }
+  #help-panel .help-grid .k { justify-self: start; }
+  #help-panel .help-grid .d { margin-bottom: 8px; }
+  /* Prompts stack above the touch deck instead of under thumbs. */
+  #toasts { bottom: calc(210px + env(safe-area-inset-bottom, 0px)); width: calc(100vw - 24px); }
+  .toast { font-size: 13px; max-width: none; width: 100%; text-align: center; }
+  #buildhint { bottom: calc(200px + env(safe-area-inset-bottom, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
+  #touch-build { top: calc(52px + env(safe-area-inset-top, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
+  #altar-prompt { bottom: calc(250px + env(safe-area-inset-bottom, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
+  #anvil-prompt, #water-prompt { bottom: calc(292px + env(safe-area-inset-bottom, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
+  /* Touch deck: joystick bottom-left, weapon belt above it, action
+     pads bottom-right. Three zones, no overlaps at 390px wide. */
+  #touch { padding: 10px; gap: 10px; justify-content: flex-end; align-items: flex-end; }
+  #joystick { width: 128px; height: 128px; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  #joy-knob { width: 54px; height: 54px; margin: -27px 0 0 -27px; }
+  body.mobile #weaponbar {
+    left: 12px;
+    right: auto;
+    transform: none;
+    bottom: calc(152px + env(safe-area-inset-bottom, 0px));
+    max-width: 124px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    justify-content: flex-start;
+    gap: 4px;
+    z-index: 11;
+  }
+  body.mobile.hud-collapsed #weaponbar,
+  body.mobile.hide-debug #weaponbar {
+    display: none;
+  }
+  body.mobile .wslot { min-width: 56px; min-height: 56px; flex: 0 0 auto; }
+  body.mobile .wslot .wicon { font-size: 17px; }
+  body.mobile .wslot .wlabel { font-size: 8px; }
+  /* Portrait phone: belt padding only (positioning lives on the base
+     portrait rule above); short-landscape docks it bottom-center below. */
+  body.mobile #weaponbar {
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  body.mobile #weaponbar::-webkit-scrollbar { display: none; }
+  .touch-actions {
+    grid-template-columns: repeat(3, 56px);
+    grid-auto-flow: row;
+    gap: 8px;
+    max-height: 30vh;
+    overflow-y: auto;
+    padding: 2px;
+    margin-left: 0;
+  }
+  .tbtn { width: 56px; height: 56px; border-radius: 12px; }
+  .tbtn-icon { font-size: 20px; }
+  .tbtn-label { font-size: 9px; }
   .codex-grid { grid-template-columns: 1fr; }
+  #vulkanNotice { top: calc(8px + env(safe-area-inset-top, 0px)); font-size: 12px; }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
-  .touch-actions { grid-template-columns: repeat(5, 44px); }
-  .tbtn-label { display: none; }
-  #quest { top: 50px; }
+  /* Short landscape phones: weapon belt docks bottom-center as a 2-row
+     grid clear of the HUD tablet (left), the touch pads (bottom) and the
+     minimap (right). Applies to real touch phones, not narrow desktops. */
+  body.mobile #hud { width: auto; min-width: 0; max-width: 46vw; padding: 6px 32px 6px 8px; gap: 4px; box-sizing: border-box; }
+  body.mobile.hud-collapsed #hud { max-width: 200px; }
+  body.mobile .hud-row.inv-row { max-width: 100%; }
+  body.mobile .bar { grid-template-columns: 30px 1fr 24px; gap: 5px; }
+  body.mobile .bar-track { height: 8px; }
+  body.mobile #quest { top: calc(8px + env(safe-area-inset-top, 0px)); font-size: 11px; -webkit-line-clamp: 1; }
+  body.mobile #weaponbar, body.mobile.hud-collapsed #weaponbar {
+    display: flex;
+    left: auto;
+    right: 12px;
+    transform: none;
+    /* Right-docked above the touch deck: the deck's right column of pads
+       ends at 132px from the bottom, so the belt stacks directly above it
+       and never slides under the left-hand HUD tablet. */
+    bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+    max-width: 40vw;
+    flex-wrap: wrap;
+    justify-content: center;
+    box-sizing: border-box;
+    gap: 4px;
+  }
+  body.mobile .wslot { min-width: 48px; min-height: 44px; padding: 4px 5px; }
+  body.mobile .wslot .wicon { font-size: 16px; }
+  body.mobile .wslot .wlabel { display: none; }
+  body.mobile #invbtn, body.mobile #codexbtn, body.mobile #help, body.mobile #gear {
+    left: 12px;
+    right: auto;
+    bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+    width: 44px;
+    height: 44px;
+  }
+  body.mobile #gear { bottom: calc(276px + env(safe-area-inset-bottom, 0px)); }
+  body.mobile #help { bottom: calc(220px + env(safe-area-inset-bottom, 0px)); }
+  body.mobile #invbtn { bottom: calc(164px + env(safe-area-inset-bottom, 0px)); }
+  body.mobile #codexbtn { bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
+  body.mobile #minimap { width: 72px; height: 72px; top: auto; bottom: calc(276px + env(safe-area-inset-bottom, 0px)); }
+  body.mobile .touch-actions {
+    grid-template-columns: repeat(6, 52px);
+    max-height: 26vh;
+  }
+  body.mobile .tbtn { width: 52px; height: 52px; }
+  body.mobile .tbtn-label { display: none; }
+  body.mobile #joystick { width: 104px; height: 104px; }
+  body.mobile #joy-knob { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
+  body.mobile #toasts { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  body.mobile #inventory { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); max-height: 52vh; }
+  .overlay { align-items: flex-end; padding: 10px; }
+  #overlay-box, .overlay #overlay-box { max-height: 92vh; }
 }
 
 @supports (padding: env(safe-area-inset-bottom)) {
-  #touch { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
-  #joystick { bottom: max(20px, env(safe-area-inset-bottom)); left: max(20px, env(safe-area-inset-left)); }
+  #hud { top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left)); }
+  #touch { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  #joystick { bottom: max(12px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); }
   #compass { bottom: max(14px, env(safe-area-inset-bottom)); right: max(14px, env(safe-area-inset-right)); }
+  #gear { right: max(14px, env(safe-area-inset-right)); }
+  #minimap { right: max(14px, env(safe-area-inset-right)); }
+  .mm-legend { right: max(14px, env(safe-area-inset-right)); }
+  #inventory { right: max(14px, env(safe-area-inset-right)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

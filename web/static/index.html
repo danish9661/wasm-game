@@ -20,7 +20,7 @@
   </div>
 
   <div id="hud">
-    <div class="hud-row">
+    <div class="hud-row hud-vitals">
       <div class="bar"><span class="bar-label">HP</span><div class="bar-track"><div class="bar-fill" id="bar-hp"></div></div><span class="bar-num" id="num-hp">100</span></div>
       <div class="bar"><span class="bar-label">HUNGER</span><div class="bar-track"><div class="bar-fill" id="bar-hunger"></div></div><span class="bar-num" id="num-hunger">100</span></div>
       <div class="bar"><span class="bar-label">THIRST</span><div class="bar-track"><div class="bar-fill" id="bar-thirst"></div></div><span class="bar-num" id="num-thirst">100</span></div>
@@ -30,7 +30,7 @@
       <span class="bar-label boss-label">WARDEN</span>
       <div class="bar-track boss-track"><div class="bar-fill boss-fill" id="bar-boss"></div></div>
     </div>
-    <div class="hud-row inv-row">
+    <div class="hud-row inv-row" id="hud-chips">
       <span class="inv-chip inv-wood" id="inv-wood">W 0</span>
       <span class="inv-chip inv-stone" id="inv-stone">S 0</span>
       <span class="inv-chip inv-food" id="inv-food">F 0</span>
@@ -51,7 +51,8 @@
       <span class="inv-chip near" id="hud-near" style="display:none">📍</span>
       <span class="inv-clock" id="hud-clock">06:00</span>
     </div>
-    <div class="hud-row">
+    <button id="hud-toggle" aria-expanded="true" aria-controls="hud-chips hud-debug" title="Collapse details">–</button>
+    <div class="hud-row hud-debug" id="hud-debug">
       <span class="inv-chip" id="fps">FPS --</span>
       <span class="inv-chip" id="spd">SPD 0.0 t/s</span>
       <span class="speed-meter" title="Movement speed (tiles/sec)"><i id="spd-bar"></i></span>
@@ -262,6 +263,18 @@
   <div id="mm-legend" class="mm-legend"></div>
 
     <script type="module">
+    // Form factor is set synchronously before first paint so phones never
+    // flash the desktop HUD. `body.mobile` = real phone (touch + small
+    // viewport); narrow desktop windows stay on the desktop layout.
+    // Recomputed on resize so rotation reflows live.
+    const __setFormFactor = () => {
+      const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      const phone = touch && (window.innerWidth <= 700 || (window.innerHeight <= 500 && window.innerWidth > window.innerHeight));
+      document.body.classList.toggle('mobile', phone);
+      document.body.classList.toggle('desktop', !phone);
+    };
+    __setFormFactor();
+    window.addEventListener('resize', __setFormFactor);
     import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot, debug_enter_interior } from './wasm_game.js?v=20260901';
 
     const coopTagsEl = document.getElementById('coop-tags');
@@ -746,21 +759,40 @@
           // (Module scope doesn't attach `var` to window, so without this
           // every gameplay toast was a silent no-op.)
           window.toast = toast;
+          // ---- HUD details toggle ---------------------------------------
+          // The – / + tab on the HUD tablet collapses the chip field +
+          // debug row (mobile space). FPS tap still works too.
+          const hudToggle = document.getElementById('hud-toggle');
+          const setHudCollapsed = (collapsed) => {
+            document.body.classList.toggle('hud-collapsed', collapsed);
+            document.body.classList.toggle('hide-debug', collapsed);
+            if (hudToggle) {
+              hudToggle.textContent = collapsed ? '+' : '–';
+              hudToggle.setAttribute('aria-expanded', String(!collapsed));
+              hudToggle.title = collapsed ? 'Show details' : 'Collapse details';
+            }
+          };
           // ---- Dynamic form factor --------------------------------------
-          // `body.mobile` drives the compact HUD (touch phones AND narrow
-          // desktop windows); `body.desktop` is the full HUD. Recomputed on
-          // load + resize so rotating a phone reflows the HUD live.
+          // `body.mobile` was set synchronously before first paint (see top
+          // of this module); keep it fresh on resize so rotating a phone
+          // reflows the HUD live. Collapse state follows the same rule.
           const updateFormFactor = () => {
-            const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-            const mobile = touch || window.innerWidth <= 700;
-            document.body.classList.toggle('mobile', mobile);
-            document.body.classList.toggle('desktop', !mobile);
+            __setFormFactor();
+            // Phones start collapsed: vitals + quest stay, chips and (in
+            // portrait) the weapon belt tuck behind the tab. Runs on every
+            // reflow so rotation lands in the right state; an explicit tab
+            // tap afterwards always wins until the next resize.
+            const coarseNow = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            if (window.innerWidth <= 700 && coarseNow) setHudCollapsed(true);
+            else if (!document.body.classList.contains('hud-collapsed')) setHudCollapsed(false);
           };
           updateFormFactor();
           window.addEventListener('resize', updateFormFactor);
-          // Debug-row toggle: tap FPS to collapse the perf row (mobile space).
+          if (hudToggle) hudToggle.addEventListener('click', () => {
+            setHudCollapsed(!document.body.classList.contains('hud-collapsed'));
+          });
           document.getElementById('fps').addEventListener('click', () => {
-            document.body.classList.toggle('hide-debug');
+            setHudCollapsed(!document.body.classList.contains('hud-collapsed'));
           });
           // ---- Weapon bar ------------------------------------------------
           // Mirrors game/src/weapons.rs: (slot, icon, label, dmg, reach, speed).
