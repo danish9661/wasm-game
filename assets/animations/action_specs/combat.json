@@ -1,0 +1,76 @@
+{
+  "schema": "fight-animations.action-specs/1",
+  "fps": 30,
+  "status": "authored procedurally (GVHMR/Mixamo path unavailable on this machine)",
+  "source": "assets/animations/attack_sword_slash.glb",
+  "note": "The mixamo-llm-mocap pipeline requires a video plate, a GVHMR venv with ~5.3 GB of checkpoints and the license-gated SMPL-X body model, plus a Mixamo FBX/account. None are present; these timings are authored, not measured from footage.",
+  "verbs": [
+    {
+      "id": "sword_slash",
+      "clip": "attack_sword_slash",
+      "startup_s": 0.4,
+      "startup_frames": [0, 12],
+      "active_s": 0.267,
+      "active_frames": [12, 20],
+      "recovery_s": 0.733,
+      "recovery_frames": [20, 42],
+      "cancel": "none through frame 20; recovery may be cancelled into walk from frame 30",
+      "resource_cost": "1 stamina (engine-side; animation has no cost channel)",
+      "contact_shape": "sword arc, right hand over shoulder to across chest, reach ~0.9 m",
+      "contact_rule": "resolve once on frame 14-19 against targets inside the arc and facing; direction + range + phase required",
+      "outcome": "damage + posture hit; target plays hit, lethal target plays death",
+      "cooldown_s": 0.2,
+      "root_motion": "0.20 m forward on frames 12-20, held through recovery",
+      "feedback": "blade trail on 12-20, impact spark on resolved contact, camera shake 2 frames on hit",
+      "readability": "windup shows the blade behind the shoulder for 12 frames at 320x240 CCTV scale"
+    },
+    {
+      "id": "hit_reaction",
+      "clip": "hit",
+      "startup_frames": [0, 6],
+      "recovery_frames": [6, 30],
+      "cancel": "none before frame 18; stagger-lock ends at frame 30",
+      "contact_rule": "driven by the resolved sword-slash contact event, never by animation overlap",
+      "root_motion": "0.13 m backwards on frames 0-13",
+      "outcome": "posture +0.35, interrupted action"
+    },
+    {
+      "id": "death",
+      "clip": "death",
+      "startup_frames": [0, 21],
+      "recovery_frames": [21, 54],
+      "cancel": "none; terminal",
+      "root_motion": "0.52 m backwards over two staggers",
+      "end_pose": "laid out on the back, feet forward, ragdoll takes over at frame 54",
+      "outcome": "remove from combat, ragdoll handover"
+    },
+    {
+      "id": "guard_idle",
+      "clip": "idle",
+      "loop": true,
+      "cancel": "any locomotion or attack input",
+      "root_motion": false
+    },
+    {
+      "id": "walk",
+      "clip_pattern": "walk_{f,fl,l,bl,b,br,r,fr}",
+      "loop": true,
+      "cycle_frames": 24,
+      "speed_mps": 1.09,
+      "cancel": "any attack or hit",
+      "root_motion": "on root only; feet planted in world space during stance"
+    }
+  ],
+  "deterministic_tests": [
+    "startup too early: contact before frame 12 is rejected",
+    "late contact: contact after frame 20 is rejected",
+    "wrong direction: target outside the arc is rejected",
+    "out of range: target beyond 0.9 m is rejected",
+    "multiple targets: arc applies the contact once per stable target id",
+    "interrupted: hit during windup cancels the attack and plays hit",
+    "death: lethal contact on a hit plays death and ends at the ragdoll-ready pose",
+    "cooldown: second slash before 0.2 s is rejected",
+    "pause and frame step: frame-stepping 0-42 reproduces the same contact windows",
+    "loops: idle and all eight walks close within the manifest seam thresholds"
+  ]
+}

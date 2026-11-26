@@ -1,0 +1,505 @@
+{
+  "schema": "fight-animations.combat-clips/1",
+  "generator": "scripts/generate_combat_animations.py",
+  "tooling": {
+    "blender": "5.1.2",
+    "fps": 30,
+    "pipeline": "procedural keyframes on assets/models/player.glb",
+    "gvhmr_available": false,
+    "mixamo_available": false,
+    "reason": "no GVHMR venv/checkpoints/SMPL-X body model, no Mixamo FBX or credentials, no video plate"
+  },
+  "source_mesh": "assets/models/player.glb",
+  "review_sheet": "assets/animations/review/contact_sheet.png",
+  "rig": "empties over the 19 unskinned mesh parts; root carries horizontal travel, hips carries vertical bob",
+  "axes": {
+    "blender_up": "Z",
+    "blender_front": "-Y",
+    "gltf_front": "+Z",
+    "directions": {
+      "f": [
+        0.0,
+        1.0
+      ],
+      "fl": [
+        0.7071,
+        0.7071
+      ],
+      "l": [
+        1.0,
+        0.0
+      ],
+      "bl": [
+        0.7071,
+        -0.7071
+      ],
+      "b": [
+        0.0,
+        -1.0
+      ],
+      "br": [
+        -0.7071,
+        -0.7071
+      ],
+      "r": [
+        -1.0,
+        0.0
+      ],
+      "fr": [
+        -0.7071,
+        0.7071
+      ]
+    }
+  },
+  "root_motion_decision": {
+    "root_motion": [
+      "walk_f",
+      "walk_fl",
+      "walk_l",
+      "walk_bl",
+      "walk_b",
+      "walk_br",
+      "walk_r",
+      "walk_fr",
+      "attack_sword_slash",
+      "hit",
+      "death"
+    ],
+    "in_place": [
+      "idle"
+    ],
+    "note": "horizontal displacement is keyed only on `root`; hips has vertical bob only; no scale keys"
+  },
+  "conventions": {
+    "fps": 30,
+    "loop_last_frame": "root-relative pose of frame N == frame 0; root translation advances one stride",
+    "direction_codes": [
+      "f",
+      "fl",
+      "l",
+      "bl",
+      "b",
+      "br",
+      "r",
+      "fr"
+    ],
+    "scale_keys": false,
+    "samplers": "LINEAR"
+  },
+  "gate": {
+    "loop_seam_position_cm": [
+      0.5,
+      2.0
+    ],
+    "loop_seam_velocity_mps": [
+      0.3,
+      0.8
+    ],
+    "root_velocity_mps": [
+      0.1,
+      0.3
+    ],
+    "foot_slide_cm": [
+      2.0,
+      5.0
+    ],
+    "ground_penetration_cm": [
+      1.0,
+      3.0
+    ],
+    "end_settled_mps": [
+      0.05,
+      0.15
+    ],
+    "note": "[warn, fail]; game-animation references/validation.md"
+  },
+  "clips": [
+    {
+      "clip": "idle",
+      "frames": 121,
+      "duration_s": 4.0333,
+      "loop": true,
+      "root_motion": false,
+      "direction": null,
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 0.006,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 3.07,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/idle.glb",
+      "action": "idle",
+      "notes": "Combat-ready guard: small breath and weight shift, feet planted, no travel.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_f",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "f",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_f.glb",
+      "action": "walk_f",
+      "notes": "Brisk low-poly walk, direction f; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_fl",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "fl",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_fl.glb",
+      "action": "walk_fl",
+      "notes": "Brisk low-poly walk, direction fl; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_l",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "l",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_l.glb",
+      "action": "walk_l",
+      "notes": "Brisk low-poly walk, direction l; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_bl",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "bl",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_bl.glb",
+      "action": "walk_bl",
+      "notes": "Brisk low-poly walk, direction bl; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_b",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "b",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_b.glb",
+      "action": "walk_b",
+      "notes": "Brisk low-poly walk, direction b; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_br",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "br",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_br.glb",
+      "action": "walk_br",
+      "notes": "Brisk low-poly walk, direction br; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_r",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "r",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_r.glb",
+      "action": "walk_r",
+      "notes": "Brisk low-poly walk, direction r; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "walk_fr",
+      "frames": 25,
+      "duration_s": 0.8333,
+      "loop": true,
+      "root_motion": true,
+      "direction": "fr",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 1.0891,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 0,
+        "r": 0
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 7.248,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/walk_fr.glb",
+      "action": "walk_fr",
+      "notes": "Brisk low-poly walk, direction fr; root carries 1.09 m/s, hips bob only; planted feet solved in world space.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "attack_sword_slash",
+      "frames": 42,
+      "duration_s": 1.4,
+      "loop": false,
+      "root_motion": true,
+      "direction": "f",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 1.4695,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 0.1484,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 2,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.378,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/attack_sword_slash.glb",
+      "action": "attack_sword_slash",
+      "notes": "Windup frames 0-12 (0.40 s), active cut 12-20 (0.27 s), recovery 20-42 (0.73 s); 0.20 m root step-in on the cut; right-hand sword arc crosses the front at chest height.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "hit",
+      "frames": 30,
+      "duration_s": 1.0,
+      "loop": false,
+      "root_motion": true,
+      "direction": "b",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.5726,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 0.1365,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.378,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "path": "assets/animations/hit.glb",
+      "action": "hit",
+      "notes": "Backwards flinch on impact, torso and head snap, settles before frame 30.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    },
+    {
+      "clip": "death",
+      "frames": 54,
+      "duration_s": 1.8,
+      "loop": false,
+      "root_motion": true,
+      "direction": "b",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 2.5362,
+      "grounded_p10_cm": 0.1,
+      "ground_penetration_cm": 0.0,
+      "root_speed_mps": 0.553,
+      "travel_direction_error_deg": 0.0,
+      "end_settled_mps": 0.0,
+      "foot_plants": {
+        "l": 2,
+        "r": 2
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 42.804,
+      "status": "WARN",
+      "fails": [],
+      "warns": [
+        "feet.slide_per_step 2.536 cm > 2"
+      ],
+      "path": "assets/animations/death.glb",
+      "action": "death",
+      "notes": "Two staggering steps, buckle, laid-out finish with feet forward for ragdoll handover. WARN: ~2.5 cm heel roll during the fall is a body-collapse pivot, not locomotion skate.",
+      "source": "procedural (no mocap; GVHMR/Mixamo unavailable)",
+      "license": "CC0 (authored here on the project's player mesh)"
+    }
+  ],
+  "summary": {
+    "count": 12,
+    "pass": 11,
+    "warn": 1,
+    "fail": 0
+  },
+  "fails": [],
+  "warnings": [
+    {
+      "clip": "death",
+      "check": "feet.slide_per_step 2.536 cm > 2"
+    }
+  ]
+}
