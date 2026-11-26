@@ -439,7 +439,7 @@
     "allow_scale_keys": false,
     "naming": {
       "clip_regex": "^[a-z][a-z0-9_]*$",
-      "loop_clips": ["idle", "walk_f", "walk_fl", "walk_l", "walk_bl", "walk_b", "walk_br", "walk_r", "walk_fr"],
+      "loop_clips": ["idle", "walk_f", "walk_fl", "walk_l", "walk_bl", "walk_b", "walk_br", "walk_r", "walk_fr", "run_f", "run_fl", "run_l", "run_bl", "run_b", "run_br", "run_r", "run_fr", "sprint_f", "sprint_fl", "sprint_l", "sprint_bl", "sprint_b", "sprint_br", "sprint_r", "sprint_fr", "sleep", "cook", "craft", "climb"],
       "direction_codes": ["f", "fl", "l", "bl", "b", "br", "r", "fr"]
     },
     "directions_gltf": {
@@ -450,14 +450,18 @@
       "travel_on": "root",
       "hips": "vertical bob only",
       "in_place": ["idle"],
-      "decision": "walks carry 1.09 m/s on root; slash/hit/death carry their one-shot step on root; no scale keys"
+      "decision": "walk 1.09 m/s, run 1.46 m/s, sprint 1.98 m/s on root; slash/hit/death/jump/door_open carry one-shot travel; dodge and climb move on root; idle/bow/sleep/drink/eat/cook/craft/block/interact are in place; no scale keys"
     },
     "engine": {
       "bone_frames": "world_aligned object tracks",
       "loop_convention": "frame N duplicates frame 0 in root-relative pose; root translation advances one stride",
       "samplers": "LINEAR"
     },
-    "durations_s": {"idle": 4.033, "walk_cycle": 0.8, "attack_sword_slash": 1.4, "hit": 1.0, "death": 1.8},
+    "durations_s": {"idle": 4.033, "walk_cycle": 0.8, "run_cycle": 0.667, "sprint_cycle": 0.533,
+                    "attack_sword_slash": 1.4, "hit": 1.0, "death": 1.8, "bow": 1.6,
+                    "jump": 1.8, "sleep_cycle": 4.0, "drink": 1.8, "eat": 2.2,
+                    "cook_cycle": 2.0, "craft_cycle": 1.6, "door_open": 1.8,
+                    "block": 1.6, "dodge": 1.2, "interact": 1.4, "climb_cycle": 1.2},
     "thresholds": {
       "loop_seam_position_cm": [0.5, 2.0],
       "loop_seam_velocity_mps": [0.3, 0.8],
@@ -467,7 +471,8 @@
       "end_settled_mps": [0.05, 0.15]
     },
     "clip_manifest": "animations/manifest.json",
-    "action_spec": "animations/action_specs/combat.json"
+    "action_spec": "animations/action_specs/combat.json",
+    "life_action_spec": "animations/action_specs/life.json"
   },
   "manifest_fields": [
     "id",
