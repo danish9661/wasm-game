@@ -698,7 +698,15 @@ fn set_backend(mode: &str) {
 /// EXPERIMENT switch: when true, on a successful surface present we display the
 /// WebGPU surface directly (gpu mode) and SKIP the per-frame `drawImage` readback
 /// to #blit that is the measured ~50-70ms fps wall. Set via the `?gpu` URL param.
-static FORCE_GPU: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+// Direct presentation is the default. The old default ran `drawImage` from the
+// WebGPU canvas into #blit on *every* frame even after a successful surface
+// present (the #blit canvas was hidden). Dawn's CopyTextureForBrowser caches
+// the imported allocation, so resizing the canvas backing store (adaptive
+// resolution / window resize) made it import a new, larger texture into the
+// stale, smaller allocation -> "Requested allocation size is smaller than the
+// image requires". Only the genuine broken-surface path (backend_mode 2) needs
+// a copy, and it uses the readback buffer instead.
+static FORCE_GPU: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn set_force_gpu(v: bool) {
     FORCE_GPU.store(v, std::sync::atomic::Ordering::Relaxed);
