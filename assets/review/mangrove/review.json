@@ -1,0 +1,69 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/models/mangrove.glb",
+ "id": "mangrove",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "trunk.001_primitive0",
+   "trunk.001_primitive1",
+   "trunk.001_primitive2",
+   "trunk.001_primitive3",
+   "trunk.001_primitive4",
+   "trunk.001_primitive5"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -1.297,
+    0,
+    -0.877
+   ],
+   "max": [
+    1.297,
+    2.719,
+    0.877
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "exp_wood_dark",
+   "exp_wood",
+   "exp_leaf_dark",
+   "exp_leaf",
+   "exp_leaf_light",
+   "exp_wood_light"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/mangrove/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/mangrove/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/mangrove/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/mangrove/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/mangrove/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/mangrove.png"
+  }
+ ]
+}

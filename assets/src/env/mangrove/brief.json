@@ -1,0 +1,31 @@
+{
+  "id": "mangrove",
+  "category": "env",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "Swamp biome hero tree: stilt roots and a flat-topped canopy, a landmark the player can shelter under.",
+  "dims": {
+    "x": 2.59,
+    "y": 1.75,
+    "z": 2.72,
+    "tol": 0.05,
+    "basis": "measured from exported GLB; 1.75x player height"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "prop",
+  "density_class": "prop",
+  "collider": "convex",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "seen from the 45/30 isometric camera as a biome landmark"
+  },
+  "references": [],
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, saturated accent colours, readable at ~60 px. Palette-only (docs/ART_DIRECTION.md), no textures, no smooth shading. 1 tile = 1 u; player = 1.55 u; storey = 2.5 u; doors 0.9 x 2.0 u. Base at z=0, centred on (0,0). Never: smooth normals, external textures, invented hues, hidden geometry nobody sees.",
+  "notes": "Hero finishing: bevelled silhouette parts, weighted normals, flat shading, smart UV pack; 460 tris. Crown widened, seam capped and feet grounded after the critic rounds."
+}

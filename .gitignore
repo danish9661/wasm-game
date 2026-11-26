@@ -1,5 +1,7 @@
 /target
 /pkg
+__pycache__/
+*.pyc
 *.log
 .DS_Store/saves
 /saves/
