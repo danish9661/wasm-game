@@ -262,6 +262,41 @@ pub struct ParsedGeometry {
     pub base_colours: Vec<[f32; 3]>,
 }
 
+/// Unit billboard quad in the local XY plane, normal facing +Z. Instances are
+/// rotated to face the isometric camera and tinted per sprite, so HP bars,
+/// projectiles, loot, particles and weather can be drawn by the same 3D pass
+/// instead of disappearing when the 2.5D path is toggled off.
+pub fn unit_quad() -> ParsedGeometry {
+    ParsedGeometry {
+        name: "billboard".to_string(),
+        vertices: vec![
+            -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0,
+            1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0,
+            -1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0,
+        ],
+        indices: vec![0, 1, 2, 0, 2, 3],
+        base_colours: vec![[1.0, 1.0, 1.0]],
+    }
+}
+
+/// Flat ground quad in the local XZ plane, normal +Y. Used for sprites that
+/// lie on the terrain (puddles, telegraph rings, loot diamonds, floors) so
+/// they are not drawn as upright cards when the 3D pass is active.
+pub fn unit_ground_quad() -> ParsedGeometry {
+    ParsedGeometry {
+        name: "ground_quad".to_string(),
+        vertices: vec![
+            -1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0,
+            1.0, 0.0, -1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0,
+            1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0,
+            -1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0,
+        ],
+        indices: vec![0, 1, 2, 0, 2, 3],
+        base_colours: vec![[1.0, 1.0, 1.0]],
+    }
+}
+
 /// Parse a GLB into interleaved vertices + u32 indices, baking node transforms
 /// and material base colours. No GPU resources involved.
 pub fn parse_glb(bytes: &[u8]) -> Result<ParsedGeometry, String> {

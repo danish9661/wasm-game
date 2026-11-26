@@ -86,6 +86,7 @@ struct VOut {
     @location(1) normal: vec3<f32>,
     @location(2) color: vec3<f32>,
     @location(3) dist: f32,
+    @location(4) alpha: f32,
 };
 
 @vertex
@@ -108,6 +109,7 @@ fn vs_main(
     out.normal = normalize((model * vec4<f32>(normal, 0.0)).xyz);
     out.color = color * tint.rgb;
     out.dist = length(wp.xyz - g.eye.xyz);
+    out.alpha = tint.a;
     return out;
 }
 
@@ -125,7 +127,7 @@ fn fs_main(in: VOut) -> @location(0) vec4<f32> {
     // Simple distance fog toward a dark diorama backdrop.
     let f = clamp((in.dist - 20.0) * g.fog.w, 0.0, 1.0);
     col = mix(col, g.fog.rgb, f);
-    return vec4<f32>(clamp(col, vec3<f32>(0.0), vec3<f32>(1.0)), 1.0);
+    return vec4<f32>(clamp(col, vec3<f32>(0.0), vec3<f32>(1.0)), in.alpha);
 }
 "#;
 
@@ -241,7 +243,8 @@ impl Scene3D {
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format,
-                    blend: None,
+                    // Opaque geometry has alpha 1; billboards/effects fade.
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),

@@ -93,7 +93,8 @@ try {
 
   const sceneStatus = await page.evaluate(() => window.__m.render3d_status());
   console.log(`       3D scene: ${sceneStatus}`);
-  (/models/.test(sceneStatus) && /instances/.test(sceneStatus))
+  (/models/.test(sceneStatus) && /instances/.test(sceneStatus)
+    && /entities=\d+ overlays=\d+/.test(sceneStatus))
     ? ok('GLB models + instanced groups loaded') : bad(`bad 3D scene status: ${sceneStatus}`);
 
   // Sample the actual presented #game canvas. Headless screenshots do not

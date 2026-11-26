@@ -162,9 +162,9 @@ directory server; `pkg/index.html` is the entry point.
    pure Python 3 standard library — no Blender needed.
 
 **Status:** the GLBs are now consumed by the shipping client's 3D vertical
-slice (see §5): the game canvas fetches `player`, `tree`, `rock`, `house`,
-`bush`, `campfire`, `crystal` and `banner` from `pkg/assets/models/` at boot and
-draws them with the instanced pipeline. The original 2.5D procedural geometry
+slice (see §5): the game canvas fetches 72 curated GLBs (player, terrain props,
+structures, every enemy kind, weapons/vehicles) from `pkg/assets/models/` at
+boot and draws them with the instanced pipeline. The original 2.5D procedural geometry
 remains the fallback (`?2d` / `set_render3d(false)`).
 
 ## 5. Current rendering limitations and the planned 3D glTF path
@@ -213,9 +213,12 @@ GLBs above, uploads them through `model::upload_geometry()`, and installs a
 shared `pipeline3d::Scene3D` on the *game* device. Each `update()` builds:
 (1) one instanced player GLB at the sim player's position/facing/terrain height,
 (2) a generated `terrain3d` heightfield with per-biome vertex colours and
-height-derived side skirts (one identity instance), and (3) GLB props mapped
-from the same `SpriteStyle` stream that fed `build_tile_mesh` (tree, rock,
-house, bush, campfire, crystal, banner). `App::render()` records the 3D pass
+height-derived side skirts (one identity instance), and (3) every sprite from the same `SpriteStyle` stream that fed `build_tile_mesh`:
+props and characters resolve to one of 72 curated GLBs (trees, rocks, houses,
+walls, chests, signs, barrels, all enemy kinds, …), HP bars/arrows/particles
+and weather motes become camera-facing billboards, and flat ground sprites
+(puddles, telegraphs, loot) become terrain-hugging quads — so the 3D pass
+draws the whole frame instead of dropping non-mapped styles. `App::render()` records the 3D pass
 into whichever colour attachment it presents (surface or offscreen blit target)
 with a depth buffer; the 2D quad pass, particles/weather overlays and frame
 dump are untouched and stay behind the `?2d` / `set_render3d(false)` toggle.

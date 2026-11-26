@@ -1049,45 +1049,196 @@ pub struct App {
 }
 
 // --- 3D vertical slice: model table ---------------------------------------
-// Index 0 is the generated terrain heightfield; the rest are GLBs fetched
-// from `/assets/models/` on startup. Ordering is the group ordering in Scene3D.
+// Indices 0/1 are generated geometry (terrain heightfield + camera-facing unit
+// quad for HUD-ish sprites/effects). Every other entry is a GLB fetched from
+// `/assets/models/` at boot. The 3D pass covers the whole frame, not just a
+// decorative subset: every sprite style maps to a GLB or to a billboard.
 const IDX_TERRAIN: usize = 0;
-const IDX_PLAYER: usize = 1;
-const IDX_TREE: usize = 2;
-const IDX_ROCK: usize = 3;
-const IDX_HOUSE: usize = 4;
-const IDX_BUSH: usize = 5;
-const IDX_CAMPFIRE: usize = 6;
-const IDX_CRYSTAL: usize = 7;
-const IDX_BANNER: usize = 8;
-const SCENE_MODELS: &[&str] = &[
-    "terrain", "player", "tree", "rock", "house", "bush", "campfire", "crystal", "banner",
+const IDX_BILLBOARD: usize = 1;
+const IDX_GROUND: usize = 2;
+
+/// Every GLB the vertical slice uses. Unique names, matching `assets/models/`.
+const GLB_MODELS: &[&str] = &[
+    "player", "tree", "pine", "rock", "rock_pile", "house", "cabin", "hut", "inn", "barn",
+    "watchtower", "wall", "bush", "grass_tuft", "fern", "flower", "mushroom", "cactus",
+    "campfire", "torch", "brazier", "crystal", "ore", "chest", "banner", "altar", "anvil",
+    "bed", "well", "spike", "farm_plot", "turret", "healing_totem", "sign", "barrel", "totem",
+    "statue", "lantern", "crate_box", "pillar", "bone_pile", "lilypad", "reed", "rubble",
+    "ruin_tower", "portal", "enchanting_table", "dungeon", "fence", "vines", "slime", "goblin",
+    "skeleton", "ogre", "raider", "guard", "golem", "bat", "spider", "imp", "wraith",
+    "colossus", "scorpion_queen", "toad_king", "brute", "stormcaller", "ocean_leviathan",
+    "wolf", "archer", "car", "train", "rail",
 ];
 const TERRAIN_RADIUS: i32 = 14;
 
-/// Map a gameplay sprite style to one of the loaded props. Styles we have no
-/// GLB for (HP bars, weather, particles, ...) stay on the 2.5D overlay path.
-fn scene_model_for(style: SpriteStyle) -> Option<usize> {
-    match style {
-        SpriteStyle::Tree => Some(IDX_TREE),
-        SpriteStyle::Rock | SpriteStyle::RockPile | SpriteStyle::Rubble => Some(IDX_ROCK),
-        SpriteStyle::House
-        | SpriteStyle::Cabin
-        | SpriteStyle::Hut
-        | SpriteStyle::Inn
-        | SpriteStyle::Barn
-        | SpriteStyle::Watchtower => Some(IDX_HOUSE),
-        SpriteStyle::Bush
-        | SpriteStyle::GrassTuft
-        | SpriteStyle::Fern
-        | SpriteStyle::Flower
-        | SpriteStyle::Mushroom
-        | SpriteStyle::Cactus => Some(IDX_BUSH),
-        SpriteStyle::Campfire | SpriteStyle::Torch | SpriteStyle::Brazier => Some(IDX_CAMPFIRE),
-        SpriteStyle::Crystal => Some(IDX_CRYSTAL),
-        SpriteStyle::Banner => Some(IDX_BANNER),
-        _ => None,
+/// Number of models in `Scene3D`: generated pair + one per GLB above.
+const fn model_count() -> usize {
+    3 + GLB_MODELS.len()
+}
+
+fn model_index(name: &str) -> usize {
+    match name {
+        "terrain" => IDX_TERRAIN,
+        "billboard" => IDX_BILLBOARD,
+        "ground" => IDX_GROUND,
+        other => 3 + GLB_MODELS.iter().position(|n| *n == other).unwrap_or(0),
     }
+}
+
+/// Map a gameplay sprite style to a drawable model. Unknown/decorative styles
+/// fall back to the billboard quad so nothing silently disappears in 3D mode.
+fn scene_model_for(style: SpriteStyle) -> &'static str {
+    match style {
+        SpriteStyle::Generic | SpriteStyle::Floor => "ground",
+        SpriteStyle::HpBack | SpriteStyle::HpFill | SpriteStyle::Arrow => "billboard",
+        SpriteStyle::Tree => "tree",
+        SpriteStyle::Rock => "rock",
+        SpriteStyle::RockPile => "rock_pile",
+        SpriteStyle::Rubble => "rubble",
+        SpriteStyle::Bush => "bush",
+        SpriteStyle::GrassTuft => "grass_tuft",
+        SpriteStyle::Fern => "fern",
+        SpriteStyle::Flower => "flower",
+        SpriteStyle::Mushroom => "mushroom",
+        SpriteStyle::Cactus => "cactus",
+        SpriteStyle::Crystal => "crystal",
+        SpriteStyle::Ore => "ore",
+        SpriteStyle::Campfire => "campfire",
+        SpriteStyle::Torch => "torch",
+        SpriteStyle::Brazier => "brazier",
+        SpriteStyle::Altar => "altar",
+        SpriteStyle::Chest | SpriteStyle::Treasure => "chest",
+        SpriteStyle::Banner => "banner",
+        SpriteStyle::Fence => "fence",
+        SpriteStyle::Anvil => "anvil",
+        SpriteStyle::Bed => "bed",
+        SpriteStyle::Well => "well",
+        SpriteStyle::Spike => "spike",
+        SpriteStyle::FarmPlot => "farm_plot",
+        SpriteStyle::Turret => "turret",
+        SpriteStyle::HealingTotem => "healing_totem",
+        SpriteStyle::Sign => "sign",
+        SpriteStyle::Barrel => "barrel",
+        SpriteStyle::Totem => "totem",
+        SpriteStyle::Statue => "statue",
+        SpriteStyle::Lantern => "lantern",
+        SpriteStyle::Crate => "crate_box",
+        SpriteStyle::Pillar => "pillar",
+        SpriteStyle::BonePile => "bone_pile",
+        SpriteStyle::Lilypad => "lilypad",
+        SpriteStyle::Reed => "reed",
+        SpriteStyle::RuinTower => "ruin_tower",
+        SpriteStyle::Portal => "portal",
+        SpriteStyle::EnchantingTable => "enchanting_table",
+        SpriteStyle::Dungeon => "dungeon",
+        SpriteStyle::Wall => "wall",
+        SpriteStyle::House => "house",
+        SpriteStyle::Cabin => "cabin",
+        SpriteStyle::Hut => "hut",
+        SpriteStyle::Inn => "inn",
+        SpriteStyle::Barn => "barn",
+        SpriteStyle::Watchtower => "watchtower",
+        SpriteStyle::Vines => "vines",
+        SpriteStyle::Humanoid => "player",
+        SpriteStyle::Slime => "slime",
+        SpriteStyle::Goblin => "goblin",
+        SpriteStyle::Skeleton => "skeleton",
+        SpriteStyle::Ogre => "ogre",
+        SpriteStyle::Stoneslinger | SpriteStyle::Raider => "raider",
+        SpriteStyle::Guard => "guard",
+        SpriteStyle::Golem => "golem",
+        SpriteStyle::Bat => "bat",
+        SpriteStyle::Spider => "spider",
+        SpriteStyle::Imp => "imp",
+        SpriteStyle::Wraith => "wraith",
+        SpriteStyle::Colossus => "colossus",
+        SpriteStyle::ScorpionQueen => "scorpion_queen",
+        SpriteStyle::ToadKing => "toad_king",
+        SpriteStyle::Brute => "brute",
+        SpriteStyle::Stormcaller => "stormcaller",
+        SpriteStyle::OceanLeviathan => "ocean_leviathan",
+        SpriteStyle::Wolf => "wolf",
+        SpriteStyle::Archer => "archer",
+        SpriteStyle::Car => "car",
+        SpriteStyle::Train => "train",
+        SpriteStyle::Rail => "rail",
+    }
+}
+
+/// Characters get a gentle tint from their gameplay colour (so hit flashes and
+/// co-op ally colours still read); props keep their authored material colours.
+fn scene_tint(style: SpriteStyle, color: [f32; 3], alpha: f32) -> [f32; 4] {
+    let character = matches!(
+        style,
+        SpriteStyle::Humanoid
+            | SpriteStyle::Slime
+            | SpriteStyle::Goblin
+            | SpriteStyle::Skeleton
+            | SpriteStyle::Ogre
+            | SpriteStyle::Stoneslinger
+            | SpriteStyle::Guard
+            | SpriteStyle::Golem
+            | SpriteStyle::Bat
+            | SpriteStyle::Spider
+            | SpriteStyle::Imp
+            | SpriteStyle::Wraith
+            | SpriteStyle::Colossus
+            | SpriteStyle::ScorpionQueen
+            | SpriteStyle::ToadKing
+            | SpriteStyle::Brute
+            | SpriteStyle::Stormcaller
+            | SpriteStyle::OceanLeviathan
+            | SpriteStyle::Wolf
+            | SpriteStyle::Archer
+            | SpriteStyle::Raider
+    );
+    if character {
+        [
+            0.6 + 0.4 * color[0],
+            0.6 + 0.4 * color[1],
+            0.6 + 0.4 * color[2],
+            alpha,
+        ]
+    } else {
+        [1.0, 1.0, 1.0, alpha]
+    }
+}
+
+/// Terrain-hugging quad instance for puddles, rings, loot and other flat
+/// sprites. Rotated 45° so its edges follow the isometric world axes.
+fn scene_ground(x: f32, y: f32, z: f32, half_w: f32, half_d: f32, tint: [f32; 4]) -> Instance {
+    let yaw = 45.0_f32.to_radians();
+    let mut transform = model::math4::multiply(
+        &model::math4::translation(x, y, z),
+        &model::math4::rotation_y(yaw),
+    );
+    transform = model::math4::multiply(
+        &transform,
+        &model::math4::scaling(half_w.max(0.01), 1.0, half_d.max(0.01)),
+    );
+    Instance { transform, tint }
+}
+
+/// Camera-facing billboard instance: translation * yaw(45°) * non-uniform scale.
+fn scene_billboard(
+    x: f32,
+    y: f32,
+    z: f32,
+    half_w: f32,
+    half_h: f32,
+    bias: f32,
+    tint: [f32; 4],
+) -> Instance {
+    let yaw = 45.0_f32.to_radians();
+    let mut transform = model::math4::multiply(
+        &model::math4::translation(x + bias * 0.707, y, z + bias * 0.707),
+        &model::math4::rotation_y(yaw),
+    );
+    transform = model::math4::multiply(
+        &transform,
+        &model::math4::scaling(half_w.max(0.01), half_h.max(0.01), 1.0),
+    );
+    Instance { transform, tint }
 }
 
 impl App {
@@ -1132,8 +1283,8 @@ impl App {
     /// the *game* device, then switch the game canvas to the 3D pass. Any
     /// failure is returned so `start()` can silently keep the 2.5D path.
     pub async fn init_3d_scene(&mut self) -> Result<String, String> {
-        let mut models: Vec<Model> = Vec::with_capacity(SCENE_MODELS.len());
-        for name in SCENE_MODELS.iter().skip(1) {
+        let mut models: Vec<Model> = Vec::with_capacity(model_count());
+        for name in GLB_MODELS {
             let url = format!("/assets/models/{name}.glb");
             let bytes = pipeline3d::fetch_glb(&url).await?;
             let model = model::load_glb(&bytes, &self.device, &self.queue)
@@ -1147,6 +1298,14 @@ impl App {
             &self.edits,
             center,
             TERRAIN_RADIUS,
+        );
+        models.insert(
+            IDX_GROUND,
+            model::upload_geometry(model::unit_ground_quad(), &self.device, &self.queue),
+        );
+        models.insert(
+            IDX_BILLBOARD,
+            model::upload_geometry(model::unit_quad(), &self.device, &self.queue),
         );
         models.insert(
             IDX_TERRAIN,
@@ -1198,7 +1357,9 @@ impl App {
             * terrain3d::HEIGHT_SCALE;
         self.player_height3d = player_h;
 
-        let mut placements: Vec<Vec<Instance>> = (0..SCENE_MODELS.len()).map(|_| Vec::new()).collect();
+        // Screen pixels per world unit, matching Scene3D's half_height/zoom.
+        let px_per_unit = (self.viewport[1] * self.zoom / 12.0).max(1.0);
+        let mut placements: Vec<Vec<Instance>> = (0..model_count()).map(|_| Vec::new()).collect();
         // The terrain mesh is baked in world coordinates: one identity instance.
         placements[IDX_TERRAIN].push(Instance {
             transform: model::math4::identity(),
@@ -1206,7 +1367,7 @@ impl App {
         });
         // Player GLB: Y-up, base on the ground, facing from the simulation.
         let yaw = self.player.facing.1.atan2(self.player.facing.0);
-        placements[IDX_PLAYER].push(pipeline3d::instance_at(
+        placements[model_index("player")].push(pipeline3d::instance_at(
             self.player.x,
             player_h,
             self.player.y,
@@ -1215,28 +1376,128 @@ impl App {
             [1.0, 1.0, 1.0, 1.0],
         ));
 
+        // Every sprite from the sim is represented: GLBs for entities/props,
+        // camera-facing quads for HP bars, arrows, loot and other overlays.
         for sp in sprites {
-            let Some(idx) = scene_model_for(sp.style) else {
-                continue;
-            };
+            let idx = model_index(scene_model_for(sp.style));
             let h = tile_height_at(
                 &self.world,
                 &mut self.chunks,
                 sp.x.floor() as i32,
                 sp.y.floor() as i32,
             ) as f32 * terrain3d::HEIGHT_SCALE;
-            let yaw = sp.facing.1.atan2(sp.facing.0);
-            let scale = match sp.style {
-                SpriteStyle::Bush | SpriteStyle::Flower | SpriteStyle::GrassTuft
-                | SpriteStyle::Fern | SpriteStyle::Mushroom => 0.9,
-                _ => 1.0,
-            };
-            placements[idx].push(pipeline3d::instance_at(
-                sp.x, h, sp.y, yaw, scale, [1.0, 1.0, 1.0, 1.0],
+            if idx == IDX_GROUND {
+                // Flat ground sprites (puddles, rings, loot) lie on the tile
+                // instead of standing up like a card.
+                let hw = sp.half_w / px_per_unit;
+                let hd = 2.0 * sp.half_h / px_per_unit;
+                let y = h + sp.lift / (px_per_unit * 0.866);
+                placements[idx].push(scene_ground(
+                    sp.x,
+                    y,
+                    sp.y,
+                    hw,
+                    hd,
+                    scene_tint(sp.style, sp.color, sp.alpha),
+                ));
+            } else if idx == IDX_BILLBOARD {
+                let hw = sp.half_w / px_per_unit;
+                let hh = sp.half_h / px_per_unit;
+                let y = h + sp.lift / (px_per_unit * 0.866);
+                let tint = match sp.style {
+                    SpriteStyle::HpBack => [0.0, 0.0, 0.0, 0.85],
+                    SpriteStyle::HpFill => [sp.color[0], sp.color[1], sp.color[2], 1.0],
+                    _ => scene_tint(sp.style, sp.color, sp.alpha),
+                };
+                // Nudge the fill toward the camera so it is not z-fighting the
+                // backing plate at the same world position.
+                let bias = if sp.style == SpriteStyle::HpFill { 0.04 } else { 0.0 };
+                placements[idx].push(scene_billboard(sp.x, y, sp.y, hw, hh, bias, tint));
+            } else {
+                let yaw = sp.facing.1.atan2(sp.facing.0);
+                let scale = match sp.style {
+                    SpriteStyle::Bush | SpriteStyle::Flower | SpriteStyle::GrassTuft
+                    | SpriteStyle::Fern | SpriteStyle::Mushroom => 0.9,
+                    _ => 1.0,
+                };
+                placements[idx].push(pipeline3d::instance_at(
+                    sp.x,
+                    h,
+                    sp.y,
+                    yaw,
+                    scale,
+                    scene_tint(sp.style, sp.color, sp.alpha),
+                ));
+            }
+        }
+
+        // Transient hit sparks / death puffs: fading billboards in the same
+        // 3D pass instead of vanishing with the 2.5D overlay.
+        for p in &self.particles {
+            let h = tile_height_at(
+                &self.world,
+                &mut self.chunks,
+                p.x.floor() as i32,
+                p.y.floor() as i32,
+            ) as f32 * terrain3d::HEIGHT_SCALE;
+            let alpha = (p.life / p.max_life).clamp(0.0, 1.0);
+            let half = (p.size / px_per_unit).max(0.02);
+            placements[IDX_BILLBOARD].push(scene_billboard(
+                p.x,
+                h + 0.25,
+                p.y,
+                half,
+                half,
+                0.0,
+                [p.color[0], p.color[1], p.color[2], alpha],
             ));
         }
+
+        // Weather motes, deterministic per index and animated by the same
+        // cosmetic clock the 2D path uses. They follow the camera target.
+        if self.weather > 0 {
+            let (tint, count, size) = match self.weather {
+                1 => ([0.55, 0.72, 0.95, 0.45], 100, 0.09), // rain
+                2 => ([0.92, 0.96, 1.00, 0.65], 70, 0.06),  // snow
+                3 => ([0.45, 0.55, 0.85, 0.50], 120, 0.10), // storm
+                _ => ([0.80, 0.90, 0.60, 0.40], 50, 0.07),  // other
+            };
+            for i in 0..count {
+                let fx = ((i * 37 % 97) as f32 / 97.0 - 0.5) * 18.0;
+                let fz = ((i * 53 % 89) as f32 / 89.0 - 0.5) * 18.0;
+                let speed = 3.0 + (i % 7) as f32 * 0.4;
+                let fall = (self.anim_clock * speed + i as f32 * 0.37).rem_euclid(9.0);
+                let (hw, hh) = if self.weather == 1 || self.weather == 3 {
+                    (size * 0.25, size * 2.0)
+                } else {
+                    (size, size)
+                };
+                placements[IDX_BILLBOARD].push(scene_billboard(
+                    self.player.x + fx,
+                    (player_h + 7.0 - fall).max(player_h + 0.15),
+                    self.player.y + fz,
+                    hw,
+                    hh,
+                    0.0,
+                    tint,
+                ));
+            }
+        }
+
+        let billboards = placements[IDX_BILLBOARD].len();
+        let entities: usize = placements
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i >= 3)
+            .map(|(_, v)| v.len())
+            .sum();
         scene.set_instances(&self.device, &self.queue, placements);
-        self.scene3d_status = format!("3d: {}", scene.stats());
+        self.scene3d_status = format!(
+            "3d: {}; entities={} overlays={}",
+            scene.stats(),
+            entities,
+            billboards
+        );
     }
 
     /// Record one frame on the real game render target: instanced glTF scene
