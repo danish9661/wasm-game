@@ -1,6 +1,14 @@
 # Animation clips
 
-40 named 30 fps clips on the existing `assets/models/player.glb` doll.
+> **Authoritative player set:** `player/` — a from-scratch redesign of 13 clips
+> bound to the verified 1.551 u player, with source SHA-256, dimension-derived
+> rig, per-clip root offsets in metres and numeric gates. The root-level
+> humanoid clips below are retained as the earlier exploratory set and are
+> **superseded** by `player/`. Weather FX and NPC work loops are in
+> `world_manifest.json` (`fx_*`, `*_<work>` GLBs at this level).
+
+Earlier exploratory set: 40 named 30 fps clips on the existing
+`assets/models/player.glb` doll.
 
 | Group | Clips |
 |---|---|

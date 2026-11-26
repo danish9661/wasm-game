@@ -70,6 +70,7 @@ def remeasure(clip, path):
     """Import the exported GLB and re-measure it with the generator's own code."""
     errs = []
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.context.scene.render.fps = 30   # GLB times were exported at 30 fps
     bpy.ops.import_scene.gltf(filepath=path)
     scene = bpy.context.scene
     objs = {o.name: o for o in bpy.data.objects}
