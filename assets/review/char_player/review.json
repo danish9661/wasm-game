@@ -1,0 +1,83 @@
+{
+ "glb": "/home/danish1075/Documents/wasm game/assets/export/char/char_player.glb",
+ "id": "char_player",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "char_player_lod0_primitive0",
+   "char_player_lod0_primitive1",
+   "char_player_lod0_primitive2",
+   "char_player_lod0_primitive3",
+   "char_player_lod0_primitive4",
+   "char_player_lod0_primitive5",
+   "char_player_lod0_primitive6",
+   "char_player_lod0_primitive7"
+  ],
+  "lod_tris": {
+   "0": 1404
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.29,
+    0,
+    -0.161
+   ],
+   "max": [
+    0.29,
+    1.535,
+    0.161
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_pants",
+   "m_leather",
+   "m_tunic_orange",
+   "m_gold",
+   "m_skin",
+   "m_hair",
+   "m_eye",
+   "m_steel"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/feed.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player.png"
+  }
+ ]
+}

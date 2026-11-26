@@ -1,4 +1,6 @@
+mod model;
 mod network;
+mod pipeline3d;
 mod renderer;
 mod save;
 mod zip;
@@ -478,4 +480,23 @@ fn install_input_handlers(window: web_sys::Window, document: web_sys::Document) 
         .add_event_listener_with_callback("resize", on_resize.as_ref().unchecked_ref())
         .ok();
     on_resize.forget();
+}
+
+// --- Additive glTF / 3D demo path -----------------------------------------
+// These exports are entirely optional: the existing `step()` loop, App and
+// gameplay code are untouched. `load_demo_models()` fetches several GLBs into
+// a dedicated `#demo3d` canvas; `render_3d_demo()` draws one instanced frame.
+
+/// Fetch + upload the demo GLBs (`/assets/models/*.glb`) and build the 3D scene.
+/// Await this from JS, then call `render_3d_demo()` each frame you want to draw.
+#[wasm_bindgen]
+pub async fn load_demo_models() -> Result<String, String> {
+    pipeline3d::load_demo_models().await
+}
+
+/// Render one frame of the instanced isometric 3D demo. Safe to call before
+/// `load_demo_models()` (it simply returns a status string).
+#[wasm_bindgen]
+pub fn render_3d_demo() -> String {
+    pipeline3d::render_3d_demo()
 }

@@ -1,0 +1,40 @@
+{
+  "id": "char_player",
+  "category": "char",
+  "tier": "S",
+  "status": "wip",
+  "track": "character",
+  "source": "make",
+  "what": "Starfall player hero: orange-tunic wanderer in the isometric overworld, seen from the game camera.",
+  "dims": {
+    "x": 0.58,
+    "y": 0.33,
+    "z": 1.55,
+    "tol": 0.05,
+    "basis": "Measured final silhouette incl. held sword; height 1.55u from docs/ART_DIRECTION.md"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "char_body",
+  "density_class": "char_body",
+  "collider": "none",
+  "props": {},
+  "materials": [
+    "m_tunic_orange",
+    "m_skin",
+    "m_hair",
+    "m_leather",
+    "m_pants",
+    "m_steel",
+    "m_eye",
+    "m_gold"
+  ],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "isometric gameplay camera at 45/30 degrees"
+  },
+  "references": [],
+  "style_notes": "Flat-shaded low-poly diorama style, palette tunic #FF8C26, no textures.",
+  "notes": "Built with game-asset-modeling: bmesh parts, bevels, weighted normals, UV pack; flat low-poly palette, no textures."
+}

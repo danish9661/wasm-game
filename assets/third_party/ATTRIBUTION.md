@@ -1,0 +1,201 @@
+# Third-party CC0 assets
+
+All models below are **CC0 1.0 (public domain)** — commercial use allowed, no attribution required.
+Sources are credited here for provenance.
+
+## Kenney (via Touhid-HZ/shooter-asset-library)
+
+Author: Kenney Vervacke — https://kenney.nl — CC0 1.0
+Pack source: https://github.com/Touhid-HZ/shooter-asset-library
+
+- `k-graveyard-altar-stone.glb` — Kenney graveyard — CC0
+- `k-graveyard-altar-wood.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-bevel.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-broken.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-cross.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-cross-large.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-debris.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-decorative.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-roof.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-round.glb` — Kenney graveyard — CC0
+- `k-graveyard-gravestone-wide.glb` — Kenney graveyard — CC0
+- `k-graveyard-rocks.glb` — Kenney graveyard — CC0
+- `k-graveyard-rocks-tall.glb` — Kenney graveyard — CC0
+- `k-graveyard-stone-wall.glb` — Kenney graveyard — CC0
+- `k-graveyard-stone-wall-column.glb` — Kenney graveyard — CC0
+- `k-graveyard-stone-wall-curve.glb` — Kenney graveyard — CC0
+- `k-graveyard-stone-wall-damaged.glb` — Kenney graveyard — CC0
+- `k-mini-forest-bridge.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-building-platform.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-building-roof.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-building-structure.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-character-archer.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-fence.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-flag.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-ladder.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-patch-dirt.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-patch-grass.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-plant.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-platform.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-rocks-high.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-rocks-low.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-rocks-ramp.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-stones.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-target.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-tent.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-tree.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-tree-high.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-weapon-arrow.glb` — Kenney mini-forest — CC0
+- `k-mini-forest-weapon-bow.glb` — Kenney mini-forest — CC0
+- `k-nature-rock-largea.glb` — Kenney nature — CC0
+- `k-nature-rock-largeb.glb` — Kenney nature — CC0
+- `k-nature-rock-largec.glb` — Kenney nature — CC0
+- `k-nature-rock-larged.glb` — Kenney nature — CC0
+- `k-nature-rock-largee.glb` — Kenney nature — CC0
+- `k-nature-rock-largef.glb` — Kenney nature — CC0
+- `k-nature-rock-smalla.glb` — Kenney nature — CC0
+- `k-nature-rock-smallb.glb` — Kenney nature — CC0
+- `k-nature-rock-smallc.glb` — Kenney nature — CC0
+- `k-nature-rock-smalld.glb` — Kenney nature — CC0
+- `k-nature-rock-smalle.glb` — Kenney nature — CC0
+- `k-nature-rock-smallf.glb` — Kenney nature — CC0
+- `k-nature-rock-smallflata.glb` — Kenney nature — CC0
+- `k-nature-rock-smallflatb.glb` — Kenney nature — CC0
+- `k-nature-rock-smallflatc.glb` — Kenney nature — CC0
+- `k-nature-rock-smallg.glb` — Kenney nature — CC0
+- `k-nature-rock-smallh.glb` — Kenney nature — CC0
+- `k-nature-rock-smalli.glb` — Kenney nature — CC0
+- `k-nature-rock-smalltopa.glb` — Kenney nature — CC0
+- `k-nature-rock-smalltopb.glb` — Kenney nature — CC0
+- `k-nature-tree-default.glb` — Kenney nature — CC0
+- `k-nature-tree-default-dark.glb` — Kenney nature — CC0
+- `k-nature-tree-default-fall.glb` — Kenney nature — CC0
+- `k-nature-tree-fat.glb` — Kenney nature — CC0
+- `k-nature-tree-fat-darkh.glb` — Kenney nature — CC0
+- `k-nature-tree-fat-fall.glb` — Kenney nature — CC0
+- `k-nature-tree-oak.glb` — Kenney nature — CC0
+- `k-nature-tree-oak-dark.glb` — Kenney nature — CC0
+- `k-nature-tree-oak-fall.glb` — Kenney nature — CC0
+- `k-nature-tree-palm.glb` — Kenney nature — CC0
+- `k-nature-tree-palmbend.glb` — Kenney nature — CC0
+- `k-nature-tree-palmdetailedshort.glb` — Kenney nature — CC0
+- `k-nature-tree-palmdetailedtall.glb` — Kenney nature — CC0
+- `k-nature-tree-palmshort.glb` — Kenney nature — CC0
+- `k-nature-tree-palmtall.glb` — Kenney nature — CC0
+- `k-nature-tree-pinedefaulta.glb` — Kenney nature — CC0
+- `k-nature-tree-pinedefaultb.glb` — Kenney nature — CC0
+- `k-nature-tree-pinegrounda.glb` — Kenney nature — CC0
+- `k-nature-tree-pinegroundb.glb` — Kenney nature — CC0
+- `k-nature-tree-pinerounda.glb` — Kenney nature — CC0
+- `k-nature-tree-pineroundb.glb` — Kenney nature — CC0
+- `k-nature-tree-pineroundc.glb` — Kenney nature — CC0
+- `k-nature-tree-pineroundd.glb` — Kenney nature — CC0
+- `k-nature-tree-pinerounde.glb` — Kenney nature — CC0
+- `k-nature-tree-pineroundf.glb` — Kenney nature — CC0
+- `k-nature-tree-pinesmalla.glb` — Kenney nature — CC0
+- `k-nature-tree-pinesmallb.glb` — Kenney nature — CC0
+- `k-nature-tree-pinesmallc.glb` — Kenney nature — CC0
+- `k-nature-tree-pinesmalld.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetalla.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetalla-detailed.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetallb.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetallb-detailed.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetallc.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetallc-detailed.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetalld.glb` — Kenney nature — CC0
+- `k-nature-tree-pinetalld-detailed.glb` — Kenney nature — CC0
+- `k-survival-barrel.glb` — Kenney survival — CC0
+- `k-survival-barrel-open.glb` — Kenney survival — CC0
+- `k-survival-bedroll.glb` — Kenney survival — CC0
+- `k-survival-bedroll-frame.glb` — Kenney survival — CC0
+- `k-survival-bedroll-packed.glb` — Kenney survival — CC0
+- `k-survival-bottle.glb` — Kenney survival — CC0
+- `k-survival-bottle-large.glb` — Kenney survival — CC0
+- `k-survival-box.glb` — Kenney survival — CC0
+- `k-survival-box-large.glb` — Kenney survival — CC0
+- `k-survival-box-large-open.glb` — Kenney survival — CC0
+- `k-survival-box-open.glb` — Kenney survival — CC0
+- `k-survival-bucket.glb` — Kenney survival — CC0
+- `k-survival-campfire-fishing-stand.glb` — Kenney survival — CC0
+- `k-survival-campfire-pit.glb` — Kenney survival — CC0
+- `k-survival-campfire-stand.glb` — Kenney survival — CC0
+- `k-survival-chest.glb` — Kenney survival — CC0
+- `k-survival-fence.glb` — Kenney survival — CC0
+- `k-survival-fence-doorway.glb` — Kenney survival — CC0
+- `k-survival-fence-fortified.glb` — Kenney survival — CC0
+- `k-survival-fish.glb` — Kenney survival — CC0
+- `k-survival-fish-large.glb` — Kenney survival — CC0
+- `k-survival-floor.glb` — Kenney survival — CC0
+- `k-survival-floor-hole.glb` — Kenney survival — CC0
+- `k-survival-floor-old.glb` — Kenney survival — CC0
+- `k-survival-grass.glb` — Kenney survival — CC0
+- `k-survival-grass-large.glb` — Kenney survival — CC0
+- `k-survival-metal-panel.glb` — Kenney survival — CC0
+- `k-survival-metal-panel-narrow.glb` — Kenney survival — CC0
+- `k-survival-metal-panel-screws.glb` — Kenney survival — CC0
+- `k-survival-metal-panel-screws-half.glb` — Kenney survival — CC0
+- `k-survival-metal-panel-screws-narrow.glb` — Kenney survival — CC0
+- `k-survival-patch-grass.glb` — Kenney survival — CC0
+- `k-survival-patch-grass-large.glb` — Kenney survival — CC0
+- `k-survival-resource-planks.glb` — Kenney survival — CC0
+- `k-survival-resource-stone.glb` — Kenney survival — CC0
+- `k-survival-resource-stone-large.glb` — Kenney survival — CC0
+- `k-survival-resource-wood.glb` — Kenney survival — CC0
+- `k-survival-rock-a.glb` — Kenney survival — CC0
+- `k-survival-rock-b.glb` — Kenney survival — CC0
+- `k-survival-rock-c.glb` — Kenney survival — CC0
+- `k-survival-rock-flat.glb` — Kenney survival — CC0
+- `k-survival-rock-flat-grass.glb` — Kenney survival — CC0
+- `k-survival-rock-sand-a.glb` — Kenney survival — CC0
+- `k-survival-rock-sand-b.glb` — Kenney survival — CC0
+- `k-survival-rock-sand-c.glb` — Kenney survival — CC0
+- `k-survival-signpost.glb` — Kenney survival — CC0
+- `k-survival-signpost-single.glb` — Kenney survival — CC0
+- `k-survival-structure.glb` — Kenney survival — CC0
+- `k-survival-structure-canvas.glb` — Kenney survival — CC0
+- `k-survival-structure-floor.glb` — Kenney survival — CC0
+- `k-survival-structure-metal.glb` — Kenney survival — CC0
+- `k-survival-structure-metal-doorway.glb` — Kenney survival — CC0
+- `k-survival-structure-metal-floor.glb` — Kenney survival — CC0
+- `k-survival-structure-metal-roof.glb` — Kenney survival — CC0
+- `k-survival-structure-metal-wall.glb` — Kenney survival — CC0
+- `k-survival-structure-roof.glb` — Kenney survival — CC0
+- `k-survival-tent.glb` — Kenney survival — CC0
+- `k-survival-tent-canvas.glb` — Kenney survival — CC0
+- `k-survival-tent-canvas-half.glb` — Kenney survival — CC0
+- `k-survival-tool-axe.glb` — Kenney survival — CC0
+- `k-survival-tool-axe-upgraded.glb` — Kenney survival — CC0
+- `k-survival-tool-hammer.glb` — Kenney survival — CC0
+- `k-survival-tool-hammer-upgraded.glb` — Kenney survival — CC0
+- `k-survival-tool-hoe.glb` — Kenney survival — CC0
+- `k-survival-tool-hoe-upgraded.glb` — Kenney survival — CC0
+- `k-survival-tool-pickaxe.glb` — Kenney survival — CC0
+- `k-survival-tool-pickaxe-upgraded.glb` — Kenney survival — CC0
+- `k-survival-tool-shovel.glb` — Kenney survival — CC0
+- `k-survival-tool-shovel-upgraded.glb` — Kenney survival — CC0
+- `k-survival-tree.glb` — Kenney survival — CC0
+- `k-survival-tree-autumn.glb` — Kenney survival — CC0
+- `k-survival-tree-autumn-tall.glb` — Kenney survival — CC0
+- `k-survival-tree-autumn-trunk.glb` — Kenney survival — CC0
+- `k-survival-tree-log.glb` — Kenney survival — CC0
+- `k-survival-tree-log-small.glb` — Kenney survival — CC0
+- `k-survival-tree-tall.glb` — Kenney survival — CC0
+- `k-survival-tree-trunk.glb` — Kenney survival — CC0
+- `k-survival-workbench.glb` — Kenney survival — CC0
+- `k-survival-workbench-anvil.glb` — Kenney survival — CC0
+- `k-survival-workbench-grind.glb` — Kenney survival — CC0
+
+## Vuena
+
+https://github.com/Vuena/vuena-assets-mcp — CC0 1.0
+
+- `animal_fox.glb` — Fox — Cute Pets & Wildlife — CC0-1.0
+- `animal_owl.glb` — Owl — Cute Pets & Wildlife — CC0-1.0
+- `blocky_01_hero.glb` — Hero — Rigged Blocky Characters — CC0-1.0
+- `blocky_03_knight.glb` — Knight — Rigged Blocky Characters — CC0-1.0
+- `blocky_05_wizard.glb` — Wizard — Rigged Blocky Characters — CC0-1.0
+- `blocky_09_zombie.glb` — Zombie — Rigged Blocky Characters — CC0-1.0
+- `monster_03_ghost.glb` — Ghost — Blocky Monsters (Halloween) — CC0-1.0
+- `monster_10_skeleton.glb` — Skeleton — Blocky Monsters (Halloween) — CC0-1.0
+- `prop_pine_snow_small.glb` — Small snowy pine — Blocky Winter & Christmas — CC0-1.0
+- `prop_05_gravestone_round.glb` — Round gravestone — Blocky Monsters (Halloween) — CC0-1.0

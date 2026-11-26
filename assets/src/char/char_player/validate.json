@@ -1,0 +1,301 @@
+{
+ "id": "char_player",
+ "result": "PASS",
+ "items": [
+  {
+   "level": "PASS",
+   "check": "name.id",
+   "detail": "char_player (prefix char_)"
+  },
+  {
+   "level": "PASS",
+   "check": "file.name",
+   "detail": "char_player.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "file.path",
+   "detail": "export/char/char_player.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.single_root",
+   "detail": "1 root nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.root_name",
+   "detail": "root 'char_player'"
+  },
+  {
+   "level": "PASS",
+   "check": "name.nodes",
+   "detail": "2 nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "xform.applied",
+   "detail": "scale 1, mesh rotations identity"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.lod0",
+   "detail": "lod nodes: [0]"
+  },
+  {
+   "level": "PASS",
+   "check": "budget.lod0",
+   "detail": "1404 tris (budget 1500)"
+  },
+  {
+   "level": "INFO",
+   "check": "lod.skip",
+   "detail": "lod0 1404 tris <= 10000, LODs not required"
+  },
+  {
+   "level": "INFO",
+   "check": "dims",
+   "detail": "x 0.580  y 0.323  z 1.535 m (Blender axes: width, depth, height)"
+  },
+  {
+   "level": "PASS",
+   "check": "dims.target",
+   "detail": "within 5%"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.bottom_center",
+   "detail": "bbox min z 0.000, center x 0.000 y 0.000"
+  },
+  {
+   "level": "PASS",
+   "check": "props.required",
+   "detail": "root extras: []"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.normals",
+   "detail": "all primitives have NORMAL"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.uv0",
+   "detail": "TEXCOORD_0 on every primitive"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.assigned",
+   "detail": "8 materials used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.name",
+   "detail": "m_pants"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.albedo_range",
+   "detail": "baseColorFactor sRGB [0.18, 0.204, 0.251]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_pants",
+   "detail": "mean color matches swatch pants"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.name",
+   "detail": "m_leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.albedo_range",
+   "detail": "baseColorFactor sRGB [0.349, 0.184, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_leather",
+   "detail": "mean color matches swatch leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_tunic_orange.name",
+   "detail": "m_tunic_orange"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_tunic_orange.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_tunic_orange.albedo_range",
+   "detail": "baseColorFactor sRGB [1.0, 0.549, 0.149]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_tunic_orange",
+   "detail": "mean color matches swatch tunic"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_tunic_orange.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.name",
+   "detail": "m_gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.651, 0.18]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_gold",
+   "detail": "mean color matches swatch gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.roughness",
+   "detail": "roughnessFactor 0.50 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_skin.name",
+   "detail": "m_skin"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_skin.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_skin.albedo_range",
+   "detail": "baseColorFactor sRGB [0.918, 0.722, 0.549]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_skin",
+   "detail": "mean color matches swatch skin"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_skin.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_hair.name",
+   "detail": "m_hair"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_hair.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_hair.albedo_range",
+   "detail": "baseColorFactor sRGB [0.29, 0.18, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_hair",
+   "detail": "mean color matches swatch hair"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_hair.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_eye.name",
+   "detail": "m_eye"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_eye.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_eye.albedo_range",
+   "detail": "baseColorFactor sRGB [0.102, 0.102, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_eye",
+   "detail": "mean color matches swatch charcoal"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_eye.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_steel.name",
+   "detail": "m_steel"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_steel.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_steel.albedo_range",
+   "detail": "baseColorFactor sRGB [0.784, 0.816, 0.847]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_steel",
+   "detail": "mean color matches swatch steel"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_steel.roughness",
+   "detail": "roughnessFactor 0.85 (S4: roughness high)"
+  },
+  {
+   "level": "INFO",
+   "check": "texel_density",
+   "detail": "no textured primitives"
+  },
+  {
+   "level": "PASS",
+   "check": "khronos.errors",
+   "detail": "0 errors, 0 warnings []"
+  }
+ ]
+}
