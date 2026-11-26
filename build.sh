@@ -12,6 +12,11 @@ cp documentation.html pkg/ 2>/dev/null || true
 rm -rf pkg/element_previews
 cp -r element_previews pkg/ 2>/dev/null || true
 
+# 3D vertical slice: the runtime fetches GLBs from /assets/models/*.glb.
+rm -rf pkg/assets/models
+mkdir -p pkg/assets/models
+cp assets/models/*.glb pkg/assets/models/
+
 # Cache-bust: stamp the JS + WASM URLs with the commit SHA so a fresh GitHub
 # Pages deploy is never served from a stale browser/CDN cache. The base-named
 # files still exist, so any cached older index.html gracefully loads the new

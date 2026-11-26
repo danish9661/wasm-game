@@ -1,10 +1,13 @@
-//! Additive orthographic-isometric glTF render path.
+//! Orthographic-isometric glTF render path.
 //!
-//! This is intentionally *separate* from the working 2.5D quad renderer in
-//! `renderer.rs`: it owns its own canvas (`#demo3d`), device, surface, depth
-//! buffer and pipeline, so none of the existing gameplay exports or the
-//! `step()` game loop are touched. It draws GLB models from `model.rs` with
-//! instanced draws, flat/lit shading and simple distance fog — no PBR stack.
+//! The core `Scene3D` is device/surface agnostic: it owns the pipeline, depth
+//! buffer, globals uniform and instanced model groups, but borrows the caller's
+//! device/queue and records into the caller's colour attachment. That lets the
+//! shipping game draw its 3D vertical slice on the real `#game` surface (and
+//! on the offscreen blit target) while the original demo keeps its own canvas.
+//!
+//! It draws GLB models from `model.rs` with instanced draws, flat/lit shading
+//! and simple distance fog — no PBR stack.
 
 use crate::model::math4::{self, Mat4};
 use crate::model::{Model, MODEL_VERTEX_STRIDE};
@@ -37,9 +40,23 @@ impl Instance {
     }
 }
 
+/// Per-frame camera/lighting state supplied by the game loop.
+pub struct SceneParams {
+    /// World-space look-at point (usually the player, y = ground height).
+    pub target: [f32; 3],
+    /// Zoom multiplier: > 1 zooms in.
+    pub zoom: f32,
+    /// Sun/daylight strength 0..1 (0 = deep night).
+    pub daylight: f32,
+    /// Night point-light strength 0..1.
+    pub night: f32,
+    /// Half-height of the orthographic view in world units at zoom 1.
+    pub half_height: f32,
+}
+
 /// A group of instances drawn from one model with a single `draw_indexed`.
 struct Group {
-    /// Index into `Demo3D::models`.
+    /// Index into `Scene3D::models`.
     model: usize,
     /// Byte offset into the shared instance buffer.
     instance_offset: u64,
@@ -87,7 +104,7 @@ fn vs_main(
     var out: VOut;
     out.clip = g.view_proj * wp;
     out.world = wp.xyz;
-    // Uniform scale only in this demo, so the upper 3x3 is enough for normals.
+    // Models and props use uniform scale, so the upper 3x3 is enough here.
     out.normal = normalize((model * vec4<f32>(normal, 0.0)).xyz);
     out.color = color * tint.rgb;
     out.dist = length(wp.xyz - g.eye.xyz);
@@ -99,9 +116,9 @@ fn fs_main(in: VOut) -> @location(0) vec4<f32> {
     let n = normalize(in.normal);
     // Flat-shaded look: quantise the sun term into a few discrete bands.
     let raw = max(dot(n, normalize(g.sun_dir.xyz)), 0.0);
-   let lit = floor(raw * 4.0 + 0.5) / 4.0;
+    let lit = floor(raw * 4.0 + 0.5) / 4.0;
     var col = in.color * (g.ambient.rgb + g.sun_color.rgb * g.sun_dir.w * lit);
-    // Single warm point light with a linear falloff.
+    // Single warm point light (campfire / night accent) with linear falloff.
     let to_light = g.point_pos.xyz - in.world;
     let att = max(0.0, 1.0 - length(to_light) / max(g.point_pos.w, 0.001));
     col += in.color * g.point_color.rgb * (g.point_color.w * att * att);
@@ -112,16 +129,32 @@ fn fs_main(in: VOut) -> @location(0) vec4<f32> {
 }
 "#;
 
-fn f32_bytes(data: &[f32]) -> &[u8] {
+pub(crate) fn f32_bytes(data: &[f32]) -> &[u8] {
     // SAFETY: f32 is 4 bytes with no padding; every bit pattern is valid u8.
     unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len() * 4) }
 }
 
-struct Demo3D {
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    surface: wgpu::Surface<'static>,
-    config: wgpu::SurfaceConfiguration,
+fn create_depth(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("scene3d_depth"),
+        size: wgpu::Extent3d {
+            width: width.max(1),
+            height: height.max(1),
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Depth32Float,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    })
+}
+
+/// Reusable 3D scene: pipeline, depth buffer, uniforms and instanced groups.
+/// Does not own a surface or device — the game renders it into whichever
+/// colour attachment it is presenting this frame.
+pub struct Scene3D {
     pipeline: wgpu::RenderPipeline,
     globals_buffer: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
@@ -130,66 +163,18 @@ struct Demo3D {
     instance_buffer: wgpu::Buffer,
     groups: Vec<Group>,
     total_instances: u32,
-    frame: u64,
     width: u32,
     height: u32,
 }
 
-impl Demo3D {
-    /// Build a dedicated WebGPU context on a `#demo3d` canvas.
-    async fn new() -> Result<Self, String> {
-        let canvas = ensure_canvas()?;
-        let width = canvas.width().max(1);
-        let height = canvas.height().max(1);
-
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        let surface = instance
-            .create_surface(wgpu::SurfaceTarget::Canvas(canvas))
-            .map_err(|e| format!("create_surface(demo3d): {e}"))?;
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                force_fallback_adapter: false,
-                compatible_surface: Some(&surface),
-                apply_limit_buckets: false,
-            })
-            .await
-            .map_err(|e| format!("request_adapter(demo3d): {e}"))?;
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                label: Some("demo3d_device"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                ..Default::default()
-            })
-            .await
-            .map_err(|e| format!("request_device(demo3d): {e}"))?;
-
-        let format = surface
-            .get_capabilities(&adapter)
-            .formats
-            .first()
-            .copied()
-            .ok_or("demo3d: no surface formats")?;
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format,
-            color_space: wgpu::SurfaceColorSpace::Auto,
-            width,
-            height,
-            present_mode: wgpu::PresentMode::Fifo,
-            alpha_mode: wgpu::CompositeAlphaMode::Opaque,
-            view_formats: vec![],
-            desired_maximum_frame_latency: 2,
-        };
-        surface.configure(&device, &config);
-
+impl Scene3D {
+    pub fn new(device: &wgpu::Device, format: wgpu::TextureFormat, width: u32, height: u32) -> Self {
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("demo3d_shader"),
+            label: Some("scene3d_shader"),
             source: wgpu::ShaderSource::Wgsl(SHADER_3D.into()),
         });
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("demo3d_globals_layout"),
+            label: Some("scene3d_globals_layout"),
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
@@ -202,12 +187,12 @@ impl Demo3D {
             }],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("demo3d_pipeline_layout"),
+            label: Some("scene3d_pipeline_layout"),
             bind_group_layouts: &[Some(&bind_group_layout)],
             immediate_size: 0,
         });
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("demo3d_pipeline"),
+            label: Some("scene3d_pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &module,
@@ -265,33 +250,29 @@ impl Demo3D {
         });
 
         let globals_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("demo3d_globals"),
+            label: Some("scene3d_globals"),
             size: (GLOBALS_FLOATS * 4) as u64,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("demo3d_globals_group"),
+            label: Some("scene3d_globals_group"),
             layout: &bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: globals_buffer.as_entire_binding(),
             }],
         });
-        let depth = create_depth(&device, width, height);
-        // Placeholder instance buffer; replaced by `set_scene`.
+        let depth = create_depth(device, width, height);
+        // Placeholder instance buffer; replaced by `set_instances`.
         let instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("demo3d_instances"),
+            label: Some("scene3d_instances"),
             size: INSTANCE_STRIDE,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
-        Ok(Self {
-            device,
-            queue,
-            surface,
-            config,
+        Self {
             pipeline,
             globals_buffer,
             bind_group,
@@ -300,21 +281,35 @@ impl Demo3D {
             instance_buffer,
             groups: Vec::new(),
             total_instances: 0,
-            frame: 0,
             width,
             height,
-        })
+        }
     }
 
-    /// Replace the demo scene. `placements` is parallel to `models`: each
-    /// entry holds the instances of that model. All instances are packed into
-    /// one buffer; one `draw_indexed` per model group keeps it instanced.
-    fn set_scene(&mut self, models: Vec<Model>, placements: Vec<Vec<Instance>>) {
+    /// Swap the model set (e.g. after regenerating the terrain heightfield).
+    /// Call `set_instances` afterwards to repopulate the draw groups.
+    pub fn set_models(&mut self, models: Vec<Model>) {
+        self.models = models;
+        self.total_instances = 0;
+        self.groups.clear();
+    }
+
+    /// Replace one model in place (used when the camera moves and the generated
+    /// terrain heightfield must be rebuilt while GLBs stay uploaded).
+    pub fn replace_model(&mut self, index: usize, model: Model) {
+        if let Some(slot) = self.models.get_mut(index) {
+            *slot = model;
+        }
+    }
+
+    /// Pack instances into the shared GPU buffer. One `draw_indexed` per model.
+    /// The buffer grows on demand and is otherwise reused every frame.
+    pub fn set_instances(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, placements: Vec<Vec<Instance>>) {
         let mut packed: Vec<f32> = Vec::new();
         let mut groups = Vec::new();
         let mut total = 0u32;
         for (model_index, instances) in placements.into_iter().enumerate() {
-            if instances.is_empty() || model_index >= models.len() {
+            if instances.is_empty() || model_index >= self.models.len() {
                 continue;
             }
             let offset = (packed.len() * 4) as u64;
@@ -329,42 +324,48 @@ impl Demo3D {
             total += instances.len() as u32;
         }
         let bytes = f32_bytes(&packed);
-        self.instance_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("demo3d_instances"),
-            size: bytes.len().max(INSTANCE_STRIDE as usize) as u64,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        if !bytes.is_empty() {
-            self.queue.write_buffer(&self.instance_buffer, 0, bytes);
+        let needed = bytes.len().max(INSTANCE_STRIDE as usize) as u64;
+        if self.instance_buffer.size() < needed {
+            self.instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("scene3d_instances"),
+                size: needed,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
         }
-        self.models = models;
+        if !bytes.is_empty() {
+            queue.write_buffer(&self.instance_buffer, 0, bytes);
+        }
         self.groups = groups;
         self.total_instances = total;
     }
 
-    fn write_globals(&mut self) {
-        // Orthographic isometric camera: yaw 45°, pitch 30° (2:1-ish look).
+    /// Recreate the depth texture to match a resized render target.
+    pub fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
+        if width == self.width && height == self.height {
+            return;
+        }
+        self.width = width;
+        self.height = height;
+        self.depth = create_depth(device, width, height);
+    }
+
+    /// Write the orthographic isometric camera + time-of-day uniforms.
+    pub fn prepare(&self, queue: &wgpu::Queue, params: &SceneParams) {
+        // yaw 45°, pitch 30°: close to the original 2:1 isometric look.
         let yaw = 45.0_f32.to_radians();
         let pitch = 30.0_f32.to_radians();
         let dist = 24.0f32;
-        let target = [0.0f32, 0.8, 0.0];
+        let target = params.target;
         let eye = [
             target[0] + pitch.cos() * yaw.sin() * dist,
             target[1] + pitch.sin() * dist,
             target[2] + pitch.cos() * yaw.cos() * dist,
         ];
 
-        let half_h = 5.0f32;
-        let aspect = self.width as f32 / self.height as f32;
-        let proj = math4::ortho(
-            -half_h * aspect,
-            half_h * aspect,
-            -half_h,
-            half_h,
-            0.1,
-            100.0,
-        );
+        let half_h = (params.half_height / params.zoom.max(0.2)).max(0.5);
+        let aspect = self.width as f32 / self.height.max(1) as f32;
+        let proj = math4::ortho(-half_h * aspect, half_h * aspect, -half_h, half_h, 0.1, 100.0);
         let view = math4::look_at(eye, target, [0.0, 1.0, 0.0]);
         let view_proj = math4::multiply(&proj, &view);
 
@@ -373,22 +374,162 @@ impl Demo3D {
             data[c * 4..c * 4 + 4].copy_from_slice(col);
         }
         data[16..20].copy_from_slice(&[eye[0], eye[1], eye[2], 0.0]);
-        // Warm sun, high in the sky.
-        data[20..24].copy_from_slice(&[0.45, 0.82, 0.35, 0.78]);
+        // Warm sun, high in the sky; intensity follows the day/night clock.
+        data[20..24].copy_from_slice(&[0.45, 0.82, 0.35, 0.12 + 0.66 * params.daylight]);
         data[24..28].copy_from_slice(&[1.0, 0.93, 0.82, 0.0]);
-        // Cool hemisphere fill.
-        data[28..32].copy_from_slice(&[0.42, 0.47, 0.56, 0.0]);
-        // Campfire-ish point light near the middle of the diorama.
-        data[32..36].copy_from_slice(&[1.6, 1.2, 1.4, 6.0]);
-        data[36..40].copy_from_slice(&[1.0, 0.55, 0.25, 0.55]);
+        // Cool hemisphere fill (dimmer at night).
+        let amb = 0.18 + 0.30 * params.daylight;
+        data[28..32].copy_from_slice(&[0.42 * amb, 0.47 * amb, 0.56 * amb, 0.0]);
+        // Point light tracks the camera target (campfire-ish warm glow).
+        data[32..36].copy_from_slice(&[target[0], target[1] + 0.8, target[2], 6.0]);
+        data[36..40].copy_from_slice(&[1.0, 0.55, 0.25, 0.45 * params.night]);
         // Fog colour + density.
         data[40..44].copy_from_slice(&[0.05, 0.07, 0.11, 0.012]);
-        self.queue
-            .write_buffer(&self.globals_buffer, 0, f32_bytes(&data));
+        queue.write_buffer(&self.globals_buffer, 0, f32_bytes(&data));
+    }
+
+    /// Record the 3D pass into an existing command encoder.
+    pub fn record(&self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView, clear: wgpu::Color) {
+        let depth_view = self.depth.create_view(&wgpu::TextureViewDescriptor::default());
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("scene3d_pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(clear),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &depth_view,
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: wgpu::StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
+        if !self.groups.is_empty() {
+            pass.set_pipeline(&self.pipeline);
+            pass.set_bind_group(0, &self.bind_group, &[]);
+            for group in &self.groups {
+                let model = &self.models[group.model];
+                pass.set_vertex_buffer(0, model.vertex_buffer.slice(..));
+                pass.set_index_buffer(model.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                pass.set_vertex_buffer(
+                    1,
+                    self.instance_buffer.slice(
+                        group.instance_offset
+                            ..group.instance_offset + group.count as u64 * INSTANCE_STRIDE,
+                    ),
+                );
+                pass.draw_indexed(0..model.index_count, 0, 0..group.count);
+            }
+        }
+    }
+
+    pub fn stats(&self) -> String {
+        let vertices: u32 = self.models.iter().map(|m| m.vertex_count).sum();
+        let colours: usize = self.models.iter().map(|m| m.base_colours.len()).sum();
+        format!(
+            "{} models ({} verts, {} materials), {} instances, {} draw groups, {}x{}",
+            self.models.len(),
+            vertices,
+            colours,
+            self.total_instances,
+            self.groups.len(),
+            self.width,
+            self.height
+        )
+    }
+}
+
+/// Demo wrapper: keeps the original standalone `#demo3d` canvas + device.
+struct Demo3D {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    surface: wgpu::Surface<'static>,
+    config: wgpu::SurfaceConfiguration,
+    scene: Scene3D,
+    frame: u64,
+}
+
+impl Demo3D {
+    /// Build a dedicated WebGPU context on a `#demo3d` canvas.
+    async fn new() -> Result<Self, String> {
+        let canvas = ensure_canvas()?;
+        let width = canvas.width().max(1);
+        let height = canvas.height().max(1);
+
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let surface = instance
+            .create_surface(wgpu::SurfaceTarget::Canvas(canvas))
+            .map_err(|e| format!("create_surface(demo3d): {e}"))?;
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                force_fallback_adapter: false,
+                compatible_surface: Some(&surface),
+                apply_limit_buckets: false,
+            })
+            .await
+            .map_err(|e| format!("request_adapter(demo3d): {e}"))?;
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                label: Some("demo3d_device"),
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::default(),
+                ..Default::default()
+            })
+            .await
+            .map_err(|e| format!("request_device(demo3d): {e}"))?;
+
+        let format = surface
+            .get_capabilities(&adapter)
+            .formats
+            .first()
+            .copied()
+            .ok_or("demo3d: no surface formats")?;
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format,
+            color_space: wgpu::SurfaceColorSpace::Auto,
+            width,
+            height,
+            present_mode: wgpu::PresentMode::Fifo,
+            alpha_mode: wgpu::CompositeAlphaMode::Opaque,
+            view_formats: vec![],
+            desired_maximum_frame_latency: 2,
+        };
+        surface.configure(&device, &config);
+        let scene = Scene3D::new(&device, format, width, height);
+
+        Ok(Self {
+            device,
+            queue,
+            surface,
+            config,
+            scene,
+            frame: 0,
+        })
     }
 
     fn render_frame(&mut self) -> Result<(), String> {
-        self.write_globals();
+        self.scene.prepare(
+            &self.queue,
+            &SceneParams {
+                target: [0.0, 0.8, 0.0],
+                zoom: 1.0,
+                daylight: 1.0,
+                night: 1.0,
+                half_height: 5.0,
+            },
+        );
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(f) => f,
             wgpu::CurrentSurfaceTexture::Suboptimal(f) => f,
@@ -397,59 +538,21 @@ impl Demo3D {
         let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let depth_view = self.depth.create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("demo3d_encoder"),
             });
-        {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("demo3d_pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.05,
-                            g: 0.07,
-                            b: 0.11,
-                            a: 1.0,
-                        }),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &depth_view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(1.0),
-                        store: wgpu::StoreOp::Store,
-                    }),
-                    stencil_ops: None,
-                }),
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
-            if !self.groups.is_empty() {
-                pass.set_pipeline(&self.pipeline);
-                pass.set_bind_group(0, &self.bind_group, &[]);
-                for group in &self.groups {
-                    let model = &self.models[group.model];
-                    pass.set_vertex_buffer(0, model.vertex_buffer.slice(..));
-                    pass.set_index_buffer(model.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-                    pass.set_vertex_buffer(
-                        1,
-                        self.instance_buffer.slice(
-                            group.instance_offset
-                                ..group.instance_offset + group.count as u64 * INSTANCE_STRIDE,
-                        ),
-                    );
-                    pass.draw_indexed(0..model.index_count, 0, 0..group.count);
-                }
-            }
-        }
+        self.scene.record(
+            &mut encoder,
+            &view,
+            wgpu::Color {
+                r: 0.05,
+                g: 0.07,
+                b: 0.11,
+                a: 1.0,
+            },
+        );
         self.queue.submit([encoder.finish()]);
         self.queue.present(frame);
         self.frame += 1;
@@ -457,37 +560,11 @@ impl Demo3D {
     }
 
     fn stats(&self) -> String {
-        let vertices: u32 = self.models.iter().map(|m| m.vertex_count).sum();
-        let colours: usize = self.models.iter().map(|m| m.base_colours.len()).sum();
         format!(
-            "demo3d: {} models ({} verts, {} materials), {} instances, {} draw groups, {} frames, {}x{}",
-            self.models.len(),
-            vertices,
-            colours,
-            self.total_instances,
-            self.groups.len(),
-            self.frame,
-            self.config.width,
-            self.config.height
+            "demo3d: {} frames, {}x{}; {}",
+            self.frame, self.config.width, self.config.height, self.scene.stats()
         )
     }
-}
-
-fn create_depth(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Texture {
-    device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("demo3d_depth"),
-        size: wgpu::Extent3d {
-            width: width.max(1),
-            height: height.max(1),
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Depth32Float,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[],
-    })
 }
 
 /// Create (or reuse) a visible canvas dedicated to the 3D demo. Using a
@@ -526,8 +603,9 @@ fn ensure_canvas() -> Result<HtmlCanvasElement, String> {
     Ok(canvas)
 }
 
-/// Download a GLB from the dev server into raw bytes.
-async fn fetch_glb(url: &str) -> Result<Vec<u8>, String> {
+/// Download a GLB from the dev server into raw bytes. Also used by the game
+/// vertical slice to load its runtime models from `/assets/models/`.
+pub(crate) async fn fetch_glb(url: &str) -> Result<Vec<u8>, String> {
     let window = web_sys::window().ok_or("no window")?;
     let response = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(url))
         .await
@@ -553,14 +631,15 @@ const DEMO_MODELS: &[&str] = &[
     "player", "tree", "house", "campfire", "rock", "crystal", "banner",
 ];
 
-fn make_instance(x: f32, z: f32, yaw: f32, scale: f32, tint: [f32; 4]) -> Instance {
-    // translation * rotationY * uniform scale
-    let mut transform = math4::multiply(
-        &math4::translation(x, 0.0, z),
-        &math4::rotation_y(yaw),
-    );
+/// translation(x, y, z) * rotationY(yaw) * uniform scale.
+pub(crate) fn instance_at(x: f32, y: f32, z: f32, yaw: f32, scale: f32, tint: [f32; 4]) -> Instance {
+    let mut transform = math4::multiply(&math4::translation(x, y, z), &math4::rotation_y(yaw));
     transform = math4::multiply(&transform, &math4::scaling(scale, scale, scale));
     Instance { transform, tint }
+}
+
+fn make_instance(x: f32, z: f32, yaw: f32, scale: f32, tint: [f32; 4]) -> Instance {
+    instance_at(x, 0.0, z, yaw, scale, tint)
 }
 
 /// Build a small diorama layout. The repeated trees / rocks / crystals are
@@ -633,7 +712,8 @@ pub async fn load_demo_models() -> Result<String, String> {
         }
     }
     let placements = demo_placements(models.len());
-    demo.set_scene(models, placements);
+    demo.scene.set_models(models);
+    demo.scene.set_instances(&demo.device, &demo.queue, placements);
     let stats = demo.stats();
     DEMO.with(|cell| *cell.borrow_mut() = Some(demo));
     Ok(format!("{stats}; loaded: {}", loaded_names.join(", ")))

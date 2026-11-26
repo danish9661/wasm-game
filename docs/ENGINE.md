@@ -64,7 +64,9 @@ from Rust; touch/UI controls call the exports from JS.
 
 `web/src/renderer.rs` contains `App`: camera and zoom, world/chunk caches,
 player/inventory/enemies/quest state, interiors, particles, build ghost,
-network client, and the wgpu device/surface/pipeline/buffers. Also:
+network client, and the wgpu device/surface/pipeline/buffers. The 3D vertical
+slice lives in `model.rs` (GLB -> GPU geometry), `pipeline3d.rs` (reusable
+instanced scene) and `terrain3d.rs` (heightfield from world tiles). Also:
 
 * `network.rs` — WebSocket client for co-op rooms (same crate as `sim` protocol).
 * `save.rs`, `zip.rs` — versioned JSON saves and `.zip` export/import.
@@ -159,9 +161,11 @@ directory server; `pkg/index.html` is the entry point.
    `scripts/check_metrics.py` re-asserts the headline invariants. Both are
    pure Python 3 standard library — no Blender needed.
 
-**Important:** at present the GLBs are an *art pipeline and verification*
-output; the running game still draws geometry procedurally from `game::render`
-and `game::elements` (see §5).
+**Status:** the GLBs are now consumed by the shipping client's 3D vertical
+slice (see §5): the game canvas fetches `player`, `tree`, `rock`, `house`,
+`bush`, `campfire`, `crystal` and `banner` from `pkg/assets/models/` at boot and
+draws them with the instanced pipeline. The original 2.5D procedural geometry
+remains the fallback (`?2d` / `set_render3d(false)`).
 
 ## 5. Current rendering limitations and the planned 3D glTF path
 
@@ -204,10 +208,24 @@ Intended interface (landing in parallel, exact signatures may still move):
   with per-biome materials. The 2D pipeline stays for particles, weather
   overlays, HUD-adjacent effects and the `#blit` fallback.
 
-**Status:** the modules currently provide a preview/demo, not the renderer used
-by the shipping `step()` loop; do not depend on their API from gameplay code
-yet. `game/src/*` is expected to stay unchanged — the swap remains local to
-`web/`.
+**Vertical slice (shipped in `web/` only):** `App::init_3d_scene()` fetches the
+GLBs above, uploads them through `model::upload_geometry()`, and installs a
+shared `pipeline3d::Scene3D` on the *game* device. Each `update()` builds:
+(1) one instanced player GLB at the sim player's position/facing/terrain height,
+(2) a generated `terrain3d` heightfield with per-biome vertex colours and
+height-derived side skirts (one identity instance), and (3) GLB props mapped
+from the same `SpriteStyle` stream that fed `build_tile_mesh` (tree, rock,
+house, bush, campfire, crystal, banner). `App::render()` records the 3D pass
+into whichever colour attachment it presents (surface or offscreen blit target)
+with a depth buffer; the 2D quad pass, particles/weather overlays and frame
+dump are untouched and stay behind the `?2d` / `set_render3d(false)` toggle.
+`game/src/*` remains unchanged. Verification:
+`cargo check --target wasm32-unknown-unknown -p wasm_game`, `./build.sh`, and
+`node tests/smoke_3d.mjs` (headless Playwright; install `playwright-core`
+locally and set `PLAYWRIGHT_MODULE`/`CHROME_BIN` if it is not on the module
+path — 0 console errors). The standalone
+`#demo3d` preview and its `load_demo_models()` / `render_3d_demo()` exports are
+also preserved — they now share the same `Scene3D` core.
 
 ## 6. Why not switch engines?
 

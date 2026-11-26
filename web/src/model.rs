@@ -315,22 +315,21 @@ pub fn parse_glb(bytes: &[u8]) -> Result<ParsedGeometry, String> {
     })
 }
 
-/// Parse a GLB and upload its geometry to the GPU.
+/// Upload already-parsed `[pos(3), normal(3), colour(3)]` geometry.
 ///
-/// Uses the `gltf` crate (with its default `import`/`utils` features) for
-/// parsing, then bakes node transforms + material colours into interleaved
-/// `[pos(3), normal(3), colour(3)]` vertices and u32 indices.
-pub fn load_glb(
-    bytes: &[u8],
+/// Shared by the GLB loader and the generated terrain heightfield so both go
+/// through exactly one vertex/index layout for the 3D pipeline.
+pub fn upload_geometry(
+    parsed: ParsedGeometry,
     device: &wgpu::Device,
     queue: &wgpu::Queue,
-) -> Result<Model, String> {
+) -> Model {
     let ParsedGeometry {
         name,
         vertices,
         indices,
         base_colours,
-    } = parse_glb(bytes)?;
+    } = parsed;
     let vertex_buffer = upload_buffer(
         device,
         queue,
@@ -349,14 +348,27 @@ pub fn load_glb(
         queue.write_buffer(&index_buffer, 0, index_bytes);
     }
 
-    Ok(Model {
+    Model {
         name,
         vertex_buffer,
         index_buffer,
         vertex_count: (vertices.len() / MODEL_VERTEX_FLOATS) as u32,
         index_count: indices.len() as u32,
         base_colours,
-    })
+    }
+}
+
+/// Parse a GLB and upload its geometry to the GPU.
+///
+/// Uses the `gltf` crate (with its default `import`/`utils` features) for
+/// parsing, then bakes node transforms + material colours into interleaved
+/// `[pos(3), normal(3), colour(3)]` vertices and u32 indices.
+pub fn load_glb(
+    bytes: &[u8],
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+) -> Result<Model, String> {
+    Ok(upload_geometry(parse_glb(bytes)?, device, queue))
 }
 
 #[cfg(test)]
