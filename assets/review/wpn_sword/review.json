@@ -1,0 +1,89 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/export/props/wpn_sword.glb",
+ "id": "wpn_sword",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "wpn_sword_lod0_primitive0",
+   "wpn_sword_lod0_primitive1",
+   "wpn_sword_lod0_primitive2"
+  ],
+  "lod_tris": {
+   "0": 264
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.125,
+    -0.118,
+    -0.04
+   ],
+   "max": [
+    0.125,
+    1.16,
+    0.04
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_steel_blade",
+   "m_gold",
+   "m_leather_grip"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "fp",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/fp.png"
+  },
+  {
+   "view": "fp_close",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/fp_close.png"
+  },
+  {
+   "view": "item_side_l",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/item_side_l.png"
+  },
+  {
+   "view": "item_side_r",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/item_side_r.png"
+  },
+  {
+   "view": "item_top",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/item_top.png"
+  },
+  {
+   "view": "item_front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/item_front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/iso_context.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/wpn_sword.png"
+  }
+ ]
+}

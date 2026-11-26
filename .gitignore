@@ -1,6 +1,9 @@
 /target
 /pkg
 *.log
+__pycache__/
+*.pyc
+assets/manifest.json.lock
 .DS_Store/saves
 /saves/
 

@@ -2,13 +2,13 @@
   "id": "char_player",
   "category": "char",
   "tier": "S",
-  "status": "wip",
+  "status": "done",
   "track": "character",
   "source": "make",
   "what": "Starfall player hero: orange-tunic wanderer in the isometric overworld, seen from the game camera.",
   "dims": {
-    "x": 0.58,
-    "y": 0.33,
+    "x": 0.591,
+    "y": 0.278,
     "z": 1.55,
     "tol": 0.05,
     "basis": "Measured final silhouette incl. held sword; height 1.55u from docs/ART_DIRECTION.md"

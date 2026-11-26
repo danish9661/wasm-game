@@ -1,0 +1,36 @@
+{
+  "id": "char_wolf",
+  "category": "char",
+  "tier": "S",
+  "status": "done",
+  "track": "character",
+  "source": "make",
+  "what": "A wild wolf that prowls the Starfall forest edge; a low four-legged silhouette seen from the isometric camera and at eye height.",
+  "dims": {
+    "x": 0.446,
+    "y": 1.68,
+    "z": 1.06,
+    "tol": 0.08,
+    "basis": "old wolf was 1.14u high; body length ~1.15u at a shoulder height of ~0.7u, 1u tile scale"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "char_body",
+  "density_class": "char_body",
+  "collider": "none",
+  "props": {},
+  "materials": [
+    "m_wolf_body",
+    "m_wolf_dark",
+    "m_wolf_eye",
+    "m_snow"
+  ],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "isometric gameplay camera; body/head/tail silhouette must read at 45/30 degrees"
+  },
+  "references": [],
+  "style_notes": "Low-poly diorama, leather #592F1A coat, charcoal #1A1A1A legs and muzzle, snow #E8F0FA chest, gold #D9A62E eyes, no textures. Never: smooth shading, stacked boxes, invented hues.",
+  "notes": "Replaces the old 246-tri wolf with a lofted body, wedge head, ears, legs and a raised tail."
+}

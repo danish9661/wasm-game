@@ -1,0 +1,75 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/export/char/char_wolf.glb",
+ "id": "char_wolf",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "char_wolf_lod0_primitive0",
+   "char_wolf_lod0_primitive1",
+   "char_wolf_lod0_primitive2",
+   "char_wolf_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 488
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.23,
+    0,
+    -0.86
+   ],
+   "max": [
+    0.23,
+    1.06,
+    0.86
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_wolf_body",
+   "m_wolf_dark",
+   "m_snow",
+   "m_wolf_eye"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf/feed.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_wolf.png"
+  }
+ ]
+}

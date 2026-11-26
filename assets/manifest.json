@@ -1,0 +1,62 @@
+[
+  {
+    "id": "char_player",
+    "path": "export/char/char_player.glb",
+    "category": "char",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Built with game-asset-modeling: bmesh parts, bevels, weighted normals, UV pack; flat low-poly palette, no textures."
+  },
+  {
+    "id": "char_wolf",
+    "path": "export/char/char_wolf.glb",
+    "category": "char",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Replaces the old 246-tri wolf with a lofted body, wedge head, ears, legs and a raised tail."
+  },
+  {
+    "id": "prop_altar",
+    "path": "export/props/prop_altar.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Replaces the 388-tri old altar with a stepped/bevelled plinth, tapered pedestal, gold posts and layered crystal shards."
+  },
+  {
+    "id": "prop_house",
+    "path": "export/props/prop_house.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Replaces the 236-tri old house with pitched gables, shingled roof, timber frame, framed windows and a chimney, within the 1500-tri assembled budget."
+  },
+  {
+    "id": "prop_tree",
+    "path": "export/props/prop_tree.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Replaces the 100-tri old tree with a tapered loft trunk, angled branches and three faceted canopy lobes."
+  },
+  {
+    "id": "wpn_sword",
+    "path": "export/props/wpn_sword.glb",
+    "category": "wpn",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt from the old 110-tri box sword with bmesh lofts, selective bevels, weighted normals and a packed UV0."
+  }
+]

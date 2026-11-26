@@ -1,5 +1,5 @@
 {
- "glb": "/home/danish1075/Documents/wasm game/assets/export/char/char_player.glb",
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/export/char/char_player.glb",
  "id": "char_player",
  "errors": [],
  "warnings": [],
@@ -15,7 +15,7 @@
    "char_player_lod0_primitive7"
   ],
   "lod_tris": {
-   "0": 1404
+   "0": 500
   },
   "col_meshes": [],
   "sockets": [],
@@ -23,20 +23,20 @@
   "broken": 0,
   "bbox_gltf": {
    "min": [
-    -0.29,
+    -0.295,
     0,
-    -0.161
+    -0.139
    ],
    "max": [
-    0.29,
-    1.535,
-    0.161
+    0.295,
+    1.55,
+    0.139
    ]
   },
   "extras": {},
   "materials": [
-   "m_pants",
    "m_leather",
+   "m_pants",
    "m_tunic_orange",
    "m_gold",
    "m_skin",
@@ -49,35 +49,35 @@
  "views": [
   {
    "view": "front",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/front.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player/front.png"
   },
   {
    "view": "three_quarter",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/three_quarter.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player/three_quarter.png"
   },
   {
    "view": "eye",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/eye.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player/eye.png"
   },
   {
    "view": "iso",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/iso.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player/iso.png"
   },
   {
    "view": "iso_context",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/iso_context.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player/iso_context.png"
   },
   {
    "view": "feed",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/feed.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player/feed.png"
   },
   {
    "view": "uv_density",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player/uv_density.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player/uv_density.png"
   },
   {
    "view": "sheet",
-   "file": "/home/danish1075/Documents/wasm game/assets/review/char_player.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/char_player.png"
   }
  ]
 }

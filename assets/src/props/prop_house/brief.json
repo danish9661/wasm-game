@@ -1,0 +1,45 @@
+{
+  "id": "prop_house",
+  "category": "prop",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "A timber-framed Starfall cottage: stone plinth, plaster walls, steep tiled roof with chimney, door and two windows, seen from the isometric overworld camera.",
+  "dims": {
+    "x": 2.36,
+    "y": 2.265,
+    "z": 3.1,
+    "tol": 0.08,
+    "basis": "ART_DIRECTION house ~3.0u high, 1 tile = 1u so a 2x2-tile footprint with 0.15u roof overhang"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "hero",
+  "density_class": "prop",
+  "collider": "box",
+  "props": {},
+  "materials": [
+    "m_stone",
+    "m_plaster",
+    "m_wood",
+    "m_roof",
+    "m_glass",
+    "m_gold"
+  ],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "commander camera sees the roof and the front facade at 45/30 degrees"
+  },
+  "review_context": {
+    "tile": [
+      3,
+      3
+    ],
+    "elevation": 0.0
+  },
+  "references": [],
+  "style_notes": "Low-poly diorama: wood #6B4423, stone #7A7F87, plaster #D9B46A-tinted pale, roof dark slate from palette steel, glass #3A7CA5, gold #D9A62E handle. No textures. Never: flat roof, unreadable windows, invented hues, stacked boxes without bevels.",
+  "notes": "Replaces the 236-tri old house with pitched gables, shingled roof, timber frame, framed windows and a chimney, within the 1500-tri assembled budget."
+}

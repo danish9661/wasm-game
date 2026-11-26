@@ -1,0 +1,36 @@
+{
+  "id": "prop_altar",
+  "category": "prop",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "An arcane stone altar in a Starfall shrine: stepped plinth, four gold-capped posts and a hovering purple crystal, seen from the isometric camera.",
+  "dims": {
+    "x": 1.0,
+    "y": 0.72,
+    "z": 1.9,
+    "tol": 0.08,
+    "basis": "old altar was 1.94u high; plinth spans ~1u (one tile) with a 0.72u depth"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "prop",
+  "density_class": "prop",
+  "collider": "box",
+  "props": {},
+  "materials": [
+    "m_stone",
+    "m_gold",
+    "m_arcane",
+    "m_arcane_dim"
+  ],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "commander camera looks down on the shrine; stepped base and crystal silhouette must read"
+  },
+  "references": [],
+  "style_notes": "Low-poly diorama, stone #7A7F87, gold #D9A62E, arcane purple #6B3FA0 emissive, no textures. Never: smooth shading, invented hues, stacked boxes without bevels.",
+  "notes": "Replaces the 388-tri old altar with a stepped/bevelled plinth, tapered pedestal, gold posts and layered crystal shards."
+}

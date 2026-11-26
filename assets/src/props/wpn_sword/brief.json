@@ -1,0 +1,42 @@
+{
+  "id": "wpn_sword",
+  "category": "wpn",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "The player's held broadsword: a straight double-edged blade with a gold crossguard, drawn at the hip in the overworld and seen close in first person.",
+  "dims": {
+    "x": 0.25,
+    "y": 0.08,
+    "z": 1.278,
+    "tol": 0.06,
+    "basis": "ART_DIRECTION held weapon 1.0-1.3u; replaced the old 1.25u sword, crossguard width ~0.32u from a hand-width grip"
+  },
+  "pivot": "custom",
+  "pivot_point": [
+    0.0,
+    0.0,
+    -0.06
+  ],
+  "on_ground": false,
+  "budget_class": "hero",
+  "density_class": "hero",
+  "collider": "none",
+  "props": {},
+  "materials": [
+    "m_steel_blade",
+    "m_gold",
+    "m_leather_grip"
+  ],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "held",
+    "why": "first-person view model at ~0.5m; blade silhouette and guard read at arm's length"
+  },
+  "review_held": true,
+  "references": [],
+  "style_notes": "Low-poly diorama, palette steel #C8D0D8 / gold #D9A62E / dark leather #592F1A, no textures. Crisp blade facets, bevelled guard. Never: smooth shading, stacked-box blade, invented hues.",
+  "notes": "Rebuilt from the old 110-tri box sword with bmesh lofts, selective bevels, weighted normals and a packed UV0."
+}
