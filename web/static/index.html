@@ -31,10 +31,10 @@
       <div class="bar-track boss-track"><div class="bar-fill boss-fill" id="bar-boss"></div></div>
     </div>
     <div class="hud-row inv-row" id="hud-chips">
-      <span class="inv-chip inv-wood" id="inv-wood">W 0</span>
-      <span class="inv-chip inv-stone" id="inv-stone">S 0</span>
-      <span class="inv-chip inv-food" id="inv-food">F 0</span>
-      <span class="inv-chip inv-frag" id="inv-frag" style="display:none">🩱 0</span>
+      <span class="inv-chip inv-wood" id="inv-wood">🪵 0</span>
+      <span class="inv-chip inv-stone" id="inv-stone">🪨 0</span>
+      <span class="inv-chip inv-food" id="inv-food">🍖 0</span>
+      <span class="inv-chip inv-frag" id="inv-frag" style="display:none">👑 0</span>
       <span class="inv-chip" id="hud-coords">@ 0,0</span>
       <span class="inv-chip" id="hud-mobs">MOBS 0</span>
       <span class="inv-chip weather" id="hud-weather" style="display:none">🌧 Rain</span>
@@ -122,7 +122,7 @@
 
   <div id="touch" class="hidden">
     <div id="joystick"><div id="joy-knob"></div></div>
-    <div class="touch-actions">
+    <div class="touch-actions" id="touch-actions-list">
       <button class="tbtn act" data-key="KeyE" title="Interact"><span class="tbtn-icon">E</span><span class="tbtn-label">Use</span></button>
       <button class="tbtn act" data-key="KeyJ" title="Attack"><span class="tbtn-icon">⚔</span><span class="tbtn-label">Atk</span></button>
       <button class="tbtn act" data-key="KeyK" title="Bow"><span class="tbtn-icon">🏹</span><span class="tbtn-label">Bow</span></button>
@@ -142,6 +142,7 @@
       <button class="tbtn act" data-key="KeyY" title="Pack stone block (2 stone)"><span class="tbtn-icon">🧱</span><span class="tbtn-label">Block</span></button>
       <button class="tbtn act" data-key="PrintScreen" title="Screenshot"><span class="tbtn-icon">📷</span><span class="tbtn-label"></span></button>
     </div>
+    <button id="touch-more" class="tbtn more" title="Show available actions" aria-expanded="false" aria-controls="touch-actions-list"><span class="tbtn-icon">⋯</span><span class="tbtn-label">Actions</span><span id="touch-count" class="fab-count" aria-hidden="true">0</span></button>
     <div id="touch-build" class="hidden">BUILD MODE — tap ground to place · 🔨 to exit</div>
   </div>
 
@@ -157,6 +158,7 @@
         <button id="btn-help" class="menu-btn">Help / Demo</button>
         <a id="btn-github" class="menu-btn" href="https://github.com/danish9661/wasm-game" target="_blank" rel="noopener">GitHub</a>
       </div>
+      <p class="boot-hint"><kbd>Enter</kbd> New Game · <kbd>Esc</kbd> Settings · <kbd>I</kbd> Inventory</p>
       <div class="set-row" style="justify-content:center;gap:8px;margin:6px 0 2px">
         <label>World Seed <input id="boot-seed" type="text" placeholder="random" style="width:120px" /></label>
       </div>
@@ -192,7 +194,7 @@
       <label class="set-row">SFX <input id="set-sfx" type="range" min="0" max="1" step="0.05" /></label>
       <label class="set-row">Music <input id="set-music" type="range" min="0" max="1" step="0.05" /></label>
       <label class="set-row">Mute <input id="set-mute" type="checkbox" /></label>
-       <label class="set-row">Resolution
+       <label class="set-row" id="res-row">Resolution
         <select id="set-res">
           <option value="640x360">Low (640×360)</option>
           <option value="960x540">Medium (960×540)</option>
@@ -200,6 +202,7 @@
           <option value="native">Native (full res)</option>
         </select>
       </label>
+      <div class="set-row" id="res-auto-row" style="display:none">Resolution <span id="res-auto-val" class="res-auto-val">Auto</span></div>
       <label class="set-row">Auto Resolution <input id="set-adaptive" type="checkbox" /></label>
       <div class="menu-btns">
         <button id="btn-save" class="menu-btn">Save Game</button>
@@ -249,7 +252,11 @@
   </div>
 
   <div id="inventory" class="hidden">
-    <h3>RESOURCES</h3>
+    <div class="inv-top">
+      <h3>RESOURCES</h3>
+      <span class="inv-cue" aria-hidden="true">↕ scroll</span>
+      <button id="inv-close" aria-label="Close inventory (I)" title="Close inventory (I)">✕<small>I</small></button>
+    </div>
     <div id="inv-resources"></div>
     <h3>BUILD</h3>
     <div id="inv-recipes"></div>
@@ -274,6 +281,8 @@
       document.body.classList.toggle('desktop', !phone);
     };
     __setFormFactor();
+    // Dev telemetry is opt-in (?debug): the shipped HUD stays player-facing.
+    if (location.search.includes('debug')) document.body.classList.add('show-debug');
     window.addEventListener('resize', __setFormFactor);
     import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot, debug_enter_interior } from './wasm_game.js?v=20260901';
 
@@ -839,6 +848,25 @@
               b.classList.toggle('equipped', w.label.toLowerCase() === cur);
             });
           };
+          // Contextual touch deck: essentials stay, everything else appears
+          // only when the game state makes it useful.
+          const updateTouchActions = (stats) => {
+            const avail = new Set(['KeyE', 'KeyJ', 'Space', 'ShiftLeft', 'KeyQ']);
+            if ((stats.wown || 1) & 32) avail.add('KeyK'); // bow slot owned
+            if (stats.f > 0 && stats.hunger < 100) avail.add('KeyC');
+            if (stats.hp < 100) avail.add('KeyR');
+            if (stats.nearWater === 1 || stats.thirst < 100) avail.add('KeyT');
+            if (stats.near2 && stats.near2 !== 'wilderness') {
+              avail.add('Enter'); avail.add('KeyO'); avail.add('KeyZ');
+            }
+            if (stats.nearAnvil === 1) avail.add('KeyM');
+            if (stats.s >= 2) avail.add('KeyY');
+            document.querySelectorAll('#touch .tbtn.act').forEach((b) => {
+              b.classList.toggle('available', avail.has(b.dataset.key));
+            });
+            el('touch-count').textContent = String(avail.size);
+            el('touch-more').title = `Show ${avail.size} available actions`;
+          };
           const updateHud = (stats) => {
             setBar('bar-hp', 'num-hp', stats.hp);
             setBar('bar-hunger', 'num-hunger', stats.hunger);
@@ -853,9 +881,9 @@
             const thirstTrack = document.querySelector('#bar-thirst').parentElement;
             if (stats.thirst < 20 && stats.alive) thirstTrack.classList.add('critical-low');
             else thirstTrack.classList.remove('critical-low');
-            el('inv-wood').textContent = `W ${stats.w}`;
-            el('inv-stone').textContent = `S ${stats.s}`;
-            el('inv-food').textContent = `F ${stats.f}`;
+            el('inv-wood').textContent = `🪵 ${stats.w}`;
+            el('inv-stone').textContent = `🪨 ${stats.s}`;
+            el('inv-food').textContent = `🍖 ${stats.f}`;
             el('hud-coords').textContent = `@ ${stats.px},${stats.py}`;
             el('hud-mobs').textContent = `MOBS ${stats.mobs}`;
             el('hud-clock').textContent = stats.time;
@@ -940,6 +968,7 @@
              const obj = OBJECTIVES[Math.min(stats.quest | 0, OBJECTIVES.length - 1)];
              el('hud-objective').style.display = 'inline-block';
              el('hud-objective').textContent = '🎯 ' + obj;
+             el('hud-objective').title = '🎯 ' + obj;
 
              // Compass needle points from the player toward the current objective
              // (nearest unrecovered fragment guardian, or the altar once complete).
@@ -954,7 +983,7 @@
 
             if (stats.frag > 0) {
               el('inv-frag').style.display = '';
-              el('inv-frag').textContent = `🩱 ${stats.frag}/5`;
+              el('inv-frag').textContent = `👑 ${stats.frag}/5`;
             } else {
               el('inv-frag').style.display = 'none';
             }
@@ -1018,6 +1047,7 @@
             lastAlive = stats.alive;
 
             audioFromStats(stats);
+            updateTouchActions(stats);
           };
           const parseStats = (raw) => {
             const get = (re) => (String(raw).match(re) || [])[1];
@@ -1083,7 +1113,7 @@
             wood: ['🪵', 'Wood'], stone: ['🪨', 'Stone'], food: ['🍖', 'Food'],
             herb: ['🌿', 'Herb'], gem: ['💎', 'Gem'], iron: ['⚙️', 'Iron'],
             ironplate: ['🛡', 'Iron Plate'], gold: ['💰', 'Gold'],
-            fragment: ['🩱', 'Crown Fragment'],
+            fragment: ['👑', 'Crown Fragment'],
           };
           const updateInventory = (json) => {
             if (!json) return;
@@ -1135,17 +1165,32 @@
             }
             el('invbtn').classList.toggle('active', invOpen);
           };
+          // Close the contextual action overlay whenever another panel opens.
+          function closeActionsOverlay() {
+            const t = el('touch');
+            if (!t) return;
+            t.classList.remove('fab-open');
+            document.body.classList.remove('actions-open');
+            const fab = el('touch-more');
+            fab.setAttribute('aria-expanded', 'false');
+            fab.title = 'Show available actions';
+            fab.querySelector('.tbtn-label').textContent = 'Actions';
+          }
           const toggleInventory = () => {
             invOpen = !invOpen;
+            if (invOpen) closeActionsOverlay();
             invEl.classList.toggle('hidden', !invOpen);
+            document.body.classList.toggle('inv-open', invOpen);
+            el('invbtn').setAttribute('aria-expanded', String(invOpen));
           };
           el('invbtn').onclick = toggleInventory;
+          el('inv-close').onclick = toggleInventory;
 
           const codexEl = el('codex');
           let codexOpen = false;
           // Item-name -> RGB, mirrors ItemKind::color() in the Rust code.
           const ITEM_RGB = {
-            'wood': [140, 97, 51], 'stone': [158, 158, 168], 'food': [217, 89, 64],
+            'wood': [200, 155, 110], 'stone': [158, 158, 168], 'food': [232, 120, 95],
             'crown fragment': [255, 214, 77], 'herb': [115, 204, 102], 'gem': [115, 217, 242],
           };
           const dropPill = (name) => {
@@ -1181,6 +1226,7 @@
           };
           const toggleCodex = () => {
             codexOpen = !codexOpen;
+            if (codexOpen) closeActionsOverlay();
             codexEl.classList.toggle('hidden', !codexOpen);
             if (codexOpen) renderCodex();
           };
@@ -1441,13 +1487,22 @@
 
           // ---- Settings menu --------------------------------------------
           const settingsEl = el('settings');
+          // Auto resolution owns the readout: show the device's real viewport
+          // instead of a misleading desktop preset on a phone.
+          const syncResolutionRow = () => {
+            el('res-auto-val').textContent = `Auto · ${window.innerWidth}×${window.innerHeight}`;
+            el('res-auto-row').style.display = settings.adaptive ? 'flex' : 'none';
+            el('res-row').style.display = settings.adaptive ? 'none' : 'flex';
+          };
           const openSettings = () => {
+            closeActionsOverlay();
             el('set-master').value = settings.master;
             el('set-sfx').value = settings.sfx;
             el('set-music').value = settings.music;
             el('set-mute').checked = settings.muted;
             el('set-res').value = settings.res;
             el('set-adaptive').checked = settings.adaptive;
+            syncResolutionRow();
             settingsEl.className = 'overlay';
             paused = true;
           };
@@ -1477,6 +1532,7 @@
             settings.adaptive = e.target.checked;
             saveSettings();
             set_adaptive_res(settings.adaptive);
+            syncResolutionRow();
           };
           el('set-res').onchange = (e) => {
             settings.res = e.target.value;
@@ -1497,8 +1553,12 @@
               if (e.code === 'KeyY') { e.preventDefault(); reforge(0); }
               else if (e.code === 'KeyN') { e.preventDefault(); reforge(1); }
             }
+            if (bootOpen && e.code === 'Enter' && document.activeElement && document.activeElement.tagName !== 'INPUT') {
+              e.preventDefault();
+              el('btn-new').click();
+            }
             if (e.code === 'Escape') {
-              if (settingsEl.className === 'hidden') openSettings(); else closeSettings();
+              if (settingsEl.classList.contains('hidden')) openSettings(); else closeSettings();
             }
             if (e.code === 'KeyI') {
               e.preventDefault();
@@ -1553,7 +1613,24 @@
           // ---- Touch controls -------------------------------------------
           const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
           if (isTouch) el('touch').classList.remove('hidden');
-          document.querySelectorAll('#touch .tbtn').forEach((b) => {
+          // One dynamic FAB opens the contextual action overlay; only buttons
+          // the current game state marks .available are rendered inside it.
+          const touchMore = el('touch-more');
+          const touchDeck = el('touch');
+          touchMore.addEventListener('click', () => {
+            const open = !touchDeck.classList.contains('fab-open');
+            if (open && (invOpen || !settingsEl.classList.contains('hidden'))) return;
+            touchDeck.classList.toggle('fab-open', open);
+            document.body.classList.toggle('actions-open', open);
+            touchMore.setAttribute('aria-expanded', String(open));
+            touchMore.title = open ? 'Close actions' : `Show ${el('touch-count').textContent} available actions`;
+            touchMore.querySelector('.tbtn-label').textContent = open ? 'Close' : 'Actions';
+          });
+          // Tap the scrim (the #touch element outside the panel/FAB) to dismiss.
+          touchDeck.addEventListener('click', (ev) => {
+            if (ev.target === touchDeck && touchDeck.classList.contains('fab-open')) closeActionsOverlay();
+          });
+          document.querySelectorAll('#touch .tbtn[data-key]').forEach((b) => {
             const code = b.dataset.key;
             // NOTE: dispatch on `document` — the wasm input handlers listen on
             // `document` (keydown/keyup), and a `window`-targeted event never

@@ -1,0 +1,16 @@
+{
+  "desktop": {
+    "errors": [],
+    "stats": {
+      "frames": 57,
+      "stats": "[wasm] quads=2493 frames=52 player=(-31.5,-9.5) hp=100 hunger=100 stamina=100 thirst=100 alive=1 inv=(w0,s0,f0,h0,g0,gol"
+    }
+  },
+  "mobile": {
+    "errors": [],
+    "stats": {
+      "frames": 131,
+      "stats": "[wasm] quads=1000 frames=119 player=(-31.5,-9.5) hp=100 hunger=100 stamina=100 thirst=100 alive=1 inv=(w0,s0,f0,h0,g0,go"
+    }
+  }
+}

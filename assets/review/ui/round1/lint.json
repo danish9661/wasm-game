@@ -1,0 +1,7 @@
+{
+ "fail": [
+  "desktop: 4 text run(s) below WCAG AA, e.g. \"HP\" 4.42; \"HUNGER\" 4.42; \"THIRST\" 4.42",
+  "phone: 4 text run(s) below WCAG AA, e.g. \"HP\" 4.42; \"HUNGER\" 4.42; \"THIRST\" 4.42"
+ ],
+ "warn": []
+}

@@ -1,0 +1,12 @@
+desktop/boot: AA ok
+desktop/hud: AA ok
+desktop/settings: AA ok
+desktop/inventory: AA ok
+desktop/codex: AA ok
+desktop/errors: none
+phone/boot: AA ok
+phone/hud: AA ok
+phone/settings: AA ok
+phone/inventory: AA ok
+phone/codex: AA ok
+phone/errors: none
