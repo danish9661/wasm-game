@@ -1181,6 +1181,40 @@ fn scene_model_variant(style: SpriteStyle, x: f32, y: f32) -> &'static str {
     }
 }
 
+/// Sample an authored animation clip at time `t` and return its body motion in
+/// world units: (right, up, forward). Clips store sampled root/hip transforms;
+/// applying them to the instanced player model makes the existing GLB visibly
+/// walk, strike, dodge and react instead of standing rigid.
+fn anim_offset(name: &str, t: f32) -> (f32, f32, f32) {
+    use crate::generated_animations::ANIM_CLIPS;
+    let Some(clip) = ANIM_CLIPS.iter().find(|c| c.name == name) else {
+        return (0.0, 0.0, 0.0);
+    };
+    if clip.frames.is_empty() {
+        return (0.0, 0.0, 0.0);
+    }
+    let idx = ((t * 30.0) as usize) % clip.frames.len();
+    let a = clip.frames[idx];
+    let b = clip.frames[(idx + 1) % clip.frames.len()];
+    let f = (t * 30.0).fract();
+    let lerp = |x: f32, y: f32| x + (y - x) * f;
+    // glTF/Blender: +Z up, -Y forward. Convert to enginespace right/up/forward.
+    (
+        lerp(a[0], b[0]),
+        lerp(a[5], b[5]),
+        -lerp(a[1], b[1]),
+    )
+}
+
+/// Pick the clip that matches the live player state.
+fn player_anim_clip(walk: f32, swing: f32, dodge: f32, hurt: f32) -> &'static str {
+    if hurt > 0.01 { "hit_light" }
+    else if dodge > 0.01 { "dodge_roll" }
+    else if swing > 0.05 { "attack_1" }
+    else if walk > 0.15 { "walk" }
+    else { "idle" }
+}
+
 /// Characters get a gentle tint from their gameplay colour (so hit flashes and
 /// co-op ally colours still read); props keep their authored material colours.
 fn scene_tint(style: SpriteStyle, color: [f32; 3], alpha: f32) -> [f32; 4] {
@@ -1382,11 +1416,23 @@ impl App {
             tint: [1.0, 1.0, 1.0, 1.0],
         });
         // Player GLB: Y-up, base on the ground, facing from the simulation.
+        // Authored clip motion is sampled here so the model walks/strikes
+        // instead of being a rigid statue in the 3D pass.
         let yaw = self.player.facing.1.atan2(self.player.facing.0);
+        let walk_amount = (self.speed / 8.0).clamp(0.0, 1.0);
+        let clip = player_anim_clip(
+            walk_amount,
+            self.player.swing_t,
+            self.player.dodge_timer,
+            self.player.hurt_timer,
+        );
+        let (side, bob, forward) = anim_offset(clip, self.anim_clock);
+        let fx = self.player.facing.0;
+        let fy = self.player.facing.1;
         placements[model_index("player")].push(pipeline3d::instance_at(
-            self.player.x,
-            player_h,
-            self.player.y,
+            self.player.x + side * fx - forward * fy,
+            player_h + bob.max(-0.25),
+            self.player.y + side * fy + forward * fx,
             yaw,
             1.0,
             [1.0, 1.0, 1.0, 1.0],
