@@ -1,0 +1,71 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/models/house.glb",
+ "id": "house",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_house_lod0_primitive0",
+   "prop_house_lod0_primitive1",
+   "prop_house_lod0_primitive2",
+   "prop_house_lod0_primitive3",
+   "prop_house_lod0_primitive4",
+   "prop_house_lod0_primitive5"
+  ],
+  "lod_tris": {
+   "0": 1226
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -1.18,
+    0,
+    -1.063
+   ],
+   "max": [
+    1.18,
+    3.1,
+    1.063
+   ]
+  },
+  "extras": {
+   "prop_house_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "m_stone",
+   "m_plaster",
+   "m_wood",
+   "m_roof_slate",
+   "m_glass",
+   "m_gold"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_house/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_house/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_house/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_house/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_house.png"
+  }
+ ]
+}
