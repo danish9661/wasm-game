@@ -1,9 +1,12 @@
 use game::building::{BUILDABLE, CHEST_RANGE, Structure, StructureKind, try_build};
 use game::iso::iso_to_world;
 use game::combat::{
-    ARROW_DAMAGE, Arrow,
-    arrow_hits, swing_hits,
+    ARROW_DAMAGE, Arrow, TURRET_SHOT_DAMAGE,
+    arrow_hits, swing_hits, turret_target,
 };
+use game::fishing::Fishing;
+use game::food::FoodSupply;
+use game::reputation::Reputation;
 use game::daynight::{DAY_LENGTH, START_TIME, NIGHTFALL, clock, daylight as daylight_at, shattered_night, temperature};
 use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, Telegraph, WINDUP, spawner_on, telegraph_progress};
 use game::items::{Inventory, ItemKind};
@@ -848,6 +851,14 @@ pub struct App {
     visible_cache: (i32, i32, i32, i32, Vec<(i32, i32)>),
     player: Player,
     inventory: Inventory,
+    /// Raw/cooked food and spoil timer (see `game::food`).
+    food: FoodSupply,
+    /// Shoreline cast state (see `game::fishing`).
+    fishing: Fishing,
+    /// Per-village standing (see `game::reputation`).
+    reputation: Reputation,
+    /// True while resting beside a bed this frame (drives heal + HUD hint).
+    resting: bool,
     nodes: NodeRegistry,
     structures: Vec<Structure>,
     enemies: EnemyRegistry,
@@ -1839,6 +1850,24 @@ impl App {
             "hasAnvil": has_anvil,
             "nearAnvil": self.near_anvil(),
             "salves": self.salves,
+            // Food/fishing/reputation panel hints (v1 additive; old HUDs ignore
+            // unknown keys). Cooked food restores more and never spoils.
+            "foodHint": self.food.hint(&self.inventory),
+            "fishHint": self.fishing.hint(),
+            "rep": self
+                .reputation
+                .nearest_village(self.player.x, self.player.y, &self.villages)
+                .map_or_else(
+                    || serde_json::json!({ "name": "wilderness", "standing": 0, "tier": "Neutral" }),
+                    |v| serde_json::json!({
+                        "name": self.villages.iter().find(|(x, y, _)| (*x, *y) == v)
+                            .map_or_else(|| format!("{} {}", v.0, v.1), |(_, _, n)| n.clone()),
+                        "standing": self.reputation.standing(v),
+                        "tier": self.reputation.tier(v).label(),
+                        "buyFactor": self.reputation.buy_factor(v),
+                        "sellFactor": self.reputation.sell_factor(v),
+                    }),
+                ),
             "crafts": crafts,
             // Portal transition: tells the HUD to show the "city is being built"
             // loading overlay and (once arrived) that the build-in animation is
@@ -2005,6 +2034,7 @@ impl App {
         // Hoisted: `near_water` needs `&mut self` (chunk cache) and would
         // clash with the field borrows inside the format! below.
         let near_water = self.near_water() as u8;
+        let shore = self.near_shoreline() as u8;
         let near = match self.nearest_resource() {
             Some((tx, ty, kind)) => format!("{}@({tx},{ty})", kind_name(kind)),
             None => String::from("none"),
@@ -2058,6 +2088,16 @@ impl App {
             }
             best.map(|(_, n)| n).unwrap_or_else(|| "wilderness".to_string())
         };
+        // Reputation HUD: standing with the village nearest the player, or a
+        // wilderness marker. Separated by '/' so it stays one whitespace-free
+        // stats token for the JS `get()` regex.
+        let rep_label = self
+            .reputation
+            .nearest_village(px, py, &self.villages)
+            .map_or_else(
+                || "wilderness".to_string(),
+                |v| format!("{}/{}", self.reputation.tier(v).label(), self.reputation.standing(v)),
+            );
         let online = self.remote_players.len();
         let coopids = self
             .remote_players
@@ -2066,7 +2106,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={} mode={} scene3d={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={} shore={} campfire={} bed={} fish={} rest={} raw={} cooked={} rep={} mode={} scene3d={}",
 
             self.quad_count(),
             self.frames(),
@@ -2133,6 +2173,14 @@ impl App {
                self.player.unlocked,
                self.player.blocking as u8,
                near_water,
+               shore,
+               self.near_campfire() as u8,
+               self.near_bed() as u8,
+               self.fishing.bite_open() as u8,
+               self.resting as u8,
+               self.food.raw(&self.inventory),
+               self.food.cooked(),
+               rep_label,
                if self.render3d_enabled() { "3d" } else { "2.5d" },
                self.scene3d_status,
             )
@@ -2273,6 +2321,10 @@ impl App {
             visible_cache: (i32::MIN, i32::MIN, i32::MIN, i32::MIN, Vec::new()),
             player: Player::new(px, py),
             inventory: Inventory::new(),
+            food: FoodSupply::new(),
+            fishing: Fishing::new(),
+            reputation: Reputation::new(),
+            resting: false,
             nodes: NodeRegistry::new(),
             edits: game::world::TileEdits::default(),
             structures,
@@ -2492,8 +2544,12 @@ impl App {
                 }
                 "KeyC" => {
                     self.net_eat = true;
-                    if self.player.eat(&mut self.inventory) {
+                    // Cooked meals are eaten first; raw falls back to the old
+                    // 34-hunger portion and keeps spoiling in the pack.
+                    if self.food.eat(&mut self.player, &mut self.inventory) {
                         play_sfx("eat");
+                    } else {
+                        toast(&self.food.hint(&self.inventory));
                     }
                 }
                 "KeyT" => {
@@ -2520,7 +2576,8 @@ impl App {
                 "KeyM" => self.craft_weapon(),
                 "KeyY" => self.place_block(),
                 "KeyO" => self.talk_nearest_npc(),
-                "KeyL" => self.cook(),
+                // 0 cooks at a campfire (L stays the Codex key in the page).
+                "Digit0" => self.cook(),
                 "Enter" => {
                     // OS key-repeat while held must not strobe enter/leave;
                     // a hold is one entry (or one exit), never a lottery.
@@ -2648,23 +2705,50 @@ impl App {
         })
     }
 
-    /// Cook at a campfire: two raw Food become a hot meal that restores more
-    /// health and a little thirst than eating raw. Bound to KeyL.
+    /// Cook at a campfire: two raw portions become one cooked meal. The meal
+    /// is stored separately (`FoodSupply::cooked`), never spoils, and restores
+    /// much more hunger (+ a little HP/thirst) when eaten with C. Bound to 0.
     pub fn cook(&mut self) {
         if !self.near_campfire() {
             toast("Stand near a campfire to cook");
             return;
         }
-        if self.inventory.count(ItemKind::Food) < 2 {
-            toast("Need 2 food to cook a meal");
+        let hint = self.food.hint(&self.inventory);
+        if self.food.cook(&mut self.inventory) {
+            play_sfx("eat");
+            toast(&format!(
+                "Cooked a meal ({} raw → 1 cooked, {} hunger +{} HP). {}",
+                game::food::COOK_INPUT,
+                game::food::COOKED_HUNGER as u32,
+                game::food::COOKED_HP as u32,
+                hint
+            ));
+        } else {
+            toast(&format!("Need {} raw food to cook. {}", game::food::COOK_INPUT, hint));
+        }
+    }
+
+    /// Cast or reel at a wadable shoreline. Reeling during the bite window
+    /// yields one raw Food; an early/late pull just loses the cast.
+    pub fn fish(&mut self) {
+        if !self.near_shoreline() {
+            toast("Find a sandy shoreline (shallow water) to fish");
             return;
         }
-        self.inventory.remove(ItemKind::Food, 2);
-        self.player.hp = (self.player.hp + 25.0).min(self.player.max_hp());
-        self.player.hunger = (self.player.hunger + 20.0).min(100.0);
-        self.player.thirst = (self.player.thirst + 10.0).min(100.0);
-        play_sfx("eat");
-        toast("Cooked a hot meal (+25 HP, +hunger)");
+        if self.fishing.bite_open() {
+            if self.fishing.reel(&mut self.inventory) {
+                play_sfx("pickup");
+                toast("Caught a fish! +1 raw food (cook it before it spoils)");
+            }
+            return;
+        }
+        if self.fishing.active() {
+            toast(self.fishing.hint());
+            return;
+        }
+        self.fishing.cast();
+        play_sfx("splash");
+        toast("Cast! Press E again when the bobber dips");
     }
 
     /// Equip an owned weapon by slot index (0 = Fists … 5 = Bow, matching
@@ -2817,6 +2901,15 @@ impl App {
         };
         let seed = ((self.npcs[idx].x * 13.0 + self.npcs[idx].y * 7.0) as u32)
             ^ (idx as u32).wrapping_mul(2654435761);
+        // An NPC's home tile is the deterministic village centre from `poi`,
+        // so standing is keyed by village rather than by individual villager.
+        let village = (
+            self.npcs[idx].home.0.floor() as i32,
+            self.npcs[idx].home.1.floor() as i32,
+        );
+        if matches!(self.npcs[idx].kind, NpcKind::Guard | NpcKind::Golem) {
+            toast(self.reputation.guard_line_of(village));
+        }
         let npc = &mut self.npcs[idx];
 
         // Fulfill an active quest if the player carries the goods.
@@ -2827,9 +2920,13 @@ impl App {
                 self.inventory.add(ritem, rcount);
                 let lvl_before = self.player.level;
                 self.player.add_xp(xp);
+                self.reputation.adjust(village, 5);
+                let rep_tier = self.reputation.tier(village).label();
                 let reward_name = ritem.name();
-                let mut msg =
-                    format!("{}: Quest done! +{}xp, +{} {}", npc.name, xp, rcount, reward_name);
+                let mut msg = format!(
+                    "{}: Quest done! +{}xp, +{} {} · {} standing {}",
+                    npc.name, xp, rcount, reward_name, rep_tier, village.0
+                );
                 if self.player.level > lvl_before {
                     play_sfx("levelup");
                     msg.push_str(&format!(" — Level {}!", self.player.level));
@@ -2855,7 +2952,7 @@ impl App {
 
         // Merchant trade: offer buy/sell instead of fetch quests.
         if npc.kind == game::npc::NpcKind::Merchant {
-            self.buy_from_merchant();
+            self.buy_from_merchant(village);
             return;
         }
 
@@ -2887,7 +2984,7 @@ impl App {
     /// Merchant trade: try to sell the player's most valuable sellable item for
     /// Gold. Each press sells one item. When nothing is left to sell, the
     /// merchant refuses.
-    pub fn buy_from_merchant(&mut self) {
+    pub fn buy_from_merchant(&mut self, village: (i32, i32)) {
         // Sell order: most valuable first so the player earns Gold fastest.
         let sell_order = [
             ItemKind::IronPlate,
@@ -2898,16 +2995,21 @@ impl App {
             ItemKind::Wood,
             ItemKind::Stone,
         ];
+        let standing = self.reputation.standing(village);
         for &item in &sell_order {
-            let price = game::trade::sell_price(item);
+            let price = game::trade::sell_price_with_rep(item, standing);
             if price > 0 && self.inventory.count(item) > 0 {
                 self.inventory.remove(item, 1);
                 self.inventory.add(ItemKind::Gold, price);
+                // Honest trade slowly improves the village's opinion.
+                self.reputation.adjust(village, 1);
                 play_sfx("pickup");
                 toast(&format!(
-                    "Sold {} for {} gold",
+                    "Sold {} for {} gold · {} standing {}",
                     item.name(),
-                    price
+                    price,
+                    self.reputation.tier(village).label(),
+                    self.reputation.standing(village)
                 ));
                 return;
             }
@@ -3737,6 +3839,28 @@ impl App {
         tile_at(&self.world, &mut self.chunks, tx, ty).wadable()
     }
 
+    /// True when the player stands in wadable shallows touching open water —
+    /// the same shoreline the drinking check uses, but excluding wells. This
+    /// is the only spot where a line can be cast.
+    pub fn near_shoreline(&mut self) -> bool {
+        if self.interior.is_some() {
+            return false;
+        }
+        let tx = self.player.x.floor() as i32;
+        let ty = self.player.y.floor() as i32;
+        if !self.etile(tx, ty).wadable() {
+            return false;
+        }
+        [(tx + 1, ty), (tx - 1, ty), (tx, ty + 1), (tx, ty - 1)]
+            .iter()
+            .any(|(x, y)| {
+                matches!(
+                    self.etile(*x, *y),
+                    TileKind::Water | TileKind::DeepWater
+                )
+            })
+    }
+
     /// Craft recipe `idx` at an Anvil. Returns false if no anvil, unaffordable,
     /// or out of range.
     /// Craft and equip an armour piece (game/src/equipment.rs owns the
@@ -4460,6 +4584,14 @@ impl App {
                         ));
                     }
                 }
+                // Defending a hamlet raises that village's standing. Turret,
+                // guard and trap kills are untagged and pay no reputation.
+                self.reputation.credit_defense(
+                    ex,
+                    ey,
+                    &self.villages,
+                    if kind.is_boss() { 2 } else { 1 },
+                );
                 // Experience + level-up for the player (elite enemies pay out more).
                 let lvl_before = self.player.level;
                 self.player.add_xp((kind.xp() as f32 * elite) as u32);
@@ -4675,6 +4807,9 @@ impl App {
                     toast(&format!("Your {} broke!", t.name()));
                 }
             }
+        } else if self.near_shoreline() {
+            // Shoreline interaction reuses E: cast, then reel on the bite.
+            self.fish();
         } else {
             // Nothing to harvest: break ground instead (the Minecraft E).
             self.try_dig();
@@ -4934,48 +5069,54 @@ impl App {
         self.place(kind, tx, ty);
     }
 
-    /// Sleep in a bed: skip the night and wake at dawn, restoring a little
-    /// hunger and hp. Only works when standing next to a placed Bed.
-    fn try_sleep(&mut self) {
-        let mut rested = false;
-        // Inside a building: rest at the bed furniture (left-top of the room).
+    /// Bed furniture in reach, returned as the world-space home tile a sleep
+    /// should set as respawn. Inside a room the bed is drawn at the top-left;
+    /// outdoors it is the placed `StructureKind::Bed`.
+    fn bed_respawn_point(&self) -> Option<(f32, f32)> {
         if let Some(int) = &self.interior {
             let bedx = int.bx - int.rw + 0.8;
             let bedy = int.by - int.rh + 0.8;
             let dx = bedx - (int.bx + int.px);
             let dy = bedy - (int.by + int.py);
             if dx * dx + dy * dy < 1.2 {
-                rested = true;
+                return Some((int.bx as f32 + 0.5, int.by as f32 + 0.5));
             }
         }
-        // Outside: rest at a placed bed structure.
-        if !rested {
-            rested = self.structures.iter().any(|s| {
+        self.structures
+            .iter()
+            .find(|s| {
                 s.kind == StructureKind::Bed
                     && {
                         let dx = s.tx as f32 + 0.5 - self.player.x;
                         let dy = s.ty as f32 + 0.5 - self.player.y;
                         dx * dx + dy * dy < 4.0
                     }
-            });
-        }
-        if rested {
-            self.time_of_day = 0.32; // wake ~07:40 with daylight climbing
-            self.player.hunger = (self.player.hunger + 30.0).min(100.0);
-            self.player.thirst = (self.player.thirst + 30.0).min(100.0);
-            self.player.hp = (self.player.hp + 40.0).min(self.player.max_hp());
-            // Sleeping somewhere new moves home there: respawns wake at the
-            // last bed used (the Minecraft bed rule).
-            if let Some(int) = &self.interior {
-                self.spawn_point = (int.bx, int.by);
-            } else {
-                self.spawn_point = (self.player.x, self.player.y);
-            }
-            play_sfx("sleep");
-            toast("Rested — home set here");
-        } else {
+            })
+            .map(|s| (s.tx as f32 + 0.5, s.ty as f32 + 0.5))
+    }
+
+    /// True while the player can rest (and slowly heal) beside a bed.
+    pub fn near_bed(&self) -> bool {
+        self.bed_respawn_point().is_some()
+    }
+
+    /// Sleep in a bed: skip the night and wake at dawn. Resting also heals HP
+    /// over time each frame while the player lingers near the bed (see
+    /// `update`), so a wounded player does not need to sleep to recover.
+    fn try_sleep(&mut self) {
+        let Some(home) = self.bed_respawn_point() else {
             toast("No bed nearby to rest");
-        }
+            return;
+        };
+        self.time_of_day = 0.32; // wake ~07:40 with daylight climbing
+        self.player.hunger = (self.player.hunger + 30.0).min(100.0);
+        self.player.thirst = (self.player.thirst + 30.0).min(100.0);
+        self.player.hp = (self.player.hp + 40.0).min(self.player.max_hp());
+        // Sleeping somewhere new moves home there: respawns wake at the exact
+        // bed tile (previously the player's arbitrary standing position).
+        self.spawn_point = home;
+        play_sfx("sleep");
+        toast("Rested — home set here");
     }
 
     /// Effective tile for gameplay: player edits win offline; co-op stays
@@ -5024,6 +5165,10 @@ impl App {
         self.spawn_point = (px, py);
         self.player = Player::new(px, py);
         self.inventory = Inventory::new();
+        self.food = FoodSupply::new();
+        self.fishing = Fishing::new();
+        self.reputation = Reputation::new();
+        self.resting = false;
         self.nodes = NodeRegistry::new();
         self.edits = game::world::TileEdits::default();
         self.arrows = Vec::new();
@@ -5352,6 +5497,9 @@ impl App {
             tools: self.player.tools,
             tool_hp: self.player.tool_hp,
             day_count: self.day_count,
+            food: self.food,
+            fishing: self.fishing,
+            reputation: self.reputation.clone(),
         }
     }
 
@@ -5456,6 +5604,10 @@ impl App {
         self.player.tools = s.tools;
         self.player.tool_hp = s.tool_hp;
         self.day_count = s.day_count;
+        self.food = s.food;
+        self.fishing = s.fishing;
+        self.reputation = s.reputation.clone();
+        self.resting = false;
         self.shatter_announced = false;
         self.shatter_pack = false;
         // Restore the persisted town so it cannot be re-rolled into something new:
@@ -5886,10 +6038,23 @@ impl App {
                 }
             }
         }
+        // Food spoils while carried; cooked meals in the food supply never do.
+        let spoiled = self.food.tick(&mut self.inventory, dt);
+        if spoiled > 0 {
+            toast(&format!("{spoiled} raw food spoiled — cook it at a campfire!"));
+        }
+        // The shoreline bobber keeps moving even while the player walks away.
+        self.fishing.tick(dt);
         if self.player.alive {
             let wet = self.weather == 1;
             self.player
                 .tick(dt, temperature(self.time_of_day), warm, wet, biome, self.weather);
+            // Beds mend HP gradually while the player lingers nearby — a gap
+            // the old "instant heal only when pressing Z" left open.
+            self.resting = self.near_bed();
+            if self.resting {
+                self.player.rest_tick(dt);
+            }
             // Resting by a fire (or inside a home) slowly mends wounds.
             let max_hp = self.player.max_hp();
             if warm && self.player.hp < max_hp {
@@ -5899,12 +6064,13 @@ impl App {
                 self.player.hp = (self.player.hp + dt * 2.0).min(max_hp);
             }
         } else {
+            self.resting = false;
             self.respawn_timer -= dt;
             if self.respawn_timer <= 0.0 {
-                self.player.respawn();
-                // respawn at the actual waking tile (where the altar sits)
-                self.player.x = self.spawn_point.0;
-                self.player.y = self.spawn_point.1;
+                // Respawn at the last bed slept in (or the waking altar tile).
+                // `respawn_at` keeps the single respawn primitive honest — no
+                // post-hoc position overwrite that could be forgotten.
+                self.player.respawn_at(self.spawn_point.0, self.spawn_point.1);
             }
         }
 
@@ -6098,6 +6264,29 @@ impl App {
         const HEAL_RATE: f32 = 8.0;
         let px = self.player.x;
         let py = self.player.y;
+        // Shared targeting rule (co-op server uses the same helper): nearest
+        // living hostile in range WITH line of sight. Emplacements have no
+        // ammo — firing costs nothing but the cooldown.
+        let foes: Vec<(f32, f32)> = self
+            .enemies
+            .enemies()
+            .filter(|e| e.alive())
+            .map(|e| (e.x, e.y))
+            .collect();
+        let world = &self.world;
+        let cache = &mut self.chunks;
+        let edits = &self.edits;
+        let structs = &self.structures;
+        let mut opaque = |tx: i32, ty: i32| -> bool {
+            let tile = game::world::edited_tile(edits, world, cache, tx, ty);
+            !tile.walkable()
+                || structs.iter().any(|s| {
+                    s.tx == tx
+                        && s.ty == ty
+                        && s.kind.blocks_movement()
+                        && s.kind != StructureKind::Turret // emplacement itself
+                })
+        };
         for s in &self.structures {
             if s.kind == StructureKind::Turret {
                 let cx = s.tx as f32 + 0.5;
@@ -6105,21 +6294,15 @@ impl App {
                 let cd = self.turret_cd.entry((s.tx, s.ty)).or_insert(0.0);
                 *cd = (*cd - dt).max(0.0);
                 if *cd <= 0.0 {
-                    let r2 = TURRET_RANGE * TURRET_RANGE;
-                    let mut best: Option<(f32, f32, f32)> = None; // (dist2, ex, ey)
-        for e in self.enemies.enemies() {
-                        let dx = e.x - cx;
-                        let dy = e.y - cy;
-                        let d2 = dx * dx + dy * dy;
-                        if d2 <= r2 && best.map_or(true, |(bd, _, _)| d2 < bd) {
-                            best = Some((d2, e.x, e.y));
-                        }
-                    }
-                    if let Some((_, ex, ey)) = best {
+                    if let Some((ex, ey)) =
+                        turret_target((cx, cy), TURRET_RANGE, foes.iter(), &mut opaque)
+                    {
                         let (dx, dy) = (ex - cx, ey - cy);
                         let len = (dx * dx + dy * dy).sqrt().max(1e-4);
-                        // Turret shots share spoils but earn no credit.
+                        // Turret shots share spoils but earn no XP/quest/rep
+                        // credit, and cost no ammunition.
                         let mut ta = Arrow::new(cx, cy, dx / len, dy / len);
+                        ta.damage = TURRET_SHOT_DAMAGE;
                         ta.tagged = false;
                         self.arrows.push(ta);
                         *cd = TURRET_CD;

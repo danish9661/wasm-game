@@ -508,7 +508,7 @@ body.mobile .wslot { min-width: 52px; min-height: 52px; }
 .toast.toast-info { border-left-color: var(--sf-river); }
 @keyframes toast-in { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-#altar-prompt, #anvil-prompt, #water-prompt {
+#altar-prompt, #anvil-prompt, #water-prompt, #meal-prompt {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
@@ -527,7 +527,9 @@ body.mobile .wslot { min-width: 52px; min-height: 52px; }
 #altar-prompt b { color: var(--sf-ember); }
 #anvil-prompt, #water-prompt { bottom: 106px; border-color: var(--sf-line-cool); }
 #water-prompt { border-color: rgba(111, 182, 214, 0.5); }
-#altar-prompt.hidden, #anvil-prompt.hidden, #water-prompt.hidden { display: none; }
+#meal-prompt { bottom: 142px; border-color: rgba(232, 120, 95, 0.55); }
+#meal-prompt b { color: var(--sf-ember); }
+#altar-prompt.hidden, #anvil-prompt.hidden, #water-prompt.hidden, #meal-prompt.hidden { display: none; }
 
 #buildhint {
   position: fixed;
@@ -1031,7 +1033,7 @@ body.inv-open #codexbtn, body.inv-open #help, body.inv-open #gear {
 /* Toasts recede while the action panel is open so the two never collide. */
 body.actions-open #toasts, body.actions-open #buildhint,
 body.actions-open #altar-prompt, body.actions-open #anvil-prompt,
-body.actions-open #water-prompt { opacity: 0; }
+body.actions-open #water-prompt, body.actions-open #meal-prompt { opacity: 0; }
 .inv-cue { margin-left: auto; font-size: 10px; color: var(--sf-faint); white-space: nowrap; }
 #inventory h3 {
   margin: 2px 0 8px;
@@ -1461,6 +1463,7 @@ body.mobile.hud-collapsed #hud { width: auto; min-width: 0; }
   #touch-build { top: calc(52px + env(safe-area-inset-top, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
   #altar-prompt { bottom: calc(210px + env(safe-area-inset-bottom, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
   #anvil-prompt, #water-prompt { bottom: calc(250px + env(safe-area-inset-bottom, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
+  #meal-prompt { bottom: calc(286px + env(safe-area-inset-bottom, 0px)); font-size: 12px; max-width: calc(100vw - 24px); white-space: normal; }
   /* Touch deck: joystick bottom-left, weapon belt above it, action
      pads bottom-right. Three zones, no overlaps at 390px wide. */
   #touch { padding: 10px; gap: 10px; justify-content: flex-end; align-items: flex-end; }
