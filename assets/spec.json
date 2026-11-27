@@ -472,6 +472,8 @@
     },
     "clip_manifest": "animations/manifest.json",
     "final_player_manifest": "animations/player/manifest.json",
+    "wave2_manifest": "animations/wave2/manifest.json",
+    "wave2_note": "second wave: 30 enemy/boss/NPC clips on per-model bound-derived pivot rigs, scaled against the 1.55 u player; loops slime_hop, spider_scuttle, villager_idle, guard_patrol, golem_standby",
     "world_manifest": "animations/world_manifest.json",
     "action_spec": "animations/action_specs/combat.json",
     "life_action_spec": "animations/action_specs/life.json"

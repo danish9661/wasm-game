@@ -1,14 +1,20 @@
 # Final player animation set
 
-13 clips, authored from scratch for the verified **1.551 u** player in
+35 clips, authored from scratch for the verified **1.551 u** player in
 `assets/models/player.glb`. This directory is the authoritative player set;
-the earlier root-level humanoid clips are superseded.
+the earlier root-level humanoid clips are superseded. The second wave adds the
+8-direction walk/run aliases and six interaction clips; all are bound to the
+same measured rig.
 
 | Clip | Loop | Root offset (m) | Duration (s) |
 |---|---|---|---|
 | `idle` | yes | 0.00 | 4.033 |
 | `walk` | yes | +0.84 forward (1.05 m/s) | 0.833 |
 | `run` | yes | +0.96 forward (1.60 m/s) | 0.633 |
+| `walk_f` / `walk_l` / `walk_b` / `walk_r` | yes | 0.84 along the named axis | 0.833 |
+| `walk_fl` / `walk_fr` / `walk_bl` / `walk_br` | yes | 0.594 on each axis (0.84 total) | 0.833 |
+| `run_f` / `run_l` / `run_b` / `run_r` | yes | 0.96 along the named axis | 0.633 |
+| `run_fl` / `run_fr` / `run_bl` / `run_br` | yes | 0.679 on each axis (0.96 total) | 0.633 |
 | `attack_1` | no | +0.14 | 1.600 |
 | `attack_2` | no | +0.16 | 1.600 |
 | `attack_3` | no | +0.22 | 1.800 |
@@ -19,6 +25,12 @@ the earlier root-level humanoid clips are superseded.
 | `hit_heavy` | no | -0.20 back | 1.600 |
 | `death` | no | -0.56 back (0.63 total) | 2.400 |
 | `interact` | no | +0.12 at apex, returns to 0 | 1.800 |
+| `harvest` | no | +0.08 at apex, returns to 0 | 1.800 |
+| `build` | no | +0.09 at apex, returns to 0 | 1.800 |
+| `mine` | no | +0.12 held | 1.600 |
+| `open_chest` | no | +0.14 at apex, returns to 0 | 1.800 |
+| `eat` | no | 0.00 | 2.000 |
+| `drink` | no | 0.00 | 1.800 |
 
 The attack chain and heavy attack publish explicit windup / cut / recovery
 windows in `manifest.json` → `clips[].notes`, and the timing contract is in
@@ -47,13 +59,15 @@ the heavy attack uses 0.25 m rather than an unreachable 0.38 m lunge.
 `manifest.json` → `gates_warn_fail` uses the game-animation `[warn, fail]`
 thresholds. Latest generation:
 
-- **13/13 clips PASS**, 0 WARN, 0 FAIL.
-- Loop seam position: **0.000 cm**; seam/root velocity excess: **0.000 m/s**.
-- Foot slide: walk 0.71 cm, run 0.77 cm, heavy attack 1.84 cm (all below 2 cm).
-- Ground penetration: **0.00 cm** on every clip; 10th-percentile sole height
-  0.10–0.94 cm (no floating).
-- `scripts/verify_player_final.py` re-opens all 13 exported GLBs at 30 fps and
-  re-measures: **13/13 passed**, source SHA unchanged.
+- **35 clips: 34 PASS, 1 WARN, 0 FAIL.** The one WARN is the pre-existing
+  `death` clip (3.71 cm heel roll during the collapse, documented in its note).
+- Loop seam position: **0.000 cm**; seam/root velocity excess: **0.000 m/s**
+  on all 18 locomotion loops, including every diagonal.
+- Foot slide: walk 0.61 cm, run 0.67 cm, diagonals 0.57/0.63 cm, all new
+  interaction clips 0.00 cm.
+- Ground penetration: **0.00 cm** on every clip.
+- `scripts/verify_player_final.py` re-opens all 35 exported GLBs at 30 fps and
+  re-measures: **35/35 passed**, source SHA unchanged.
 
 ## Files
 
