@@ -715,6 +715,14 @@ pub fn set_force_gpu(v: bool) {
     FORCE_GPU.store(v, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// Set when Dawn reports a bad external-texture import for the WebGPU canvas.
+/// On affected drivers the compositor can import a stale allocation
+/// ("Requested allocation size ... is smaller than the image requires") into
+/// the swapchain. When seen, switch to the readback/#blit path, which never
+/// imports an external texture and therefore stays correct.
+static GPU_IMPORT_BROKEN: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 /// A ground loot drop the player walks over to collect. Spawned when enemies
 /// or resource nodes are destroyed; auto-collected on proximity.
 #[derive(Clone, Copy)]
@@ -2126,7 +2134,14 @@ impl App {
             .map_err(|e| format!("request_device: {e}"))?;
         glog("[gfx] device + queue obtained");
         device.on_uncaptured_error(std::sync::Arc::new(|e| {
-            web_sys::console::error_1(&format!("[gfx] UNCAPTURED GPU ERROR: {e}").into());
+            let msg = format!("{e}");
+            web_sys::console::error_1(&format!("[gfx] UNCAPTURED GPU ERROR: {msg}").into());
+            if msg.contains("allocation size") || msg.contains("Invalid Texture") {
+                GPU_IMPORT_BROKEN.store(true, std::sync::atomic::Ordering::Relaxed);
+                web_sys::console::warn_1(
+                    &"[gfx] swapchain import failed — switching to #blit readback path".into(),
+                );
+            }
         }));
 
         let format = surface.get_capabilities(&adapter).formats[0];
@@ -7120,21 +7135,35 @@ impl App {
         // screen (e.g. SwiftShader where present() is a no-op). Forcing it
         // unconditionally made the whole game freeze on normal GPUs, because the
         // readback buffer stayed busy and frames were skipped.
-        let frame = self.surface.get_current_texture();
-        let surface_tex: Option<wgpu::SurfaceTexture> = match frame {
-            wgpu::CurrentSurfaceTexture::Success(f) => Some(f),
-            wgpu::CurrentSurfaceTexture::Suboptimal(f) => Some(f),
-            // Momentarily unavailable (tab hidden / vsync timeout): keep the last
-            // presented frame on screen.
-            wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => None,
-            // Genuinely broken surface: drop to the blit readback fallback.
-            _ => {
-                if self.backend_mode != 2 {
-                    self.backend_mode = 2;
-                    self.using_blit = true;
-                    set_backend("blit");
+        let surface_tex: Option<wgpu::SurfaceTexture> = if GPU_IMPORT_BROKEN
+            .load(std::sync::atomic::Ordering::Relaxed)
+        {
+            // A driver/compositor that cannot import the swapchain texture must
+            // not acquire it at all — use the offscreen + readback path.
+            if self.backend_mode != 2 {
+                self.backend_mode = 2;
+                self.using_blit = true;
+                set_backend("blit");
+            }
+            None
+        } else {
+            let frame = self.surface.get_current_texture();
+            match frame {
+                wgpu::CurrentSurfaceTexture::Success(f) => Some(f),
+                wgpu::CurrentSurfaceTexture::Suboptimal(f) => Some(f),
+                // Momentarily unavailable (tab hidden / vsync timeout): keep the
+                // last presented frame on screen.
+                wgpu::CurrentSurfaceTexture::Timeout
+                | wgpu::CurrentSurfaceTexture::Occluded => None,
+                // Genuinely broken surface: drop to the blit readback fallback.
+                _ => {
+                    if self.backend_mode != 2 {
+                        self.backend_mode = 2;
+                        self.using_blit = true;
+                        set_backend("blit");
+                    }
+                    None
                 }
-                None
             }
         };
 

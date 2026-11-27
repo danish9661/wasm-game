@@ -313,7 +313,16 @@ function runChecks(dump, dump2, dump3) {
       // A second Enter while outside is harmless (toasts "Stand next to...").
     }
     if (!interiorDump) {
-      interiorDump = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+      // Walking to a specific house is brittle (buildings / spawn layout change
+      // with the world seed). The engine exposes a debug hook that takes the
+      // exact same toggle_interior path — use it for the art audit.
+      try {
+        await page.evaluate(() => { if (window.debug_enter_interior) window.debug_enter_interior(0); });
+        await stepN(10, 0.03);
+        interiorDump = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+      } catch (_) {
+        interiorDump = await page.evaluate(() => JSON.parse(window.get_frame_dump()));
+      }
     }
   }
 
