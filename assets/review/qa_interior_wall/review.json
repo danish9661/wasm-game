@@ -1,0 +1,64 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/models/interior_wall.glb",
+ "id": "interior_wall",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "interior_wall_hero_primitive0",
+   "interior_wall_hero_primitive1",
+   "interior_wall_detail_primitive0",
+   "interior_wall_detail_primitive1",
+   "interior_wall_detail_primitive2",
+   "interior_wall_detail_primitive3"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.5,
+    0,
+    -0.092
+   ],
+   "max": [
+    0.5,
+    2.5,
+    0.094
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "rep_wood",
+   "rep_leather",
+   "rep_wood_light",
+   "rep_bone",
+   "rep_stone_light"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_interior_wall/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_interior_wall/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_interior_wall/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_interior_wall/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_interior_wall.png"
+  }
+ ]
+}

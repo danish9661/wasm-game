@@ -9,8 +9,10 @@ One collection per asset; each collection is exported as its own GLB.
 import sys, os, math
 sys.path.insert(0, os.path.dirname(__file__))
 from common import *
+import family_repairs as R
 
 new_scene()
+RM = R.materials()
 
 # ---------------------------------------------------------------------------
 # Shared palette materials (slight lightness variations of the contract hues)
@@ -438,11 +440,9 @@ def build_torch():
 # Optional extras
 # ---------------------------------------------------------------------------
 def build_spike():
+    # Visual-QA rebuild: bmesh, bevels, weighted normals, packed UVs.
     col = collection("spike")
-    cone("stake", (0, 0, 0.68), 0.14, 0, 1.28, M["wood"], col, 6)
-    cone("tip", (0, 0, 1.34), 0.07, 0, 0.24, M["steel"], col, 6)
-    cyl("base", (0, 0, 0.08), 0.24, 0.16, M["stone"], col, 6)
-    box("brace", (0, 0, 0.38), (0.42, 0.08, 0.08), M["leather"], col)
+    R.build_spike(col, RM)
     return col
 
 
@@ -472,15 +472,9 @@ def build_healing_totem():
 
 
 def build_statue():
+    # Visual-QA rebuild: bmesh, bevels, weighted normals, packed UVs.
     col = collection("statue")
-    box("pedestal", (0, 0, 0.14), (0.9, 0.9, 0.28), M["stone_dark"], col)
-    box("plinth", (0, 0, 0.36), (0.68, 0.68, 0.18), M["stone_light"], col)
-    box("body", (0, 0, 0.95), (0.38, 0.3, 0.9), M["stone"], col)
-    ico("head", (0, 0, 1.56), 0.22, M["stone_light"], col, 0)
-    for x in (-0.3, 0.3):
-        box("arm", (x, 0, 0.98), (0.12, 0.22, 0.68), M["stone"], col)
-    cone("crown", (0, 0, 1.83), 0.19, 0, 0.26, M["gold"], col, 6)
-    box("sword", (0.36, 0, 0.5), (0.07, 0.07, 0.9), M["steel"], col)
+    R.build_statue(col, RM)
     return col
 
 

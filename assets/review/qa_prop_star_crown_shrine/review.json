@@ -1,0 +1,67 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/models/prop_star_crown_shrine.glb",
+ "id": "prop_star_crown_shrine",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_star_crown_shrine_lod0_primitive0",
+   "prop_star_crown_shrine_lod0_primitive1",
+   "prop_star_crown_shrine_lod0_primitive2",
+   "prop_star_crown_shrine_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 398
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.62,
+    0,
+    -0.36
+   ],
+   "max": [
+    0.62,
+    2.19,
+    0.36
+   ]
+  },
+  "extras": {
+   "prop_star_crown_shrine_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "m_stone",
+   "m_niche",
+   "m_gold_glow",
+   "m_star_gem"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_prop_star_crown_shrine/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_prop_star_crown_shrine/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_prop_star_crown_shrine/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_prop_star_crown_shrine/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_prop_star_crown_shrine.png"
+  }
+ ]
+}

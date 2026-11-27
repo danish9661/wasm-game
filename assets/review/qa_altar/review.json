@@ -1,0 +1,67 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/models/altar.glb",
+ "id": "altar",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_altar_lod0_primitive0",
+   "prop_altar_lod0_primitive1",
+   "prop_altar_lod0_primitive2",
+   "prop_altar_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 456
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.5,
+    0,
+    -0.36
+   ],
+   "max": [
+    0.5,
+    1.988,
+    0.36
+   ]
+  },
+  "extras": {
+   "prop_altar_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "m_stone",
+   "m_gold",
+   "m_arcane",
+   "m_arcane_dim"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_altar/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_altar/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_altar/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_altar/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-buildings/assets/review/qa_altar.png"
+  }
+ ]
+}

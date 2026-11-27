@@ -11,6 +11,10 @@ piece builders, showing how the kit snaps together on the 1 u grid.
 import sys, os, math
 sys.path.insert(0, os.path.dirname(__file__))
 from common import *
+import family_repairs as R
+from qa_mesh import tri_count as qa_tri_count
+
+RM = R.materials()
 
 new_scene()
 
@@ -236,12 +240,16 @@ def build_room():
     # One 4x4 floor slab (floor tiles are exactly 1u, so this is 4x4 of them).
     p.box("floor_slab", (0, 0, 0.05), (4.0, 4.0, 0.1), M["wood"])
 
-    # Four walls, 4 x 1u segments each; the south wall has a door opening.
+    # Dollhouse cutaway: full north/west walls, a low south wall and NO east
+    # wall, so the furnished interior is readable from the 45/30 play camera.
+    # The 4x4 floor and all furniture stay intact — the room is still usable.
     for i in range(4):
         t = -1.5 + i
         build_wall(Piece(col, t, 2.0))            # north
-        build_wall(Piece(col, t, -2.0)) if i != 2 else None  # south (door gap)
-        build_wall(Piece(col, 2.0, t, math.pi / 2))  # east
+        if i != 2:                               # south (door gap at +0.5)
+            sp = Piece(col, t, -2.0)
+            sp.box("wainscot", (0, 0, 0.40), (1.0, 0.15, 0.8), M["wood"])
+            sp.box("rail", (0, 0, 0.825), (1.0, 0.15, 0.05), M["leather"])
         build_wall(Piece(col, -2.0, t, math.pi / 2))  # west
 
     # Door in the south wall segment centred at x = +0.5, plus its transom.
@@ -254,15 +262,29 @@ def build_room():
     build_table(Piece(col, 0.90, -0.40))
     build_chair(Piece(col, 0.90, -1.45, math.pi))
     build_shelf(Piece(col, 1.68, 1.0, -math.pi / 2))
+    # bmesh detail: plank floor, corner posts and framed windows.
+    R.detail_house_interior(col, RM)
     return col
 
 
 # ---------------------------------------------------------------------------
 # Build, export, preview
 # ---------------------------------------------------------------------------
+def build_interior_floor(piece=None):
+    col = piece.col if piece is not None else collection("interior_floor")
+    R.build_interior_floor(col, RM)
+    return col
+
+
+def build_interior_wall(piece=None):
+    col = piece.col if piece is not None else collection("interior_wall")
+    R.build_interior_wall(col, RM)
+    return col
+
+
 ASSETS = [
-    ("interior_floor", build_floor),
-    ("interior_wall", build_wall),
+    ("interior_floor", build_interior_floor),
+    ("interior_wall", build_interior_wall),
     ("interior_door", build_door),
     ("interior_window", build_window),
     ("interior_stairs", build_stairs),

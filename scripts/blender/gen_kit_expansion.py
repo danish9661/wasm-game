@@ -12,8 +12,10 @@ import sys, os, math
 sys.path.insert(0, os.path.dirname(__file__))
 from common import new_scene, box, cyl, cone, ico, contact_sheet
 from expansion_common import P, collection, finalize, write_records
+import family_repairs as R
 
 new_scene()
+RM = R.materials()
 RECORDS = []
 SETS = []
 STOREY = 2.5
@@ -166,10 +168,19 @@ def build_pillar(f):
     f.box("capital", (0, 0, 2.45), (0.30, 0.30, 0.10), P["stone_light"])
 
 
+def kit_wall_wood_qa(f):
+    """Authoritative detailed standalone kit wall (interiors use the cheap one)."""
+    R.build_kit_wall_wood(f.col, RM)
+
+
+def kit_wall_stone_qa(f):
+    R.build_kit_wall_stone(f.col, RM)
+
+
 KIT = [
     ("kit_floor",       build_floor,      (1.00, 1.00, 0.10), "one tile", "4 planks"),
-    ("kit_wall_wood",   build_wall_wood,  (1.00, 0.15, 2.50), "1 u frontage", "timber/stud"),
-    ("kit_wall_stone",  build_wall_stone, (1.00, 0.18, 2.50), "1 u frontage", "3 courses"),
+    ("kit_wall_wood",   kit_wall_wood_qa, (1.00, 0.15, 2.50), "1 u frontage", "bevelled planks + brace"),
+    ("kit_wall_stone",  kit_wall_stone_qa, (1.00, 0.18, 2.50), "1 u frontage", "staggered stone courses"),
     ("kit_door",        build_door,       (0.90, 0.12, 2.00), "0.9 x 2.0", " centred on X"),
     ("kit_window",      build_window,     (0.80, 0.10, 0.90), "0.8 x 0.9", "raise to 1.1 sill"),
     ("kit_stairs",      build_stairs,     (1.00, 1.50, 1.50), "1 u wide", "6 treads"),

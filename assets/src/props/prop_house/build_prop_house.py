@@ -154,4 +154,11 @@ def build_form():
 obj = build_form()
 root = gam.finish(ctx, obj)
 gam.export(ctx, root)
+# Runtime GLB fix: the web 3D renderer walks every node and draws the box
+# collider as an untextured white cube, hiding the detailed house. Keep the
+# collider node, drop only its renderable mesh reference.
+sys.path.insert(0, os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "..", "scripts")))
+from strip_collider_meshes import strip_file
+strip_file(ctx.glb)
 print("GAM_REPORT", gam.mesh_report(bpy.data.objects[ctx.id + "_lod0"]))
