@@ -1329,19 +1329,26 @@ impl App {
         ));
     }
 
-    /// Load the vertical-slice GLBs and build the first terrain heightfield on
-    /// the *game* device, then switch the game canvas to the 3D pass. Any
-    /// failure is returned so `start()` can silently keep the 2.5D path.
-    pub async fn init_3d_scene(&mut self) -> Result<String, String> {
-        let mut models: Vec<Model> = Vec::with_capacity(model_count());
+    /// Fetch all GLB bytes WITHOUT borrowing the App. This must not hold a
+    /// `RefMut` across awaits: on GitHub Pages 223 requests take seconds, and
+    /// the game must stay playable in 2.5D while they load.
+    pub async fn fetch_3d_models() -> Result<Vec<Vec<u8>>, String> {
+        let mut bytes = Vec::with_capacity(GLB_MODELS.len());
         for name in GLB_MODELS {
-            // Relative URL: GitHub Pages project sites are served under a
-            // subpath (e.g. /wasm-game/), so a leading slash would resolve to
-            // the domain root and 404 every model.
+            // Relative URL: Pages project sites live under /wasm-game/.
             let url = format!("assets/models/{name}.glb");
-            let bytes = pipeline3d::fetch_glb(&url).await?;
-            let model = model::load_glb(&bytes, &self.device, &self.queue)
-                .map_err(|e| format!("load {url}: {e}"))?;
+            bytes.push(pipeline3d::fetch_glb(&url).await?);
+        }
+        Ok(bytes)
+    }
+
+    /// Upload already-fetched models and switch the game canvas to the 3D pass.
+    /// Called from a spawned task after the App has been registered.
+    pub fn finish_3d_scene(&mut self, bytes: Vec<Vec<u8>>) -> Result<String, String> {
+        let mut models: Vec<Model> = Vec::with_capacity(model_count());
+        for (name, blob) in GLB_MODELS.iter().zip(bytes.iter()) {
+            let model = model::load_glb(blob, &self.device, &self.queue)
+                .map_err(|e| format!("load {name}: {e}"))?;
             models.push(model);
         }
         let center = (self.player.x.floor() as i32, self.player.y.floor() as i32);

@@ -76,21 +76,33 @@ pub fn start() {
     wasm_bindgen_futures::spawn_local(async move {
         cinfo("[wasm] start() requesting WebGPU adapter/device…");
         match App::new(canvas).await {
-            Ok(mut app) => {
+            Ok(app) => {
                 clog("[wasm] webgpu initialized");
                 cinfo("[wasm] webgpu initialized (App::new ok)");
-                if use_3d {
-                    // Optional additive path: a failed fetch/parse only logs and
-                    // leaves the working 2.5D renderer in charge (no console.error).
-                    match app.init_3d_scene().await {
-                        Ok(status) => cinfo(&format!("[wasm] 3D vertical slice: {status}")),
-                        Err(e) => cinfo(&format!(
-                            "[wasm] 3D scene unavailable ({e}); using 2.5D"
-                        )),
-                    }
-                }
+                // Register the App and input handlers BEFORE any model fetch:
+                // 223 GLBs over the network can take many seconds on Pages,
+                // and the game must be playable in 2.5D while they load.
                 APP.with(|cell| *cell.borrow_mut() = Some(app));
                 install_input_handlers(window, document);
+                if use_3d {
+                    wasm_bindgen_futures::spawn_local(async move {
+                        match renderer::App::fetch_3d_models().await {
+                            Ok(bytes) => {
+                                let status = APP.with(|cell| {
+                                    match cell.borrow_mut().as_mut() {
+                                        Some(app) => app.finish_3d_scene(bytes),
+                                        None => Err("app gone".to_string()),
+                                    }
+                                });
+                                match status {
+                                    Ok(s) => cinfo(&format!("[wasm] 3D vertical slice: {s}")),
+                                    Err(e) => cinfo(&format!("[wasm] 3D scene unavailable ({e}); using 2.5D")),
+                                }
+                            }
+                            Err(e) => cinfo(&format!("[wasm] 3D models unavailable ({e}); using 2.5D")),
+                        }
+                    });
+                }
             }
             Err(msg) => {
                 clog(&format!("[wasm] init failed: {msg}"));
