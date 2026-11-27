@@ -284,7 +284,7 @@
     // Dev telemetry is opt-in (?debug): the shipped HUD stays player-facing.
     if (location.search.includes('debug')) document.body.classList.add('show-debug');
     window.addEventListener('resize', __setFormFactor);
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot, debug_enter_interior } from './wasm_game.js?v=20260901';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot, debug_enter_interior, set_render3d, render3d_enabled, render3d_status } from './wasm_game.js?v=20260901';
 
     const coopTagsEl = document.getElementById('coop-tags');
     const townTransitionEl = document.getElementById('town-transition');
@@ -1568,6 +1568,11 @@
               e.preventDefault();
               toggleCodex();
               if (!e.repeat) playSfx('codex');
+            }
+            // Digit3: swap the live game canvas between the 3D glTF vertical
+            // slice and the original 2.5D quad renderer (gameplay is unchanged).
+            if (e.code === 'Digit3' && !e.repeat) {
+              try { set_render3d(!render3d_enabled()); } catch (_) {}
             }
             if (!e.repeat) {
               if (e.code === 'KeyC') playSfx('eat');

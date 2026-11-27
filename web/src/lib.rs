@@ -3,6 +3,7 @@ mod network;
 mod pipeline3d;
 mod renderer;
 mod save;
+mod terrain3d;
 mod zip;
 
 use renderer::App;
@@ -62,12 +63,30 @@ pub fn start() {
         return;
     };
 
+    // The vertical slice presents the instanced glTF scene by default. `?2d`
+    // (or `?legacy2d`) keeps the original 2.5D quad renderer as the fallback.
+    let use_3d = window
+        .location()
+        .search()
+        .map(|s| !s.contains("2d") && !s.contains("legacy"))
+        .unwrap_or(true);
+
     wasm_bindgen_futures::spawn_local(async move {
         cinfo("[wasm] start() requesting WebGPU adapter/device…");
         match App::new(canvas).await {
-            Ok(app) => {
+            Ok(mut app) => {
                 clog("[wasm] webgpu initialized");
                 cinfo("[wasm] webgpu initialized (App::new ok)");
+                if use_3d {
+                    // Optional additive path: a failed fetch/parse only logs and
+                    // leaves the working 2.5D renderer in charge (no console.error).
+                    match app.init_3d_scene().await {
+                        Ok(status) => cinfo(&format!("[wasm] 3D vertical slice: {status}")),
+                        Err(e) => cinfo(&format!(
+                            "[wasm] 3D scene unavailable ({e}); using 2.5D"
+                        )),
+                    }
+                }
                 APP.with(|cell| *cell.borrow_mut() = Some(app));
                 install_input_handlers(window, document);
             }
@@ -499,4 +518,35 @@ pub async fn load_demo_models() -> Result<String, String> {
 #[wasm_bindgen]
 pub fn render_3d_demo() -> String {
     pipeline3d::render_3d_demo()
+}
+
+// --- Vertical-slice render mode toggle ------------------------------------
+// Swaps the *game canvas* between the instanced 3D scene and the original
+// 2.5D quad path. No gameplay state is touched; both passes read the same sim.
+
+/// Switch the game canvas to (true) or away from (false) the 3D scene.
+/// No-op if the GLBs have not finished loading yet.
+#[wasm_bindgen]
+pub fn set_render3d(on: bool) {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.set_render3d(on);
+        }
+    });
+}
+
+/// True once the 3D scene is loaded and currently presenting.
+#[wasm_bindgen]
+pub fn render3d_enabled() -> bool {
+    APP.with(|cell| cell.borrow().as_ref().map_or(false, |a| a.render3d_enabled()))
+}
+
+/// Short status string describing the 3D scene (model/instance counts).
+#[wasm_bindgen]
+pub fn render3d_status() -> String {
+    APP.with(|cell| {
+        cell.borrow()
+            .as_ref()
+            .map_or_else(|| String::from("3d: no app"), |a| a.scene3d_status())
+    })
 }

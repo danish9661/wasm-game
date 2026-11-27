@@ -13,13 +13,16 @@ use game::poi::{poi_structures, ruins_at, ruins_walls, town_name, town_site, vil
 use game::weapons::WeaponKind;
 use game::quest::QuestLog;
 use game::elements::humanoid;
-use game::render::{self, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
+use game::render::{self, tile_height_at, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
 use game::iso::{HALF_H, HALF_W};
 use game::resources::{NodeRegistry, ResourceKind, resource_on, HARVEST_RANGE};
 use game::sim::PlayerInput;
 use game::sim::{ClientMsg, RoomSpot};
 use game::world::{ChunkCache, TileKind, WorldGen, tile_at, CHUNK_SIZE};
 use crate::network::NetClient;
+use crate::model::{self, Model};
+use crate::pipeline3d::{self, Instance, Scene3D, SceneParams};
+use crate::terrain3d;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
@@ -1031,6 +1034,211 @@ pub struct App {
     /// Heavy-attack charge: anim-clock time of the current J/K press, if the
     /// button is still held. Releasing after 0.35s looses a charged finisher.
     charge_start: Option<f32>,
+    // --- 3D vertical slice (additive; gameplay untouched) ------------------
+    /// True when the game canvas presents the instanced 3D scene. The legacy
+    /// 2.5D quad path stays one toggle away (`set_render3d(false)` / `?2d`).
+    render3d: bool,
+    /// Reusable 3D pipeline on the game device (None until GLBs are loaded).
+    scene3d: Option<Scene3D>,
+    /// Tile center the current terrain heightfield was built around.
+    terrain_center: Option<(i32, i32)>,
+    /// Human-readable status / stats from the last 3D scene update.
+    scene3d_status: String,
+    /// Ground height under the player, used to keep the 3D camera at eye level.
+    player_height3d: f32,
+}
+
+// --- 3D vertical slice: model table ---------------------------------------
+// Indices 0/1 are generated geometry (terrain heightfield + camera-facing unit
+// quad for HUD-ish sprites/effects). Every other entry is a GLB fetched from
+// `/assets/models/` at boot. The 3D pass covers the whole frame, not just a
+// decorative subset: every sprite style maps to a GLB or to a billboard.
+const IDX_TERRAIN: usize = 0;
+const IDX_BILLBOARD: usize = 1;
+const IDX_GROUND: usize = 2;
+
+/// Every GLB the vertical slice uses. Unique names, matching `assets/models/`.
+const GLB_MODELS: &[&str] = &[
+    "player", "tree", "pine", "rock", "rock_pile", "house", "cabin", "hut", "inn", "barn",
+    "watchtower", "wall", "bush", "grass_tuft", "fern", "flower", "mushroom", "cactus",
+    "campfire", "torch", "brazier", "crystal", "ore", "chest", "banner", "altar", "anvil",
+    "bed", "well", "spike", "farm_plot", "turret", "healing_totem", "sign", "barrel", "totem",
+    "statue", "lantern", "crate_box", "pillar", "bone_pile", "lilypad", "reed", "rubble",
+    "ruin_tower", "portal", "enchanting_table", "dungeon", "fence", "vines", "slime", "goblin",
+    "skeleton", "ogre", "raider", "guard", "golem", "bat", "spider", "imp", "wraith",
+    "colossus", "scorpion_queen", "toad_king", "brute", "stormcaller", "ocean_leviathan",
+    "wolf", "archer", "car", "train", "rail",
+];
+const TERRAIN_RADIUS: i32 = 14;
+
+/// Number of models in `Scene3D`: generated pair + one per GLB above.
+const fn model_count() -> usize {
+    3 + GLB_MODELS.len()
+}
+
+fn model_index(name: &str) -> usize {
+    match name {
+        "terrain" => IDX_TERRAIN,
+        "billboard" => IDX_BILLBOARD,
+        "ground" => IDX_GROUND,
+        other => 3 + GLB_MODELS.iter().position(|n| *n == other).unwrap_or(0),
+    }
+}
+
+/// Map a gameplay sprite style to a drawable model. Unknown/decorative styles
+/// fall back to the billboard quad so nothing silently disappears in 3D mode.
+fn scene_model_for(style: SpriteStyle) -> &'static str {
+    match style {
+        SpriteStyle::Generic | SpriteStyle::Floor => "ground",
+        SpriteStyle::HpBack | SpriteStyle::HpFill | SpriteStyle::Arrow => "billboard",
+        SpriteStyle::Tree => "tree",
+        SpriteStyle::Rock => "rock",
+        SpriteStyle::RockPile => "rock_pile",
+        SpriteStyle::Rubble => "rubble",
+        SpriteStyle::Bush => "bush",
+        SpriteStyle::GrassTuft => "grass_tuft",
+        SpriteStyle::Fern => "fern",
+        SpriteStyle::Flower => "flower",
+        SpriteStyle::Mushroom => "mushroom",
+        SpriteStyle::Cactus => "cactus",
+        SpriteStyle::Crystal => "crystal",
+        SpriteStyle::Ore => "ore",
+        SpriteStyle::Campfire => "campfire",
+        SpriteStyle::Torch => "torch",
+        SpriteStyle::Brazier => "brazier",
+        SpriteStyle::Altar => "altar",
+        SpriteStyle::Chest | SpriteStyle::Treasure => "chest",
+        SpriteStyle::Banner => "banner",
+        SpriteStyle::Fence => "fence",
+        SpriteStyle::Anvil => "anvil",
+        SpriteStyle::Bed => "bed",
+        SpriteStyle::Well => "well",
+        SpriteStyle::Spike => "spike",
+        SpriteStyle::FarmPlot => "farm_plot",
+        SpriteStyle::Turret => "turret",
+        SpriteStyle::HealingTotem => "healing_totem",
+        SpriteStyle::Sign => "sign",
+        SpriteStyle::Barrel => "barrel",
+        SpriteStyle::Totem => "totem",
+        SpriteStyle::Statue => "statue",
+        SpriteStyle::Lantern => "lantern",
+        SpriteStyle::Crate => "crate_box",
+        SpriteStyle::Pillar => "pillar",
+        SpriteStyle::BonePile => "bone_pile",
+        SpriteStyle::Lilypad => "lilypad",
+        SpriteStyle::Reed => "reed",
+        SpriteStyle::RuinTower => "ruin_tower",
+        SpriteStyle::Portal => "portal",
+        SpriteStyle::EnchantingTable => "enchanting_table",
+        SpriteStyle::Dungeon => "dungeon",
+        SpriteStyle::Wall => "wall",
+        SpriteStyle::House => "house",
+        SpriteStyle::Cabin => "cabin",
+        SpriteStyle::Hut => "hut",
+        SpriteStyle::Inn => "inn",
+        SpriteStyle::Barn => "barn",
+        SpriteStyle::Watchtower => "watchtower",
+        SpriteStyle::Vines => "vines",
+        SpriteStyle::Humanoid => "player",
+        SpriteStyle::Slime => "slime",
+        SpriteStyle::Goblin => "goblin",
+        SpriteStyle::Skeleton => "skeleton",
+        SpriteStyle::Ogre => "ogre",
+        SpriteStyle::Stoneslinger | SpriteStyle::Raider => "raider",
+        SpriteStyle::Guard => "guard",
+        SpriteStyle::Golem => "golem",
+        SpriteStyle::Bat => "bat",
+        SpriteStyle::Spider => "spider",
+        SpriteStyle::Imp => "imp",
+        SpriteStyle::Wraith => "wraith",
+        SpriteStyle::Colossus => "colossus",
+        SpriteStyle::ScorpionQueen => "scorpion_queen",
+        SpriteStyle::ToadKing => "toad_king",
+        SpriteStyle::Brute => "brute",
+        SpriteStyle::Stormcaller => "stormcaller",
+        SpriteStyle::OceanLeviathan => "ocean_leviathan",
+        SpriteStyle::Wolf => "wolf",
+        SpriteStyle::Archer => "archer",
+        SpriteStyle::Car => "car",
+        SpriteStyle::Train => "train",
+        SpriteStyle::Rail => "rail",
+    }
+}
+
+/// Characters get a gentle tint from their gameplay colour (so hit flashes and
+/// co-op ally colours still read); props keep their authored material colours.
+fn scene_tint(style: SpriteStyle, color: [f32; 3], alpha: f32) -> [f32; 4] {
+    let character = matches!(
+        style,
+        SpriteStyle::Humanoid
+            | SpriteStyle::Slime
+            | SpriteStyle::Goblin
+            | SpriteStyle::Skeleton
+            | SpriteStyle::Ogre
+            | SpriteStyle::Stoneslinger
+            | SpriteStyle::Guard
+            | SpriteStyle::Golem
+            | SpriteStyle::Bat
+            | SpriteStyle::Spider
+            | SpriteStyle::Imp
+            | SpriteStyle::Wraith
+            | SpriteStyle::Colossus
+            | SpriteStyle::ScorpionQueen
+            | SpriteStyle::ToadKing
+            | SpriteStyle::Brute
+            | SpriteStyle::Stormcaller
+            | SpriteStyle::OceanLeviathan
+            | SpriteStyle::Wolf
+            | SpriteStyle::Archer
+            | SpriteStyle::Raider
+    );
+    if character {
+        [
+            0.6 + 0.4 * color[0],
+            0.6 + 0.4 * color[1],
+            0.6 + 0.4 * color[2],
+            alpha,
+        ]
+    } else {
+        [1.0, 1.0, 1.0, alpha]
+    }
+}
+
+/// Terrain-hugging quad instance for puddles, rings, loot and other flat
+/// sprites. Rotated 45° so its edges follow the isometric world axes.
+fn scene_ground(x: f32, y: f32, z: f32, half_w: f32, half_d: f32, tint: [f32; 4]) -> Instance {
+    let yaw = 45.0_f32.to_radians();
+    let mut transform = model::math4::multiply(
+        &model::math4::translation(x, y, z),
+        &model::math4::rotation_y(yaw),
+    );
+    transform = model::math4::multiply(
+        &transform,
+        &model::math4::scaling(half_w.max(0.01), 1.0, half_d.max(0.01)),
+    );
+    Instance { transform, tint }
+}
+
+/// Camera-facing billboard instance: translation * yaw(45°) * non-uniform scale.
+fn scene_billboard(
+    x: f32,
+    y: f32,
+    z: f32,
+    half_w: f32,
+    half_h: f32,
+    bias: f32,
+    tint: [f32; 4],
+) -> Instance {
+    let yaw = 45.0_f32.to_radians();
+    let mut transform = model::math4::multiply(
+        &model::math4::translation(x + bias * 0.707, y, z + bias * 0.707),
+        &model::math4::rotation_y(yaw),
+    );
+    transform = model::math4::multiply(
+        &transform,
+        &model::math4::scaling(half_w.max(0.01), half_h.max(0.01), 1.0),
+    );
+    Instance { transform, tint }
 }
 
 impl App {
@@ -1048,6 +1256,277 @@ impl App {
 
     pub fn player_y(&self) -> f32 {
         self.player.y
+    }
+
+    // --- 3D vertical slice --------------------------------------------------
+    /// True when the game canvas presents the instanced glTF scene.
+    pub fn render3d_enabled(&self) -> bool {
+        self.render3d && self.scene3d.is_some()
+    }
+
+    /// Status line of the 3D scene (or why it is unavailable).
+    pub fn scene3d_status(&self) -> String {
+        self.scene3d_status.clone()
+    }
+
+    /// Toggle the 3D scene against the original 2.5D quad renderer. The flag
+    /// is inert until `init_3d_scene()` has finished loading the GLBs.
+    pub fn set_render3d(&mut self, on: bool) {
+        self.render3d = on && self.scene3d.is_some();
+        glog(&format!(
+            "[gfx] render mode: {}",
+            if self.render3d { "3d" } else { "2.5d" }
+        ));
+    }
+
+    /// Load the vertical-slice GLBs and build the first terrain heightfield on
+    /// the *game* device, then switch the game canvas to the 3D pass. Any
+    /// failure is returned so `start()` can silently keep the 2.5D path.
+    pub async fn init_3d_scene(&mut self) -> Result<String, String> {
+        let mut models: Vec<Model> = Vec::with_capacity(model_count());
+        for name in GLB_MODELS {
+            let url = format!("/assets/models/{name}.glb");
+            let bytes = pipeline3d::fetch_glb(&url).await?;
+            let model = model::load_glb(&bytes, &self.device, &self.queue)
+                .map_err(|e| format!("load {url}: {e}"))?;
+            models.push(model);
+        }
+        let center = (self.player.x.floor() as i32, self.player.y.floor() as i32);
+        let terrain = terrain3d::build_terrain(
+            &self.world,
+            &mut self.chunks,
+            &self.edits,
+            center,
+            TERRAIN_RADIUS,
+        );
+        models.insert(
+            IDX_GROUND,
+            model::upload_geometry(model::unit_ground_quad(), &self.device, &self.queue),
+        );
+        models.insert(
+            IDX_BILLBOARD,
+            model::upload_geometry(model::unit_quad(), &self.device, &self.queue),
+        );
+        models.insert(
+            IDX_TERRAIN,
+            model::upload_geometry(terrain, &self.device, &self.queue),
+        );
+        let mut scene = Scene3D::new(
+            &self.device,
+            self.config.format,
+            self.config.width,
+            self.config.height,
+        );
+        scene.set_models(models);
+        self.scene3d = Some(scene);
+        self.terrain_center = Some(center);
+        self.render3d = true;
+        self.update_3d_scene(&[]);
+        glog(&format!("[gfx] 3D vertical slice active: {}", self.scene3d_status));
+        Ok(self.scene3d_status.clone())
+    }
+
+    /// Refresh the 3D scene from the same sim state that fed `build_tile_mesh`:
+    /// player position/facing plus tree/rock/house/... props from world chunks.
+    fn update_3d_scene(&mut self, sprites: &[Sprite]) {
+        let Some(scene) = self.scene3d.as_mut() else {
+            return;
+        };
+        let center = (self.player.x.floor() as i32, self.player.y.floor() as i32);
+        // Rebuild with a little slack: re-uploading ~30x30 tiles on every
+        // single tile crossing is wasted work, and the patch already extends
+        // well past the visible area.
+        let needs_terrain = match self.terrain_center {
+            Some((cx, cy)) => (center.0 - cx).abs().max((center.1 - cy).abs()) > 3,
+            None => true,
+        };
+        if needs_terrain {
+            let terrain = terrain3d::build_terrain(
+                &self.world,
+                &mut self.chunks,
+                &self.edits,
+                center,
+                TERRAIN_RADIUS,
+            );
+            let model = model::upload_geometry(terrain, &self.device, &self.queue);
+            scene.replace_model(IDX_TERRAIN, model);
+            self.terrain_center = Some(center);
+        }
+
+        let player_h = tile_height_at(&self.world, &mut self.chunks, center.0, center.1) as f32
+            * terrain3d::HEIGHT_SCALE;
+        self.player_height3d = player_h;
+
+        // Screen pixels per world unit, matching Scene3D's half_height/zoom.
+        let px_per_unit = (self.viewport[1] * self.zoom / 12.0).max(1.0);
+        let mut placements: Vec<Vec<Instance>> = (0..model_count()).map(|_| Vec::new()).collect();
+        // The terrain mesh is baked in world coordinates: one identity instance.
+        placements[IDX_TERRAIN].push(Instance {
+            transform: model::math4::identity(),
+            tint: [1.0, 1.0, 1.0, 1.0],
+        });
+        // Player GLB: Y-up, base on the ground, facing from the simulation.
+        let yaw = self.player.facing.1.atan2(self.player.facing.0);
+        placements[model_index("player")].push(pipeline3d::instance_at(
+            self.player.x,
+            player_h,
+            self.player.y,
+            yaw,
+            1.0,
+            [1.0, 1.0, 1.0, 1.0],
+        ));
+
+        // Every sprite from the sim is represented: GLBs for entities/props,
+        // camera-facing quads for HP bars, arrows, loot and other overlays.
+        for sp in sprites {
+            let idx = model_index(scene_model_for(sp.style));
+            let h = tile_height_at(
+                &self.world,
+                &mut self.chunks,
+                sp.x.floor() as i32,
+                sp.y.floor() as i32,
+            ) as f32 * terrain3d::HEIGHT_SCALE;
+            if idx == IDX_GROUND {
+                // Flat ground sprites (puddles, rings, loot) lie on the tile
+                // instead of standing up like a card.
+                let hw = sp.half_w / px_per_unit;
+                let hd = 2.0 * sp.half_h / px_per_unit;
+                let y = h + sp.lift / (px_per_unit * 0.866);
+                placements[idx].push(scene_ground(
+                    sp.x,
+                    y,
+                    sp.y,
+                    hw,
+                    hd,
+                    scene_tint(sp.style, sp.color, sp.alpha),
+                ));
+            } else if idx == IDX_BILLBOARD {
+                let hw = sp.half_w / px_per_unit;
+                let hh = sp.half_h / px_per_unit;
+                let y = h + sp.lift / (px_per_unit * 0.866);
+                let tint = match sp.style {
+                    SpriteStyle::HpBack => [0.0, 0.0, 0.0, 0.85],
+                    SpriteStyle::HpFill => [sp.color[0], sp.color[1], sp.color[2], 1.0],
+                    _ => scene_tint(sp.style, sp.color, sp.alpha),
+                };
+                // Nudge the fill toward the camera so it is not z-fighting the
+                // backing plate at the same world position.
+                let bias = if sp.style == SpriteStyle::HpFill { 0.04 } else { 0.0 };
+                placements[idx].push(scene_billboard(sp.x, y, sp.y, hw, hh, bias, tint));
+            } else {
+                let yaw = sp.facing.1.atan2(sp.facing.0);
+                let scale = match sp.style {
+                    SpriteStyle::Bush | SpriteStyle::Flower | SpriteStyle::GrassTuft
+                    | SpriteStyle::Fern | SpriteStyle::Mushroom => 0.9,
+                    _ => 1.0,
+                };
+                placements[idx].push(pipeline3d::instance_at(
+                    sp.x,
+                    h,
+                    sp.y,
+                    yaw,
+                    scale,
+                    scene_tint(sp.style, sp.color, sp.alpha),
+                ));
+            }
+        }
+
+        // Transient hit sparks / death puffs: fading billboards in the same
+        // 3D pass instead of vanishing with the 2.5D overlay.
+        for p in &self.particles {
+            let h = tile_height_at(
+                &self.world,
+                &mut self.chunks,
+                p.x.floor() as i32,
+                p.y.floor() as i32,
+            ) as f32 * terrain3d::HEIGHT_SCALE;
+            let alpha = (p.life / p.max_life).clamp(0.0, 1.0);
+            let half = (p.size / px_per_unit).max(0.02);
+            placements[IDX_BILLBOARD].push(scene_billboard(
+                p.x,
+                h + 0.25,
+                p.y,
+                half,
+                half,
+                0.0,
+                [p.color[0], p.color[1], p.color[2], alpha],
+            ));
+        }
+
+        // Weather motes, deterministic per index and animated by the same
+        // cosmetic clock the 2D path uses. They follow the camera target.
+        if self.weather > 0 {
+            let (tint, count, size) = match self.weather {
+                1 => ([0.55, 0.72, 0.95, 0.45], 100, 0.09), // rain
+                2 => ([0.92, 0.96, 1.00, 0.65], 70, 0.06),  // snow
+                3 => ([0.45, 0.55, 0.85, 0.50], 120, 0.10), // storm
+                _ => ([0.80, 0.90, 0.60, 0.40], 50, 0.07),  // other
+            };
+            for i in 0..count {
+                let fx = ((i * 37 % 97) as f32 / 97.0 - 0.5) * 18.0;
+                let fz = ((i * 53 % 89) as f32 / 89.0 - 0.5) * 18.0;
+                let speed = 3.0 + (i % 7) as f32 * 0.4;
+                let fall = (self.anim_clock * speed + i as f32 * 0.37).rem_euclid(9.0);
+                let (hw, hh) = if self.weather == 1 || self.weather == 3 {
+                    (size * 0.25, size * 2.0)
+                } else {
+                    (size, size)
+                };
+                placements[IDX_BILLBOARD].push(scene_billboard(
+                    self.player.x + fx,
+                    (player_h + 7.0 - fall).max(player_h + 0.15),
+                    self.player.y + fz,
+                    hw,
+                    hh,
+                    0.0,
+                    tint,
+                ));
+            }
+        }
+
+        let billboards = placements[IDX_BILLBOARD].len();
+        let entities: usize = placements
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i >= 3)
+            .map(|(_, v)| v.len())
+            .sum();
+        scene.set_instances(&self.device, &self.queue, placements);
+        self.scene3d_status = format!(
+            "3d: {}; entities={} overlays={}",
+            scene.stats(),
+            entities,
+            billboards
+        );
+    }
+
+    /// Record one frame on the real game render target: instanced glTF scene
+    /// when enabled, otherwise the original flat 2.5D quad pass.
+    fn record_frame(&self, view: &wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
+        if self.render3d_enabled() {
+            let daylight = daylight_at(self.time_of_day).clamp(0.0, 1.0);
+            let params = SceneParams {
+                target: [self.player.x, self.player_height3d + 0.8, self.player.y],
+                zoom: self.zoom,
+                daylight,
+                night: 1.0 - daylight,
+                half_height: 6.0,
+            };
+            let scene = self.scene3d.as_ref().unwrap();
+            scene.prepare(&self.queue, &params);
+            scene.record(
+                encoder,
+                view,
+                wgpu::Color {
+                    r: 0.05,
+                    g: 0.07,
+                    b: 0.11,
+                    a: 1.0,
+                },
+            );
+        } else {
+            self.record_pass(view, encoder);
+        }
     }
 
     /// JSON payload for the Inventory & Crafting / Build panel:
@@ -1508,7 +1987,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={} mode={} scene3d={}",
 
             self.quad_count(),
             self.frames(),
@@ -1575,6 +2054,8 @@ impl App {
                self.player.unlocked,
                self.player.blocking as u8,
                near_water,
+               if self.render3d_enabled() { "3d" } else { "2.5d" },
+               self.scene3d_status,
             )
     }
 
@@ -1808,6 +2289,11 @@ impl App {
             net_shoot: false,
             net_build: None,
             charge_start: None,
+            render3d: false,
+            scene3d: None,
+            terrain_center: None,
+            scene3d_status: String::from("3d: not loaded"),
+            player_height3d: 0.0,
         };
 
         // Multiplayer: `?mp=ws://host:port[&name=Alias][&token=abc]` joins a
@@ -4912,6 +5398,9 @@ impl App {
         self.config.height = height;
         self.surface.configure(&self.device, &self.config);
         self.offscreen = create_offscreen(&self.device, self.config.format, width, height);
+        if let Some(scene) = self.scene3d.as_mut() {
+            scene.resize(&self.device, width, height);
+        }
         self.alloc_readback();
         self.viewport = [width as f32, height as f32];
         self.write_uniforms();
@@ -5884,6 +6373,12 @@ impl App {
         }
         // The player quad is always emitted while `player` is Some (it is, in
         // the live loop).
+        // Additive 3D path: rebuild the instanced scene from this frame's sim
+        // state. The 2.5D vertex stream above is still produced so the legacy
+        // renderer, frame dump and readback stats keep working unchanged.
+        if self.scene3d.is_some() {
+            self.update_3d_scene(&sprites);
+        }
     }
 
     /// Synchronize with the multiplayer server: send this frame's input and
@@ -6642,7 +7137,7 @@ impl App {
             // swapchain) and then copy it onto the 2D #blit canvas with a fast
             // GPU->GPU `drawImage`, avoiding the slow GPU->CPU readback entirely.
             let view = f.texture.create_view(&wgpu::TextureViewDescriptor::default());
-            self.record_pass(&view, &mut encoder);
+            self.record_frame(&view, &mut encoder);
             let cmd = encoder.finish();
             self.queue.submit([cmd]);
             self.queue.present(f);
@@ -6676,7 +7171,7 @@ impl App {
             let off_view = self
                 .offscreen
                 .create_view(&wgpu::TextureViewDescriptor::default());
-            self.record_pass(&off_view, &mut encoder);
+            self.record_frame(&off_view, &mut encoder);
 
             // We reuse ONE readback buffer instead of allocating a fresh one every
             // frame. If the buffer is still mapped from the previous frame we skip
