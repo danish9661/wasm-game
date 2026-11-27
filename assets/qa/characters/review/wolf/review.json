@@ -1,0 +1,67 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/wolf.glb",
+ "id": "wolf",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "wolf_lod0_primitive0",
+   "wolf_lod0_primitive1",
+   "wolf_lod0_primitive2",
+   "wolf_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 340
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.275,
+    0,
+    -0.844
+   ],
+   "max": [
+    0.275,
+    1.29,
+    0.844
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_wood",
+   "m_leather",
+   "m_bone",
+   "m_sand"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/wolf/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/wolf/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/wolf/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/wolf/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/wolf/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/wolf_sheet.png"
+  }
+ ]
+}

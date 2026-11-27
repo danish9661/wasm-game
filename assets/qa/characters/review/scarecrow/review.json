@@ -1,0 +1,71 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/scarecrow.glb",
+ "id": "scarecrow",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "scarecrow_lod0_primitive0",
+   "scarecrow_lod0_primitive1",
+   "scarecrow_lod0_primitive2",
+   "scarecrow_lod0_primitive3",
+   "scarecrow_lod0_primitive4",
+   "scarecrow_lod0_primitive5"
+  ],
+  "lod_tris": {
+   "0": 356
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.627,
+    0,
+    -0.277
+   ],
+   "max": [
+    0.627,
+    1.844,
+    0.277
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_wood",
+   "m_leather",
+   "m_cloth",
+   "m_sand",
+   "m_eye",
+   "m_sand_dark"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scarecrow/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scarecrow/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scarecrow/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scarecrow/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scarecrow/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scarecrow_sheet.png"
+  }
+ ]
+}

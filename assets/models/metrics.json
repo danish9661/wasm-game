@@ -13,7 +13,7 @@
     "models": 254,
     "passed": 254,
     "failed": 0,
-    "total_triangles": 60498,
+    "total_triangles": 62012,
     "models_dir": "assets/models"
   },
   "models": [
@@ -471,28 +471,28 @@
       "name": "bat",
       "file": "assets/models/bat.glb",
       "category": "Character",
-      "triangles": 148,
+      "triangles": 196,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 12,
-      "primitives": 12,
+      "meshes": 1,
+      "primitives": 3,
       "materials": 3,
       "min": [
-        -0.8211,
+        -0.47,
         0.0,
-        -0.1531
+        -0.2224
       ],
       "max": [
-        0.8211,
-        1.04,
-        0.234
+        0.47,
+        1.16,
+        0.2224
       ],
-      "height": 1.04,
+      "height": 1.16,
       "base_y": 0.0,
-      "center_x": -0.0,
-      "center_z": 0.0405,
-      "footprint_x": 1.6421,
-      "footprint_z": 0.3871,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.94,
+      "footprint_z": 0.4448,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1371,28 +1371,28 @@
       "name": "colossus",
       "file": "assets/models/colossus.glb",
       "category": "Character",
-      "triangles": 254,
+      "triangles": 396,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 20,
-      "primitives": 20,
-      "materials": 3,
+      "primitives": 25,
+      "materials": 7,
       "min": [
-        -1.1483,
+        -1.1507,
         0.0,
-        -0.35
+        -0.5636
       ],
       "max": [
-        1.1483,
-        3.05,
-        0.3789
+        1.1507,
+        3.02,
+        0.5636
       ],
-      "height": 3.05,
+      "height": 3.02,
       "base_y": 0.0,
       "center_x": 0.0,
-      "center_z": 0.0145,
-      "footprint_x": 2.2967,
-      "footprint_z": 0.7289,
+      "center_z": 0.0,
+      "footprint_x": 2.3015,
+      "footprint_z": 1.1271,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4341,28 +4341,28 @@
       "name": "npc_bard",
       "file": "assets/models/npc_bard.glb",
       "category": "Other",
-      "triangles": 248,
+      "triangles": 368,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 17,
-      "primitives": 17,
-      "materials": 9,
+      "meshes": 1,
+      "primitives": 10,
+      "materials": 10,
       "min": [
-        -0.561,
+        -0.468,
         0.0,
-        -0.283
+        -0.3501
       ],
       "max": [
-        0.561,
-        1.828,
-        0.283
+        0.468,
+        1.98,
+        0.3501
       ],
-      "height": 1.828,
+      "height": 1.98,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.1221,
-      "footprint_z": 0.566,
+      "footprint_x": 0.936,
+      "footprint_z": 0.7001,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4461,28 +4461,28 @@
       "name": "npc_desert_scorpion",
       "file": "assets/models/npc_desert_scorpion.glb",
       "category": "Npc Variants",
-      "triangles": 264,
+      "triangles": 312,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 20,
-      "primitives": 20,
+      "meshes": 1,
+      "primitives": 4,
       "materials": 4,
       "min": [
-        -0.59,
+        -0.7907,
         0.0,
-        -0.72
+        -0.721
       ],
       "max": [
-        0.59,
-        1.14,
-        0.72
+        0.7907,
+        1.5485,
+        0.721
       ],
-      "height": 1.14,
+      "height": 1.5485,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.18,
-      "footprint_z": 1.44,
+      "footprint_x": 1.5814,
+      "footprint_z": 1.442,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4551,28 +4551,28 @@
       "name": "npc_farmer",
       "file": "assets/models/npc_farmer.glb",
       "category": "Other",
-      "triangles": 232,
+      "triangles": 396,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 15,
-      "primitives": 15,
-      "materials": 7,
+      "primitives": 19,
+      "materials": 9,
       "min": [
-        -0.6405,
+        -0.6744,
         0.0,
-        -0.3
+        -0.3644
       ],
       "max": [
-        0.6405,
-        1.89,
-        0.3
+        0.6744,
+        1.9,
+        0.3644
       ],
-      "height": 1.89,
+      "height": 1.9,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.281,
-      "footprint_z": 0.6,
+      "footprint_x": 1.3489,
+      "footprint_z": 0.7287,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4581,28 +4581,28 @@
       "name": "npc_fisher",
       "file": "assets/models/npc_fisher.glb",
       "category": "Other",
-      "triangles": 248,
+      "triangles": 372,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 15,
-      "primitives": 15,
-      "materials": 8,
+      "meshes": 1,
+      "primitives": 9,
+      "materials": 9,
       "min": [
-        -0.5509,
+        -0.7275,
         0.0,
-        -0.29
+        -0.3141
       ],
       "max": [
-        0.5509,
-        1.9864,
-        0.29
+        0.7275,
+        2.03,
+        0.3141
       ],
-      "height": 1.9864,
+      "height": 2.03,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.1017,
-      "footprint_z": 0.58,
+      "footprint_x": 1.455,
+      "footprint_z": 0.6282,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4731,28 +4731,28 @@
       "name": "npc_innkeeper",
       "file": "assets/models/npc_innkeeper.glb",
       "category": "Other",
-      "triangles": 260,
+      "triangles": 384,
       "triangle_limit": 1500,
       "complex": true,
       "meshes": 15,
-      "primitives": 15,
-      "materials": 8,
+      "primitives": 22,
+      "materials": 10,
       "min": [
-        -0.6293,
+        -0.5635,
         0.0,
-        -0.2988
+        -0.3558
       ],
       "max": [
-        0.6293,
-        1.6155,
-        0.2988
+        0.5635,
+        1.82,
+        0.3558
       ],
-      "height": 1.6155,
+      "height": 1.82,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.2586,
-      "footprint_z": 0.5975,
+      "footprint_x": 1.1271,
+      "footprint_z": 0.7116,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4791,28 +4791,28 @@
       "name": "npc_merchant",
       "file": "assets/models/npc_merchant.glb",
       "category": "Npc Variants",
-      "triangles": 184,
+      "triangles": 416,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 12,
-      "primitives": 12,
-      "materials": 6,
+      "primitives": 19,
+      "materials": 8,
       "min": [
-        -0.5071,
+        -0.5981,
         0.0,
-        -0.3625
+        -0.4845
       ],
       "max": [
-        0.5071,
-        1.63,
-        0.3625
+        0.5981,
+        1.88,
+        0.4845
       ],
-      "height": 1.63,
+      "height": 1.88,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.0142,
-      "footprint_z": 0.725,
+      "footprint_x": 1.1962,
+      "footprint_z": 0.9691,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4881,28 +4881,28 @@
       "name": "npc_sailor",
       "file": "assets/models/npc_sailor.glb",
       "category": "Other",
-      "triangles": 216,
+      "triangles": 356,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 14,
-      "primitives": 14,
-      "materials": 7,
+      "meshes": 1,
+      "primitives": 11,
+      "materials": 11,
       "min": [
-        -0.5503,
+        -0.5927,
         0.0,
-        -0.3013
+        -0.3141
       ],
       "max": [
-        0.5503,
-        1.67,
-        0.3013
+        0.5927,
+        1.8,
+        0.3141
       ],
-      "height": 1.67,
+      "height": 1.8,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.1006,
-      "footprint_z": 0.6027,
+      "footprint_x": 1.1855,
+      "footprint_z": 0.6282,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4941,28 +4941,28 @@
       "name": "npc_traveling_scholar",
       "file": "assets/models/npc_traveling_scholar.glb",
       "category": "Other",
-      "triangles": 278,
+      "triangles": 388,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 17,
-      "primitives": 17,
-      "materials": 8,
+      "meshes": 1,
+      "primitives": 9,
+      "materials": 9,
       "min": [
-        -0.5,
+        -0.509,
         0.0,
-        -0.31
+        -0.3371
       ],
       "max": [
-        0.5,
-        1.96,
-        0.31
+        0.509,
+        1.88,
+        0.3371
       ],
-      "height": 1.96,
+      "height": 1.88,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.0,
-      "footprint_z": 0.62,
+      "footprint_x": 1.0181,
+      "footprint_z": 0.6741,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -5001,28 +5001,28 @@
       "name": "npc_wolf_pup",
       "file": "assets/models/npc_wolf_pup.glb",
       "category": "Npc Variants",
-      "triangles": 128,
+      "triangles": 224,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 10,
-      "primitives": 10,
-      "materials": 5,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
       "min": [
-        -0.2294,
+        -0.2839,
         0.0,
-        -0.5477
+        -0.5968
       ],
       "max": [
-        0.2294,
-        0.64,
-        0.5477
+        0.2839,
+        0.9128,
+        0.5968
       ],
-      "height": 0.64,
+      "height": 0.9128,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.4588,
-      "footprint_z": 1.0954,
+      "footprint_x": 0.5678,
+      "footprint_z": 1.1936,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -5871,28 +5871,28 @@
       "name": "scarecrow",
       "file": "assets/models/scarecrow.glb",
       "category": "Other",
-      "triangles": 226,
+      "triangles": 356,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 15,
-      "primitives": 15,
+      "meshes": 1,
+      "primitives": 6,
       "materials": 6,
       "min": [
-        -0.7324,
+        -0.6266,
         0.0,
-        -0.3
+        -0.2772
       ],
       "max": [
-        0.7324,
-        2.02,
-        0.3
+        0.6266,
+        1.8444,
+        0.2772
       ],
-      "height": 2.02,
+      "height": 1.8444,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.4647,
-      "footprint_z": 0.6,
+      "footprint_x": 1.2532,
+      "footprint_z": 0.5543,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -5901,28 +5901,28 @@
       "name": "scorpion_queen",
       "file": "assets/models/scorpion_queen.glb",
       "category": "Character",
-      "triangles": 286,
+      "triangles": 332,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 22,
-      "primitives": 22,
+      "primitives": 23,
       "materials": 6,
       "min": [
-        -1.2885,
-        0.005,
-        -1.2407
+        -0.9449,
+        0.0,
+        -0.8523
       ],
       "max": [
-        1.2885,
-        2.2173,
-        0.9775
+        0.9449,
+        2.2162,
+        0.8523
       ],
-      "height": 2.2123,
-      "base_y": 0.005,
+      "height": 2.2162,
+      "base_y": 0.0,
       "center_x": 0.0,
-      "center_z": -0.1316,
-      "footprint_x": 2.5769,
-      "footprint_z": 2.2182,
+      "center_z": 0.0,
+      "footprint_x": 1.8897,
+      "footprint_z": 1.7046,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -5961,28 +5961,28 @@
       "name": "sea_turtle",
       "file": "assets/models/sea_turtle.glb",
       "category": "Other",
-      "triangles": 250,
+      "triangles": 260,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 14,
-      "primitives": 14,
+      "meshes": 1,
+      "primitives": 4,
       "materials": 4,
       "min": [
-        -0.4732,
+        -0.5483,
         0.0,
-        -0.6442
+        -0.5917
       ],
       "max": [
-        0.4732,
-        0.583,
-        0.6442
+        0.5483,
+        0.6806,
+        0.5917
       ],
-      "height": 0.583,
+      "height": 0.6806,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.9463,
-      "footprint_z": 1.2884,
+      "footprint_x": 1.0967,
+      "footprint_z": 1.1834,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -6351,28 +6351,28 @@
       "name": "spider",
       "file": "assets/models/spider.glb",
       "category": "Character",
-      "triangles": 284,
+      "triangles": 296,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 22,
       "primitives": 22,
-      "materials": 4,
+      "materials": 3,
       "min": [
-        -0.7253,
-        0.0013,
-        -0.5262
+        -0.6563,
+        0.0,
+        -0.4976
       ],
       "max": [
-        0.7253,
-        0.675,
-        0.385
+        0.6563,
+        0.8391,
+        0.4976
       ],
-      "height": 0.6737,
-      "base_y": 0.0013,
+      "height": 0.8391,
+      "base_y": 0.0,
       "center_x": 0.0,
-      "center_z": -0.0706,
-      "footprint_x": 1.4505,
-      "footprint_z": 0.9112,
+      "center_z": 0.0,
+      "footprint_x": 1.3126,
+      "footprint_z": 0.9951,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -7431,28 +7431,28 @@
       "name": "wolf",
       "file": "assets/models/wolf.glb",
       "category": "Character",
-      "triangles": 488,
+      "triangles": 340,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 1,
       "primitives": 4,
       "materials": 4,
       "min": [
-        -0.2298,
+        -0.2749,
         0.0,
-        -0.86
+        -0.8436
       ],
       "max": [
-        0.2298,
-        1.06,
-        0.86
+        0.2749,
+        1.29,
+        0.8436
       ],
-      "height": 1.06,
+      "height": 1.29,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.4596,
-      "footprint_z": 1.72,
+      "footprint_x": 0.5498,
+      "footprint_z": 1.6871,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -7461,28 +7461,28 @@
       "name": "wraith",
       "file": "assets/models/wraith.glb",
       "category": "Character",
-      "triangles": 148,
+      "triangles": 264,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 10,
-      "primitives": 10,
+      "meshes": 1,
+      "primitives": 4,
       "materials": 4,
       "min": [
-        -0.55,
+        -0.5566,
         0.0,
-        -0.42
+        -0.3141
       ],
       "max": [
-        0.55,
+        0.5566,
         1.78,
-        0.42
+        0.3141
       ],
       "height": 1.78,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.1,
-      "footprint_z": 0.84,
+      "footprint_x": 1.1131,
+      "footprint_z": 0.6282,
       "bounds_complete": true,
       "violations": [],
       "pass": true

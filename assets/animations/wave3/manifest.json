@@ -89,15 +89,15 @@
     },
     "spider": {
       "glb": "assets/models/spider.glb",
-      "sha256": "9da2dac2cb2555e63bd99359212fbcd051e72c1c9fa36509799120365d3cc3cb",
-      "height_m": 0.6737,
-      "scale_to_1p55u": 0.43465
+      "sha256": "e508c17cb6615052b42d76942c15cc68880ad8b73f71ddf4f501a80344186467",
+      "height_m": 0.8391,
+      "scale_to_1p55u": 0.54135
     },
     "scorpion_queen": {
       "glb": "assets/models/scorpion_queen.glb",
-      "sha256": "bdb371f95058f9b995820787e3934761a523bcad1f18b146bd945299a49384e1",
-      "height_m": 2.2123,
-      "scale_to_1p55u": 1.42727
+      "sha256": "38f2308316bd63ad1cf13f4278c64c697719688d9f822081505b90669693dbb9",
+      "height_m": 2.2162,
+      "scale_to_1p55u": 1.42979
     },
     "toad_king": {
       "glb": "assets/models/toad_king.glb",
@@ -119,9 +119,9 @@
     },
     "colossus": {
       "glb": "assets/models/colossus.glb",
-      "sha256": "f0972bdf7d36a85696fa26303aeaca1fcdec30ce77736cfc3be4b56c0dc1fc9b",
-      "height_m": 3.05,
-      "scale_to_1p55u": 1.96774
+      "sha256": "103963e48bd0429e3a319310c9c50f6919fe0eee6a4fab0657df242fc00809bd",
+      "height_m": 3.02,
+      "scale_to_1p55u": 1.94839
     },
     "npc_villager_child": {
       "glb": "assets/models/npc_villager_child.glb",
@@ -137,9 +137,9 @@
     },
     "npc_merchant": {
       "glb": "assets/models/npc_merchant.glb",
-      "sha256": "8c933356965face3c449f9a9d851a29e724b0fd71465943947fc39d7a795cd98",
-      "height_m": 1.63,
-      "scale_to_1p55u": 1.05161
+      "sha256": "c5a200b7bde5d597274623938dc31392f6a59f5d7e608e9770ab3646b25096cf",
+      "height_m": 1.88,
+      "scale_to_1p55u": 1.2129
     },
     "golem": {
       "glb": "assets/models/golem.glb",
@@ -786,9 +786,9 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.0,
+      "foot_slide_cm": 0.01,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1294,
+      "float_p10_cm": 0.3999,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -797,8 +797,8 @@
         "magnitude": 0.0
       },
       "mean_speed_mps": 0.0,
-      "min_z_m": 0.00129,
-      "max_ground_lift_cm": 0.0,
+      "min_z_m": 0.004,
+      "max_ground_lift_cm": 0.1,
       "clip": "spider_idle",
       "model": "spider",
       "kind": "enemy",
@@ -807,7 +807,7 @@
       "duration_s": 4.0333,
       "loop": true,
       "root_motion": false,
-      "scale_to_1p55u": 0.43465,
+      "scale_to_1p55u": 0.54135,
       "contacts": [
         "lower_l0",
         "lower_l1",
@@ -818,7 +818,7 @@
         "lower_r2",
         "lower_r3"
       ],
-      "source_sha256": "9da2dac2cb2555e63bd99359212fbcd051e72c1c9fa36509799120365d3cc3cb",
+      "source_sha256": "e508c17cb6615052b42d76942c15cc68880ad8b73f71ddf4f501a80344186467",
       "status": "PASS",
       "fails": [],
       "warns": [],
@@ -903,19 +903,19 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.0,
+      "foot_slide_cm": 0.0223,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.5022,
+      "float_p10_cm": 0.2975,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": -0.0,
-        "gltf_y": 0.0285,
-        "magnitude": 0.0285
+        "gltf_y": 0.0286,
+        "magnitude": 0.0286
       },
       "mean_speed_mps": 0.0145,
-      "min_z_m": 0.00502,
-      "max_ground_lift_cm": 0.0,
+      "min_z_m": 0.00297,
+      "max_ground_lift_cm": 0.1,
       "clip": "scorpion_queen_enrage",
       "model": "scorpion_queen",
       "kind": "boss",
@@ -924,7 +924,7 @@
       "duration_s": 2.0,
       "loop": false,
       "root_motion": true,
-      "scale_to_1p55u": 1.42727,
+      "scale_to_1p55u": 1.42979,
       "contacts": [
         "leg_l0",
         "leg_l1",
@@ -933,7 +933,7 @@
         "leg_r1",
         "leg_r2"
       ],
-      "source_sha256": "bdb371f95058f9b995820787e3934761a523bcad1f18b146bd945299a49384e1",
+      "source_sha256": "38f2308316bd63ad1cf13f4278c64c697719688d9f822081505b90669693dbb9",
       "status": "PASS",
       "fails": [],
       "warns": [],
@@ -944,9 +944,9 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.0,
+      "foot_slide_cm": 0.014,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.5022,
+      "float_p10_cm": 0.2996,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -954,9 +954,9 @@
         "gltf_y": 0.0,
         "magnitude": 0.03
       },
-      "mean_speed_mps": 0.6709,
-      "min_z_m": 0.00295,
-      "max_ground_lift_cm": 3.463,
+      "mean_speed_mps": 0.6624,
+      "min_z_m": 0.00299,
+      "max_ground_lift_cm": 0.1,
       "clip": "scorpion_queen_ultimate",
       "model": "scorpion_queen",
       "kind": "boss",
@@ -965,7 +965,7 @@
       "duration_s": 1.8,
       "loop": false,
       "root_motion": true,
-      "scale_to_1p55u": 1.42727,
+      "scale_to_1p55u": 1.42979,
       "contacts": [
         "leg_l0",
         "leg_l1",
@@ -974,7 +974,7 @@
         "leg_r1",
         "leg_r2"
       ],
-      "source_sha256": "bdb371f95058f9b995820787e3934761a523bcad1f18b146bd945299a49384e1",
+      "source_sha256": "38f2308316bd63ad1cf13f4278c64c697719688d9f822081505b90669693dbb9",
       "status": "PASS",
       "fails": [],
       "warns": [],
@@ -1202,10 +1202,10 @@
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": -0.0,
-        "gltf_y": 0.0394,
-        "magnitude": 0.0394
+        "gltf_y": 0.039,
+        "magnitude": 0.039
       },
-      "mean_speed_mps": 0.02,
+      "mean_speed_mps": 0.0198,
       "min_z_m": 0.00397,
       "max_ground_lift_cm": 0.1,
       "clip": "colossus_enrage",
@@ -1216,12 +1216,12 @@
       "duration_s": 2.0,
       "loop": false,
       "root_motion": true,
-      "scale_to_1p55u": 1.96774,
+      "scale_to_1p55u": 1.94839,
       "contacts": [
         "lower_leg_l",
         "lower_leg_r"
       ],
-      "source_sha256": "f0972bdf7d36a85696fa26303aeaca1fcdec30ce77736cfc3be4b56c0dc1fc9b",
+      "source_sha256": "103963e48bd0429e3a319310c9c50f6919fe0eee6a4fab0657df242fc00809bd",
       "status": "PASS",
       "fails": [],
       "warns": [],
@@ -1234,17 +1234,17 @@
       "root_velocity_mps": 0.0,
       "foot_slide_cm": 0.0,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.38,
+      "float_p10_cm": 0.3804,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
-        "gltf_z": 0.0937,
-        "gltf_y": -0.0017,
-        "magnitude": 0.0937
+        "gltf_z": 0.0927,
+        "gltf_y": 0.0,
+        "magnitude": 0.0927
       },
-      "mean_speed_mps": 1.0082,
-      "min_z_m": 0.00362,
-      "max_ground_lift_cm": 0.268,
+      "mean_speed_mps": 0.9974,
+      "min_z_m": 0.00378,
+      "max_ground_lift_cm": 0.1,
       "clip": "colossus_ultimate",
       "model": "colossus",
       "kind": "boss",
@@ -1253,12 +1253,12 @@
       "duration_s": 1.8,
       "loop": false,
       "root_motion": true,
-      "scale_to_1p55u": 1.96774,
+      "scale_to_1p55u": 1.94839,
       "contacts": [
         "lower_leg_l",
         "lower_leg_r"
       ],
-      "source_sha256": "f0972bdf7d36a85696fa26303aeaca1fcdec30ce77736cfc3be4b56c0dc1fc9b",
+      "source_sha256": "103963e48bd0429e3a319310c9c50f6919fe0eee6a4fab0657df242fc00809bd",
       "status": "PASS",
       "fails": [],
       "warns": [],
@@ -1345,7 +1345,7 @@
       "root_velocity_mps": 0.0,
       "foot_slide_cm": 0.0174,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.2985,
+      "float_p10_cm": 0.2986,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -1364,12 +1364,12 @@
       "duration_s": 2.0333,
       "loop": true,
       "root_motion": false,
-      "scale_to_1p55u": 1.05161,
+      "scale_to_1p55u": 1.2129,
       "contacts": [
         "leg_l",
         "leg_r"
       ],
-      "source_sha256": "8c933356965face3c449f9a9d851a29e724b0fd71465943947fc39d7a795cd98",
+      "source_sha256": "c5a200b7bde5d597274623938dc31392f6a59f5d7e608e9770ab3646b25096cf",
       "status": "PASS",
       "fails": [],
       "warns": [],

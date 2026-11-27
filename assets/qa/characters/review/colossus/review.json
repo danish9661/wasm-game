@@ -1,0 +1,89 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/colossus.glb",
+ "id": "colossus",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "pelvis.001",
+   "torso.004",
+   "crack_l",
+   "crack_r",
+   "head.008_primitive0",
+   "head.008_primitive1",
+   "eye_l.014",
+   "eye_r.014",
+   "crown_0",
+   "crown_1",
+   "crown_2",
+   "shoulder_l.002_primitive0",
+   "shoulder_l.002_primitive1",
+   "arm_l.006",
+   "shoulder_r.002_primitive0",
+   "shoulder_r.002_primitive1",
+   "arm_r.006",
+   "fist_l.001",
+   "fist_r.001_primitive0",
+   "fist_r.001_primitive1",
+   "fist_r.001_primitive2",
+   "leg_l.006",
+   "foot_l.004",
+   "leg_r.006",
+   "foot_r.004"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -1.151,
+    0,
+    -0.564
+   ],
+   "max": [
+    1.151,
+    3.02,
+    0.564
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_stone",
+   "m_fire",
+   "m_charcoal",
+   "m_gold",
+   "m_iron",
+   "m_steel",
+   "m_wood"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/colossus/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/colossus/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/colossus/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/colossus/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/colossus/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/colossus_sheet.png"
+  }
+ ]
+}

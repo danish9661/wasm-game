@@ -1,0 +1,26 @@
+{
+  "id": "bat",
+  "category": "char",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "Rebuilt low-poly character for the visual-quality audit.",
+  "dims": {
+    "x": 0.94,
+    "y": 0.4448,
+    "z": 1.16,
+    "tol": 0.35,
+    "basis": "verified GLB bounds from scripts/verify_models.py"
+  },
+  "pivot": "bottom_center",
+  "views": {
+    "primary": "iso"
+  },
+  "style_notes": "ART_DIRECTION.md: flat-shaded diorama, palette only.",
+  "review_views": [
+    "front",
+    "three_quarter",
+    "iso",
+    "feed"
+  ]
+}

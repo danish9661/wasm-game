@@ -1,0 +1,369 @@
+{
+  "family": [
+    {
+      "name": "archer",
+      "category": "Character",
+      "height": 1.62,
+      "triangles": 304,
+      "materials": 6
+    },
+    {
+      "name": "armored_goblin",
+      "category": "Character",
+      "height": 1.36,
+      "triangles": 292,
+      "materials": 8
+    },
+    {
+      "name": "bat",
+      "category": "Character",
+      "height": 1.16,
+      "triangles": 196,
+      "materials": 3
+    },
+    {
+      "name": "brute",
+      "category": "Character",
+      "height": 1.89,
+      "triangles": 272,
+      "materials": 7
+    },
+    {
+      "name": "colossus",
+      "category": "Character",
+      "height": 3.02,
+      "triangles": 396,
+      "materials": 7
+    },
+    {
+      "name": "goblin",
+      "category": "Character",
+      "height": 1.12,
+      "triangles": 194,
+      "materials": 5
+    },
+    {
+      "name": "golem",
+      "category": "Character",
+      "height": 1.92,
+      "triangles": 214,
+      "materials": 4
+    },
+    {
+      "name": "guard",
+      "category": "Character",
+      "height": 1.55,
+      "triangles": 190,
+      "materials": 6
+    },
+    {
+      "name": "imp",
+      "category": "Character",
+      "height": 1.0875,
+      "triangles": 160,
+      "materials": 4
+    },
+    {
+      "name": "ocean_leviathan",
+      "category": "Character",
+      "height": 2.34,
+      "triangles": 212,
+      "materials": 5
+    },
+    {
+      "name": "ogre",
+      "category": "Character",
+      "height": 1.98,
+      "triangles": 228,
+      "materials": 4
+    },
+    {
+      "name": "player",
+      "category": "Character",
+      "height": 1.55,
+      "triangles": 500,
+      "materials": 8
+    },
+    {
+      "name": "raider",
+      "category": "Character",
+      "height": 1.56,
+      "triangles": 216,
+      "materials": 8
+    },
+    {
+      "name": "scorpion_queen",
+      "category": "Character",
+      "height": 2.2162,
+      "triangles": 332,
+      "materials": 6
+    },
+    {
+      "name": "skeleton",
+      "category": "Character",
+      "height": 1.67,
+      "triangles": 312,
+      "materials": 2
+    },
+    {
+      "name": "slime",
+      "category": "Character",
+      "height": 0.754,
+      "triangles": 160,
+      "materials": 5
+    },
+    {
+      "name": "spider",
+      "category": "Character",
+      "height": 0.8391,
+      "triangles": 296,
+      "materials": 3
+    },
+    {
+      "name": "stormcaller",
+      "category": "Character",
+      "height": 2.65,
+      "triangles": 264,
+      "materials": 7
+    },
+    {
+      "name": "toad_king",
+      "category": "Character",
+      "height": 2.232,
+      "triangles": 232,
+      "materials": 6
+    },
+    {
+      "name": "wolf",
+      "category": "Character",
+      "height": 1.29,
+      "triangles": 340,
+      "materials": 4
+    },
+    {
+      "name": "wraith",
+      "category": "Character",
+      "height": 1.78,
+      "triangles": 264,
+      "materials": 4
+    },
+    {
+      "name": "wraith_knight",
+      "category": "Character",
+      "height": 1.81,
+      "triangles": 308,
+      "materials": 7
+    },
+    {
+      "name": "fire_elemental",
+      "category": "Other",
+      "height": 1.96,
+      "triangles": 260,
+      "materials": 3
+    },
+    {
+      "name": "forest_deer",
+      "category": "Other",
+      "height": 1.87,
+      "triangles": 228,
+      "materials": 6
+    },
+    {
+      "name": "npc_apprentice",
+      "category": "Other",
+      "height": 1.68,
+      "triangles": 264,
+      "materials": 8
+    },
+    {
+      "name": "npc_bard",
+      "category": "Other",
+      "height": 1.98,
+      "triangles": 368,
+      "materials": 10
+    },
+    {
+      "name": "npc_blacksmith",
+      "category": "Building",
+      "height": 1.79,
+      "triangles": 276,
+      "materials": 6
+    },
+    {
+      "name": "npc_captain",
+      "category": "Other",
+      "height": 1.87,
+      "triangles": 232,
+      "materials": 8
+    },
+    {
+      "name": "npc_child_urchin",
+      "category": "Other",
+      "height": 1.25,
+      "triangles": 212,
+      "materials": 7
+    },
+    {
+      "name": "npc_desert_scorpion",
+      "category": "Npc Variants",
+      "height": 1.5485,
+      "triangles": 312,
+      "materials": 4
+    },
+    {
+      "name": "npc_dire_wolf",
+      "category": "Npc Variants",
+      "height": 1.22,
+      "triangles": 196,
+      "materials": 5
+    },
+    {
+      "name": "npc_elder",
+      "category": "Npc Variants",
+      "height": 1.82,
+      "triangles": 180,
+      "materials": 7
+    },
+    {
+      "name": "npc_farmer",
+      "category": "Other",
+      "height": 1.9,
+      "triangles": 396,
+      "materials": 9
+    },
+    {
+      "name": "npc_fisher",
+      "category": "Other",
+      "height": 2.03,
+      "triangles": 372,
+      "materials": 9
+    },
+    {
+      "name": "npc_forest_warden",
+      "category": "Npc Variants",
+      "height": 2.3174,
+      "triangles": 494,
+      "materials": 9
+    },
+    {
+      "name": "npc_guard",
+      "category": "Npc Variants",
+      "height": 1.96,
+      "triangles": 268,
+      "materials": 8
+    },
+    {
+      "name": "npc_hunter",
+      "category": "Other",
+      "height": 1.76,
+      "triangles": 244,
+      "materials": 6
+    },
+    {
+      "name": "npc_ice_elemental",
+      "category": "Npc Variants",
+      "height": 2.05,
+      "triangles": 148,
+      "materials": 4
+    },
+    {
+      "name": "npc_innkeeper",
+      "category": "Other",
+      "height": 1.82,
+      "triangles": 384,
+      "materials": 10
+    },
+    {
+      "name": "npc_mayor",
+      "category": "Other",
+      "height": 1.87,
+      "triangles": 232,
+      "materials": 7
+    },
+    {
+      "name": "npc_merchant",
+      "category": "Npc Variants",
+      "height": 1.88,
+      "triangles": 416,
+      "materials": 8
+    },
+    {
+      "name": "npc_mermaid",
+      "category": "Other",
+      "height": 1.94,
+      "triangles": 258,
+      "materials": 7
+    },
+    {
+      "name": "npc_priest",
+      "category": "Other",
+      "height": 1.71,
+      "triangles": 268,
+      "materials": 7
+    },
+    {
+      "name": "npc_sailor",
+      "category": "Other",
+      "height": 1.8,
+      "triangles": 356,
+      "materials": 11
+    },
+    {
+      "name": "npc_swamp_toad",
+      "category": "Npc Variants",
+      "height": 0.71,
+      "triangles": 256,
+      "materials": 5
+    },
+    {
+      "name": "npc_traveling_scholar",
+      "category": "Other",
+      "height": 1.88,
+      "triangles": 388,
+      "materials": 9
+    },
+    {
+      "name": "npc_villager_child",
+      "category": "Building",
+      "height": 1.0555,
+      "triangles": 192,
+      "materials": 6
+    },
+    {
+      "name": "npc_wolf_pup",
+      "category": "Npc Variants",
+      "height": 0.9128,
+      "triangles": 224,
+      "materials": 4
+    },
+    {
+      "name": "river_otter",
+      "category": "Other",
+      "height": 0.9233,
+      "triangles": 208,
+      "materials": 5
+    },
+    {
+      "name": "scarecrow",
+      "category": "Other",
+      "height": 1.8444,
+      "triangles": 356,
+      "materials": 6
+    },
+    {
+      "name": "sea_turtle",
+      "category": "Other",
+      "height": 0.6806,
+      "triangles": 260,
+      "materials": 4
+    },
+    {
+      "name": "stone_elemental",
+      "category": "Other",
+      "height": 1.778,
+      "triangles": 320,
+      "materials": 3
+    }
+  ],
+  "count": 52
+}

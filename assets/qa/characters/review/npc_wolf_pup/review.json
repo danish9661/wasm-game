@@ -1,0 +1,67 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_wolf_pup.glb",
+ "id": "npc_wolf_pup",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "npc_wolf_pup_lod0_primitive0",
+   "npc_wolf_pup_lod0_primitive1",
+   "npc_wolf_pup_lod0_primitive2",
+   "npc_wolf_pup_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 224
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.284,
+    0,
+    -0.597
+   ],
+   "max": [
+    0.284,
+    0.913,
+    0.597
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_wood",
+   "m_leather",
+   "m_bone",
+   "m_sand"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_wolf_pup/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_wolf_pup/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_wolf_pup/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_wolf_pup/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_wolf_pup/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_wolf_pup_sheet.png"
+  }
+ ]
+}

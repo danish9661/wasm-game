@@ -1,0 +1,77 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_fisher.glb",
+ "id": "npc_fisher",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "npc_fisher_lod0_primitive0",
+   "npc_fisher_lod0_primitive1",
+   "npc_fisher_lod0_primitive2",
+   "npc_fisher_lod0_primitive3",
+   "npc_fisher_lod0_primitive4",
+   "npc_fisher_lod0_primitive5",
+   "npc_fisher_lod0_primitive6",
+   "npc_fisher_lod0_primitive7",
+   "npc_fisher_lod0_primitive8"
+  ],
+  "lod_tris": {
+   "0": 372
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.727,
+    0,
+    -0.314
+   ],
+   "max": [
+    0.727,
+    2.03,
+    0.314
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_skin",
+   "m_wood",
+   "m_leather",
+   "m_cloth",
+   "m_fire",
+   "m_sand",
+   "m_snow",
+   "m_eye",
+   "m_trousers"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_fisher/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_fisher/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_fisher/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_fisher/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_fisher/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_fisher_sheet.png"
+  }
+ ]
+}

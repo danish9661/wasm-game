@@ -1,0 +1,86 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/scorpion_queen.glb",
+ "id": "scorpion_queen",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "body.004_primitive0",
+   "body.004_primitive1",
+   "crown_l",
+   "crown_r",
+   "head.005",
+   "eye_l.010",
+   "eye_r.010",
+   "arm_l.004",
+   "pincer_l_up",
+   "pincer_l_lo",
+   "arm_r.004",
+   "pincer_r_up",
+   "pincer_r_lo",
+   "tail_1",
+   "tail_2",
+   "tail_3",
+   "stinger",
+   "leg_l0",
+   "leg_l1",
+   "leg_l2",
+   "leg_r0",
+   "leg_r1",
+   "leg_r2"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.945,
+    0,
+    -0.852
+   ],
+   "max": [
+    0.945,
+    2.216,
+    0.852
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_gold",
+   "m_arcane",
+   "m_enemy",
+   "m_fire",
+   "m_stone",
+   "m_steel"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scorpion_queen/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scorpion_queen/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scorpion_queen/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scorpion_queen/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scorpion_queen/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/scorpion_queen_sheet.png"
+  }
+ ]
+}

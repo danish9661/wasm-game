@@ -1,0 +1,67 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/sea_turtle.glb",
+ "id": "sea_turtle",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "sea_turtle_lod0_primitive0",
+   "sea_turtle_lod0_primitive1",
+   "sea_turtle_lod0_primitive2",
+   "sea_turtle_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 260
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.548,
+    0,
+    -0.592
+   ],
+   "max": [
+    0.548,
+    0.681,
+    0.592
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_wood",
+   "m_bone",
+   "m_leaf",
+   "m_leaf_dark"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/sea_turtle/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/sea_turtle/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/sea_turtle/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/sea_turtle/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/sea_turtle/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/sea_turtle_sheet.png"
+  }
+ ]
+}

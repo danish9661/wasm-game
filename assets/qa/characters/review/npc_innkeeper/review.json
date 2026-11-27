@@ -1,0 +1,89 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_innkeeper.glb",
+ "id": "npc_innkeeper",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "belly",
+   "apron.001_primitive0",
+   "apron.001_primitive1",
+   "apron.001_primitive2",
+   "belt.001",
+   "head.002_primitive0",
+   "head.002_primitive1",
+   "mustache",
+   "cap.002",
+   "arm_0.002_primitive0",
+   "arm_0.002_primitive1",
+   "arm_1.002_primitive0",
+   "arm_1.002_primitive1",
+   "mug_0",
+   "foam_0",
+   "mug_1",
+   "foam_1",
+   "tray",
+   "leg_0.001_primitive0",
+   "leg_0.001_primitive1",
+   "leg_1.001_primitive0",
+   "leg_1.001_primitive1"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.564,
+    0,
+    -0.356
+   ],
+   "max": [
+    0.564,
+    1.82,
+    0.356
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_cloth",
+   "m_wood",
+   "m_bone",
+   "m_gold",
+   "m_leather",
+   "m_skin",
+   "m_eye",
+   "m_hair",
+   "m_snow",
+   "m_trousers"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_innkeeper/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_innkeeper/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_innkeeper/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_innkeeper/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_innkeeper/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_innkeeper_sheet.png"
+  }
+ ]
+}

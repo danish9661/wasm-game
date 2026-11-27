@@ -1,0 +1,82 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/spider.glb",
+ "id": "spider",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "thorax",
+   "abdomen",
+   "eye_l.006",
+   "eye_r.006",
+   "fang_1",
+   "fang_2",
+   "upper_l0",
+   "lower_l0",
+   "upper_l1",
+   "lower_l1",
+   "upper_l2",
+   "lower_l2",
+   "upper_l3",
+   "lower_l3",
+   "upper_r0",
+   "lower_r0",
+   "upper_r1",
+   "lower_r1",
+   "upper_r2",
+   "lower_r2",
+   "upper_r3",
+   "lower_r3"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.656,
+    0,
+    -0.498
+   ],
+   "max": [
+    0.656,
+    0.839,
+    0.498
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_stone",
+   "m_leather",
+   "m_bone"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/spider/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/spider/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/spider/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/spider/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/spider/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/spider_sheet.png"
+  }
+ ]
+}

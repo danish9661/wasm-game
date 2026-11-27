@@ -1,0 +1,79 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_bard.glb",
+ "id": "npc_bard",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "npc_bard_lod0_primitive0",
+   "npc_bard_lod0_primitive1",
+   "npc_bard_lod0_primitive2",
+   "npc_bard_lod0_primitive3",
+   "npc_bard_lod0_primitive4",
+   "npc_bard_lod0_primitive5",
+   "npc_bard_lod0_primitive6",
+   "npc_bard_lod0_primitive7",
+   "npc_bard_lod0_primitive8",
+   "npc_bard_lod0_primitive9"
+  ],
+  "lod_tris": {
+   "0": 368
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.468,
+    0,
+    -0.35
+   ],
+   "max": [
+    0.468,
+    1.98,
+    0.35
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_player",
+   "m_skin",
+   "m_wood",
+   "m_leather",
+   "m_cloth",
+   "m_bone",
+   "m_gold",
+   "m_enemy",
+   "m_eye",
+   "m_trousers"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_bard/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_bard/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_bard/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_bard/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_bard/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_bard_sheet.png"
+  }
+ ]
+}

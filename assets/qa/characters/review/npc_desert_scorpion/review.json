@@ -1,0 +1,67 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_desert_scorpion.glb",
+ "id": "npc_desert_scorpion",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "npc_desert_scorpion_lod0_primitive0",
+   "npc_desert_scorpion_lod0_primitive1",
+   "npc_desert_scorpion_lod0_primitive2",
+   "npc_desert_scorpion_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 312
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.791,
+    0,
+    -0.721
+   ],
+   "max": [
+    0.791,
+    1.549,
+    0.721
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_steel",
+   "m_fire",
+   "m_sand",
+   "m_sand_dark"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_desert_scorpion/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_desert_scorpion/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_desert_scorpion/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_desert_scorpion/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_desert_scorpion/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_desert_scorpion_sheet.png"
+  }
+ ]
+}

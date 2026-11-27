@@ -1,0 +1,81 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_sailor.glb",
+ "id": "npc_sailor",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "npc_sailor_lod0_primitive0",
+   "npc_sailor_lod0_primitive1",
+   "npc_sailor_lod0_primitive2",
+   "npc_sailor_lod0_primitive3",
+   "npc_sailor_lod0_primitive4",
+   "npc_sailor_lod0_primitive5",
+   "npc_sailor_lod0_primitive6",
+   "npc_sailor_lod0_primitive7",
+   "npc_sailor_lod0_primitive8",
+   "npc_sailor_lod0_primitive9",
+   "npc_sailor_lod0_primitive10"
+  ],
+  "lod_tris": {
+   "0": 356
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.593,
+    0,
+    -0.314
+   ],
+   "max": [
+    0.593,
+    1.8,
+    0.314
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_skin",
+   "m_wood",
+   "m_leather",
+   "m_cloth",
+   "m_bone",
+   "m_steel",
+   "m_gold",
+   "m_enemy",
+   "m_sand",
+   "m_eye",
+   "m_trousers"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_sailor/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_sailor/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_sailor/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_sailor/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_sailor/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_sailor_sheet.png"
+  }
+ ]
+}

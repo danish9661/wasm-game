@@ -1,0 +1,84 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_merchant.glb",
+ "id": "npc_merchant",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "tunic",
+   "belt",
+   "pack_primitive0",
+   "pack_primitive1",
+   "pack_flap",
+   "satchel",
+   "coin",
+   "head_primitive0",
+   "head_primitive1",
+   "head_primitive2",
+   "hood",
+   "arm_0_primitive0",
+   "arm_0_primitive1",
+   "arm_1_primitive0",
+   "arm_1_primitive1",
+   "leg_0_primitive0",
+   "leg_0_primitive1",
+   "leg_1_primitive0",
+   "leg_1_primitive1"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.598,
+    0,
+    -0.485
+   ],
+   "max": [
+    0.598,
+    1.88,
+    0.485
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_cloth",
+   "m_leather",
+   "m_wood",
+   "m_gold",
+   "m_skin",
+   "m_eye",
+   "m_sand_dark",
+   "m_trousers"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_merchant/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_merchant/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_merchant/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_merchant/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_merchant/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_merchant_sheet.png"
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "npc_wolf_pup",
+  "category": "char",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "Rebuilt low-poly character for the visual-quality audit.",
+  "dims": {
+    "x": 0.5678,
+    "y": 1.1936,
+    "z": 0.9128,
+    "tol": 0.35,
+    "basis": "verified GLB bounds from scripts/verify_models.py"
+  },
+  "pivot": "bottom_center",
+  "views": {
+    "primary": "iso"
+  },
+  "style_notes": "ART_DIRECTION.md: flat-shaded diorama, palette only.",
+  "review_views": [
+    "front",
+    "three_quarter",
+    "iso",
+    "feed"
+  ]
+}

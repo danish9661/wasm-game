@@ -1,0 +1,77 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/models/npc_traveling_scholar.glb",
+ "id": "npc_traveling_scholar",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "npc_traveling_scholar_lod0_primitive0",
+   "npc_traveling_scholar_lod0_primitive1",
+   "npc_traveling_scholar_lod0_primitive2",
+   "npc_traveling_scholar_lod0_primitive3",
+   "npc_traveling_scholar_lod0_primitive4",
+   "npc_traveling_scholar_lod0_primitive5",
+   "npc_traveling_scholar_lod0_primitive6",
+   "npc_traveling_scholar_lod0_primitive7",
+   "npc_traveling_scholar_lod0_primitive8"
+  ],
+  "lod_tris": {
+   "0": 388
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.509,
+    0,
+    -0.337
+   ],
+   "max": [
+    0.509,
+    1.88,
+    0.337
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_skin",
+   "m_hair",
+   "m_wood",
+   "m_leather",
+   "m_cloth",
+   "m_bone",
+   "m_enemy",
+   "m_eye",
+   "m_trousers"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_traveling_scholar/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_traveling_scholar/three_quarter.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_traveling_scholar/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_traveling_scholar/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_traveling_scholar/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-characters/assets/qa/characters/review/npc_traveling_scholar_sheet.png"
+  }
+ ]
+}
