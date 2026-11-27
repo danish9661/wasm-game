@@ -2,9 +2,15 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-echo "==> Generating the runtime model and animation lists"
+echo "==> Generating the runtime model list"
 python3 scripts/gen_model_list.py
-~/.local/blender/blender -b --python scripts/gen_animation_data.py 2>/dev/null | tail -1
+# Animation samples are generated from the authored GLB clips with Blender.
+# CI has no Blender, so use the committed web/src/generated_animations.rs there.
+if [ -x "$HOME/.local/blender/blender" ]; then
+  "$HOME/.local/blender/blender" -b --python scripts/gen_animation_data.py 2>/dev/null | tail -1
+else
+  echo "==> Blender unavailable — using committed generated_animations.rs"
+fi
 
 echo "==> Building Rust -> WASM (wasm-pack, web target)"
 wasm-pack build web --target web --out-dir ../pkg --release
