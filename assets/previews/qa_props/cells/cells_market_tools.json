@@ -1,0 +1,380 @@
+{
+  "res": 512,
+  "models": [
+    {
+      "name": "market_stall",
+      "group": "market_tools",
+      "cell": "market_tools/market_stall.png",
+      "model_min": [
+        -1.7619831562042236,
+        -1.1649999618530273,
+        0.0
+      ],
+      "model_max": [
+        1.7619832754135132,
+        1.1649999618530273,
+        2.9600000381469727
+      ],
+      "height": 2.9600000381469727,
+      "ortho": 5.475195608139039
+    },
+    {
+      "name": "market_umbrella",
+      "group": "market_tools",
+      "cell": "market_tools/market_umbrella.png",
+      "model_min": [
+        -0.7400000095367432,
+        -0.7400000095367432,
+        0.0
+      ],
+      "model_max": [
+        0.7400000095367432,
+        0.7400000095367432,
+        2.321500062942505
+      ],
+      "height": 2.321500062942505,
+      "ortho": 4.5
+    },
+    {
+      "name": "market_scale",
+      "group": "market_tools",
+      "cell": "market_tools/market_scale.png",
+      "model_min": [
+        -0.6558845639228821,
+        -0.2199999988079071,
+        0.0
+      ],
+      "model_max": [
+        0.6558845639228821,
+        0.2199999988079071,
+        1.4300000667572021
+      ],
+      "height": 1.4300000667572021,
+      "ortho": 4.5
+    },
+    {
+      "name": "vendor_cart",
+      "group": "market_tools",
+      "cell": "market_tools/vendor_cart.png",
+      "model_min": [
+        -0.9800000190734863,
+        -0.6017851829528809,
+        0.0
+      ],
+      "model_max": [
+        0.9800000190734863,
+        0.6017851829528809,
+        1.9500000476837158
+      ],
+      "height": 1.9500000476837158,
+      "ortho": 4.5
+    },
+    {
+      "name": "farm_cart",
+      "group": "market_tools",
+      "cell": "market_tools/farm_cart.png",
+      "model_min": [
+        -0.8100000023841858,
+        -0.8450000286102295,
+        0.0
+      ],
+      "model_max": [
+        0.8100000023841858,
+        0.8450000286102295,
+        0.8899999856948853
+      ],
+      "height": 0.8899999856948853,
+      "ortho": 4.5
+    },
+    {
+      "name": "farm_plot",
+      "group": "market_tools",
+      "cell": "market_tools/farm_plot.png",
+      "model_min": [
+        -0.949999988079071,
+        -0.949999988079071,
+        0.0
+      ],
+      "model_max": [
+        0.949999988079071,
+        0.949999988079071,
+        0.5699999928474426
+      ],
+      "height": 0.5699999928474426,
+      "ortho": 4.5
+    },
+    {
+      "name": "farm_windmill",
+      "group": "market_tools",
+      "cell": "market_tools/farm_windmill.png",
+      "model_min": [
+        -0.8200000524520874,
+        -0.5410383939743042,
+        0.0
+      ],
+      "model_max": [
+        0.8200000524520874,
+        0.5410383939743042,
+        2.7199997901916504
+      ],
+      "height": 2.7199997901916504,
+      "ortho": 4.5
+    },
+    {
+      "name": "handcart",
+      "group": "market_tools",
+      "cell": "market_tools/handcart.png",
+      "model_min": [
+        -0.6800000071525574,
+        -0.6700000166893005,
+        0.0
+      ],
+      "model_max": [
+        0.6800000071525574,
+        0.6700000166893005,
+        0.8399999737739563
+      ],
+      "height": 0.8399999737739563,
+      "ortho": 4.5
+    },
+    {
+      "name": "anvil",
+      "group": "market_tools",
+      "cell": "market_tools/anvil.png",
+      "model_min": [
+        -0.33000001311302185,
+        -0.33000001311302185,
+        0.0
+      ],
+      "model_max": [
+        0.6800000667572021,
+        0.33000001311302185,
+        0.9499038457870483
+      ],
+      "height": 0.9499038457870483,
+      "ortho": 4.5
+    },
+    {
+      "name": "fishing_rod",
+      "group": "market_tools",
+      "cell": "market_tools/fishing_rod.png",
+      "model_min": [
+        -0.07602612674236298,
+        -0.046785201877355576,
+        0.0
+      ],
+      "model_max": [
+        0.2091933786869049,
+        0.17000000178813934,
+        2.1500000953674316
+      ],
+      "height": 2.1500000953674316,
+      "ortho": 4.5
+    },
+    {
+      "name": "fishing_net",
+      "group": "market_tools",
+      "cell": "market_tools/fishing_net.png",
+      "model_min": [
+        -0.4252304434776306,
+        -0.32199999690055847,
+        0.0
+      ],
+      "model_max": [
+        0.4252304434776306,
+        0.32199999690055847,
+        0.6377525329589844
+      ],
+      "height": 0.6377525329589844,
+      "ortho": 4.5
+    },
+    {
+      "name": "carrot",
+      "group": "market_tools",
+      "cell": "market_tools/carrot.png",
+      "model_min": [
+        -0.4507901966571808,
+        -0.3572688102722168,
+        0.0
+      ],
+      "model_max": [
+        0.4507901966571808,
+        0.3572688102722168,
+        0.6223999857902527
+      ],
+      "height": 0.6223999857902527,
+      "ortho": 4.5
+    },
+    {
+      "name": "potato",
+      "group": "market_tools",
+      "cell": "market_tools/potato.png",
+      "model_min": [
+        -0.5366550087928772,
+        -0.42531999945640564,
+        0.0
+      ],
+      "model_max": [
+        0.5366550087928772,
+        0.42531999945640564,
+        0.6600000262260437
+      ],
+      "height": 0.6600000262260437,
+      "ortho": 4.5
+    },
+    {
+      "name": "wheat",
+      "group": "market_tools",
+      "cell": "market_tools/wheat.png",
+      "model_min": [
+        -0.41143548488616943,
+        -0.3572688102722168,
+        0.0
+      ],
+      "model_max": [
+        0.41143548488616943,
+        0.3572688102722168,
+        1.2960000038146973
+      ],
+      "height": 1.2960000038146973,
+      "ortho": 4.5
+    },
+    {
+      "name": "chicken_coop",
+      "group": "market_tools",
+      "cell": "market_tools/chicken_coop.png",
+      "model_min": [
+        -0.7000000476837158,
+        -0.5799999833106995,
+        0.0
+      ],
+      "model_max": [
+        0.7000000476837158,
+        0.5799999833106995,
+        1.4499999284744263
+      ],
+      "height": 1.4499999284744263,
+      "ortho": 4.5
+    },
+    {
+      "name": "scarecrow",
+      "group": "market_tools",
+      "cell": "market_tools/scarecrow.png",
+      "model_min": [
+        -0.7323539853096008,
+        -0.30000001192092896,
+        0.0
+      ],
+      "model_max": [
+        0.7323539853096008,
+        0.30000001192092896,
+        2.0199999809265137
+      ],
+      "height": 2.0199999809265137,
+      "ortho": 4.5
+    },
+    {
+      "name": "bench",
+      "group": "market_tools",
+      "cell": "market_tools/bench.png",
+      "model_min": [
+        -0.75,
+        -0.26249998807907104,
+        0.0
+      ],
+      "model_max": [
+        0.75,
+        0.26249998807907104,
+        1.0549999475479126
+      ],
+      "height": 1.0549999475479126,
+      "ortho": 4.5
+    },
+    {
+      "name": "bench_ornate",
+      "group": "market_tools",
+      "cell": "market_tools/bench_ornate.png",
+      "model_min": [
+        -0.75,
+        -0.35499998927116394,
+        0.0
+      ],
+      "model_max": [
+        0.75,
+        0.35499998927116394,
+        1.1100000143051147
+      ],
+      "height": 1.1100000143051147,
+      "ortho": 4.5
+    },
+    {
+      "name": "street_bollard",
+      "group": "market_tools",
+      "cell": "market_tools/street_bollard.png",
+      "model_min": [
+        -0.37155401706695557,
+        -0.20999999344348907,
+        0.0
+      ],
+      "model_max": [
+        0.37155401706695557,
+        0.20999999344348907,
+        0.8700000047683716
+      ],
+      "height": 0.8700000047683716,
+      "ortho": 4.5
+    },
+    {
+      "name": "street_planter",
+      "group": "market_tools",
+      "cell": "market_tools/street_planter.png",
+      "model_min": [
+        -0.6500000357627869,
+        -0.2800000011920929,
+        0.0
+      ],
+      "model_max": [
+        0.6500000357627869,
+        0.2800000011920929,
+        1.4600000381469727
+      ],
+      "height": 1.4600000381469727,
+      "ortho": 4.5
+    },
+    {
+      "name": "dock_bollard",
+      "group": "market_tools",
+      "cell": "market_tools/dock_bollard.png",
+      "model_min": [
+        -0.33000001311302185,
+        -0.2517852187156677,
+        0.0
+      ],
+      "model_max": [
+        0.33000001311302185,
+        0.2517852187156677,
+        0.8299999833106995
+      ],
+      "height": 0.8299999833106995,
+      "ortho": 4.5
+    },
+    {
+      "name": "dock_plank",
+      "group": "market_tools",
+      "cell": "market_tools/dock_plank.png",
+      "model_min": [
+        -0.8199999928474426,
+        -0.41678521037101746,
+        0.0
+      ],
+      "model_max": [
+        0.8199999928474426,
+        0.41678521037101746,
+        0.27000001072883606
+      ],
+      "height": 0.27000001072883606,
+      "ortho": 4.5
+    }
+  ],
+  "config": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/scripts/qa/family_props.json"
+}

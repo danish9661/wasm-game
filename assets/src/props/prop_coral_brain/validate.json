@@ -45,22 +45,22 @@
   {
    "level": "PASS",
    "check": "budget.lod0",
-   "detail": "184 tris (budget 500)"
+   "detail": "472 tris (budget 500)"
   },
   {
    "level": "INFO",
    "check": "lod.skip",
-   "detail": "lod0 184 tris <= 10000, LODs not required"
+   "detail": "lod0 472 tris <= 10000, LODs not required"
   },
   {
    "level": "INFO",
    "check": "dims",
-   "detail": "x 0.841  y 0.782  z 0.678 m (Blender axes: width, depth, height)"
+   "detail": "x 0.899  y 0.743  z 0.658 m (Blender axes: width, depth, height)"
   },
   {
    "level": "PASS",
    "check": "dims.target",
-   "detail": "within 18%"
+   "detail": "within 14%"
   },
   {
    "level": "PASS",
@@ -80,7 +80,7 @@
   {
    "level": "PASS",
    "check": "col.not_render_mesh.prop_coral_brain_col",
-   "detail": "12 tris vs render 184"
+   "detail": "12 tris vs render 472"
   },
   {
    "level": "PASS",
@@ -115,7 +115,7 @@
   {
    "level": "PASS",
    "check": "uv1.overlap",
-   "detail": "0 overlapping px at 1024 (islands: 66)"
+   "detail": "0 overlapping px at 1024 (islands: 76)"
   },
   {
    "level": "PASS",
@@ -125,112 +125,62 @@
   {
    "level": "INFO",
    "check": "uv1.coverage",
-   "detail": "38.8% of the lightmap square used"
+   "detail": "37.2% of the lightmap square used"
   },
   {
    "level": "PASS",
    "check": "mat.assigned",
-   "detail": "4 materials used"
+   "detail": "2 materials used"
   },
   {
    "level": "PASS",
-   "check": "mat.m_arcane.name",
-   "detail": "m_arcane"
+   "check": "mat.m_coral_stone.name",
+   "detail": "m_coral_stone"
   },
   {
    "level": "PASS",
-   "check": "mat.m_arcane.workflow",
+   "check": "mat.m_coral_stone.workflow",
    "detail": "metal/rough"
   },
   {
    "level": "PASS",
-   "check": "mat.m_arcane.albedo_range",
-   "detail": "baseColorFactor sRGB [0.42, 0.247, 0.627]"
+   "check": "mat.m_coral_stone.albedo_range",
+   "detail": "baseColorFactor sRGB [0.722, 0.753, 0.784]"
   },
   {
    "level": "PASS",
-   "check": "palette.saturation.m_arcane",
-   "detail": "mean color matches swatch arcane"
+   "check": "palette.saturation.m_coral_stone",
+   "detail": "mean color sRGB [0.722, 0.753, 0.784]  sat 0.08 (max 1.00 unless an accent rule allows it)"
   },
   {
    "level": "PASS",
-   "check": "mat.m_arcane.roughness",
-   "detail": "roughnessFactor 0.80 (S4: roughness high)"
+   "check": "mat.m_coral_stone.roughness",
+   "detail": "roughnessFactor 0.94 (S4: roughness high)"
   },
   {
    "level": "PASS",
-   "check": "mat.m_bone.name",
-   "detail": "m_bone"
+   "check": "mat.m_coral_sand.name",
+   "detail": "m_coral_sand"
   },
   {
    "level": "PASS",
-   "check": "mat.m_bone.workflow",
+   "check": "mat.m_coral_sand.workflow",
    "detail": "metal/rough"
   },
   {
    "level": "PASS",
-   "check": "mat.m_bone.albedo_range",
-   "detail": "baseColorFactor sRGB [0.91, 0.878, 0.8]"
+   "check": "mat.m_coral_sand.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.706, 0.416]"
   },
   {
    "level": "PASS",
-   "check": "palette.saturation.m_bone",
-   "detail": "mean color sRGB [0.91, 0.878, 0.8]  sat 0.12 (max 1.00 unless an accent rule allows it)"
+   "check": "palette.saturation.m_coral_sand",
+   "detail": "mean color matches swatch sand"
   },
   {
    "level": "PASS",
-   "check": "mat.m_bone.roughness",
-   "detail": "roughnessFactor 0.95 (S4: roughness high)"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_coral.name",
-   "detail": "m_coral"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_coral.workflow",
-   "detail": "metal/rough"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_coral.albedo_range",
-   "detail": "baseColorFactor sRGB [0.769, 0.271, 0.102]"
-  },
-  {
-   "level": "PASS",
-   "check": "palette.saturation.m_coral",
-   "detail": "mean color sRGB [0.769, 0.271, 0.102]  sat 0.87 (max 1.00 unless an accent rule allows it)"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_coral.roughness",
-   "detail": "roughnessFactor 0.90 (S4: roughness high)"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_wood.name",
-   "detail": "m_wood"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_wood.workflow",
-   "detail": "metal/rough"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_wood.albedo_range",
-   "detail": "baseColorFactor sRGB [0.42, 0.267, 0.137]"
-  },
-  {
-   "level": "PASS",
-   "check": "palette.saturation.m_wood",
-   "detail": "mean color sRGB [0.42, 0.267, 0.137]  sat 0.67 (max 1.00 unless an accent rule allows it)"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_wood.roughness",
-   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+   "check": "mat.m_coral_sand.roughness",
+   "detail": "roughnessFactor 0.94 (S4: roughness high)"
   },
   {
    "level": "INFO",

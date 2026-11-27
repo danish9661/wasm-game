@@ -1,5 +1,5 @@
 {
- "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/export/props/prop_coral_brain.glb",
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/export/props/prop_coral_brain.glb",
  "id": "prop_coral_brain",
  "errors": [],
  "warnings": [],
@@ -7,12 +7,10 @@
   "meshes": [
    "prop_coral_brain_col",
    "prop_coral_brain_lod0_primitive0",
-   "prop_coral_brain_lod0_primitive1",
-   "prop_coral_brain_lod0_primitive2",
-   "prop_coral_brain_lod0_primitive3"
+   "prop_coral_brain_lod0_primitive1"
   ],
   "lod_tris": {
-   "0": 184
+   "0": 472
   },
   "col_meshes": [
    "prop_coral_brain_col"
@@ -22,14 +20,14 @@
   "broken": 0,
   "bbox_gltf": {
    "min": [
-    -0.421,
+    -0.45,
     0,
-    -0.391
+    -0.371
    ],
    "max": [
-    0.421,
-    0.678,
-    0.391
+    0.45,
+    0.658,
+    0.371
    ]
   },
   "extras": {
@@ -39,41 +37,47 @@
   },
   "materials": [
    "__GLTFLoader._default",
-   "m_arcane",
-   "m_bone",
-   "m_coral",
-   "m_wood"
+   "m_coral_stone",
+   "m_coral_sand"
   ],
   "texture_widths": {}
  },
  "views": [
   {
    "view": "front",
-   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/front.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/front.png"
   },
   {
    "view": "three_quarter",
-   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/three_quarter.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/three_quarter.png"
   },
   {
    "view": "eye",
-   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/eye.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/eye.png"
   },
   {
    "view": "iso",
-   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/iso.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/iso.png"
   },
   {
    "view": "iso_context",
-   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/iso_context.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/iso_context.png"
   },
   {
    "view": "feed",
-   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/feed.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/feed.png"
+  },
+  {
+   "view": "collision",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/collision.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain/uv_density.png"
   },
   {
    "view": "sheet",
-   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain.png"
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_coral_brain.png"
   }
  ]
 }

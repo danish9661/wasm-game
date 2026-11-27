@@ -1,0 +1,83 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/export/props/prop_rope_coil.glb",
+ "id": "prop_rope_coil",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_rope_coil_col",
+   "prop_rope_coil_lod0_primitive0",
+   "prop_rope_coil_lod0_primitive1"
+  ],
+  "lod_tris": {
+   "0": 308
+  },
+  "col_meshes": [
+   "prop_rope_coil_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.63,
+    0,
+    -0.552
+   ],
+   "max": [
+    0.63,
+    0.284,
+    0.552
+   ]
+  },
+  "extras": {
+   "prop_rope_coil_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_rope_coil_rope",
+   "m_rope_coil_dark"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/feed.png"
+  },
+  {
+   "view": "collision",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/collision.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_rope_coil.png"
+  }
+ ]
+}

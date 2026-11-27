@@ -45,22 +45,22 @@
   {
    "level": "PASS",
    "check": "budget.lod0",
-   "detail": "232 tris (budget 500)"
+   "detail": "368 tris (budget 500)"
   },
   {
    "level": "INFO",
    "check": "lod.skip",
-   "detail": "lod0 232 tris <= 10000, LODs not required"
+   "detail": "lod0 368 tris <= 10000, LODs not required"
   },
   {
    "level": "INFO",
    "check": "dims",
-   "detail": "x 0.969  y 0.880  z 1.010 m (Blender axes: width, depth, height)"
+   "detail": "x 1.140  y 1.095  z 1.097 m (Blender axes: width, depth, height)"
   },
   {
    "level": "PASS",
    "check": "dims.target",
-   "detail": "within 18%"
+   "detail": "within 14%"
   },
   {
    "level": "PASS",
@@ -80,7 +80,7 @@
   {
    "level": "PASS",
    "check": "col.not_render_mesh.prop_haystack_col",
-   "detail": "12 tris vs render 232"
+   "detail": "12 tris vs render 368"
   },
   {
    "level": "PASS",
@@ -115,7 +115,7 @@
   {
    "level": "PASS",
    "check": "uv1.overlap",
-   "detail": "0 overlapping px at 1024 (islands: 42)"
+   "detail": "0 overlapping px at 1024 (islands: 101)"
   },
   {
    "level": "PASS",
@@ -125,7 +125,7 @@
   {
    "level": "INFO",
    "check": "uv1.coverage",
-   "detail": "54.4% of the lightmap square used"
+   "detail": "36.2% of the lightmap square used"
   },
   {
    "level": "PASS",
@@ -134,78 +134,78 @@
   },
   {
    "level": "PASS",
-   "check": "mat.m_sand.name",
-   "detail": "m_sand"
+   "check": "mat.m_haystack_hay.name",
+   "detail": "m_haystack_hay"
   },
   {
    "level": "PASS",
-   "check": "mat.m_sand.workflow",
+   "check": "mat.m_haystack_hay.workflow",
    "detail": "metal/rough"
   },
   {
    "level": "PASS",
-   "check": "mat.m_sand.albedo_range",
+   "check": "mat.m_haystack_hay.albedo_range",
    "detail": "baseColorFactor sRGB [0.851, 0.706, 0.416]"
   },
   {
    "level": "PASS",
-   "check": "palette.saturation.m_sand",
+   "check": "palette.saturation.m_haystack_hay",
    "detail": "mean color matches swatch sand"
   },
   {
    "level": "PASS",
-   "check": "mat.m_sand.roughness",
+   "check": "mat.m_haystack_hay.roughness",
    "detail": "roughnessFactor 0.95 (S4: roughness high)"
   },
   {
    "level": "PASS",
-   "check": "mat.m_sand_dark.name",
-   "detail": "m_sand_dark"
+   "check": "mat.m_haystack_straw.name",
+   "detail": "m_haystack_straw"
   },
   {
    "level": "PASS",
-   "check": "mat.m_sand_dark.workflow",
+   "check": "mat.m_haystack_straw.workflow",
    "detail": "metal/rough"
   },
   {
    "level": "PASS",
-   "check": "mat.m_sand_dark.albedo_range",
-   "detail": "baseColorFactor sRGB [0.722, 0.58, 0.306]"
-  },
-  {
-   "level": "PASS",
-   "check": "palette.saturation.m_sand_dark",
-   "detail": "mean color sRGB [0.722, 0.58, 0.306]  sat 0.58 (max 1.00 unless an accent rule allows it)"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_sand_dark.roughness",
-   "detail": "roughnessFactor 0.95 (S4: roughness high)"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_gold.name",
-   "detail": "m_gold"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_gold.workflow",
-   "detail": "metal/rough"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_gold.albedo_range",
+   "check": "mat.m_haystack_straw.albedo_range",
    "detail": "baseColorFactor sRGB [0.851, 0.651, 0.18]"
   },
   {
    "level": "PASS",
-   "check": "palette.saturation.m_gold",
+   "check": "palette.saturation.m_haystack_straw",
    "detail": "mean color matches swatch gold"
   },
   {
    "level": "PASS",
-   "check": "mat.m_gold.roughness",
-   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+   "check": "mat.m_haystack_straw.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_haystack_band.name",
+   "detail": "m_haystack_band"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_haystack_band.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_haystack_band.albedo_range",
+   "detail": "baseColorFactor sRGB [0.349, 0.184, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_haystack_band",
+   "detail": "mean color matches swatch leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_haystack_band.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
   },
   {
    "level": "INFO",

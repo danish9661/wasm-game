@@ -1,0 +1,58 @@
+{
+  "description": "Props / weapons / tools / vehicles / decorative objects QA family. Gameplay scale: 1 unit = 1 tile, human silhouette = 1.55 u.",
+  "groups": [
+    {
+      "name": "weapons",
+      "ortho": 2.6,
+      "models": [
+        "sword", "axe", "bow", "block_shield", "arrow", "dagger", "hammer",
+        "mace", "scythe", "spear", "crossbow"
+      ]
+    },
+    {
+      "name": "camp_light_storage",
+      "ortho": 4.2,
+      "models": [
+        "campfire", "torch", "torch_sconce", "lantern", "brazier", "crypt_brazier",
+        "street_lamp", "healing_totem", "chest", "interior_chest", "barrel",
+        "barrel_open", "barrel_stacked", "crate_box", "market_crates",
+        "market_goods", "well", "well_bucket", "water_trough", "hitching_post",
+        "rope_coil", "chain_hoist", "hay_bale", "haystack"
+      ]
+    },
+    {
+      "name": "market_tools",
+      "ortho": 4.5,
+      "models": [
+        "market_stall", "market_umbrella", "market_scale", "vendor_cart",
+        "farm_cart", "farm_plot", "farm_windmill", "handcart", "anvil",
+        "fishing_rod", "fishing_net", "carrot",
+        "potato", "wheat", "chicken_coop", "scarecrow",
+        "bench", "bench_ornate", "street_bollard", "street_planter",
+        "dock_bollard", "dock_plank"
+      ]
+    },
+    {
+      "name": "vehicles_wreck",
+      "ortho": 5.5,
+      "models": [
+        "car", "train", "rail", "rowboat", "anchor", "buoy", "life_ring",
+        "ship_lantern", "ship_wheel", "shipwreck_mast", "wreck_debris",
+        "wreck_hull_section", "wreck_rudder", "wreck_plank", "driftwood",
+        "bone_chandelier", "coral_brain", "coral_fan", "shell_cluster"
+      ]
+    },
+    {
+      "name": "decor_signs",
+      "ortho": 4.6,
+      "models": [
+        "sign", "signpost", "shop_sign", "inn_sign", "banner", "statue",
+        "totem", "altar", "blood_altar", "enchanting_table", "portal",
+        "town_clock", "town_fountain", "sandstone_pillar", "obsidian_spire",
+        "ice_spire", "spike", "fence", "fence_gate", "wall", "turret",
+        "stone_wall_corner", "barred_door", "portcullis_gate", "coffin_stack",
+        "sarcophagus", "open_sarcophagus", "bed"
+      ]
+    }
+  ]
+}

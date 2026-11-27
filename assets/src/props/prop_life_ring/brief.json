@@ -1,0 +1,31 @@
+{
+  "id": "prop_life_ring",
+  "category": "prop",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "Visual-QA rebuild of life_ring; low-poly diorama prop, readable from the isometric camera.",
+  "dims": {
+    "x": 1.18,
+    "y": 1.18,
+    "z": 0.22,
+    "tol": 0.14,
+    "basis": "Shipped life_ring.glb measured by verify_models.py: 1.180 x 1.180 x 0.220 u; keep the same footprint and height."
+  },
+  "pivot": "bottom_center",
+  "budget_class": "prop",
+  "density_class": "prop",
+  "collider": "box",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "Reads at gameplay scale beside a 1.55 u human; 60 px inset used in the contact sheet."
+  },
+  "references": [],
+  "style_notes": "Low-poly diorama, flat palette colours from docs/ART_DIRECTION.md, no textures. Never: smooth shading, plain unbroken boxes, invented hues.",
+  "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/life_ring.glb."
+}

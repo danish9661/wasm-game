@@ -1,0 +1,211 @@
+{
+ "id": "wpn_arrow",
+ "result": "PASS",
+ "items": [
+  {
+   "level": "PASS",
+   "check": "name.id",
+   "detail": "wpn_arrow (prefix wpn_)"
+  },
+  {
+   "level": "PASS",
+   "check": "file.name",
+   "detail": "wpn_arrow.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "file.path",
+   "detail": "export/props/wpn_arrow.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.single_root",
+   "detail": "1 root nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.root_name",
+   "detail": "root 'wpn_arrow'"
+  },
+  {
+   "level": "PASS",
+   "check": "name.nodes",
+   "detail": "2 nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "xform.applied",
+   "detail": "scale 1, mesh rotations identity"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.lod0",
+   "detail": "lod nodes: [0]"
+  },
+  {
+   "level": "PASS",
+   "check": "budget.lod0",
+   "detail": "172 tris (budget 1500)"
+  },
+  {
+   "level": "INFO",
+   "check": "lod.skip",
+   "detail": "lod0 172 tris <= 10000, LODs not required"
+  },
+  {
+   "level": "INFO",
+   "check": "dims",
+   "detail": "x 0.153  y 0.210  z 0.880 m (Blender axes: width, depth, height)"
+  },
+  {
+   "level": "PASS",
+   "check": "dims.target",
+   "detail": "within 14%"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.custom.root_at_origin",
+   "detail": "root translation [0, 0, 0]"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.custom.on_ground",
+   "detail": "mesh min height 0.000 (set brief on_ground=false if it hangs)"
+  },
+  {
+   "level": "INFO",
+   "check": "pivot.custom",
+   "detail": "pivot_point [0, 0, 0]; bbox min [-0.068, -0.105, 0.0] max [0.085, 0.105, 0.88]"
+  },
+  {
+   "level": "PASS",
+   "check": "props.required",
+   "detail": "root extras: []"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.normals",
+   "detail": "all primitives have NORMAL"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.uv0",
+   "detail": "TEXCOORD_0 on every primitive"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.assigned",
+   "detail": "4 materials used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_wood.name",
+   "detail": "m_arrow_wood"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_wood.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_wood.albedo_range",
+   "detail": "baseColorFactor sRGB [0.349, 0.184, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_arrow_wood",
+   "detail": "mean color matches swatch leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_wood.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_flight.name",
+   "detail": "m_arrow_flight"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_flight.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_flight.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.651, 0.18]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_arrow_flight",
+   "detail": "mean color matches swatch gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_flight.roughness",
+   "detail": "roughnessFactor 0.70 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_nock.name",
+   "detail": "m_arrow_nock"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_nock.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_nock.albedo_range",
+   "detail": "baseColorFactor sRGB [0.91, 0.878, 0.8]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_arrow_nock",
+   "detail": "mean color sRGB [0.91, 0.878, 0.8]  sat 0.12 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_nock.roughness",
+   "detail": "roughnessFactor 0.85 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_head.name",
+   "detail": "m_arrow_head"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_head.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_head.albedo_range",
+   "detail": "baseColorFactor sRGB [0.784, 0.816, 0.847]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_arrow_head",
+   "detail": "mean color matches swatch steel"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_arrow_head.roughness",
+   "detail": "roughnessFactor 0.50 (S4: roughness high)"
+  },
+  {
+   "level": "INFO",
+   "check": "texel_density",
+   "detail": "no textured primitives"
+  },
+  {
+   "level": "PASS",
+   "check": "khronos.errors",
+   "detail": "0 errors, 0 warnings []"
+  }
+ ]
+}

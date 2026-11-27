@@ -1,0 +1,271 @@
+{
+ "id": "prop_crate_box",
+ "result": "PASS",
+ "items": [
+  {
+   "level": "PASS",
+   "check": "name.id",
+   "detail": "prop_crate_box (prefix prop_)"
+  },
+  {
+   "level": "PASS",
+   "check": "file.name",
+   "detail": "prop_crate_box.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "file.path",
+   "detail": "export/props/prop_crate_box.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.single_root",
+   "detail": "1 root nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.root_name",
+   "detail": "root 'prop_crate_box'"
+  },
+  {
+   "level": "PASS",
+   "check": "name.nodes",
+   "detail": "3 nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "xform.applied",
+   "detail": "scale 1, mesh rotations identity"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.lod0",
+   "detail": "lod nodes: [0]"
+  },
+  {
+   "level": "PASS",
+   "check": "budget.lod0",
+   "detail": "360 tris (budget 500)"
+  },
+  {
+   "level": "INFO",
+   "check": "lod.skip",
+   "detail": "lod0 360 tris <= 10000, LODs not required"
+  },
+  {
+   "level": "INFO",
+   "check": "dims",
+   "detail": "x 0.714  y 0.881  z 0.695 m (Blender axes: width, depth, height)"
+  },
+  {
+   "level": "PASS",
+   "check": "dims.target",
+   "detail": "within 14%"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.bottom_center",
+   "detail": "bbox min z 0.000, center x 0.000 y 0.000"
+  },
+  {
+   "level": "PASS",
+   "check": "col.present",
+   "detail": "prop_crate_box_col present"
+  },
+  {
+   "level": "PASS",
+   "check": "col.kind.prop_crate_box_col",
+   "detail": "ig_collider='box' (allowed ['mesh', 'box', 'convex'])"
+  },
+  {
+   "level": "PASS",
+   "check": "col.not_render_mesh.prop_crate_box_col",
+   "detail": "12 tris vs render 360"
+  },
+  {
+   "level": "PASS",
+   "check": "col.fits_render",
+   "detail": "collider bbox overlap 1.00 of render bbox"
+  },
+  {
+   "level": "PASS",
+   "check": "col.protrudes",
+   "detail": "collider extends 0.000 m beyond the render bbox (min side [0.0, 0.0, 0.0], max side [0.0, 0.0, 0.0])"
+  },
+  {
+   "level": "PASS",
+   "check": "props.required",
+   "detail": "root extras: []"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.normals",
+   "detail": "all primitives have NORMAL"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.uv0",
+   "detail": "TEXCOORD_0 on every primitive"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.range",
+   "detail": "min 0.012 max 0.988"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.overlap",
+   "detail": "0 overlapping px at 1024 (islands: 144)"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.padding",
+   "detail": "0 px closer than 4 px between islands"
+  },
+  {
+   "level": "INFO",
+   "check": "uv1.coverage",
+   "detail": "31.1% of the lightmap square used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.assigned",
+   "detail": "5 materials used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_wood.name",
+   "detail": "m_crate_wood"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_wood.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_wood.albedo_range",
+   "detail": "baseColorFactor sRGB [0.349, 0.184, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_crate_wood",
+   "detail": "mean color matches swatch leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_wood.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_plank.name",
+   "detail": "m_crate_plank"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_plank.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_plank.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.706, 0.416]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_crate_plank",
+   "detail": "mean color matches swatch sand"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_plank.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_iron.name",
+   "detail": "m_crate_iron"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_iron.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_iron.albedo_range",
+   "detail": "baseColorFactor sRGB [0.722, 0.753, 0.784]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_crate_iron",
+   "detail": "mean color sRGB [0.722, 0.753, 0.784]  sat 0.08 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_iron.roughness",
+   "detail": "roughnessFactor 0.60 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_gold.name",
+   "detail": "m_crate_gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_gold.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_gold.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.651, 0.18]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_crate_gold",
+   "detail": "mean color matches swatch gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_gold.roughness",
+   "detail": "roughnessFactor 0.55 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_void.name",
+   "detail": "m_crate_void"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_void.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_void.albedo_range",
+   "detail": "baseColorFactor sRGB [0.102, 0.102, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_crate_void",
+   "detail": "mean color matches swatch charcoal"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_crate_void.roughness",
+   "detail": "roughnessFactor 1.00 (S4: roughness high)"
+  },
+  {
+   "level": "INFO",
+   "check": "texel_density",
+   "detail": "no textured primitives"
+  },
+  {
+   "level": "PASS",
+   "check": "khronos.errors",
+   "detail": "0 errors, 0 warnings []"
+  }
+ ]
+}

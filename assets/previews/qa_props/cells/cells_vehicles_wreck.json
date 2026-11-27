@@ -1,0 +1,329 @@
+{
+  "res": 512,
+  "models": [
+    {
+      "name": "car",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/car.png",
+      "model_min": [
+        -1.059999942779541,
+        -0.6175000667572021,
+        -3.9879235913531375e-08
+      ],
+      "model_max": [
+        1.059999942779541,
+        0.6175000667572021,
+        1.1299999952316284
+      ],
+      "height": 1.1300000351108643,
+      "ortho": 5.5
+    },
+    {
+      "name": "train",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/train.png",
+      "model_min": [
+        -2.002500057220459,
+        -0.5875000357627869,
+        -3.853564578548685e-08
+      ],
+      "model_max": [
+        2.002500057220459,
+        0.5875000357627869,
+        1.8600000143051147
+      ],
+      "height": 1.8600000528407605,
+      "ortho": 5.5
+    },
+    {
+      "name": "rail",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/rail.png",
+      "model_min": [
+        -1.774999976158142,
+        -0.625,
+        0.0
+      ],
+      "model_max": [
+        1.774999976158142,
+        0.625,
+        0.2224999964237213
+      ],
+      "height": 0.2224999964237213,
+      "ortho": 5.5
+    },
+    {
+      "name": "rowboat",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/rowboat.png",
+      "model_min": [
+        -0.8427159190177917,
+        -0.649495005607605,
+        0.0
+      ],
+      "model_max": [
+        0.8427159190177917,
+        0.649495005607605,
+        0.5787764191627502
+      ],
+      "height": 0.5787764191627502,
+      "ortho": 5.5
+    },
+    {
+      "name": "anchor",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/anchor.png",
+      "model_min": [
+        -0.6711388230323792,
+        -0.1356762796640396,
+        0.0
+      ],
+      "model_max": [
+        0.6711388230323792,
+        0.1356762796640396,
+        1.6363521814346313
+      ],
+      "height": 1.6363521814346313,
+      "ortho": 5.5
+    },
+    {
+      "name": "buoy",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/buoy.png",
+      "model_min": [
+        -0.4762752652168274,
+        -0.3100000023841858,
+        0.0
+      ],
+      "model_max": [
+        0.4762752652168274,
+        0.3100000023841858,
+        1.7599999904632568
+      ],
+      "height": 1.7599999904632568,
+      "ortho": 5.5
+    },
+    {
+      "name": "life_ring",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/life_ring.png",
+      "model_min": [
+        -0.5699999928474426,
+        -0.5699999928474426,
+        0.0
+      ],
+      "model_max": [
+        0.5699999928474426,
+        0.5699999928474426,
+        0.2199999988079071
+      ],
+      "height": 0.2199999988079071,
+      "ortho": 5.5
+    },
+    {
+      "name": "ship_lantern",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/ship_lantern.png",
+      "model_min": [
+        -0.18186531960964203,
+        -0.20999999344348907,
+        0.0
+      ],
+      "model_max": [
+        0.18186531960964203,
+        0.20999999344348907,
+        0.8999999761581421
+      ],
+      "height": 0.8999999761581421,
+      "ortho": 5.5
+    },
+    {
+      "name": "ship_wheel",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/ship_wheel.png",
+      "model_min": [
+        -0.75,
+        -0.14253200590610504,
+        0.0
+      ],
+      "model_max": [
+        0.75,
+        0.14253200590610504,
+        1.5
+      ],
+      "height": 1.5,
+      "ortho": 5.5
+    },
+    {
+      "name": "shipwreck_mast",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/shipwreck_mast.png",
+      "model_min": [
+        -0.7599999904632568,
+        -0.24506400525569916,
+        0.0
+      ],
+      "model_max": [
+        0.7599999904632568,
+        0.24506400525569916,
+        2.2751851081848145
+      ],
+      "height": 2.2751851081848145,
+      "ortho": 5.5
+    },
+    {
+      "name": "wreck_debris",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/wreck_debris.png",
+      "model_min": [
+        -0.9199999570846558,
+        -0.4825320243835449,
+        0.0
+      ],
+      "model_max": [
+        0.9199999570846558,
+        0.4825320243835449,
+        0.6600000262260437
+      ],
+      "height": 0.6600000262260437,
+      "ortho": 5.5
+    },
+    {
+      "name": "wreck_hull_section",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/wreck_hull_section.png",
+      "model_min": [
+        -0.949999988079071,
+        -0.4305832087993622,
+        0.0
+      ],
+      "model_max": [
+        0.949999988079071,
+        0.4305832087993622,
+        1.159188985824585
+      ],
+      "height": 1.159188985824585,
+      "ortho": 5.5
+    },
+    {
+      "name": "wreck_rudder",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/wreck_rudder.png",
+      "model_min": [
+        -0.5111510157585144,
+        -0.20090055465698242,
+        0.0
+      ],
+      "model_max": [
+        0.5111510157585144,
+        0.20090055465698242,
+        1.5500000715255737
+      ],
+      "height": 1.5500000715255737,
+      "ortho": 5.5
+    },
+    {
+      "name": "wreck_plank",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/wreck_plank.png",
+      "model_min": [
+        -0.7581254243850708,
+        -0.2126137614250183,
+        0.0
+      ],
+      "model_max": [
+        0.7581254243850708,
+        0.2126137614250183,
+        0.2150000035762787
+      ],
+      "height": 0.2150000035762787,
+      "ortho": 5.5
+    },
+    {
+      "name": "driftwood",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/driftwood.png",
+      "model_min": [
+        -0.6572968363761902,
+        -0.31669938564300537,
+        0.0
+      ],
+      "model_max": [
+        0.6572968363761902,
+        0.31669938564300537,
+        0.22660256922245026
+      ],
+      "height": 0.22660256922245026,
+      "ortho": 5.5
+    },
+    {
+      "name": "bone_chandelier",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/bone_chandelier.png",
+      "model_min": [
+        -0.5065736770629883,
+        -0.47610151767730713,
+        0.0
+      ],
+      "model_max": [
+        0.5065736770629883,
+        0.47610151767730713,
+        1.3299999237060547
+      ],
+      "height": 1.3299999237060547,
+      "ortho": 5.5
+    },
+    {
+      "name": "coral_brain",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/coral_brain.png",
+      "model_min": [
+        -0.44969165325164795,
+        -0.37133002281188965,
+        0.0
+      ],
+      "model_max": [
+        0.44969165325164795,
+        0.37133002281188965,
+        0.6579999923706055
+      ],
+      "height": 0.6579999923706055,
+      "ortho": 5.5
+    },
+    {
+      "name": "coral_fan",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/coral_fan.png",
+      "model_min": [
+        -0.483048677444458,
+        -0.23817920684814453,
+        0.0
+      ],
+      "model_max": [
+        0.483048677444458,
+        0.23817920684814453,
+        0.8624460101127625
+      ],
+      "height": 0.8624460101127625,
+      "ortho": 5.5
+    },
+    {
+      "name": "shell_cluster",
+      "group": "vehicles_wreck",
+      "cell": "vehicles_wreck/shell_cluster.png",
+      "model_min": [
+        -0.4722564220428467,
+        -0.392995685338974,
+        0.0
+      ],
+      "model_max": [
+        0.4722564220428467,
+        0.392995685338974,
+        0.3920000195503235
+      ],
+      "height": 0.3920000195503235,
+      "ortho": 5.5
+    }
+  ],
+  "config": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/scripts/qa/family_props.json"
+}

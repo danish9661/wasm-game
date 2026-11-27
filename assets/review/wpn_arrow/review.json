@@ -1,0 +1,75 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/export/props/wpn_arrow.glb",
+ "id": "wpn_arrow",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "wpn_arrow_lod0_primitive0",
+   "wpn_arrow_lod0_primitive1",
+   "wpn_arrow_lod0_primitive2",
+   "wpn_arrow_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 172
+  },
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.068,
+    0,
+    -0.105
+   ],
+   "max": [
+    0.085,
+    0.88,
+    0.105
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "m_arrow_wood",
+   "m_arrow_flight",
+   "m_arrow_nock",
+   "m_arrow_head"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow/feed.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/wpn_arrow.png"
+  }
+ ]
+}

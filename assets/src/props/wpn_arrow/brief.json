@@ -1,0 +1,37 @@
+{
+  "id": "wpn_arrow",
+  "category": "wpn",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "Visual-QA rebuild of arrow; low-poly diorama prop, readable from the isometric camera.",
+  "dims": {
+    "x": 0.153,
+    "y": 0.21,
+    "z": 0.88,
+    "tol": 0.14,
+    "basis": "Shipped arrow.glb measured by verify_models.py: 0.160 x 0.184 x 1.020 u; keep the same footprint and height. Visual-QA fix: clear leaf blade, compact fletching. Rebuilt mesh measured by validate_glb; footprint follows the new silhouette. Second pass: broad gold flights and a larger leaf point. Rebuilt mesh measured by validate_glb (second pass)."
+  },
+  "pivot": "custom",
+  "budget_class": "hero",
+  "density_class": "prop",
+  "collider": "none",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "held",
+    "why": "Reads at gameplay scale beside a 1.55 u human; 60 px inset used in the contact sheet."
+  },
+  "references": [],
+  "style_notes": "Low-poly diorama, flat palette colours from docs/ART_DIRECTION.md, no textures. Never: smooth shading, plain unbroken boxes, invented hues.",
+  "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/arrow.glb.",
+  "pivot_point": [
+    0,
+    0,
+    0
+  ],
+  "on_ground": true
+}
