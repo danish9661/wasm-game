@@ -1,0 +1,1128 @@
+{
+  "family": "models_v4",
+  "player_height": 1.55,
+  "assets": [
+    {
+      "name": "dungeon_stairs",
+      "family": "models_v4",
+      "target": {
+        "width": 1.1,
+        "depth": 1.5,
+        "height": 1.5
+      },
+      "measured": {
+        "width": 1.12,
+        "depth": 1.5,
+        "height": 1.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.968,
+      "triangles": 168,
+      "materials": 3,
+      "hero": false,
+      "notes": "cellar kit; six stone treads"
+    },
+    {
+      "name": "dungeon_cage",
+      "family": "models_v4",
+      "target": {
+        "width": 1.1,
+        "depth": 1.1,
+        "height": 1.6
+      },
+      "measured": {
+        "width": 1.2528,
+        "depth": 1.105,
+        "height": 1.54,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.994,
+      "triangles": 216,
+      "materials": 3,
+      "hero": false,
+      "notes": "prison prop; iron barred cage"
+    },
+    {
+      "name": "dungeon_lever",
+      "family": "models_v4",
+      "target": {
+        "width": 0.45,
+        "depth": 0.4,
+        "height": 1.25
+      },
+      "measured": {
+        "width": 0.34,
+        "depth": 0.5551,
+        "height": 0.915,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.59,
+      "triangles": 104,
+      "materials": 4,
+      "hero": false,
+      "notes": "mechanism; wall lever + chain"
+    },
+    {
+      "name": "dungeon_rack",
+      "family": "models_v4",
+      "target": {
+        "width": 1.4,
+        "depth": 0.6,
+        "height": 1.4
+      },
+      "measured": {
+        "width": 1.4,
+        "depth": 0.6,
+        "height": 1.34,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.865,
+      "triangles": 172,
+      "materials": 3,
+      "hero": false,
+      "notes": "holding rack; braced timber frame"
+    },
+    {
+      "name": "coffin_stack",
+      "family": "models_v4",
+      "target": {
+        "width": 1.3,
+        "depth": 0.7,
+        "height": 1.0
+      },
+      "measured": {
+        "width": 1.74,
+        "depth": 0.7884,
+        "height": 0.99,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.639,
+      "triangles": 116,
+      "materials": 4,
+      "hero": false,
+      "notes": "crypt prop; three stacked coffers"
+    },
+    {
+      "name": "dungeon_broken_pillar",
+      "family": "models_v4",
+      "target": {
+        "width": 0.9,
+        "depth": 0.85,
+        "height": 1.55
+      },
+      "measured": {
+        "width": 0.9415,
+        "depth": 0.7671,
+        "height": 1.5701,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.013,
+      "triangles": 136,
+      "materials": 3,
+      "hero": false,
+      "notes": "ruin prop; snapped column"
+    },
+    {
+      "name": "dungeon_floor_grate",
+      "family": "models_v4",
+      "target": {
+        "width": 1.0,
+        "depth": 1.0,
+        "height": 0.12
+      },
+      "measured": {
+        "width": 1.02,
+        "depth": 1.0495,
+        "height": 0.15,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.097,
+      "triangles": 172,
+      "materials": 2,
+      "hero": false,
+      "notes": "floor kit; seven-bar grate"
+    },
+    {
+      "name": "dungeon_crank",
+      "family": "models_v4",
+      "target": {
+        "width": 0.45,
+        "depth": 0.4,
+        "height": 1.4
+      },
+      "measured": {
+        "width": 0.37,
+        "depth": 0.5366,
+        "height": 0.885,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.571,
+      "triangles": 132,
+      "materials": 3,
+      "hero": false,
+      "notes": "mechanism; gate winch + gear"
+    },
+    {
+      "name": "barred_door",
+      "family": "models_v4",
+      "target": {
+        "width": 1.04,
+        "depth": 0.2,
+        "height": 2.1
+      },
+      "measured": {
+        "width": 1.04,
+        "depth": 0.25,
+        "height": 2.08,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.342,
+      "triangles": 184,
+      "materials": 6,
+      "hero": false,
+      "notes": "door variant; oak + five iron bars"
+    },
+    {
+      "name": "dungeon_arch",
+      "family": "models_v4",
+      "target": {
+        "width": 1.6,
+        "depth": 0.45,
+        "height": 2.4
+      },
+      "measured": {
+        "width": 1.58,
+        "depth": 0.44,
+        "height": 2.37,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.529,
+      "triangles": 128,
+      "materials": 3,
+      "hero": false,
+      "notes": "doorway; voussoir arch"
+    },
+    {
+      "name": "dungeon_treasury_interior",
+      "family": "models_v4",
+      "target": {
+        "width": 4.2,
+        "depth": 4.2,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 4.18,
+        "depth": 4.18,
+        "height": 2.522,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.627,
+      "triangles": 1080,
+      "materials": 8,
+      "hero": true,
+      "notes": "interior; HERO 4x4 vault; bullion"
+    },
+    {
+      "name": "haystack",
+      "family": "models_v4",
+      "target": {
+        "width": 1.25,
+        "depth": 1.1,
+        "height": 0.95
+      },
+      "measured": {
+        "width": 1.0733,
+        "depth": 0.9357,
+        "height": 1.054,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.68,
+      "triangles": 72,
+      "materials": 2,
+      "hero": false,
+      "notes": "crop; straw stack"
+    },
+    {
+      "name": "hay_bale",
+      "family": "models_v4",
+      "target": {
+        "width": 0.95,
+        "depth": 0.7,
+        "height": 0.7
+      },
+      "measured": {
+        "width": 0.9,
+        "depth": 0.66,
+        "height": 0.75,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.484,
+      "triangles": 88,
+      "materials": 3,
+      "hero": false,
+      "notes": "crop; bound bale"
+    },
+    {
+      "name": "chicken_coop",
+      "family": "models_v4",
+      "target": {
+        "width": 1.35,
+        "depth": 1.2,
+        "height": 1.5
+      },
+      "measured": {
+        "width": 1.4,
+        "depth": 1.16,
+        "height": 1.45,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.935,
+      "triangles": 180,
+      "materials": 6,
+      "hero": false,
+      "notes": "farm prop; perches + two hens"
+    },
+    {
+      "name": "water_trough",
+      "family": "models_v4",
+      "target": {
+        "width": 1.55,
+        "depth": 0.7,
+        "height": 1.0
+      },
+      "measured": {
+        "width": 1.56,
+        "depth": 0.6,
+        "height": 0.95,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.613,
+      "triangles": 104,
+      "materials": 4,
+      "hero": false,
+      "notes": "farm prop; pumped trough"
+    },
+    {
+      "name": "apple_tree",
+      "family": "models_v4",
+      "target": {
+        "width": 1.85,
+        "depth": 1.6,
+        "height": 2.55
+      },
+      "measured": {
+        "width": 1.7842,
+        "depth": 1.0996,
+        "height": 2.451,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.581,
+      "triangles": 212,
+      "materials": 5,
+      "hero": false,
+      "notes": "orchard; fruit tree"
+    },
+    {
+      "name": "farm_windmill",
+      "family": "models_v4",
+      "target": {
+        "width": 1.3,
+        "depth": 1.2,
+        "height": 2.4
+      },
+      "measured": {
+        "width": 1.64,
+        "depth": 1.0821,
+        "height": 2.72,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.755,
+      "triangles": 174,
+      "materials": 7,
+      "hero": false,
+      "notes": "landmark; four sails"
+    },
+    {
+      "name": "town_fountain",
+      "family": "models_v4",
+      "target": {
+        "width": 1.15,
+        "depth": 1.15,
+        "height": 1.42
+      },
+      "measured": {
+        "width": 1.1789,
+        "depth": 1.1701,
+        "height": 1.38,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.89,
+      "triangles": 218,
+      "materials": 4,
+      "hero": false,
+      "notes": "town prop; basin + jets"
+    },
+    {
+      "name": "market_umbrella",
+      "family": "models_v4",
+      "target": {
+        "width": 1.5,
+        "depth": 1.5,
+        "height": 2.2
+      },
+      "measured": {
+        "width": 1.58,
+        "depth": 1.58,
+        "height": 2.256,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.455,
+      "triangles": 264,
+      "materials": 5,
+      "hero": false,
+      "notes": "stall dressing; eight ribs"
+    },
+    {
+      "name": "market_scale",
+      "family": "models_v4",
+      "target": {
+        "width": 1.1,
+        "depth": 0.5,
+        "height": 1.45
+      },
+      "measured": {
+        "width": 1.3118,
+        "depth": 0.44,
+        "height": 1.43,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.923,
+      "triangles": 196,
+      "materials": 5,
+      "hero": false,
+      "notes": "stall dressing; balance + pans"
+    },
+    {
+      "name": "inn_sign",
+      "family": "models_v4",
+      "target": {
+        "width": 1.05,
+        "depth": 0.25,
+        "height": 2.05
+      },
+      "measured": {
+        "width": 1.1463,
+        "depth": 0.1892,
+        "height": 2.0,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.29,
+      "triangles": 112,
+      "materials": 5,
+      "hero": false,
+      "notes": "hanging sign; mug board"
+    },
+    {
+      "name": "street_bollard",
+      "family": "models_v4",
+      "target": {
+        "width": 0.4,
+        "depth": 0.4,
+        "height": 0.9
+      },
+      "measured": {
+        "width": 0.7431,
+        "depth": 0.42,
+        "height": 0.87,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.561,
+      "triangles": 164,
+      "materials": 4,
+      "hero": false,
+      "notes": "street prop; iron post"
+    },
+    {
+      "name": "town_clock",
+      "family": "models_v4",
+      "target": {
+        "width": 0.65,
+        "depth": 0.45,
+        "height": 2.8
+      },
+      "measured": {
+        "width": 0.56,
+        "depth": 0.64,
+        "height": 2.82,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.819,
+      "triangles": 198,
+      "materials": 5,
+      "hero": false,
+      "notes": "street prop; post clock"
+    },
+    {
+      "name": "ship_wheel",
+      "family": "models_v4",
+      "target": {
+        "width": 1.3,
+        "depth": 0.3,
+        "height": 1.15
+      },
+      "measured": {
+        "width": 1.5,
+        "depth": 0.2851,
+        "height": 1.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.968,
+      "triangles": 336,
+      "materials": 4,
+      "hero": false,
+      "notes": "helm; eight spokes + grips"
+    },
+    {
+      "name": "rope_coil",
+      "family": "models_v4",
+      "target": {
+        "width": 1.0,
+        "depth": 0.95,
+        "height": 0.3
+      },
+      "measured": {
+        "width": 1.255,
+        "depth": 1.1,
+        "height": 0.285,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.184,
+      "triangles": 320,
+      "materials": 2,
+      "hero": false,
+      "notes": "deck prop; three coils"
+    },
+    {
+      "name": "fishing_rod",
+      "family": "models_v4",
+      "target": {
+        "width": 0.55,
+        "depth": 0.4,
+        "height": 2.16
+      },
+      "measured": {
+        "width": 0.3768,
+        "depth": 0.3836,
+        "height": 2.1946,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.416,
+      "triangles": 98,
+      "materials": 5,
+      "hero": false,
+      "notes": "tackle; rod + reel + float"
+    },
+    {
+      "name": "life_ring",
+      "family": "models_v4",
+      "target": {
+        "width": 1.0,
+        "depth": 0.95,
+        "height": 0.2
+      },
+      "measured": {
+        "width": 1.18,
+        "depth": 1.18,
+        "height": 0.22,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.142,
+      "triangles": 164,
+      "materials": 3,
+      "hero": false,
+      "notes": "safety; segmented ring"
+    },
+    {
+      "name": "dock_bollard",
+      "family": "models_v4",
+      "target": {
+        "width": 0.7,
+        "depth": 0.55,
+        "height": 0.9
+      },
+      "measured": {
+        "width": 0.66,
+        "depth": 0.5036,
+        "height": 0.83,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.535,
+      "triangles": 132,
+      "materials": 4,
+      "hero": false,
+      "notes": "mooring; horn + rope"
+    },
+    {
+      "name": "ship_lantern",
+      "family": "models_v4",
+      "target": {
+        "width": 0.35,
+        "depth": 0.35,
+        "height": 0.95
+      },
+      "measured": {
+        "width": 0.3637,
+        "depth": 0.42,
+        "height": 0.9,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.581,
+      "triangles": 140,
+      "materials": 3,
+      "hero": false,
+      "notes": "lighting; caged lamp"
+    },
+    {
+      "name": "shell_cluster",
+      "family": "models_v4",
+      "target": {
+        "width": 1.05,
+        "depth": 0.95,
+        "height": 0.4
+      },
+      "measured": {
+        "width": 0.9445,
+        "depth": 0.786,
+        "height": 0.392,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.253,
+      "triangles": 136,
+      "materials": 5,
+      "hero": false,
+      "notes": "beach prop; three shells"
+    },
+    {
+      "name": "driftwood",
+      "family": "models_v4",
+      "target": {
+        "width": 1.45,
+        "depth": 0.5,
+        "height": 0.3
+      },
+      "measured": {
+        "width": 1.3146,
+        "depth": 0.6334,
+        "height": 0.2266,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.146,
+      "triangles": 112,
+      "materials": 4,
+      "hero": false,
+      "notes": "beach prop; salt-bleached log"
+    },
+    {
+      "name": "npc_mayor",
+      "family": "models_v4",
+      "target": {
+        "width": 1.05,
+        "depth": 0.55,
+        "height": 1.9
+      },
+      "measured": {
+        "width": 1.0463,
+        "depth": 0.5351,
+        "height": 1.87,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.206,
+      "triangles": 232,
+      "materials": 7,
+      "hero": false,
+      "notes": "town; tricorn + cane"
+    },
+    {
+      "name": "npc_priest",
+      "family": "models_v4",
+      "target": {
+        "width": 0.9,
+        "depth": 0.6,
+        "height": 1.75
+      },
+      "measured": {
+        "width": 1.0463,
+        "depth": 0.68,
+        "height": 1.71,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.103,
+      "triangles": 268,
+      "materials": 7,
+      "hero": false,
+      "notes": "temple; hood + cross"
+    },
+    {
+      "name": "npc_bard",
+      "family": "models_v4",
+      "target": {
+        "width": 1.15,
+        "depth": 0.7,
+        "height": 1.8
+      },
+      "measured": {
+        "width": 1.1221,
+        "depth": 0.566,
+        "height": 1.828,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.179,
+      "triangles": 248,
+      "materials": 9,
+      "hero": false,
+      "notes": "tavern; lute + plume"
+    },
+    {
+      "name": "npc_hunter",
+      "family": "models_v4",
+      "target": {
+        "width": 1.15,
+        "depth": 0.65,
+        "height": 1.85
+      },
+      "measured": {
+        "width": 1.0912,
+        "depth": 0.5176,
+        "height": 1.76,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.135,
+      "triangles": 244,
+      "materials": 6,
+      "hero": false,
+      "notes": "forest; bow + quiver"
+    },
+    {
+      "name": "npc_fisher",
+      "family": "models_v4",
+      "target": {
+        "width": 1.1,
+        "depth": 0.6,
+        "height": 1.85
+      },
+      "measured": {
+        "width": 1.1017,
+        "depth": 0.58,
+        "height": 1.9864,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.282,
+      "triangles": 248,
+      "materials": 8,
+      "hero": false,
+      "notes": "coast; rod + bucket"
+    },
+    {
+      "name": "npc_farmer",
+      "family": "models_v4",
+      "target": {
+        "width": 1.1,
+        "depth": 0.6,
+        "height": 1.9
+      },
+      "measured": {
+        "width": 1.281,
+        "depth": 0.6,
+        "height": 1.89,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.219,
+      "triangles": 232,
+      "materials": 7,
+      "hero": false,
+      "notes": "field; hoe + seed sack"
+    },
+    {
+      "name": "npc_captain",
+      "family": "models_v4",
+      "target": {
+        "width": 1.1,
+        "depth": 0.55,
+        "height": 1.9
+      },
+      "measured": {
+        "width": 1.1673,
+        "depth": 0.44,
+        "height": 1.87,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.206,
+      "triangles": 232,
+      "materials": 8,
+      "hero": false,
+      "notes": "ship; bicorne + sword"
+    },
+    {
+      "name": "npc_apprentice",
+      "family": "models_v4",
+      "target": {
+        "width": 1.0,
+        "depth": 0.6,
+        "height": 1.7
+      },
+      "measured": {
+        "width": 1.0463,
+        "depth": 0.6366,
+        "height": 1.68,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.084,
+      "triangles": 264,
+      "materials": 8,
+      "hero": false,
+      "notes": "town; goggles + scrolls"
+    },
+    {
+      "name": "npc_sailor",
+      "family": "models_v4",
+      "target": {
+        "width": 1.05,
+        "depth": 0.6,
+        "height": 1.75
+      },
+      "measured": {
+        "width": 1.1006,
+        "depth": 0.6027,
+        "height": 1.67,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.077,
+      "triangles": 216,
+      "materials": 7,
+      "hero": false,
+      "notes": "ship; bandana + cutlass"
+    },
+    {
+      "name": "npc_mermaid",
+      "family": "models_v4",
+      "target": {
+        "width": 1.05,
+        "depth": 0.6,
+        "height": 2.0
+      },
+      "measured": {
+        "width": 1.0737,
+        "depth": 0.5237,
+        "height": 1.94,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.252,
+      "triangles": 258,
+      "materials": 7,
+      "hero": false,
+      "notes": "ocean; tail + trident"
+    },
+    {
+      "name": "ruin_colonnade",
+      "family": "models_v4",
+      "target": {
+        "width": 1.85,
+        "depth": 0.45,
+        "height": 1.75
+      },
+      "measured": {
+        "width": 1.9768,
+        "depth": 0.6642,
+        "height": 1.742,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.124,
+      "triangles": 280,
+      "materials": 3,
+      "hero": false,
+      "notes": "ruin; four broken columns"
+    },
+    {
+      "name": "ruin_wall",
+      "family": "models_v4",
+      "target": {
+        "width": 1.7,
+        "depth": 0.45,
+        "height": 1.45
+      },
+      "measured": {
+        "width": 1.6452,
+        "depth": 0.7812,
+        "height": 1.442,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.93,
+      "triangles": 152,
+      "materials": 4,
+      "hero": false,
+      "notes": "ruin; cracked courses + ivy"
+    },
+    {
+      "name": "broken_obelisk",
+      "family": "models_v4",
+      "target": {
+        "width": 0.7,
+        "depth": 0.7,
+        "height": 2.15
+      },
+      "measured": {
+        "width": 0.9189,
+        "depth": 0.66,
+        "height": 2.0916,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.349,
+      "triangles": 112,
+      "materials": 4,
+      "hero": false,
+      "notes": "ruin; snapped marker"
+    },
+    {
+      "name": "ruin_steps",
+      "family": "models_v4",
+      "target": {
+        "width": 1.5,
+        "depth": 1.5,
+        "height": 1.05
+      },
+      "measured": {
+        "width": 1.7768,
+        "depth": 1.5,
+        "height": 1.048,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.676,
+      "triangles": 124,
+      "materials": 3,
+      "hero": false,
+      "notes": "ruin; five worn treads"
+    },
+    {
+      "name": "farm_cart",
+      "family": "models_v4",
+      "target": {
+        "width": 1.6,
+        "depth": 1.3,
+        "height": 0.95
+      },
+      "measured": {
+        "width": 1.84,
+        "depth": 1.75,
+        "height": 1.0,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.645,
+      "triangles": 292,
+      "materials": 5,
+      "hero": false,
+      "notes": "vehicle; two-wheel cart"
+    },
+    {
+      "name": "rowboat",
+      "family": "models_v4",
+      "target": {
+        "width": 1.8,
+        "depth": 1.05,
+        "height": 0.6
+      },
+      "measured": {
+        "width": 1.6854,
+        "depth": 1.299,
+        "height": 0.5788,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.373,
+      "triangles": 142,
+      "materials": 4,
+      "hero": false,
+      "notes": "vehicle; oared skiff"
+    },
+    {
+      "name": "handcart",
+      "family": "models_v4",
+      "target": {
+        "width": 1.1,
+        "depth": 1.5,
+        "height": 0.75
+      },
+      "measured": {
+        "width": 1.36,
+        "depth": 1.34,
+        "height": 0.84,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.542,
+      "triangles": 176,
+      "materials": 5,
+      "hero": false,
+      "notes": "vehicle; pushed barrow"
+    },
+    {
+      "name": "forest_deer",
+      "family": "models_v4",
+      "target": {
+        "width": 1.05,
+        "depth": 1.35,
+        "height": 1.8
+      },
+      "measured": {
+        "width": 1.0375,
+        "depth": 1.3522,
+        "height": 1.87,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.206,
+      "triangles": 228,
+      "materials": 6,
+      "hero": false,
+      "notes": "creature; antlered stag"
+    },
+    {
+      "name": "river_otter",
+      "family": "models_v4",
+      "target": {
+        "width": 0.85,
+        "depth": 1.35,
+        "height": 0.85
+      },
+      "measured": {
+        "width": 0.7534,
+        "depth": 1.5957,
+        "height": 0.9233,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.596,
+      "triangles": 208,
+      "materials": 5,
+      "hero": false,
+      "notes": "creature; low mustelid"
+    },
+    {
+      "name": "sea_turtle",
+      "family": "models_v4",
+      "target": {
+        "width": 1.35,
+        "depth": 1.35,
+        "height": 0.7
+      },
+      "measured": {
+        "width": 0.9463,
+        "depth": 1.2884,
+        "height": 0.583,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.376,
+      "triangles": 250,
+      "materials": 4,
+      "hero": false,
+      "notes": "creature; plated swimmer"
+    }
+  ]
+}
