@@ -1,0 +1,37 @@
+{
+  "id": "wpn_fishing_rod",
+  "category": "wpn",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "Visual-QA rebuild of fishing_rod; low-poly diorama prop, readable from the isometric camera.",
+  "dims": {
+    "x": 0.285,
+    "y": 0.217,
+    "z": 2.195,
+    "tol": 0.14,
+    "basis": "Shipped fishing_rod.glb measured by verify_models.py: 0.377 x 0.384 x 2.195 u; keep the same footprint and height. Rebuilt mesh measured by validate_glb; footprint follows the new silhouette."
+  },
+  "pivot": "custom",
+  "budget_class": "hero",
+  "density_class": "prop",
+  "collider": "none",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "held",
+    "why": "Reads at gameplay scale beside a 1.55 u human; 60 px inset used in the contact sheet."
+  },
+  "references": [],
+  "style_notes": "Low-poly diorama, flat palette colours from docs/ART_DIRECTION.md, no textures. Never: smooth shading, plain unbroken boxes, invented hues.",
+  "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/fishing_rod.glb.",
+  "pivot_point": [
+    0,
+    0,
+    0
+  ],
+  "on_ground": true
+}

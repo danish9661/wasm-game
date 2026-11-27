@@ -13,7 +13,7 @@
     "models": 254,
     "passed": 254,
     "failed": 0,
-    "total_triangles": 60498,
+    "total_triangles": 62516,
     "models_dir": "assets/models"
   },
   "models": [
@@ -201,28 +201,28 @@
       "name": "arrow",
       "file": "assets/models/arrow.glb",
       "category": "Weapon",
-      "triangles": 102,
+      "triangles": 172,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 7,
-      "primitives": 7,
-      "materials": 5,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
       "min": [
-        -0.0798,
+        -0.068,
         0.0,
-        -0.0922
+        -0.105
       ],
       "max": [
-        0.0798,
-        1.02,
-        0.0922
+        0.085,
+        0.88,
+        0.105
       ],
-      "height": 1.02,
+      "height": 0.88,
       "base_y": 0.0,
-      "center_x": -0.0,
-      "center_z": -0.0,
-      "footprint_x": 0.1597,
-      "footprint_z": 0.1844,
+      "center_x": 0.0085,
+      "center_z": 0.0,
+      "footprint_x": 0.153,
+      "footprint_z": 0.21,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1131,28 +1131,28 @@
       "name": "campfire",
       "file": "assets/models/campfire.glb",
       "category": "Structure",
-      "triangles": 242,
+      "triangles": 384,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 14,
-      "primitives": 14,
+      "meshes": 2,
+      "primitives": 5,
       "materials": 4,
       "min": [
-        -0.5485,
-        0.01,
-        -0.5736
+        -0.5518,
+        0.0,
+        -0.5463
       ],
       "max": [
-        0.5921,
-        0.84,
-        0.5736
+        0.5518,
+        0.816,
+        0.5463
       ],
-      "height": 0.83,
-      "base_y": 0.01,
-      "center_x": 0.0218,
+      "height": 0.816,
+      "base_y": 0.0,
+      "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.1405,
-      "footprint_z": 1.1472,
+      "footprint_x": 1.1036,
+      "footprint_z": 1.0927,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1431,28 +1431,28 @@
       "name": "coral_brain",
       "file": "assets/models/coral_brain.glb",
       "category": "Other",
-      "triangles": 208,
+      "triangles": 484,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 12,
-      "primitives": 12,
-      "materials": 4,
+      "meshes": 2,
+      "primitives": 3,
+      "materials": 2,
       "min": [
-        -0.4466,
+        -0.4497,
         0.0,
-        -0.3844
+        -0.3713
       ],
       "max": [
-        0.4466,
-        0.652,
-        0.3844
+        0.4497,
+        0.658,
+        0.3713
       ],
-      "height": 0.652,
+      "height": 0.658,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.8932,
-      "footprint_z": 0.7688,
+      "footprint_x": 0.8994,
+      "footprint_z": 0.7427,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1491,28 +1491,28 @@
       "name": "crate_box",
       "file": "assets/models/crate_box.glb",
       "category": "Nature",
-      "triangles": 120,
+      "triangles": 372,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 10,
-      "primitives": 10,
-      "materials": 2,
+      "meshes": 2,
+      "primitives": 6,
+      "materials": 5,
       "min": [
-        -0.36,
+        -0.357,
         0.0,
-        -0.36
+        -0.4405
       ],
       "max": [
-        0.36,
-        0.72,
-        0.5033
+        0.357,
+        0.695,
+        0.4405
       ],
-      "height": 0.72,
+      "height": 0.695,
       "base_y": 0.0,
       "center_x": 0.0,
-      "center_z": 0.0716,
-      "footprint_x": 0.72,
-      "footprint_z": 0.8633,
+      "center_z": 0.0,
+      "footprint_x": 0.714,
+      "footprint_z": 0.8809,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2301,28 +2301,28 @@
       "name": "farm_cart",
       "file": "assets/models/farm_cart.glb",
       "category": "Structure",
-      "triangles": 292,
+      "triangles": 432,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 19,
-      "primitives": 19,
-      "materials": 5,
+      "meshes": 2,
+      "primitives": 5,
+      "materials": 4,
       "min": [
-        -0.92,
+        -0.81,
         0.0,
-        -0.875
+        -0.845
       ],
       "max": [
-        0.92,
-        1.0,
-        0.875
+        0.81,
+        0.89,
+        0.845
       ],
-      "height": 1.0,
+      "height": 0.89,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.84,
-      "footprint_z": 1.75,
+      "footprint_x": 1.62,
+      "footprint_z": 1.69,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2511,28 +2511,28 @@
       "name": "fishing_net",
       "file": "assets/models/fishing_net.glb",
       "category": "Biome Props",
-      "triangles": 216,
+      "triangles": 484,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 14,
-      "primitives": 14,
-      "materials": 4,
+      "meshes": 2,
+      "primitives": 4,
+      "materials": 3,
       "min": [
-        -0.4671,
+        -0.4252,
         0.0,
-        -0.4238
+        -0.322
       ],
       "max": [
-        0.4671,
-        0.735,
-        0.4238
+        0.4252,
+        0.6378,
+        0.322
       ],
-      "height": 0.735,
+      "height": 0.6378,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.9342,
-      "footprint_z": 0.8476,
+      "footprint_x": 0.8505,
+      "footprint_z": 0.644,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2541,28 +2541,28 @@
       "name": "fishing_rod",
       "file": "assets/models/fishing_rod.glb",
       "category": "Other",
-      "triangles": 98,
+      "triangles": 272,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 6,
+      "meshes": 1,
       "primitives": 6,
-      "materials": 5,
+      "materials": 6,
       "min": [
-        -0.1884,
+        -0.076,
         0.0,
-        -0.1918
+        -0.17
       ],
       "max": [
-        0.1884,
-        2.1946,
-        0.1918
+        0.2092,
+        2.15,
+        0.0468
       ],
-      "height": 2.1946,
+      "height": 2.15,
       "base_y": 0.0,
-      "center_x": 0.0,
-      "center_z": 0.0,
-      "footprint_x": 0.3768,
-      "footprint_z": 0.3836,
+      "center_x": 0.0666,
+      "center_z": -0.0616,
+      "footprint_x": 0.2852,
+      "footprint_z": 0.2168,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2901,28 +2901,28 @@
       "name": "haystack",
       "file": "assets/models/haystack.glb",
       "category": "Other",
-      "triangles": 72,
+      "triangles": 380,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 5,
-      "primitives": 5,
-      "materials": 2,
+      "meshes": 2,
+      "primitives": 4,
+      "materials": 3,
       "min": [
-        -0.5367,
+        -0.57,
         0.0,
-        -0.4679
+        -0.5477
       ],
       "max": [
-        0.5367,
-        1.054,
-        0.4679
+        0.57,
+        1.0965,
+        0.5477
       ],
-      "height": 1.054,
+      "height": 1.0965,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.0733,
-      "footprint_z": 0.9357,
+      "footprint_x": 1.14,
+      "footprint_z": 1.0953,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -3951,28 +3951,28 @@
       "name": "life_ring",
       "file": "assets/models/life_ring.glb",
       "category": "Other",
-      "triangles": 164,
+      "triangles": 188,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 13,
-      "primitives": 13,
+      "meshes": 2,
+      "primitives": 4,
       "materials": 3,
       "min": [
-        -0.59,
+        -0.57,
         0.0,
-        -0.59
+        -0.57
       ],
       "max": [
-        0.59,
+        0.57,
         0.22,
-        0.59
+        0.57
       ],
       "height": 0.22,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.18,
-      "footprint_z": 1.18,
+      "footprint_x": 1.14,
+      "footprint_z": 1.14,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4221,28 +4221,28 @@
       "name": "market_umbrella",
       "file": "assets/models/market_umbrella.glb",
       "category": "Building",
-      "triangles": 264,
+      "triangles": 416,
       "triangle_limit": 1500,
       "complex": true,
-      "meshes": 16,
-      "primitives": 16,
+      "meshes": 2,
+      "primitives": 6,
       "materials": 5,
       "min": [
-        -0.79,
+        -0.74,
         0.0,
-        -0.79
+        -0.74
       ],
       "max": [
-        0.79,
-        2.256,
-        0.79
+        0.74,
+        2.3215,
+        0.74
       ],
-      "height": 2.256,
+      "height": 2.3215,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.58,
-      "footprint_z": 1.58,
+      "footprint_x": 1.48,
+      "footprint_z": 1.48,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -5574,25 +5574,25 @@
       "triangles": 320,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 26,
-      "primitives": 26,
+      "meshes": 2,
+      "primitives": 3,
       "materials": 2,
       "min": [
-        -0.6275,
+        -0.63,
         0.0,
-        -0.55
+        -0.552
       ],
       "max": [
-        0.6275,
-        0.285,
-        0.55
+        0.63,
+        0.284,
+        0.552
       ],
-      "height": 0.285,
+      "height": 0.284,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.255,
-      "footprint_z": 1.1,
+      "footprint_x": 1.26,
+      "footprint_z": 1.104,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -6321,28 +6321,28 @@
       "name": "spear",
       "file": "assets/models/spear.glb",
       "category": "Weapon",
-      "triangles": 76,
+      "triangles": 288,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 5,
+      "meshes": 1,
       "primitives": 5,
       "materials": 5,
       "min": [
-        -0.075,
-        0.0,
-        -0.046
+        -0.087,
+        0.01,
+        -0.048
       ],
       "max": [
-        0.075,
+        0.087,
         1.27,
-        0.046
+        0.048
       ],
-      "height": 1.27,
-      "base_y": 0.0,
+      "height": 1.26,
+      "base_y": 0.01,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.15,
-      "footprint_z": 0.092,
+      "footprint_x": 0.1739,
+      "footprint_z": 0.0961,
       "bounds_complete": true,
       "violations": [],
       "pass": true

@@ -1,0 +1,85 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/export/props/prop_haystack.glb",
+ "id": "prop_haystack",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_haystack_col",
+   "prop_haystack_lod0_primitive0",
+   "prop_haystack_lod0_primitive1",
+   "prop_haystack_lod0_primitive2"
+  ],
+  "lod_tris": {
+   "0": 368
+  },
+  "col_meshes": [
+   "prop_haystack_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.57,
+    0,
+    -0.548
+   ],
+   "max": [
+    0.57,
+    1.097,
+    0.548
+   ]
+  },
+  "extras": {
+   "prop_haystack_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_haystack_hay",
+   "m_haystack_straw",
+   "m_haystack_band"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/feed.png"
+  },
+  {
+   "view": "collision",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/collision.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_haystack.png"
+  }
+ ]
+}

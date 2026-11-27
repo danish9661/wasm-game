@@ -1,0 +1,89 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/export/props/prop_market_umbrella.glb",
+ "id": "prop_market_umbrella",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_market_umbrella_col",
+   "prop_market_umbrella_lod0_primitive0",
+   "prop_market_umbrella_lod0_primitive1",
+   "prop_market_umbrella_lod0_primitive2",
+   "prop_market_umbrella_lod0_primitive3",
+   "prop_market_umbrella_lod0_primitive4"
+  ],
+  "lod_tris": {
+   "0": 404
+  },
+  "col_meshes": [
+   "prop_market_umbrella_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.74,
+    0,
+    -0.74
+   ],
+   "max": [
+    0.74,
+    2.322,
+    0.74
+   ]
+  },
+  "extras": {
+   "prop_market_umbrella_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_umbrella_foot",
+   "m_umbrella_finial",
+   "m_umbrella_pole",
+   "m_umbrella_fire",
+   "m_umbrella_red"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/feed.png"
+  },
+  {
+   "view": "collision",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/collision.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_market_umbrella.png"
+  }
+ ]
+}

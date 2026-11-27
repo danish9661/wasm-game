@@ -30,6 +30,66 @@
     "notes": "Replaces the 388-tri old altar with a stepped/bevelled plinth, tapered pedestal, gold posts and layered crystal shards."
   },
   {
+    "id": "prop_campfire",
+    "path": "export/props/prop_campfire.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/campfire.glb."
+  },
+  {
+    "id": "prop_coral_brain",
+    "path": "export/props/prop_coral_brain.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/coral_brain.glb."
+  },
+  {
+    "id": "prop_crate_box",
+    "path": "export/props/prop_crate_box.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/crate_box.glb."
+  },
+  {
+    "id": "prop_farm_cart",
+    "path": "export/props/prop_farm_cart.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/farm_cart.glb."
+  },
+  {
+    "id": "prop_fishing_net",
+    "path": "export/props/prop_fishing_net.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/fishing_net.glb."
+  },
+  {
+    "id": "prop_haystack",
+    "path": "export/props/prop_haystack.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/haystack.glb."
+  },
+  {
     "id": "prop_house",
     "path": "export/props/prop_house.glb",
     "category": "prop",
@@ -38,6 +98,36 @@
     "source": "make",
     "license": "see LICENSES.md",
     "notes": "Replaces the 236-tri old house with pitched gables, shingled roof, timber frame, framed windows and a chimney, within the 1500-tri assembled budget."
+  },
+  {
+    "id": "prop_life_ring",
+    "path": "export/props/prop_life_ring.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/life_ring.glb."
+  },
+  {
+    "id": "prop_market_umbrella",
+    "path": "export/props/prop_market_umbrella.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/market_umbrella.glb."
+  },
+  {
+    "id": "prop_rope_coil",
+    "path": "export/props/prop_rope_coil.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/rope_coil.glb."
   },
   {
     "id": "prop_star_crown_shrine",
@@ -58,6 +148,36 @@
     "source": "make",
     "license": "see LICENSES.md",
     "notes": "Replaces the 100-tri old tree with a tapered loft trunk, angled branches and three faceted canopy lobes."
+  },
+  {
+    "id": "wpn_arrow",
+    "path": "export/props/wpn_arrow.glb",
+    "category": "wpn",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/arrow.glb."
+  },
+  {
+    "id": "wpn_fishing_rod",
+    "path": "export/props/wpn_fishing_rod.glb",
+    "category": "wpn",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/fishing_rod.glb."
+  },
+  {
+    "id": "wpn_spear",
+    "path": "export/props/wpn_spear.glb",
+    "category": "wpn",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Visual-QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; replaces assets/models/spear.glb."
   },
   {
     "id": "wpn_sword",

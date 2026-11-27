@@ -1,0 +1,482 @@
+{
+  "res": 512,
+  "models": [
+    {
+      "name": "sign",
+      "group": "decor_signs",
+      "cell": "decor_signs/sign.png",
+      "model_min": [
+        -0.6000000238418579,
+        -0.14000000059604645,
+        0.0
+      ],
+      "model_max": [
+        0.6000000238418579,
+        0.14000000059604645,
+        1.6200000047683716
+      ],
+      "height": 1.6200000047683716,
+      "ortho": 4.6
+    },
+    {
+      "name": "signpost",
+      "group": "decor_signs",
+      "cell": "decor_signs/signpost.png",
+      "model_min": [
+        -0.8899999856948853,
+        -0.10999999940395355,
+        0.0
+      ],
+      "model_max": [
+        0.8899999856948853,
+        0.10999999940395355,
+        2.049999952316284
+      ],
+      "height": 2.049999952316284,
+      "ortho": 4.6
+    },
+    {
+      "name": "shop_sign",
+      "group": "decor_signs",
+      "cell": "decor_signs/shop_sign.png",
+      "model_min": [
+        -0.5499999523162842,
+        -0.1890256106853485,
+        0.0
+      ],
+      "model_max": [
+        0.5499999523162842,
+        0.1890256106853485,
+        1.5600000619888306
+      ],
+      "height": 1.5600000619888306,
+      "ortho": 4.6
+    },
+    {
+      "name": "inn_sign",
+      "group": "decor_signs",
+      "cell": "decor_signs/inn_sign.png",
+      "model_min": [
+        -0.5731458067893982,
+        -0.09461663663387299,
+        0.0
+      ],
+      "model_max": [
+        0.5731458067893982,
+        0.09461663663387299,
+        2.0
+      ],
+      "height": 2.0,
+      "ortho": 4.6
+    },
+    {
+      "name": "banner",
+      "group": "decor_signs",
+      "cell": "decor_signs/banner.png",
+      "model_min": [
+        -0.4749999940395355,
+        -0.1899999976158142,
+        0.0
+      ],
+      "model_max": [
+        0.4749999940395355,
+        0.1899999976158142,
+        2.3499999046325684
+      ],
+      "height": 2.3499999046325684,
+      "ortho": 4.6
+    },
+    {
+      "name": "statue",
+      "group": "decor_signs",
+      "cell": "decor_signs/statue.png",
+      "model_min": [
+        -0.44999998807907104,
+        -0.44999998807907104,
+        0.0
+      ],
+      "model_max": [
+        0.44999998807907104,
+        0.44999998807907104,
+        1.9600000381469727
+      ],
+      "height": 1.9600000381469727,
+      "ortho": 4.6
+    },
+    {
+      "name": "totem",
+      "group": "decor_signs",
+      "cell": "decor_signs/totem.png",
+      "model_min": [
+        -0.5299999713897705,
+        -0.36000001430511475,
+        0.0
+      ],
+      "model_max": [
+        0.5299999713897705,
+        0.30000001192092896,
+        2.259999990463257
+      ],
+      "height": 2.259999990463257,
+      "ortho": 4.6
+    },
+    {
+      "name": "altar",
+      "group": "decor_signs",
+      "cell": "decor_signs/altar.png",
+      "model_min": [
+        -0.5,
+        -0.36000001430511475,
+        0.0
+      ],
+      "model_max": [
+        0.5,
+        0.36000001430511475,
+        1.9880000352859497
+      ],
+      "height": 1.9880000352859497,
+      "ortho": 4.6
+    },
+    {
+      "name": "blood_altar",
+      "group": "decor_signs",
+      "cell": "decor_signs/blood_altar.png",
+      "model_min": [
+        -0.6800000071525574,
+        -0.4099999964237213,
+        0.0
+      ],
+      "model_max": [
+        0.6800000071525574,
+        0.4099999964237213,
+        1.3000000715255737
+      ],
+      "height": 1.3000000715255737,
+      "ortho": 4.6
+    },
+    {
+      "name": "enchanting_table",
+      "group": "decor_signs",
+      "cell": "decor_signs/enchanting_table.png",
+      "model_min": [
+        -0.5249999761581421,
+        -0.42500001192092896,
+        0.0
+      ],
+      "model_max": [
+        0.5249999761581421,
+        0.42500001192092896,
+        1.340000033378601
+      ],
+      "height": 1.340000033378601,
+      "ortho": 4.6
+    },
+    {
+      "name": "portal",
+      "group": "decor_signs",
+      "cell": "decor_signs/portal.png",
+      "model_min": [
+        -1.0,
+        -0.42500001192092896,
+        0.0
+      ],
+      "model_max": [
+        1.0,
+        0.42500001192092896,
+        2.820000171661377
+      ],
+      "height": 2.820000171661377,
+      "ortho": 4.6
+    },
+    {
+      "name": "town_clock",
+      "group": "decor_signs",
+      "cell": "decor_signs/town_clock.png",
+      "model_min": [
+        -0.2800000011920929,
+        -0.3199999928474426,
+        0.0
+      ],
+      "model_max": [
+        0.2800000011920929,
+        0.3199999928474426,
+        2.819999933242798
+      ],
+      "height": 2.819999933242798,
+      "ortho": 4.6
+    },
+    {
+      "name": "town_fountain",
+      "group": "decor_signs",
+      "cell": "decor_signs/town_fountain.png",
+      "model_min": [
+        -0.5894424915313721,
+        -0.5850639939308167,
+        0.0
+      ],
+      "model_max": [
+        0.5894424915313721,
+        0.5850639939308167,
+        1.3799999952316284
+      ],
+      "height": 1.3799999952316284,
+      "ortho": 4.6
+    },
+    {
+      "name": "sandstone_pillar",
+      "group": "decor_signs",
+      "cell": "decor_signs/sandstone_pillar.png",
+      "model_min": [
+        -0.5262752771377563,
+        -0.38499999046325684,
+        0.0
+      ],
+      "model_max": [
+        0.5262752771377563,
+        0.38499999046325684,
+        2.4759998321533203
+      ],
+      "height": 2.4759998321533203,
+      "ortho": 4.6
+    },
+    {
+      "name": "obsidian_spire",
+      "group": "decor_signs",
+      "cell": "decor_signs/obsidian_spire.png",
+      "model_min": [
+        -0.5662752389907837,
+        -0.49625784158706665,
+        0.0
+      ],
+      "model_max": [
+        0.5662752389907837,
+        0.49625784158706665,
+        1.909000039100647
+      ],
+      "height": 1.909000039100647,
+      "ortho": 4.6
+    },
+    {
+      "name": "ice_spire",
+      "group": "decor_signs",
+      "cell": "decor_signs/ice_spire.png",
+      "model_min": [
+        -0.5484139919281006,
+        -0.5185384154319763,
+        0.0
+      ],
+      "model_max": [
+        0.5484139919281006,
+        0.5185384154319763,
+        2.0052242279052734
+      ],
+      "height": 2.0052242279052734,
+      "ortho": 4.6
+    },
+    {
+      "name": "spike",
+      "group": "decor_signs",
+      "cell": "decor_signs/spike.png",
+      "model_min": [
+        -0.20999999344348907,
+        -0.23999999463558197,
+        0.0
+      ],
+      "model_max": [
+        0.20999999344348907,
+        0.23999999463558197,
+        1.4600000381469727
+      ],
+      "height": 1.4600000381469727,
+      "ortho": 4.6
+    },
+    {
+      "name": "fence",
+      "group": "decor_signs",
+      "cell": "decor_signs/fence.png",
+      "model_min": [
+        -1.0699999332427979,
+        -0.10999999940395355,
+        0.0
+      ],
+      "model_max": [
+        1.0699999332427979,
+        0.10999999940395355,
+        1.0199999809265137
+      ],
+      "height": 1.0199999809265137,
+      "ortho": 4.6
+    },
+    {
+      "name": "fence_gate",
+      "group": "decor_signs",
+      "cell": "decor_signs/fence_gate.png",
+      "model_min": [
+        -0.6500000357627869,
+        -0.20597222447395325,
+        0.0
+      ],
+      "model_max": [
+        0.6500000357627869,
+        0.20597222447395325,
+        1.2200000286102295
+      ],
+      "height": 1.2200000286102295,
+      "ortho": 4.6
+    },
+    {
+      "name": "wall",
+      "group": "decor_signs",
+      "cell": "decor_signs/wall.png",
+      "model_min": [
+        -1.0499999523162842,
+        -0.25,
+        0.0
+      ],
+      "model_max": [
+        1.0499999523162842,
+        0.25,
+        1.5800000429153442
+      ],
+      "height": 1.5800000429153442,
+      "ortho": 4.6
+    },
+    {
+      "name": "turret",
+      "group": "decor_signs",
+      "cell": "decor_signs/turret.png",
+      "model_min": [
+        -0.6699999570846558,
+        -0.6600000262260437,
+        0.0
+      ],
+      "model_max": [
+        0.6699999570846558,
+        0.6600000262260437,
+        2.4000000953674316
+      ],
+      "height": 2.4000000953674316,
+      "ortho": 4.6
+    },
+    {
+      "name": "stone_wall_corner",
+      "group": "decor_signs",
+      "cell": "decor_signs/stone_wall_corner.png",
+      "model_min": [
+        -2.2100000381469727,
+        -2.1850638389587402,
+        0.0
+      ],
+      "model_max": [
+        2.2100000381469727,
+        2.1850640773773193,
+        4.079999923706055
+      ],
+      "height": 4.079999923706055,
+      "ortho": 7.72419828414917
+    },
+    {
+      "name": "barred_door",
+      "group": "decor_signs",
+      "cell": "decor_signs/barred_door.png",
+      "model_min": [
+        -0.5199999809265137,
+        -0.125,
+        0.0
+      ],
+      "model_max": [
+        0.5199999809265137,
+        0.125,
+        2.0799999237060547
+      ],
+      "height": 2.0799999237060547,
+      "ortho": 4.6
+    },
+    {
+      "name": "portcullis_gate",
+      "group": "decor_signs",
+      "cell": "decor_signs/portcullis_gate.png",
+      "model_min": [
+        -0.8500000238418579,
+        -0.20000000298023224,
+        0.0
+      ],
+      "model_max": [
+        0.8500000238418579,
+        0.20000000298023224,
+        2.5799999237060547
+      ],
+      "height": 2.5799999237060547,
+      "ortho": 4.6
+    },
+    {
+      "name": "coffin_stack",
+      "group": "decor_signs",
+      "cell": "decor_signs/coffin_stack.png",
+      "model_min": [
+        -0.8700000047683716,
+        -0.3942078948020935,
+        0.0
+      ],
+      "model_max": [
+        0.8700000047683716,
+        0.3942078948020935,
+        0.9900000095367432
+      ],
+      "height": 0.9900000095367432,
+      "ortho": 4.6
+    },
+    {
+      "name": "sarcophagus",
+      "group": "decor_signs",
+      "cell": "decor_signs/sarcophagus.png",
+      "model_min": [
+        -0.949999988079071,
+        -0.44999998807907104,
+        0.0
+      ],
+      "model_max": [
+        0.949999988079071,
+        0.44999998807907104,
+        0.828000009059906
+      ],
+      "height": 0.828000009059906,
+      "ortho": 4.6
+    },
+    {
+      "name": "open_sarcophagus",
+      "group": "decor_signs",
+      "cell": "decor_signs/open_sarcophagus.png",
+      "model_min": [
+        -0.9599999785423279,
+        -0.6908004283905029,
+        0.0
+      ],
+      "model_max": [
+        0.9599999785423279,
+        0.6908004283905029,
+        0.7899999618530273
+      ],
+      "height": 0.7899999618530273,
+      "ortho": 4.6
+    },
+    {
+      "name": "bed",
+      "group": "decor_signs",
+      "cell": "decor_signs/bed.png",
+      "model_min": [
+        -0.49000000953674316,
+        -0.9800000190734863,
+        0.0
+      ],
+      "model_max": [
+        0.49000000953674316,
+        0.9800000190734863,
+        0.6899999976158142
+      ],
+      "height": 0.6899999976158142,
+      "ortho": 4.6
+    }
+  ],
+  "config": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/scripts/qa/family_props.json"
+}

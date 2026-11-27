@@ -1,0 +1,89 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/export/props/prop_crate_box.glb",
+ "id": "prop_crate_box",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_crate_box_col",
+   "prop_crate_box_lod0_primitive0",
+   "prop_crate_box_lod0_primitive1",
+   "prop_crate_box_lod0_primitive2",
+   "prop_crate_box_lod0_primitive3",
+   "prop_crate_box_lod0_primitive4"
+  ],
+  "lod_tris": {
+   "0": 360
+  },
+  "col_meshes": [
+   "prop_crate_box_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.357,
+    0,
+    -0.44
+   ],
+   "max": [
+    0.357,
+    0.695,
+    0.44
+   ]
+  },
+  "extras": {
+   "prop_crate_box_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_crate_wood",
+   "m_crate_plank",
+   "m_crate_iron",
+   "m_crate_gold",
+   "m_crate_void"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/feed.png"
+  },
+  {
+   "view": "collision",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/collision.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box/uv_density.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-props/assets/review/prop_crate_box.png"
+  }
+ ]
+}

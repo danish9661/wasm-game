@@ -1,0 +1,236 @@
+{
+ "id": "wpn_spear",
+ "result": "PASS",
+ "items": [
+  {
+   "level": "PASS",
+   "check": "name.id",
+   "detail": "wpn_spear (prefix wpn_)"
+  },
+  {
+   "level": "PASS",
+   "check": "file.name",
+   "detail": "wpn_spear.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "file.path",
+   "detail": "export/props/wpn_spear.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.single_root",
+   "detail": "1 root nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.root_name",
+   "detail": "root 'wpn_spear'"
+  },
+  {
+   "level": "PASS",
+   "check": "name.nodes",
+   "detail": "2 nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "xform.applied",
+   "detail": "scale 1, mesh rotations identity"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.lod0",
+   "detail": "lod nodes: [0]"
+  },
+  {
+   "level": "PASS",
+   "check": "budget.lod0",
+   "detail": "288 tris (budget 1500)"
+  },
+  {
+   "level": "INFO",
+   "check": "lod.skip",
+   "detail": "lod0 288 tris <= 10000, LODs not required"
+  },
+  {
+   "level": "INFO",
+   "check": "dims",
+   "detail": "x 0.174  y 0.096  z 1.260 m (Blender axes: width, depth, height)"
+  },
+  {
+   "level": "PASS",
+   "check": "dims.target",
+   "detail": "within 14%"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.custom.root_at_origin",
+   "detail": "root translation [0, 0, 0]"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.custom.on_ground",
+   "detail": "mesh min height 0.010 (set brief on_ground=false if it hangs)"
+  },
+  {
+   "level": "INFO",
+   "check": "pivot.custom",
+   "detail": "pivot_point [0, 0, 0]; bbox min [-0.087, -0.048, 0.01] max [0.087, 0.048, 1.27]"
+  },
+  {
+   "level": "PASS",
+   "check": "props.required",
+   "detail": "root extras: []"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.normals",
+   "detail": "all primitives have NORMAL"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.uv0",
+   "detail": "TEXCOORD_0 on every primitive"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.assigned",
+   "detail": "5 materials used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_wood.name",
+   "detail": "m_spear_wood"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_wood.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_wood.albedo_range",
+   "detail": "baseColorFactor sRGB [0.349, 0.184, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_spear_wood",
+   "detail": "mean color matches swatch leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_wood.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_grip.name",
+   "detail": "m_spear_grip"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_grip.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_grip.albedo_range",
+   "detail": "baseColorFactor sRGB [0.349, 0.184, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_spear_grip",
+   "detail": "mean color matches swatch leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_grip.roughness",
+   "detail": "roughnessFactor 0.92 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_collar.name",
+   "detail": "m_spear_collar"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_collar.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_collar.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.651, 0.18]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_spear_collar",
+   "detail": "mean color matches swatch gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_collar.roughness",
+   "detail": "roughnessFactor 0.55 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_blade.name",
+   "detail": "m_spear_blade"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_blade.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_blade.albedo_range",
+   "detail": "baseColorFactor sRGB [0.784, 0.816, 0.847]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_spear_blade",
+   "detail": "mean color matches swatch steel"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_blade.roughness",
+   "detail": "roughnessFactor 0.50 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_butt.name",
+   "detail": "m_spear_butt"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_butt.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_butt.albedo_range",
+   "detail": "baseColorFactor sRGB [0.722, 0.753, 0.784]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_spear_butt",
+   "detail": "mean color sRGB [0.722, 0.753, 0.784]  sat 0.08 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_spear_butt.roughness",
+   "detail": "roughnessFactor 0.60 (S4: roughness high)"
+  },
+  {
+   "level": "INFO",
+   "check": "texel_density",
+   "detail": "no textured primitives"
+  },
+  {
+   "level": "PASS",
+   "check": "khronos.errors",
+   "detail": "0 errors, 0 warnings []"
+  }
+ ]
+}
