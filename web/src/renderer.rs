@@ -1335,7 +1335,10 @@ impl App {
     pub async fn init_3d_scene(&mut self) -> Result<String, String> {
         let mut models: Vec<Model> = Vec::with_capacity(model_count());
         for name in GLB_MODELS {
-            let url = format!("/assets/models/{name}.glb");
+            // Relative URL: GitHub Pages project sites are served under a
+            // subpath (e.g. /wasm-game/), so a leading slash would resolve to
+            // the domain root and 404 every model.
+            let url = format!("assets/models/{name}.glb");
             let bytes = pipeline3d::fetch_glb(&url).await?;
             let model = model::load_glb(&bytes, &self.device, &self.queue)
                 .map_err(|e| format!("load {url}: {e}"))?;

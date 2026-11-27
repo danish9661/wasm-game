@@ -704,7 +704,7 @@ pub async fn load_demo_models() -> Result<String, String> {
     let mut models = Vec::new();
     let mut loaded_names = Vec::new();
     for name in DEMO_MODELS {
-        let url = format!("/assets/models/{name}.glb");
+        let url = format!("assets/models/{name}.glb");
         let bytes = fetch_glb(&url).await?;
         match crate::model::load_glb(&bytes, &demo.device, &demo.queue) {
             Ok(model) => {
