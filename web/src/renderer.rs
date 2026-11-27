@@ -1079,7 +1079,11 @@ const IDX_GROUND: usize = 2;
 /// Every GLB in `assets/models/`, generated at build time by
 /// `scripts/gen_model_list.py`. Newly authored assets are loaded automatically.
 use crate::generated_models::GLB_MODELS;
-const TERRAIN_RADIUS: i32 = 14;
+/// How many tiles around the player the 3D terrain mesh covers. Raised from
+/// 14 to 26 so the world reads as an open landscape instead of a small stage;
+/// the heightfield is a single generated mesh, so this costs vertices, not
+/// draw calls.
+const TERRAIN_RADIUS: i32 = 26;
 
 /// Number of models in `Scene3D`: generated pair + one per GLB above.
 const fn model_count() -> usize {
@@ -1224,6 +1228,34 @@ fn player_anim_clip(walk: f32, swing: f32, dodge: f32, hurt: f32) -> &'static st
     else if swing > 0.05 { "attack_1" }
     else if walk > 0.15 { "walk" }
     else { "idle" }
+}
+
+/// Style families that represent walking characters (bob/stride in 3D).
+fn is_character_style(style: SpriteStyle) -> bool {
+    matches!(
+        style,
+        SpriteStyle::Humanoid
+            | SpriteStyle::Goblin
+            | SpriteStyle::Skeleton
+            | SpriteStyle::Ogre
+            | SpriteStyle::Stoneslinger
+            | SpriteStyle::Guard
+            | SpriteStyle::Golem
+            | SpriteStyle::Slime
+            | SpriteStyle::Bat
+            | SpriteStyle::Spider
+            | SpriteStyle::Imp
+            | SpriteStyle::Wraith
+            | SpriteStyle::Colossus
+            | SpriteStyle::ScorpionQueen
+            | SpriteStyle::ToadKing
+            | SpriteStyle::Brute
+            | SpriteStyle::Stormcaller
+            | SpriteStyle::OceanLeviathan
+            | SpriteStyle::Wolf
+            | SpriteStyle::Archer
+            | SpriteStyle::Raider
+    )
 }
 
 /// Characters get a gentle tint from their gameplay colour (so hit flashes and
@@ -1455,14 +1487,20 @@ impl App {
             self.player.hurt_timer,
         );
         let (side, bob, forward) = anim_offset(clip, self.anim_clock);
+        // Amplify the sampled clip motion: the source rig's hip bob is only a
+        // couple of centimetres, which is invisible at gameplay zoom. Add a
+        // small stride hop and a squash/stretch pulse so the walk reads.
+        let hop = (self.anim_clock * 12.0).sin() * 0.07 * walk_amount;
+        let bob = bob * 6.0 + hop;
+        let scale = 1.0 + 0.035 * walk_amount * (self.anim_clock * 12.0 + 1.57).sin();
         let fx = self.player.facing.0;
         let fy = self.player.facing.1;
         placements[model_index("player")].push(pipeline3d::instance_at(
-            self.player.x + side * fx - forward * fy,
-            player_h + bob.max(-0.25),
-            self.player.y + side * fy + forward * fx,
+            self.player.x + side * 1.5 * fx - forward * 2.0 * fy,
+            player_h + bob.max(-0.12),
+            self.player.y + side * 1.5 * fy + forward * 2.0 * fx,
             yaw,
-            1.0,
+            scale,
             [1.0, 1.0, 1.0, 1.0],
         ));
 
@@ -1505,14 +1543,22 @@ impl App {
                 placements[idx].push(scene_billboard(sp.x, y, sp.y, hw, hh, bias, tint));
             } else {
                 let yaw = sp.facing.1.atan2(sp.facing.0);
-                let scale = match sp.style {
+                let mut scale = match sp.style {
                     SpriteStyle::Bush | SpriteStyle::Flower | SpriteStyle::GrassTuft
                     | SpriteStyle::Fern | SpriteStyle::Mushroom => 0.9,
                     _ => 1.0,
                 };
+                // Walking NPCs/enemies get the same visible stride hop as the
+                // player; idle characters stay planted.
+                let mut y = h;
+                if is_character_style(sp.style) && sp.walk > 0.05 {
+                    let phase = self.anim_clock * 11.0 + sp.x * 2.0;
+                    y += phase.sin() * 0.05;
+                    scale *= 1.0 + 0.025 * (phase + 1.57).sin();
+                }
                 placements[idx].push(pipeline3d::instance_at(
                     sp.x,
-                    h,
+                    y,
                     sp.y,
                     yaw,
                     scale,
