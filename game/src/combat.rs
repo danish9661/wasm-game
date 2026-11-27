@@ -82,6 +82,55 @@ impl Arrow {
     }
 }
 
+/// Damage of a bolt from a built Turret. Turret shots are free: emplacements
+/// never draw from the player's pack, so no inventory or ammo state exists.
+pub const TURRET_SHOT_DAMAGE: f32 = ARROW_DAMAGE;
+/// Samples along a world-space ray (excluding both endpoints). `opaque`
+/// reports solid tiles/structures; a single blocker breaks the line.
+pub fn line_of_sight(
+    from: (f32, f32),
+    to: (f32, f32),
+    mut opaque: impl FnMut(i32, i32) -> bool,
+) -> bool {
+    let dx = to.0 - from.0;
+    let dy = to.1 - from.1;
+    let steps = (dx.abs().max(dy.abs()) * 3.0).ceil().max(1.0) as usize;
+    for i in 1..steps {
+        let t = i as f32 / steps as f32;
+        let tx = (from.0 + dx * t).floor() as i32;
+        let ty = (from.1 + dy * t).floor() as i32;
+        if opaque(tx, ty) {
+            return false;
+        }
+    }
+    true
+}
+
+/// Turret target selection: the nearest *living* hostile in range that the
+/// emplacement can actually see. Deterministic on tile positions; no ammo,
+/// randomness or inventory access — the caller only needs to spawn the arrow.
+pub fn turret_target<'a>(
+    from: (f32, f32),
+    range: f32,
+    foes: impl IntoIterator<Item = &'a (f32, f32)>,
+    mut opaque: impl FnMut(i32, i32) -> bool,
+) -> Option<(f32, f32)> {
+    let r2 = range * range;
+    foes.into_iter()
+        .filter(|p| {
+            let dx = p.0 - from.0;
+            let dy = p.1 - from.1;
+            dx * dx + dy * dy <= r2
+        })
+        .filter(|p| line_of_sight(from, **p, &mut opaque))
+        .min_by(|a, b| {
+            let da = (a.0 - from.0).powi(2) + (a.1 - from.1).powi(2);
+            let db = (b.0 - from.0).powi(2) + (b.1 - from.1).powi(2);
+            da.total_cmp(&db)
+        })
+        .copied()
+}
+
 /// Returns enemies hit by a melee swing: every enemy within `reach` tiles
 /// (one swing hits all adjacent enemies — no facing requirement).
 pub fn swing_hits<'a>(
@@ -204,6 +253,45 @@ mod tests {
     // Full round-trip of the core combat loop, in pure Rust (no GPU needed):
     // player swing damages an in-reach enemy, and enemy contact damages the
     // player while respecting the hurt-timer i-frames.
+    #[test]
+    fn turret_picks_the_nearest_visible_foe() {
+        let from = (0.5, 0.5);
+        let foes = [(5.5, 0.5), (2.5, 0.5), (8.5, 0.5)];
+        let target = turret_target(from, 9.0, foes.iter(), |_, _| false);
+        assert_eq!(target, Some((2.5, 0.5)), "nearest in range wins");
+        // Out of range is never selected even when it is the only foe.
+        let far = [(20.0, 0.5)];
+        assert_eq!(turret_target(from, 9.0, far.iter(), |_, _| false), None);
+    }
+
+    #[test]
+    fn turret_respects_line_of_sight() {
+        let from = (0.5, 0.5);
+        let foes = [(1.5, 2.5), (5.5, 0.5)];
+        // A wall at (1,1) hides the closer diagonal foe; the far foe's ray
+        // stays at y=0.5 and remains clear. Blocking the whole row stops both.
+        let target = turret_target(from, 9.0, foes.iter(), |tx, ty| tx == 1 && ty == 1);
+        assert_eq!(target, Some((5.5, 0.5)), "blocked foe is skipped");
+        assert_eq!(
+            turret_target(from, 9.0, foes.iter(), |tx, ty| tx == 1 && (ty == 1 || ty == 0)),
+            None,
+            "no shot through a wall"
+        );
+    }
+
+    #[test]
+    fn turret_needs_no_ammo() {
+        // Selection takes only positions + a sight test: there is no ammo
+        // argument to consume and no inventory is touched. The shot damage is
+        // a fixed constant, so firing cannot drain player resources.
+        let foes = [(3.0, 0.5)];
+        assert!(turret_target((0.5, 0.5), 9.0, foes.iter(), |_, _| false).is_some());
+        let inv = crate::items::Inventory::new();
+        assert_eq!(inv.count(crate::items::ItemKind::Gold), 0);
+        assert_eq!(inv.total(), 0);
+        assert_eq!(TURRET_SHOT_DAMAGE, ARROW_DAMAGE);
+    }
+
     #[test]
     fn player_swing_damages_enemy() {
         let p = Player::new(0.0, 0.0);

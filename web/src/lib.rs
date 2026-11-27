@@ -254,6 +254,26 @@ pub fn craft(idx: usize) -> bool {
     })
 }
 
+/// Cook a cooked meal at a nearby campfire (2 raw → 1 cooked). Also bound to 0.
+#[wasm_bindgen]
+pub fn cook_meal() {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.cook();
+        }
+    });
+}
+
+/// Cast or reel at a wadable shoreline. Also reachable with E on the shore.
+#[wasm_bindgen]
+pub fn fish() {
+    APP.with(|cell| {
+        if let Some(app) = cell.borrow_mut().as_mut() {
+            app.fish();
+        }
+    });
+}
+
 /// Equip an owned weapon by slot (0 = Fists … 5 = Bow). Powers the HUD weapon
 /// bar (tap/click to equip). Returns false for locked slots.
 #[wasm_bindgen]

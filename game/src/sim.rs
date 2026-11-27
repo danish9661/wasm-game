@@ -3,13 +3,14 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use serde::{Deserialize, Serialize};
 
 use crate::building::{Structure, StructureKind, lit_within, try_build, LIGHT_SAFE_RADIUS};
-use crate::combat::Arrow;
+use crate::combat::{Arrow, TURRET_SHOT_DAMAGE, turret_target};
 use crate::daynight::{daylight, temperature, DAY_LENGTH};
 use crate::weapons::WeaponKind;
 use crate::enemy::{AiState, Enemy, EnemyKind, EnemyRegistry, spawner_on};
 use crate::items::{Inventory, ItemKind};
 use crate::player::{self, Player};
-use crate::poi::{ruins_at, village_sites};
+use crate::poi::{ruins_at, village_name, village_sites};
+use crate::reputation::Reputation;
 use crate::quest::QuestLog;
 use crate::resources::{resource_on, NodeRegistry, ResourceKind};
 use crate::world::{edited_tile, tile_at, ChunkCache, TileEdits, WorldGen, TileKind};
@@ -434,6 +435,9 @@ pub struct SaveData {
     /// Whether the player has already visited the town (so its creation animation
     /// only plays once).
     pub town_visited: bool,
+    /// Per-village standing. Additive default keeps pre-reputation saves valid.
+    #[serde(default)]
+    pub reputation: Reputation,
 }
 
 struct NetPlayer {
@@ -504,6 +508,10 @@ pub struct Simulation {
     quest: QuestLog,
     turret_cd: HashMap<(i32, i32), f32>,
     seed: u32,
+    /// Named village centres for this world seed (reputation bookkeeping).
+    villages: Vec<(i32, i32, String)>,
+    /// Per-village standing (quests, trade, defence kills), shared by the room.
+    reputation: Reputation,
     /// Campaign-progress counters fed into `QuestLog::update` each step.
     slimes_killed: u32,
     iron_crafted: bool,
@@ -544,12 +552,17 @@ impl Simulation {
         let mut cache = ChunkCache::new(256);
         // Spawn inside the first village plaza, exactly like the client's
         // `reset_world` (falls back to origin spiral if no village exists).
-        let spawn = village_sites(seed, 3, |tx, ty| {
+        let village_sites = village_sites(seed, 3, |tx, ty| {
             tile_at(&world, &mut cache, tx, ty).walkable()
-        })
-        .first()
-        .map(|(vx, vy)| (*vx as f32 + 0.5, *vy as f32 + 0.5))
-        .unwrap_or_else(|| find_spawn(&world, &mut cache));
+        });
+        let spawn = village_sites
+            .first()
+            .map(|(vx, vy)| (*vx as f32 + 0.5, *vy as f32 + 0.5))
+            .unwrap_or_else(|| find_spawn(&world, &mut cache));
+        let villages = village_sites
+            .iter()
+            .map(|(vx, vy)| (*vx, *vy, village_name(*vx, *vy)))
+            .collect();
         // Shared world: the same POI layout the single-player client builds
         // for this seed (ruins, villages, town, dungeons), so co-op players
         // collide with, shelter in, and loot the same settlements.
@@ -574,6 +587,8 @@ impl Simulation {
             quest: QuestLog::new(),
             turret_cd: HashMap::new(),
             seed,
+            villages,
+            reputation: Reputation::new(),
             slimes_killed: 0,
             iron_crafted: false,
             chests_opened: 0,
@@ -627,6 +642,7 @@ impl Simulation {
             stamina: p.player.stamina,
             town: None,
             town_visited: false,
+            reputation: self.reputation.clone(),
         })
     }
 
@@ -640,6 +656,7 @@ impl Simulation {
             p.player.hunger = save.hunger;
             p.player.stamina = save.stamina;
         }
+        self.reputation = save.reputation.clone();
     }
 
     /// Account token for a player (used by the server to pickle save files).
@@ -1547,6 +1564,14 @@ fn step_player(
                     // behind guards/turrets can't farm progression.
                     loot.push((e.x, e.y, e.drops()));
                     if e.tagged {
+                        // Defending a hamlet earns standing with that village;
+                        // guard/turret kills are untagged and pay no reputation.
+                        self.reputation.credit_defense(
+                            e.x,
+                            e.y,
+                            &self.villages,
+                            if e.kind.is_boss() { 2 } else { 1 },
+                        );
                         xp_grants.push((pid, e.kind.xp()));
                         slain.push(e.kind);
                     }
@@ -1642,10 +1667,16 @@ fn step_player(
                     self.colossus_defeated,
                 )
             });
+        let before = self.quest.stage;
         if let Some((wood, stone, hw, hc, ha, ci, sk, nr, co, fr, au, cd)) = facts {
             self.quest.update(
                 wood, stone, hw, hc, ha, ci, sk, nr, co, fr, au, cd,
             );
+        }
+        if self.quest.stage > before {
+            if let Some((vx, vy)) = self.villages.first().map(|(vx, vy, _)| (*vx, *vy)) {
+                self.reputation.adjust((vx, vy), 5);
+            }
         }
     }
 
@@ -1734,6 +1765,15 @@ fn step_player(
             *cd = (*cd - dt).max(0.0);
             let _ = k;
         }
+        // Targets are chosen by the shared, deterministic helper: nearest
+        // living hostile in range WITH line of sight. Firing costs no ammo —
+        // the arrow cost is a fixed constant and no inventory is touched.
+        let foes: Vec<(f32, f32)> = self
+            .enemies
+            .enemies()
+            .filter(|e| e.alive())
+            .map(|e| (e.x, e.y))
+            .collect();
         for s in self.structures.iter() {
             if s.kind == StructureKind::Turret {
                 let key = (s.tx, s.ty);
@@ -1742,31 +1782,32 @@ fn step_player(
                     continue;
                 }
                 let (tx, ty) = (s.tx as f32 + 0.5, s.ty as f32 + 0.5);
-                if let Some((ex, ey)) = self.nearest_enemy_in(tx, ty, TURRET_RANGE) {
-                    let dx = ex - tx;
-                    let dy = ey - ty;
-                    // Turret shots are untagged: shared spoils, no XP/quest
-                    // credit (same rule as guard kills).
-                    let mut ta = Arrow::new(tx, ty, dx, dy);
+                let world = &self.world;
+                let cache = &mut self.cache;
+                let edits = &self.edits;
+                let structures = &self.structures;
+                let opaque = |otx: i32, oty: i32| -> bool {
+                    let tile = edited_tile(edits, world, cache, otx, oty);
+                    !tile.walkable()
+                        || structures.iter().any(|b| {
+                            b.tx == otx
+                                && b.ty == oty
+                                && b.kind.blocks_movement()
+                                && (b.tx, b.ty) != (s.tx, s.ty) // the emplacement itself
+                        })
+                };
+                if let Some((ex, ey)) =
+                    turret_target((tx, ty), TURRET_RANGE, foes.iter(), opaque)
+                {
+                    let mut ta = Arrow::new(tx, ty, ex - tx, ey - ty);
+                    ta.damage = TURRET_SHOT_DAMAGE;
+                    // Untagged: shared spoils, no XP/quest/reputation credit.
                     ta.tagged = false;
                     self.arrows.push(ta);
                     self.turret_cd.insert(key, TURRET_CD);
                 }
             }
         }
-    }
-
-    fn nearest_enemy_in(&self, x: f32, y: f32, range: f32) -> Option<(f32, f32)> {
-        let mut best: Option<(f32, f32)> = None;
-        let mut bd = range;
-        for e in self.enemies.enemies() {
-            let d = (e.x - x).hypot(e.y - y);
-            if d <= bd {
-                bd = d;
-                best = Some((e.x, e.y));
-            }
-        }
-        best
     }
 
     pub fn snapshot(&self) -> SimSnapshot {
@@ -2707,5 +2748,75 @@ mod tests {
         let back = decode_server_bin(&bytes).expect("snapshot must decode");
         let re = encode_server(&back);
         assert_eq!(bytes, re, "snapshot must round-trip byte-identically");
+    }
+
+    #[test]
+    fn turret_targets_nearest_visible_foe_without_ammo() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        let (px, py) = {
+            let p = &sim.players[&id].player;
+            (p.x, p.y)
+        };
+        let tx = px.floor() as i32 + 2;
+        let ty = py.floor() as i32;
+        for x in tx..=tx + 6 {
+            sim.edits.insert((x, ty), TileKind::Grass);
+        }
+        sim.structures.clear(); // isolate the emplacement from POI buildings
+        sim.structures.push(Structure { tx, ty, kind: StructureKind::Turret });
+        let near_x = tx + 2;
+        let far_x = tx + 5;
+        for (x, kind) in [(near_x, EnemyKind::Slime), (far_x, EnemyKind::Slime)] {
+            let e = sim.enemies.get(x, ty, kind, 0.0).expect("foe spawned");
+            e.x = x as f32 + 0.5;
+            e.y = ty as f32 + 0.5;
+        }
+        sim.step_structures(0.05);
+        assert_eq!(sim.arrows.len(), 1, "one shot, no ammo item required");
+        assert_eq!(sim.arrows[0].damage, crate::combat::TURRET_SHOT_DAMAGE);
+        assert!(!sim.arrows[0].tagged, "turret kills grant no credit");
+        assert!(sim.arrows[0].dx > 0.0, "shot travels toward the foes");
+        assert_eq!(sim.save_player(id).unwrap().inv.count(ItemKind::Gold), 0);
+
+        // Move the nearer foe diagonally behind a wall. The far foe's row is
+        // still clear, so the turret must retarget instead of firing blind.
+        sim.arrows.clear();
+        sim.turret_cd.clear();
+        sim.enemies.kill(near_x, ty, -1.0);
+        for x in tx..=near_x + 1 {
+            for y in ty..=ty + 2 {
+                sim.edits.insert((x, y), TileKind::Grass);
+            }
+        }
+        let e = sim.enemies.get(near_x, ty + 2, EnemyKind::Slime, 0.0).unwrap();
+        e.x = near_x as f32 + 0.5;
+        e.y = ty as f32 + 2.5;
+        sim.structures.push(Structure { tx: tx + 1, ty: ty + 1, kind: StructureKind::Wall });
+        sim.step_structures(0.05);
+        assert_eq!(sim.arrows.len(), 1, "blocked near foe must not stop all fire");
+        assert!(
+            sim.arrows[0].dx > 0.0 && sim.arrows[0].dy.abs() < 0.2,
+            "shot should follow the clear row toward the far foe"
+        );
+    }
+
+    #[test]
+    fn reputation_survives_save_and_old_saves_are_neutral() {
+        let mut sim = Simulation::new(1337);
+        let id = sim.add_player("hero".into(), None);
+        let v = sim.villages.first().map(|(vx, vy, _)| (*vx, *vy)).unwrap();
+        sim.reputation.adjust((v.0, v.1), 17);
+        let save = sim.save_player(id).unwrap();
+        let json = serde_json::to_string(&save).expect("save encodes");
+        let back: SaveData = serde_json::from_str(&json).expect("save decodes");
+        sim.restore_player(id, &back);
+        assert_eq!(sim.reputation.standing((v.0, v.1)), 17);
+
+        // A save written before the field existed simply reads as neutral.
+        let mut value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        value.as_object_mut().unwrap().remove("reputation");
+        let old: SaveData = serde_json::from_value(value).expect("old save still loads");
+        assert_eq!(old.reputation.standing((v.0, v.1)), 0);
     }
 }

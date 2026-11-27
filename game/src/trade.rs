@@ -30,6 +30,25 @@ pub fn buy_price(item: ItemKind) -> u32 {
     }
 }
 
+/// Sell price adjusted by the player's standing in this village: allies get
+/// up to +25%, hostiles -20%. Quest items stay unsellable at any standing.
+pub fn sell_price_with_rep(item: ItemKind, standing: i32) -> u32 {
+    adjusted_price(sell_price(item), -standing)
+}
+
+/// Buy price adjusted by standing: allies pay up to 20% less, hostiles 25% more.
+pub fn buy_price_with_rep(item: ItemKind, standing: i32) -> u32 {
+    adjusted_price(buy_price(item), standing)
+}
+
+fn adjusted_price(base: u32, standing: i32) -> u32 {
+    if base == 0 {
+        return 0;
+    }
+    let factor = 1.0 - 0.0025 * standing.clamp(-100, 100) as f32;
+    (base as f32 * factor).round().max(1.0) as u32
+}
+
 /// Whether the merchant will buy this item (non-zero sell price).
 pub fn can_sell(item: ItemKind) -> bool {
     sell_price(item) > 0
@@ -106,6 +125,25 @@ mod tests {
         inv.add(ItemKind::Fragment, 3);
         assert_eq!(sell(&mut inv, ItemKind::Fragment), 0);
         assert_eq!(inv.count(ItemKind::Fragment), 3);
+    }
+
+    #[test]
+    fn standing_changes_prices_but_never_creates_free_gold() {
+        use crate::reputation::Reputation;
+        let mut rep = Reputation::new();
+        let (v, p) = ((4, 5), ItemKind::Iron);
+        let base_buy = buy_price(p);
+        let base_sell = sell_price(p);
+        assert_eq!(buy_price_with_rep(p, rep.standing(v)), base_buy);
+        assert_eq!(sell_price_with_rep(p, rep.standing(v)), base_sell);
+        rep.adjust(v, 80);
+        assert!(buy_price_with_rep(p, rep.standing(v)) < base_buy);
+        assert!(sell_price_with_rep(p, rep.standing(v)) > base_sell);
+        rep.adjust(v, -160);
+        assert!(buy_price_with_rep(p, rep.standing(v)) > base_buy);
+        assert!(sell_price_with_rep(p, rep.standing(v)) < base_sell);
+        assert_eq!(sell_price_with_rep(ItemKind::Fragment, rep.standing(v)), 0);
+        assert_eq!(buy_price_with_rep(ItemKind::Fragment, rep.standing(v)), 0);
     }
 
     #[test]

@@ -1,6 +1,9 @@
 use game::building::Structure;
 use game::enemy::EnemyKind;
+use game::fishing::Fishing;
+use game::food::FoodSupply;
 use game::items::ItemKind;
+use game::reputation::Reputation;
 use game::resources::ResourceKind;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -132,4 +135,13 @@ pub struct SaveState {
     /// Days survived (midnight crossings) for the Shattered Night schedule.
     #[serde(default)]
     pub day_count: u32,
+    /// Raw/cooked food counts and the raw spoilage clock.
+    #[serde(default)]
+    pub food: FoodSupply,
+    /// In-flight shoreline cast (idle by default).
+    #[serde(default)]
+    pub fishing: Fishing,
+    /// Per-village standing (quests, trade, defence kills).
+    #[serde(default)]
+    pub reputation: Reputation,
 }

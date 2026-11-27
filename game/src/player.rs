@@ -20,6 +20,9 @@ pub const MAX_STAMINA: f32 = 100.0;
 pub const MAX_THIRST: f32 = 100.0;
 /// Respawn position for the player (the spawner finds the same tile).
 pub const SPAWN: (f32, f32) = (0.5, 0.5);
+/// Healing while resting next to a bed (HP/second). Slow enough to make a bed
+/// worth seeking out, fast enough that a short rest is meaningful.
+pub const REST_HEAL_RATE: f32 = 6.0;
 /// Dodge roll: duration of the burst, cooldown, stamina cost, and the speed
 /// multiplier applied during the burst.
 pub const DODGE_TIME: f32 = 0.25;
@@ -260,9 +263,16 @@ impl Player {
 
     /// Death: respawn at the spawn point with full hp but half hunger.
     pub fn respawn(&mut self) {
-        self.x = SPAWN.0;
-        self.y = SPAWN.1;
-        self.hp = MAX_HP;
+        self.respawn_at(SPAWN.0, SPAWN.1);
+    }
+
+    /// Death with an explicit home tile (the last bed slept in). Callers that
+    /// keep their own respawn point use this so the default `SPAWN` constant
+    /// never overrides a claimed bed.
+    pub fn respawn_at(&mut self, x: f32, y: f32) {
+        self.x = x;
+        self.y = y;
+        self.hp = self.max_hp();
         self.hunger = MAX_HUNGER / 2.0;
         self.stamina = MAX_STAMINA;
         self.thirst = MAX_THIRST / 2.0;
@@ -270,7 +280,16 @@ impl Player {
         self.dodge_timer = 0.0;
         self.dodge_cd = 0.0;
         self.alive = true;
-        self.hp = self.max_hp();
+    }
+
+    /// Rest beside a bed: mend HP gradually, capped at the level-scaled max.
+    /// The caller decides when the player is actually in range of a bed; this
+    /// primitive is deliberately just the healing over time.
+    pub fn rest_tick(&mut self, dt: f32) {
+        if !self.alive || dt <= 0.0 || self.hp >= self.max_hp() {
+            return;
+        }
+        self.hp = (self.hp + REST_HEAL_RATE * dt).min(self.max_hp());
     }
 
     /// Try to spend stamina; false if exhausted (attack whiffs).
@@ -282,13 +301,30 @@ impl Player {
         true
     }
 
-    /// Eat one food item: restores 30 hunger.
+    /// Eat one raw food item: restores 34 hunger.
     pub fn eat(&mut self, inv: &mut Inventory) -> bool {
-        if inv.remove(ItemKind::Food, 1) {
-            self.hunger = (self.hunger + 34.0).min(MAX_HUNGER);
-            true
-        } else {
-            false
+        self.eat_nutrition(inv, 34.0, 0.0, 0.0)
+    }
+
+    /// Eat one portion with explicit nutrition values (raw vs cooked meals).
+    /// Fails atomically when the raw stack is empty.
+    pub fn eat_nutrition(&mut self, inv: &mut Inventory, hunger: f32, hp: f32, thirst: f32) -> bool {
+        if !inv.remove(ItemKind::Food, 1) {
+            return false;
+        }
+        self.apply_nutrition(hunger, hp, thirst);
+        true
+    }
+
+    /// Apply food effects without touching the inventory (used by cooked meals,
+    /// which live in `FoodSupply` rather than the raw `ItemKind::Food` stack).
+    pub fn apply_nutrition(&mut self, hunger: f32, hp: f32, thirst: f32) {
+        self.hunger = (self.hunger + hunger).min(MAX_HUNGER);
+        if hp > 0.0 && self.alive {
+            self.hp = (self.hp + hp).min(self.max_hp());
+        }
+        if thirst > 0.0 {
+            self.thirst = (self.thirst + thirst).min(MAX_THIRST);
         }
     }
 
@@ -660,6 +696,37 @@ mod tests {
         assert!(!p.wear_tool(ToolKind::StoneAxe), "snaps at zero");
         assert!(!p.has_tool(ToolKind::StoneAxe));
         assert_eq!(p.chop_power(crate::resources::ResourceKind::Tree), 1, "back to hands");
+    }
+
+    #[test]
+    fn beds_heal_over_time_and_set_respawn() {
+        let mut p = Player::new(0.0, 0.0);
+        p.hp = 40.0;
+        p.rest_tick(1.0);
+        assert!((p.hp - (40.0 + REST_HEAL_RATE)).abs() < 1e-4);
+        p.rest_tick(100.0);
+        assert_eq!(p.hp, p.max_hp(), "rest caps at the level-scaled max");
+        p.rest_tick(1.0);
+        assert_eq!(p.hp, p.max_hp(), "no overheal");
+        p.alive = false;
+        p.rest_tick(10.0);
+        assert_eq!(p.hp, p.max_hp(), "the dead cannot rest");
+
+        // Sleeping in a bed moves home; dying there wakes you at that bed.
+        p.respawn_at(12.5, -7.5);
+        assert!((p.x - 12.5).abs() < 1e-4 && (p.y + 7.5).abs() < 1e-4);
+        assert!(p.alive);
+        assert_eq!(p.hp, p.max_hp());
+        assert!((p.hunger - MAX_HUNGER / 2.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn default_respawn_still_uses_the_spawn_tile() {
+        let mut p = Player::new(8.0, 8.0);
+        p.alive = false;
+        p.respawn();
+        assert_eq!((p.x, p.y), SPAWN);
+        assert!(p.alive);
     }
 
     #[test]
