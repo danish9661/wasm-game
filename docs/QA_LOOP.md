@@ -56,6 +56,7 @@ equipment → codex → settings → 3D toggle → mobile → save/load).
 | 7 | On a phone, the **Actions FAB did nothing** — taps fell through to the canvas. | `#touch` is `pointer-events:none` so the playfield stays clickable, but `#touch-more` never opted back in. | Added `pointer-events:auto` to `#touch-more`. | “touch controls are visible”, “touch Equipment button opens the panel”, “touch Codex button opens the Bestiary” |
 | 8 | Uploading a `.zip` save reported “Save loaded from file” into `#mp-note`, which lives in the hidden Multiplayer menu — no visible feedback, and the boot menu stayed up. | Result message written to an element outside the boot screen. | Show a real toast, persist the loaded state, and drop the boot overlay so the loaded world starts. | Covered by “Save Game commits to IndexedDB” + “Continue is enabled after a save” round trip; manual upload path is wired to the same visible `toast()` channel |
 | 9 | Exiting any panel with Esc was inconsistent across states (follow-on from #4); mobile panel geometry was untested. | No panel-priority handling; no phone-size assertions in the suite. | Fixed in #4; QA suite now measures panel rects at 390×844. | “mobile Equipment panel fits the viewport”, plus mobile inventory/codex/settings screenshots |
+| 10 | The legacy `tests/e2e.sh` CDP runner failed almost every assertion: `get_stats()` returned `no app`, canvas looked 300×150, etc. | It imported bare `./wasm_game.js` (a second, uninitialised module instance, unlike the page's `?v=` URL) and sampled the canvas size at a fixed 500 ms. | Import the exact stamped module URL, await promises in `Runtime.evaluate`, and poll for resize. `tests/assert.js` only. | Harness fix; assertions rose 8 → 14 passes. Remaining failures are stale game-state expectations (quest stages, boss/altar, 2D readback pixels) under the shipped 3D renderer and are not part of this task's gate |
 
 ## Evidence — screenshots
 
@@ -92,6 +93,7 @@ desktop / 390×844 phone @2x):
 | `tools/audit.sh` (Chrome + puppeteer-core) | RESULT: OK — houses/player/movement/attack/quest/crafting/interior gates passed |
 | `tests/smoke_3d.mjs` | 8 passed, 0 failed; 226 GLBs, 1147 instances; 0 console errors |
 | `tests/qa_loop.mjs` | **40 passed, 0 failed**; 0 console errors on desktop and mobile |
+| `tests/e2e.sh` (legacy CDP harness, not a task gate) | Harness bug fixed (8 → 14 passes); 24 stale assertions remain (quest stages, Warden/altar, 2D readback pixels, mobile viewport) — unrelated to the fixes above. The required 3D smoke + visual audit + new QA loop are all green |
 
 Gameplay flows confirmed live: boot, New Game (seed), WASD movement
 (position + keydown counter + speed), J attack, E harvest (node discovery),
@@ -101,5 +103,5 @@ layout with working touch actions.
 
 **Not changed:** `game/src/*`, asset generators/GLBs, animation data, palette
 or scale contract. All edits are in `web/src/renderer.rs`,
-`web/static/index.html`, `web/static/style.css`, plus the new regression test
-and this report.
+`web/static/index.html`, `web/static/style.css`, `tests/assert.js` (harness
+only), plus the new regression test and this report.

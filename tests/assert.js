@@ -80,7 +80,7 @@ async function connect() {
 
 let msgId = 0;
 const evaluate = async (expr) => {
-  const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true });
+  const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });
   return r.result?.result?.value;
 };
 
@@ -115,8 +115,13 @@ try {
   );
   inited ? ok('wasm module loaded, WebGPU initialized') : bad('WebGPU init');
 
-  // 2. canvas resized (not the 300x150 default)
-  const size = await evaluate(`({w: document.getElementById('game').width, h: document.getElementById('game').height})`);
+  // 2. canvas resized (not the 300x150 default). Resize happens after wasm
+  //    init, so poll instead of sampling once at a fixed 500 ms.
+  let size = null;
+  await waitFor(async () => {
+    size = await evaluate(`({w: document.getElementById('game').width, h: document.getElementById('game').height})`);
+    return size && size.w > 800;
+  }, 'canvas resize');
   (size && size.w > 800) ? ok(`canvas resized to ${size.w}x${size.h}`) : bad(`canvas not resized: ${JSON.stringify(size)}`);
 
   // 3. game loop running (fps line appears)
@@ -133,7 +138,16 @@ try {
   (quads && Number(quads) > 100) ? ok(`tile mesh generated (${quads} quads)`) : bad(`no quads: ${quads} :: log=${JSON.stringify(await evaluate('document.getElementById(\'log\').textContent'))}`);
 
   // 5. pixels actually drawn (GPU readback of the offscreen target)
-  const mReady = await waitFor(() => evaluate(`import('./wasm_game.js').then(m => { window.__m = m; return true; })`), 'wasm module handle');
+  // Import the SAME URL the page booted (including its ?v= cache stamp): a
+  // bare './wasm_game.js' creates a second, uninitialised wasm-bindgen module
+  // whose exports all return "no app", which made every later check fail.
+  const mReady = await waitFor(() => evaluate(`(async () => {
+    const text = [...document.querySelectorAll('script[type="module"]')]
+      .map(s => s.textContent || '').join('\\n');
+    const spec = text.match(/from\\s+['"](\\.\\/wasm_game\\.js[^'"]*)['"]/)?.[1] || './wasm_game.js';
+    window.__m = await import(spec);
+    return true;
+  })()`), 'wasm module handle');
   await evaluate(`window.__m.trigger_readback()`);
   let stats = '';
   const rbDone = await waitFor(async () => {
