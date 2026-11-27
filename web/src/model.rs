@@ -200,6 +200,18 @@ fn walk_node(
     // glTF matrices are column-major, matching our Mat4 layout directly.
     let world = math4::multiply(parent, &node.transform().matrix());
 
+    // Skill-generated colliders are glTF nodes named *_col / *_collider. They
+    // are gameplay metadata, not artwork: drawing them made featureless white
+    // cubes appear in the world. Skip the mesh but still walk children.
+    let node_name = node.name().unwrap_or("").to_ascii_lowercase();
+    let is_collider = node_name.ends_with("_col") || node_name.contains("collider");
+    if is_collider {
+        for child in node.children() {
+            walk_node(child, &world, buffers, vertices, indices, base_colours);
+        }
+        return;
+    }
+
     if let Some(mesh) = node.mesh() {
         for primitive in mesh.primitives() {
             // We only draw triangles; points/lines are not part of the art spec.

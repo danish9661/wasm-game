@@ -14,7 +14,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const port = Number(process.env.SMOKE_PORT || 8791);
+const port = Number(process.env.SMOKE_PORT || 8879);
 const playwrightModule =
   process.env.PLAYWRIGHT_MODULE || 'playwright-core';
 const { chromium } = await import(
@@ -72,10 +72,11 @@ try {
   // Import the *same* module URL the page booted (including its ?v= cache
   // stamp), otherwise wasm-bindgen gets a second, uninitialised instance.
   await page.evaluate(async () => {
-    const scripts = [...document.querySelectorAll('script[type="module"]')];
-    const text = scripts.map((s) => s.textContent || '').join('\n');
-    const spec = text.match(/from\s+['"](\.\/wasm_game\.js[^'"]*)['"]/)?.[1] || './wasm_game.js';
-    window.__m = await import(spec);
+    const text = document.documentElement.innerHTML;
+    const spec = text.match(/from\s*['"](\.\/wasm_game\.js[^'"]*)['"]/)?.[1]
+      || text.match(/(wasm_game\.js\?v=[^'"\s]+)/)?.[1]
+      || './wasm_game.js';
+    window.__m = await import(spec.startsWith('.') ? spec : './' + spec);
   });
 
   // WebGPU init + GLB fetch + first frames.
