@@ -5360,7 +5360,7 @@ impl App {
     }
 
     pub fn resize(&mut self) {
-        let (mut width, mut height) = resize_canvas(&self.canvas);
+        let (mut width, mut height, dpr) = canvas_size(&self.canvas);
         // Cap the internal render/readback resolution. The scene is rasterized
         // and read back in software (SwiftShader), so a large backing makes each
         // readback+blit very expensive and the #blit display lags behind the
@@ -5389,10 +5389,23 @@ impl App {
             if scale < 1.0 {
                 width = (width as f64 * scale).max(1.0) as u32;
                 height = (height as f64 * scale).max(1.0) as u32;
-                self.canvas.set_width(width);
-                self.canvas.set_height(height);
             }
         }
+        // Configure at most once, and write the backing store only once. The
+        // old code set the canvas to the full window size here and then again
+        // to the capped size, then reconfigured unconditionally — that made
+        // Dawn import the swapchain texture with a stale allocation on real
+        // GPUs ("Requested allocation size ... smaller than the image
+        // requires"). A no-op resize must not touch the surface at all.
+        if width == self.config.width && height == self.config.height {
+            return;
+        }
+        self.canvas.set_width(width);
+        self.canvas.set_height(height);
+        let _ = self.canvas.set_attribute(
+            "style",
+            &format!("width:{}px;height:{}px", width as f64 / dpr, height as f64 / dpr),
+        );
         glog(&format!("[gfx] resize -> {width}x{height} (cap {cap_w}x{cap_h})"));
         self.config.width = width;
         self.config.height = height;
@@ -7321,13 +7334,20 @@ fn create_offscreen(
     })
 }
 
-fn resize_canvas(canvas: &HtmlCanvasElement) -> (u32, u32) {
+/// Read the desired backing size without touching the canvas. Callers that
+/// actually change size set width/height exactly once and configure once.
+fn canvas_size(_canvas: &HtmlCanvasElement) -> (u32, u32, f64) {
     let window = web_sys::window().unwrap();
     let dpr = window.device_pixel_ratio();
     let width = (window.inner_width().unwrap().as_f64().unwrap() * dpr).round() as u32;
     let height = (window.inner_height().unwrap().as_f64().unwrap() * dpr).round() as u32;
-    canvas.set_width(width.max(1));
-    canvas.set_height(height.max(1));
+    (width.max(1), height.max(1), dpr)
+}
+
+fn resize_canvas(canvas: &HtmlCanvasElement) -> (u32, u32) {
+    let (width, height, dpr) = canvas_size(canvas);
+    canvas.set_width(width);
+    canvas.set_height(height);
     let _ = canvas.set_attribute(
         "style",
         &format!(

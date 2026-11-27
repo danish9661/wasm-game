@@ -726,9 +726,20 @@
           window.__frames = 0;
           window.__firstFrame = false;
           // Apply the saved resolution cap now that the wasm module is ready.
-          if (settings.res === 'native') set_render_cap(0, 0);
-          else { const _r = settings.res.split('x').map(Number); set_render_cap(_r[0], _r[1]); }
-          set_adaptive_res(settings.adaptive);
+          // On a real hardware GPU render at native size and pin it: changing
+          // the WebGPU swapchain size at runtime makes Dawn import textures
+          // with a stale allocation ("Requested allocation size is smaller
+          // than the image requires"). Software backends still use the cap.
+          const hardwareGpu = window.__adapter === 'hw' && !location.search.includes('cap');
+          window.__hardwareGpu = hardwareGpu;
+          if (hardwareGpu) {
+            set_render_cap(0, 0);
+            set_adaptive_res(false);
+          } else {
+            if (settings.res === 'native') set_render_cap(0, 0);
+            else { const _r = settings.res.split('x').map(Number); set_render_cap(_r[0], _r[1]); }
+            set_adaptive_res(settings.adaptive);
+          }
           try { resize(); } catch (_) {}
           let last = performance.now();
           let lastLog = performance.now();
@@ -1529,7 +1540,7 @@
           el('set-music').oninput = (e) => { settings.music = Number(e.target.value); applyAudio(); saveSettings(); };
           el('set-mute').onchange = (e) => { settings.muted = e.target.checked; applyAudio(); saveSettings(); };
           el('set-adaptive').onchange = (e) => {
-            settings.adaptive = e.target.checked;
+            settings.adaptive = e.target.checked && !window.__hardwareGpu;
             saveSettings();
             set_adaptive_res(settings.adaptive);
             syncResolutionRow();
