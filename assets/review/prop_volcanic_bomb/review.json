@@ -1,0 +1,77 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/export/props/prop_volcanic_bomb.glb",
+ "id": "prop_volcanic_bomb",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_volcanic_bomb_col",
+   "prop_volcanic_bomb_lod0_primitive0",
+   "prop_volcanic_bomb_lod0_primitive1",
+   "prop_volcanic_bomb_lod0_primitive2"
+  ],
+  "lod_tris": {
+   "0": 186
+  },
+  "col_meshes": [
+   "prop_volcanic_bomb_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.436,
+    0,
+    -0.389
+   ],
+   "max": [
+    0.436,
+    0.772,
+    0.389
+   ]
+  },
+  "extras": {
+   "prop_volcanic_bomb_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_stone_dark",
+   "m_lava",
+   "m_stone"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_volcanic_bomb/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_volcanic_bomb/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_volcanic_bomb/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_volcanic_bomb/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_volcanic_bomb/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_volcanic_bomb/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_volcanic_bomb.png"
+  }
+ ]
+}

@@ -1,0 +1,196 @@
+{
+ "id": "prop_ice_crystal",
+ "result": "PASS",
+ "items": [
+  {
+   "level": "PASS",
+   "check": "name.id",
+   "detail": "prop_ice_crystal (prefix prop_)"
+  },
+  {
+   "level": "PASS",
+   "check": "file.name",
+   "detail": "prop_ice_crystal.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "file.path",
+   "detail": "export/props/prop_ice_crystal.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.single_root",
+   "detail": "1 root nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.root_name",
+   "detail": "root 'prop_ice_crystal'"
+  },
+  {
+   "level": "PASS",
+   "check": "name.nodes",
+   "detail": "3 nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "xform.applied",
+   "detail": "scale 1, mesh rotations identity"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.lod0",
+   "detail": "lod nodes: [0]"
+  },
+  {
+   "level": "PASS",
+   "check": "budget.lod0",
+   "detail": "174 tris (budget 500)"
+  },
+  {
+   "level": "INFO",
+   "check": "lod.skip",
+   "detail": "lod0 174 tris <= 10000, LODs not required"
+  },
+  {
+   "level": "INFO",
+   "check": "dims",
+   "detail": "x 0.728  y 0.671  z 1.311 m (Blender axes: width, depth, height)"
+  },
+  {
+   "level": "PASS",
+   "check": "dims.target",
+   "detail": "within 18%"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.bottom_center",
+   "detail": "bbox min z 0.000, center x 0.000 y 0.000"
+  },
+  {
+   "level": "PASS",
+   "check": "col.present",
+   "detail": "prop_ice_crystal_col present"
+  },
+  {
+   "level": "PASS",
+   "check": "col.kind.prop_ice_crystal_col",
+   "detail": "ig_collider='box' (allowed ['mesh', 'box', 'convex'])"
+  },
+  {
+   "level": "PASS",
+   "check": "col.not_render_mesh.prop_ice_crystal_col",
+   "detail": "12 tris vs render 174"
+  },
+  {
+   "level": "PASS",
+   "check": "col.fits_render",
+   "detail": "collider bbox overlap 1.00 of render bbox"
+  },
+  {
+   "level": "PASS",
+   "check": "col.protrudes",
+   "detail": "collider extends 0.000 m beyond the render bbox (min side [0.0, 0.0, 0.0], max side [0.0, 0.0, 0.0])"
+  },
+  {
+   "level": "PASS",
+   "check": "props.required",
+   "detail": "root extras: []"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.normals",
+   "detail": "all primitives have NORMAL"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.uv0",
+   "detail": "TEXCOORD_0 on every primitive"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.range",
+   "detail": "min 0.013 max 0.987"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.overlap",
+   "detail": "0 overlapping px at 1024 (islands: 42)"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.padding",
+   "detail": "0 px closer than 4 px between islands"
+  },
+  {
+   "level": "INFO",
+   "check": "uv1.coverage",
+   "detail": "40.4% of the lightmap square used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.assigned",
+   "detail": "2 materials used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice_light.name",
+   "detail": "m_ice_light"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice_light.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice_light.albedo_range",
+   "detail": "baseColorFactor sRGB [0.749, 0.851, 0.933]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_ice_light",
+   "detail": "mean color sRGB [0.749, 0.851, 0.933]  sat 0.20 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice_light.roughness",
+   "detail": "roughnessFactor 0.50 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice.name",
+   "detail": "m_ice"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice.albedo_range",
+   "detail": "baseColorFactor sRGB [0.663, 0.784, 0.878]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_ice",
+   "detail": "mean color sRGB [0.663, 0.784, 0.878]  sat 0.25 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_ice.roughness",
+   "detail": "roughnessFactor 0.55 (S4: roughness high)"
+  },
+  {
+   "level": "INFO",
+   "check": "texel_density",
+   "detail": "no textured primitives"
+  },
+  {
+   "level": "PASS",
+   "check": "khronos.errors",
+   "detail": "0 errors, 0 warnings []"
+  }
+ ]
+}

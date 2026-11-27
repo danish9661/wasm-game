@@ -1,0 +1,271 @@
+{
+ "id": "prop_carrot",
+ "result": "PASS",
+ "items": [
+  {
+   "level": "PASS",
+   "check": "name.id",
+   "detail": "prop_carrot (prefix prop_)"
+  },
+  {
+   "level": "PASS",
+   "check": "file.name",
+   "detail": "prop_carrot.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "file.path",
+   "detail": "export/props/prop_carrot.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.single_root",
+   "detail": "1 root nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.root_name",
+   "detail": "root 'prop_carrot'"
+  },
+  {
+   "level": "PASS",
+   "check": "name.nodes",
+   "detail": "3 nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "xform.applied",
+   "detail": "scale 1, mesh rotations identity"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.lod0",
+   "detail": "lod nodes: [0]"
+  },
+  {
+   "level": "PASS",
+   "check": "budget.lod0",
+   "detail": "188 tris (budget 500)"
+  },
+  {
+   "level": "INFO",
+   "check": "lod.skip",
+   "detail": "lod0 188 tris <= 10000, LODs not required"
+  },
+  {
+   "level": "INFO",
+   "check": "dims",
+   "detail": "x 0.664  y 0.633  z 0.727 m (Blender axes: width, depth, height)"
+  },
+  {
+   "level": "PASS",
+   "check": "dims.target",
+   "detail": "within 18%"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.bottom_center",
+   "detail": "bbox min z 0.000, center x 0.000 y 0.000"
+  },
+  {
+   "level": "PASS",
+   "check": "col.present",
+   "detail": "prop_carrot_col present"
+  },
+  {
+   "level": "PASS",
+   "check": "col.kind.prop_carrot_col",
+   "detail": "ig_collider='box' (allowed ['mesh', 'box', 'convex'])"
+  },
+  {
+   "level": "PASS",
+   "check": "col.not_render_mesh.prop_carrot_col",
+   "detail": "12 tris vs render 188"
+  },
+  {
+   "level": "PASS",
+   "check": "col.fits_render",
+   "detail": "collider bbox overlap 1.00 of render bbox"
+  },
+  {
+   "level": "PASS",
+   "check": "col.protrudes",
+   "detail": "collider extends 0.000 m beyond the render bbox (min side [0.0, 0.0, 0.0], max side [0.0, 0.0, 0.0])"
+  },
+  {
+   "level": "PASS",
+   "check": "props.required",
+   "detail": "root extras: []"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.normals",
+   "detail": "all primitives have NORMAL"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.uv0",
+   "detail": "TEXCOORD_0 on every primitive"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.range",
+   "detail": "min 0.013 max 0.987"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.overlap",
+   "detail": "0 overlapping px at 1024 (islands: 74)"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.padding",
+   "detail": "0 px closer than 4 px between islands"
+  },
+  {
+   "level": "INFO",
+   "check": "uv1.coverage",
+   "detail": "42.2% of the lightmap square used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.assigned",
+   "detail": "5 materials used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_sand.name",
+   "detail": "m_sand"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_sand.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_sand.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.706, 0.416]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_sand",
+   "detail": "mean color matches swatch sand"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_sand.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_grass.name",
+   "detail": "m_grass"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_grass.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_grass.albedo_range",
+   "detail": "baseColorFactor sRGB [0.357, 0.549, 0.227]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_grass",
+   "detail": "mean color matches swatch grass"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_grass.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leaf.name",
+   "detail": "m_leaf"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leaf.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leaf.albedo_range",
+   "detail": "baseColorFactor sRGB [0.227, 0.478, 0.2]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_leaf",
+   "detail": "mean color matches swatch leaf"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leaf.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.name",
+   "detail": "m_gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.albedo_range",
+   "detail": "baseColorFactor sRGB [0.851, 0.651, 0.18]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_gold",
+   "detail": "mean color matches swatch gold"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_gold.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.name",
+   "detail": "m_leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.albedo_range",
+   "detail": "baseColorFactor sRGB [0.349, 0.184, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_leather",
+   "detail": "mean color matches swatch leather"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_leather.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+  },
+  {
+   "level": "INFO",
+   "check": "texel_density",
+   "detail": "no textured primitives"
+  },
+  {
+   "level": "PASS",
+   "check": "khronos.errors",
+   "detail": "0 errors, 0 warnings []"
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "prop_dead_tree",
+  "category": "prop",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "A stark dead snag: flared root base, tapered trunk and two generations of forked bare branches, readable from the iso camera.",
+  "dims": {
+    "x": 1.4,
+    "y": 1.25,
+    "z": 2.6,
+    "tol": 0.16,
+    "basis": "target from visual-QA brief; replaces assets/models/dead_tree.glb"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "prop",
+  "density_class": "prop",
+  "collider": "box",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "commander camera at 45/30; gameplay-scale readability is the contract"
+  },
+  "reviews": "gameplay",
+  "review_views": [
+    "front",
+    "three_quarter",
+    "eye",
+    "iso",
+    "feed",
+    "collision"
+  ],
+  "references": [],
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, palette-only, readable at ~60 px. 1u = 1 tile; player = 1.55u; base at z=0, centred on (0,0). Palette from docs/ART_DIRECTION.md. Never: plain cubes, featureless blobs, smooth normals, textures, invented hues, trees that are just cones/cylinders.",
+  "notes": "Fresh-eyes visual QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; re-exported to assets/models/dead_tree.glb."
+}

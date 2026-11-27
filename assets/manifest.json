@@ -30,6 +30,166 @@
     "notes": "Replaces the 388-tri old altar with a stepped/bevelled plinth, tapered pedestal, gold posts and layered crystal shards."
   },
   {
+    "id": "prop_basalt_columns",
+    "path": "export/props/prop_basalt_columns.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_bush",
+    "path": "export/props/prop_bush.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_cactus",
+    "path": "export/props/prop_cactus.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Fresh-eyes visual QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; re-exported to assets/models/cactus.glb."
+  },
+  {
+    "id": "prop_carrot",
+    "path": "export/props/prop_carrot.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_coral",
+    "path": "export/props/prop_coral.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_coral_brain",
+    "path": "export/props/prop_coral_brain.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_coral_fan",
+    "path": "export/props/prop_coral_fan.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_crystal",
+    "path": "export/props/prop_crystal.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_dead_tree",
+    "path": "export/props/prop_dead_tree.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Fresh-eyes visual QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; re-exported to assets/models/dead_tree.glb."
+  },
+  {
+    "id": "prop_dune_rock",
+    "path": "export/props/prop_dune_rock.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_fern",
+    "path": "export/props/prop_fern.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_flower",
+    "path": "export/props/prop_flower.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_grass_tuft",
+    "path": "export/props/prop_grass_tuft.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_hay_bale",
+    "path": "export/props/prop_hay_bale.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_haystack",
+    "path": "export/props/prop_haystack.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_herb_patch",
+    "path": "export/props/prop_herb_patch.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
     "id": "prop_house",
     "path": "export/props/prop_house.glb",
     "category": "prop",
@@ -38,6 +198,116 @@
     "source": "make",
     "license": "see LICENSES.md",
     "notes": "Replaces the 236-tri old house with pitched gables, shingled roof, timber frame, framed windows and a chimney, within the 1500-tri assembled budget."
+  },
+  {
+    "id": "prop_ice_crystal",
+    "path": "export/props/prop_ice_crystal.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_ice_spire",
+    "path": "export/props/prop_ice_spire.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Fresh-eyes visual QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; re-exported to assets/models/ice_spire.glb."
+  },
+  {
+    "id": "prop_lilypad",
+    "path": "export/props/prop_lilypad.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_mangrove_roots",
+    "path": "export/props/prop_mangrove_roots.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Fresh-eyes visual QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; re-exported to assets/models/mangrove_roots.glb."
+  },
+  {
+    "id": "prop_mushroom",
+    "path": "export/props/prop_mushroom.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_mushroom_cluster",
+    "path": "export/props/prop_mushroom_cluster.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_pine",
+    "path": "export/props/prop_pine.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_potato",
+    "path": "export/props/prop_potato.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_reed",
+    "path": "export/props/prop_reed.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_rubble",
+    "path": "export/props/prop_rubble.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_shell_cluster",
+    "path": "export/props/prop_shell_cluster.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
   },
   {
     "id": "prop_star_crown_shrine",
@@ -50,6 +320,16 @@
     "notes": "Skill-built hero prop: bmesh parts, selective bevels, weighted normals, UV pack, LOD/collider finish. Deliberately a recessed stele + radial star crown, NOT the stepped pedestal + bowl + posts of prop_altar or models/altar.glb."
   },
   {
+    "id": "prop_swamp_reeds",
+    "path": "export/props/prop_swamp_reeds.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
     "id": "prop_tree",
     "path": "export/props/prop_tree.glb",
     "category": "prop",
@@ -57,7 +337,37 @@
     "status": "done",
     "source": "make",
     "license": "see LICENSES.md",
-    "notes": "Replaces the 100-tri old tree with a tapered loft trunk, angled branches and three faceted canopy lobes."
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_vines",
+    "path": "export/props/prop_vines.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_volcanic_bomb",
+    "path": "export/props/prop_volcanic_bomb.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+  },
+  {
+    "id": "prop_wheat",
+    "path": "export/props/prop_wheat.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
   },
   {
     "id": "wpn_sword",
