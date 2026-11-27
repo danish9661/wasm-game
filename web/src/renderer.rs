@@ -5859,39 +5859,25 @@ impl App {
                 || resource_on(tx, ty, tile).is_some_and(|k| k.blocks_movement())
                     && !self.nodes.is_depleted(tx, ty)
         };
+        // Proper NPC AI: civilians sleep at night / flee danger / greet the
+        // player, guards and golems patrol and give chase. The state machine
+        // lives in game/src/npc.rs; the renderer only supplies world facts.
+        let night = game::daynight::daylight(self.time_of_day) < 0.35;
         for n in self.npcs.iter_mut() {
-            if n.kind == NpcKind::Guard || n.kind == NpcKind::Golem {
-                // Engage the nearest hostile enemy within the hamlet's perimeter,
-                // but stay close to home so the watch doesn't wander off.
-                let home_d = (n.home.0 - n.x).hypot(n.home.1 - n.y);
-                let mut best: Option<(f32, (f32, f32))> = None;
-                for &(ex, ey) in &enemy_spots {
-                    let d = (ex - n.x).hypot(ey - n.y);
-                    if d < 8.0 && best.map_or(true, |(bd, _)| d < bd) {
-                        best = Some((d, (ex, ey)));
-                    }
+            let mut danger: Option<(f32, (f32, f32))> = None;
+            for &(ex, ey) in &enemy_spots {
+                let d = (ex - n.x).hypot(ey - n.y);
+                if d < 8.0 && danger.map_or(true, |(bd, _)| d < bd) {
+                    danger = Some((d, (ex, ey)));
                 }
-                if let Some((d, (ex, ey))) = best.filter(|_| home_d < 11.0) {
-                    let dx = ex - n.x;
-                    let dy = ey - n.y;
-                    let len = d.max(1e-3);
-                    n.facing = (dx / len, dy / len);
-                    let sp = 2.2 * dt; // guards move briskly when giving chase (paced down with everything else)
-                    if d > 1.2 {
-                        let nx = n.x + dx / len * sp;
-                        let ny = n.y + dy / len * sp;
-                        if !blocked(nx, ny) {
-                            n.x = nx;
-                            n.y = ny;
-                        }
-                    }
-                    n.walk = (n.walk + dt * 6.0) % 1000.0;
-                } else {
-                    n.update(dt, &mut blocked);
-                }
-            } else {
-                n.update(dt, &mut blocked);
             }
+            let ctx = game::npc::NpcContext {
+                player: (self.player.x, self.player.y),
+                danger: danger.map(|(_, p)| p),
+                night,
+                talk_range: 3.4,
+            };
+            n.update_with_context(dt, &mut blocked, ctx);
         }
         let enemy_speed = game::enemy::Enemy::speed_scale_for_level(self.player.level);
         // (edits resolve inline: the enemy loop below borrows `enemies`
