@@ -1,0 +1,83 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/models/shrine_interior.glb",
+ "id": "shrine_interior",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "floor_slab.002_primitive0",
+   "floor_slab.002_primitive1",
+   "floor_slab.002_primitive2",
+   "floor_slab.002_primitive3",
+   "floor_slab.002_primitive4",
+   "floor_slab.002_primitive5",
+   "floor_slab.002_primitive6",
+   "floor_slab.002_primitive7",
+   "floor_slab.002_primitive8",
+   "floor_slab.002_primitive9",
+   "floor_slab.002_primitive10",
+   "floor_slab.002_primitive11",
+   "floor_slab.002_primitive12"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -2.375,
+    0,
+    -2.375
+   ],
+   "max": [
+    2.375,
+    2.5,
+    2.375
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "exp_stone_light",
+   "exp_stone",
+   "exp_stone_dark",
+   "exp_wood_dark",
+   "exp_wood",
+   "exp_iron",
+   "exp_gold",
+   "exp_ice",
+   "v5_arcane",
+   "exp_bone",
+   "v5_fire",
+   "exp_cloth",
+   "exp_sand"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/shrine_interior/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/shrine_interior/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/shrine_interior/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/shrine_interior/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/shrine_interior/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/shrine_interior.png"
+  }
+ ]
+}

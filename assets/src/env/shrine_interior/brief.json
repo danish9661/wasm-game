@@ -1,0 +1,37 @@
+{
+  "id": "shrine_interior",
+  "category": "env",
+  "tier": "S",
+  "status": "done",
+  "track": "kit",
+  "source": "make",
+  "what": "Complete 4x4-tile shrine interior: pale stone floor and walls on the 1 u grid, a 0.9x2.0 door, two framed north-wall windows, a raised dais with a stepped altar and a glowing arcane crystal, two candles, two columns with capitals, arcane banners, two kneeling cushions and a censer hung from a beam seated on the corner posts.",
+  "dims": {
+    "x": 4.75,
+    "y": 4.75,
+    "z": 2.5,
+    "tol": 0.06,
+    "basis": "measured from the exported GLB; walls on the 1 u grid at \u00b12 with 0.125 u infills closing to 0.75 u corner posts; exactly one 2.5 u storey"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "kit",
+  "density_class": "kit",
+  "collider": "box",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "diorama cutaway from the 45-degree isometric camera; the altar/crystal axis is the focal point"
+  },
+  "review_views": [
+    "front",
+    "three_quarter",
+    "eye",
+    "iso"
+  ],
+  "references": [],
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, saturated palette accents, readable at ~60 px. Palette-only (docs/ART_DIRECTION.md), no textures, no smooth shading. 1 tile = 1 u; player = 1.55 u; storey = 2.5 u; doors 0.9 x 2.0 u; grid 1 u. Base at z=0, centred on (0,0). Never: smooth normals, external textures, invented hues, hidden geometry nobody sees.",
+  "notes": "Hero: bmesh-authored parts, selective bevel on floor slab and altar top, weighted normals, flat shading and an explicit UV pack. 1124 triangles (1500 assembled budget). Rebuilt each run from scripts/blender/gen_models_v5.py. Review uses front/three_quarter/eye/iso only: the review harness aims focus close-ups from low exterior angles, which cannot see into a four-walled room; the 45-degree iso and eye views are the primary evidence for the interior props. Camera-facing south and east walls are a 1.1 u cutaway (south keeps a full-height 0.9x2.0 door cell); north and west keep three 2.5 u courses."
+}

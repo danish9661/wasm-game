@@ -1,0 +1,37 @@
+{
+  "id": "tavern_interior",
+  "category": "env",
+  "tier": "S",
+  "status": "done",
+  "track": "kit",
+  "source": "make",
+  "what": "Complete 4x4-tile tavern interior for the town: planked floor, timber walls with a 0.9x2.0 door and two windows, a long bar with three stools, two round tables with benches and mugs, a stone hearth with flame, and two hanging lanterns. Players enter through the south door and read the bar immediately from the isometric camera.",
+  "dims": {
+    "x": 5.0,
+    "y": 5.0,
+    "z": 2.5,
+    "tol": 0.06,
+    "basis": "measured from the exported GLB; walls on the 1 u grid at \u00b12, 1 u corner posts close the runs; exactly one 2.5 u storey"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "kit",
+  "density_class": "kit",
+  "collider": "box",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "diorama cutaway from the 45-degree isometric camera; the 60 px gameplay read is the bar and hearth silhouette"
+  },
+  "review_views": [
+    "front",
+    "three_quarter",
+    "eye",
+    "iso"
+  ],
+  "references": [],
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, saturated palette accents, readable at ~60 px. Palette-only (docs/ART_DIRECTION.md), no textures, no smooth shading. 1 tile = 1 u; player = 1.55 u; storey = 2.5 u; doors 0.9 x 2.0 u; grid 1 u. Base at z=0, centred on (0,0). Never: smooth normals, external textures, invented hues, hidden geometry nobody sees.",
+  "notes": "Hero: bmesh-authored parts, selective bevel on floor slab and counter top, weighted normals, flat shading and an explicit UV pack. 1468 triangles (1500 assembled budget). Rebuilt each run from scripts/blender/gen_models_v5.py. Review uses front/three_quarter/eye/iso only: the review harness aims focus close-ups from low exterior angles, which cannot see into a four-walled room; the 45-degree iso and eye views are the primary evidence for the interior props. Camera-facing south and east walls are a 1.1 u cutaway (south keeps a full-height 0.9x2.0 door cell); north and west keep three 2.5 u courses."
+}

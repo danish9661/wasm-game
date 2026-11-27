@@ -1,0 +1,81 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/models/smithy_interior.glb",
+ "id": "smithy_interior",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "floor_slab.001_primitive0",
+   "floor_slab.001_primitive1",
+   "floor_slab.001_primitive2",
+   "floor_slab.001_primitive3",
+   "floor_slab.001_primitive4",
+   "floor_slab.001_primitive5",
+   "floor_slab.001_primitive6",
+   "floor_slab.001_primitive7",
+   "floor_slab.001_primitive8",
+   "floor_slab.001_primitive9",
+   "floor_slab.001_primitive10",
+   "floor_slab.001_primitive11"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -2.5,
+    0,
+    -2.5
+   ],
+   "max": [
+    2.5,
+    2.5,
+    2.5
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "exp_stone_dark",
+   "exp_stone",
+   "exp_wood_dark",
+   "exp_wood",
+   "exp_iron",
+   "exp_gold",
+   "exp_ice",
+   "exp_stone_light",
+   "v5_charcoal",
+   "v5_fire",
+   "exp_steel",
+   "exp_water"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/smithy_interior/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/smithy_interior/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/smithy_interior/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/smithy_interior/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/smithy_interior/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/models-v5/assets/review/smithy_interior.png"
+  }
+ ]
+}
