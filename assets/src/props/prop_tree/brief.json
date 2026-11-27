@@ -5,38 +5,34 @@
   "status": "done",
   "track": "invented",
   "source": "make",
-  "what": "A broadleaf forest tree lining the Starfall overworld paths; a trunk with three faceted canopy lobes read from the isometric camera.",
+  "what": "Visual-QA wave-2 rebuild of tree at gameplay scale.",
   "dims": {
-    "x": 1.287,
-    "y": 0.813,
+    "x": 1.621,
+    "y": 1.042,
     "z": 2.97,
-    "tol": 0.08,
-    "basis": "ART_DIRECTION tree 2.5-3.0u; old tree was 2.78u, canopy span ~1.1u from a 1u tile"
+    "tol": 0.18,
+    "basis": "target silhouette from fresh-eyes QA sheets"
   },
   "pivot": "bottom_center",
   "budget_class": "prop",
   "density_class": "prop",
   "collider": "box",
   "props": {},
-  "materials": [
-    "m_wood",
-    "m_leaf",
-    "m_leaf_light"
-  ],
+  "materials": [],
   "variants": [],
   "sockets": [],
   "views": {
     "primary": "iso",
-    "why": "commander camera at 45/30 degrees; canopy silhouette against the ground"
+    "why": "commander camera 45/30"
   },
-  "review_context": {
-    "tile": [
-      3,
-      3
-    ],
-    "elevation": 0.0
-  },
+  "review_views": [
+    "front",
+    "three_quarter",
+    "eye",
+    "iso",
+    "feed"
+  ],
   "references": [],
-  "style_notes": "Low-poly diorama, leaf #3A7A33 with a slightly lighter leaf for contrast, wood #6B4423, no textures. Never: smooth shading, flat billboard canopy, invented hues.",
-  "notes": "Replaces the 100-tri old tree with a tapered loft trunk, angled branches and three faceted canopy lobes."
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, palette-only, readable at ~60 px. 1u = 1 tile; player 1.55u; base at z=0, centred on (0,0). Never: plain cubes, featureless blobs, smooth normals, textures, invented hues.",
+  "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
 }

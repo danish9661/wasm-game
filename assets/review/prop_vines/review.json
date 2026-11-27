@@ -1,0 +1,77 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/export/props/prop_vines.glb",
+ "id": "prop_vines",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_vines_col",
+   "prop_vines_lod0_primitive0",
+   "prop_vines_lod0_primitive1",
+   "prop_vines_lod0_primitive2"
+  ],
+  "lod_tris": {
+   "0": 160
+  },
+  "col_meshes": [
+   "prop_vines_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.47,
+    0,
+    -0.451
+   ],
+   "max": [
+    0.47,
+    1.074,
+    0.451
+   ]
+  },
+  "extras": {
+   "prop_vines_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_wood",
+   "m_leaf",
+   "m_leaf_light"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_vines/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_vines/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_vines/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_vines/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_vines/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_vines/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_vines.png"
+  }
+ ]
+}

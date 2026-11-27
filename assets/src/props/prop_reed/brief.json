@@ -1,0 +1,38 @@
+{
+  "id": "prop_reed",
+  "category": "prop",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "Visual-QA wave-2 rebuild of reed at gameplay scale.",
+  "dims": {
+    "x": 0.556,
+    "y": 0.385,
+    "z": 1.231,
+    "tol": 0.18,
+    "basis": "target silhouette from fresh-eyes QA sheets"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "prop",
+  "density_class": "prop",
+  "collider": "box",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "commander camera 45/30"
+  },
+  "review_views": [
+    "front",
+    "three_quarter",
+    "eye",
+    "iso",
+    "feed"
+  ],
+  "references": [],
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, palette-only, readable at ~60 px. 1u = 1 tile; player 1.55u; base at z=0, centred on (0,0). Never: plain cubes, featureless blobs, smooth normals, textures, invented hues.",
+  "notes": "Rebuilt with bmesh parts, bevels, weighted normals, packed UVs."
+}

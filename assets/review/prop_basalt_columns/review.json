@@ -1,0 +1,77 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/export/props/prop_basalt_columns.glb",
+ "id": "prop_basalt_columns",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_basalt_columns_col",
+   "prop_basalt_columns_lod0_primitive0",
+   "prop_basalt_columns_lod0_primitive1",
+   "prop_basalt_columns_lod0_primitive2"
+  ],
+  "lod_tris": {
+   "0": 240
+  },
+  "col_meshes": [
+   "prop_basalt_columns_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.53,
+    0,
+    -0.497
+   ],
+   "max": [
+    0.53,
+    1.726,
+    0.497
+   ]
+  },
+  "extras": {
+   "prop_basalt_columns_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_stone_dark",
+   "m_stone",
+   "m_stone_light"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_basalt_columns/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_basalt_columns/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_basalt_columns/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_basalt_columns/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_basalt_columns/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_basalt_columns/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_basalt_columns.png"
+  }
+ ]
+}

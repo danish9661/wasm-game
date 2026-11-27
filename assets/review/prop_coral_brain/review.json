@@ -1,0 +1,79 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/export/props/prop_coral_brain.glb",
+ "id": "prop_coral_brain",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_coral_brain_col",
+   "prop_coral_brain_lod0_primitive0",
+   "prop_coral_brain_lod0_primitive1",
+   "prop_coral_brain_lod0_primitive2",
+   "prop_coral_brain_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 184
+  },
+  "col_meshes": [
+   "prop_coral_brain_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.421,
+    0,
+    -0.391
+   ],
+   "max": [
+    0.421,
+    0.678,
+    0.391
+   ]
+  },
+  "extras": {
+   "prop_coral_brain_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_arcane",
+   "m_bone",
+   "m_coral",
+   "m_wood"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_brain.png"
+  }
+ ]
+}

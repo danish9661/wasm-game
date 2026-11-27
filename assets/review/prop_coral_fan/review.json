@@ -1,0 +1,79 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/export/props/prop_coral_fan.glb",
+ "id": "prop_coral_fan",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_coral_fan_col",
+   "prop_coral_fan_lod0_primitive0",
+   "prop_coral_fan_lod0_primitive1",
+   "prop_coral_fan_lod0_primitive2",
+   "prop_coral_fan_lod0_primitive3"
+  ],
+  "lod_tris": {
+   "0": 128
+  },
+  "col_meshes": [
+   "prop_coral_fan_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.467,
+    0,
+    -0.157
+   ],
+   "max": [
+    0.467,
+    0.792,
+    0.157
+   ]
+  },
+  "extras": {
+   "prop_coral_fan_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_stone_dark",
+   "m_arcane",
+   "m_coral",
+   "m_bone"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_fan/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_fan/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_fan/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_fan/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_fan/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_fan/feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/visual-nature/assets/review/prop_coral_fan.png"
+  }
+ ]
+}

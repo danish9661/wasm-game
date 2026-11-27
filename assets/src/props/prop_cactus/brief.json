@@ -1,0 +1,40 @@
+{
+  "id": "prop_cactus",
+  "category": "prop",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "A desert cactus: tapered ribbed column with rounded, tapered arms and spine nubs - not three pieces of green plumbing.",
+  "dims": {
+    "x": 0.95,
+    "y": 0.44,
+    "z": 1.2,
+    "tol": 0.16,
+    "basis": "target from visual-QA brief; replaces assets/models/cactus.glb"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "prop",
+  "density_class": "prop",
+  "collider": "box",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "commander camera at 45/30; gameplay-scale readability is the contract"
+  },
+  "reviews": "gameplay",
+  "review_views": [
+    "front",
+    "three_quarter",
+    "eye",
+    "iso",
+    "feed",
+    "collision"
+  ],
+  "references": [],
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, palette-only, readable at ~60 px. 1u = 1 tile; player = 1.55u; base at z=0, centred on (0,0). Palette from docs/ART_DIRECTION.md. Never: plain cubes, featureless blobs, smooth normals, textures, invented hues, trees that are just cones/cylinders.",
+  "notes": "Fresh-eyes visual QA rebuild: bmesh parts, bevels, weighted normals, packed UV0; re-exported to assets/models/cactus.glb."
+}

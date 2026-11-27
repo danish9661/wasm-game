@@ -1,0 +1,14 @@
+{
+  "family": "nature_biome",
+  "scale_note": "1u = 1 tile; player = 1.55u; orthographic yaw 45 pitch 30",
+  "models": [
+    "tree", "pine", "apple_tree", "dead_tree", "mangrove", "mangrove_roots",
+    "bush", "berry_bush", "fern", "grass_tuft", "flower", "reed", "swamp_reeds",
+    "cactus", "mushroom", "mushroom_cluster", "herb_patch", "wheat", "carrot",
+    "potato", "rock", "rock_pile", "rubble", "dune_rock", "ore", "crystal",
+    "ice_crystal", "ice_spire", "obsidian_spire", "basalt_columns",
+    "volcanic_bomb", "lava_vent", "coral", "coral_fan", "coral_brain",
+    "lilypad", "vines", "frozen_log", "wreck_plank", "driftwood",
+    "shell_cluster", "hay_bale", "haystack"
+  ]
+}

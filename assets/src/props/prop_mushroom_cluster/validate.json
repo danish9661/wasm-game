@@ -1,0 +1,246 @@
+{
+ "id": "prop_mushroom_cluster",
+ "result": "PASS",
+ "items": [
+  {
+   "level": "PASS",
+   "check": "name.id",
+   "detail": "prop_mushroom_cluster (prefix prop_)"
+  },
+  {
+   "level": "PASS",
+   "check": "file.name",
+   "detail": "prop_mushroom_cluster.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "file.path",
+   "detail": "export/props/prop_mushroom_cluster.glb"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.single_root",
+   "detail": "1 root nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.root_name",
+   "detail": "root 'prop_mushroom_cluster'"
+  },
+  {
+   "level": "PASS",
+   "check": "name.nodes",
+   "detail": "3 nodes"
+  },
+  {
+   "level": "PASS",
+   "check": "xform.applied",
+   "detail": "scale 1, mesh rotations identity"
+  },
+  {
+   "level": "PASS",
+   "check": "hier.lod0",
+   "detail": "lod nodes: [0]"
+  },
+  {
+   "level": "PASS",
+   "check": "budget.lod0",
+   "detail": "408 tris (budget 500)"
+  },
+  {
+   "level": "INFO",
+   "check": "lod.skip",
+   "detail": "lod0 408 tris <= 10000, LODs not required"
+  },
+  {
+   "level": "INFO",
+   "check": "dims",
+   "detail": "x 0.847  y 0.680  z 0.570 m (Blender axes: width, depth, height)"
+  },
+  {
+   "level": "PASS",
+   "check": "dims.target",
+   "detail": "within 18%"
+  },
+  {
+   "level": "PASS",
+   "check": "pivot.bottom_center",
+   "detail": "bbox min z 0.000, center x 0.000 y 0.000"
+  },
+  {
+   "level": "PASS",
+   "check": "col.present",
+   "detail": "prop_mushroom_cluster_col present"
+  },
+  {
+   "level": "PASS",
+   "check": "col.kind.prop_mushroom_cluster_col",
+   "detail": "ig_collider='box' (allowed ['mesh', 'box', 'convex'])"
+  },
+  {
+   "level": "PASS",
+   "check": "col.not_render_mesh.prop_mushroom_cluster_col",
+   "detail": "12 tris vs render 408"
+  },
+  {
+   "level": "PASS",
+   "check": "col.fits_render",
+   "detail": "collider bbox overlap 1.00 of render bbox"
+  },
+  {
+   "level": "PASS",
+   "check": "col.protrudes",
+   "detail": "collider extends 0.000 m beyond the render bbox (min side [0.0, 0.0, 0.0], max side [0.0, 0.0, 0.0])"
+  },
+  {
+   "level": "PASS",
+   "check": "props.required",
+   "detail": "root extras: []"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.normals",
+   "detail": "all primitives have NORMAL"
+  },
+  {
+   "level": "PASS",
+   "check": "attr.uv0",
+   "detail": "TEXCOORD_0 on every primitive"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.range",
+   "detail": "min 0.013 max 0.988"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.overlap",
+   "detail": "0 overlapping px at 1024 (islands: 103)"
+  },
+  {
+   "level": "PASS",
+   "check": "uv1.padding",
+   "detail": "0 px closer than 4 px between islands"
+  },
+  {
+   "level": "INFO",
+   "check": "uv1.coverage",
+   "detail": "41.7% of the lightmap square used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.assigned",
+   "detail": "4 materials used"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_wood_light.name",
+   "detail": "m_wood_light"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_wood_light.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_wood_light.albedo_range",
+   "detail": "baseColorFactor sRGB [0.486, 0.337, 0.2]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_wood_light",
+   "detail": "mean color sRGB [0.486, 0.337, 0.2]  sat 0.59 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_wood_light.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_coral.name",
+   "detail": "m_coral"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_coral.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_coral.albedo_range",
+   "detail": "baseColorFactor sRGB [0.769, 0.271, 0.102]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_coral",
+   "detail": "mean color sRGB [0.769, 0.271, 0.102]  sat 0.87 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_coral.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_bone.name",
+   "detail": "m_bone"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_bone.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_bone.albedo_range",
+   "detail": "baseColorFactor sRGB [0.91, 0.878, 0.8]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_bone",
+   "detail": "mean color sRGB [0.91, 0.878, 0.8]  sat 0.12 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_bone.roughness",
+   "detail": "roughnessFactor 0.95 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_mush.name",
+   "detail": "m_mush"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_mush.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_mush.albedo_range",
+   "detail": "baseColorFactor sRGB [0.753, 0.224, 0.169]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_mush",
+   "detail": "mean color matches swatch enemy"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_mush.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "INFO",
+   "check": "texel_density",
+   "detail": "no textured primitives"
+  },
+  {
+   "level": "PASS",
+   "check": "khronos.errors",
+   "detail": "0 errors, 0 warnings []"
+  }
+ ]
+}
