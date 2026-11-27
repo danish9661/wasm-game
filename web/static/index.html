@@ -74,7 +74,7 @@
   <div id="meal-prompt" class="hidden">🍲 Campfire — press <b>0</b> to cook 2 raw food into a cooked meal</div>
 
   <button id="invbtn" title="Inventory & crafting (I)">🎒</button>
-  <button id="codexbtn" title="Bestiary / Codex (L)">📖</button>
+  <button id="codexbtn" title="Bestiary / Codex (Tab)">📖</button>
   <button id="help" title="Controls &amp; help">?</button>
   <button id="gear" title="Settings (Esc)">⚙</button>
 
@@ -95,6 +95,7 @@
         <span class="k">🌙</span><span class="d">Every 4th night is a Shattered Night — elite hunters roam till dawn. Fight or stay inside the lamplight</span>
         <span class="k">0</span><span class="d">Cook at a campfire: 2 raw food → 1 cooked meal. Cooked never spoils and restores far more hunger (+ a little HP/thirst). Raw food rots while carried.</span>
         <span class="k">🎣</span><span class="d">Fish at a sandy shoreline (shallow water): press <b>E</b> to cast, then <b>E</b> again when the bobber dips to land raw food. T still drinks there.</span>
+        <span class="k">Tab</span><span class="d">Open the Codex / bestiary — enemy stats, drops and behaviours discovered in combat</span>
         <span class="k">🗺</span><span class="d">Carry a treasure map to reveal buried caches (X) on the minimap; dig them with E</span>
         <span class="k">G</span><span class="d">Build a fence (blocks movement)</span>
         <span class="k">B</span><span class="d">Build a bed: resting nearby heals HP over time; sleeping (Z) skips to dawn and sets your exact respawn tile</span>
@@ -141,7 +142,8 @@
       <button class="tbtn act" data-key="KeyM" title="Forge / Enchant"><span class="tbtn-icon">⚒</span><span class="tbtn-label">Forge</span></button>
       <button class="tbtn act" data-key="KeyQ" title="Build mode"><span class="tbtn-icon">🔨</span><span class="tbtn-label">Build</span></button>
       <button class="tbtn act" data-key="KeyI" title="Inventory"><span class="tbtn-icon">🎒</span><span class="tbtn-label">Inv</span></button>
-      <button class="tbtn act" data-key="KeyL" title="Codex"><span class="tbtn-icon">📖</span><span class="tbtn-label">Codex</span></button>
+      <button class="tbtn act" data-key="Tab" title="Codex"><span class="tbtn-icon">📖</span><span class="tbtn-label">Codex</span></button>
+      <button class="tbtn act" data-key="KeyU" title="Equipment"><span class="tbtn-icon">🛡</span><span class="tbtn-label">Gear</span></button>
       <button class="tbtn act" data-key="KeyO" title="Talk to merchant"><span class="tbtn-icon">💬</span><span class="tbtn-label">Talk</span></button>
       <button class="tbtn act" data-key="KeyZ" title="Sleep (near bed)"><span class="tbtn-icon">😴</span><span class="tbtn-label">Sleep</span></button>
       <button class="tbtn act" data-key="KeyY" title="Pack stone block (2 stone)"><span class="tbtn-icon">🧱</span><span class="tbtn-label">Block</span></button>
@@ -231,7 +233,7 @@
       <h2>BESTIARY</h2>
       <div class="codex-body"></div>
       <div class="menu-btns">
-        <button id="codex-close" class="menu-btn">Close (L)</button>
+        <button id="codex-close" class="menu-btn">Close (Tab)</button>
       </div>
     </div>
   </div>
@@ -878,6 +880,10 @@
           // only when the game state makes it useful.
           const updateTouchActions = (stats) => {
             const avail = new Set(['KeyE', 'KeyJ', 'Space', 'ShiftLeft', 'KeyQ']);
+            // No permanent HUD button exists for Equipment, so the touch deck
+            // is the only way a phone player can open it.
+            if (stats.build !== 1) avail.add('KeyU');
+            avail.add('Tab'); // Codex / bestiary
             if ((stats.wown || 1) & 32) avail.add('KeyK'); // bow slot owned
             if (stats.f > 0 && stats.hunger < 100) avail.add('KeyC');
             if (stats.hp < 100) avail.add('KeyR');
@@ -1104,6 +1110,7 @@
             lastAlive = stats.alive;
 
             audioFromStats(stats);
+            syncBuildHint(stats.build === 1);
             updateTouchActions(stats);
           };
           const parseStats = (raw) => {
@@ -1162,8 +1169,15 @@
               objdx: Number(get(/objdx=([-\d.]+)/) || 0),
               objdy: Number(get(/objdy=([-\d.]+)/) || 0),
               near: get(/near2=(\S+)/) || 'wilderness',
+              // These three came from get_stats() but were never parsed, so
+              // low-HP vignette/heartbeat and build feedback stayed dead.
+              maxhp: Number(get(/maxhp=([\d.]+)/) || 100),
+              structures: Number(get(/structures=(\d+)/) || 0),
+              build: Number(get(/build=(\d)/) || 0),
             };
           };
+          // Test hooks for the browser regression suite (tests/qa_loop.mjs).
+          window.__qa = { parseStats, updateHud };
 
           // ---- Inventory & Crafting / Build UI ---------------------------
           let invOpen = false;
@@ -1179,6 +1193,20 @@
             herb: ['🌿', 'Herb'], gem: ['💎', 'Gem'], iron: ['⚙️', 'Iron'],
             ironplate: ['🛡', 'Iron Plate'], gold: ['💰', 'Gold'],
             fragment: ['👑', 'Crown Fragment'],
+          };
+          // Build-mode feedback lives outside the inventory panel. It used to
+          // be refreshed only while that panel was open, so pressing Q (or a
+          // build hotkey) left desktop players with no on-screen hint at all.
+          let buildHintSelected = 'structure';
+          const syncBuildHint = (on, selected) => {
+            if (selected) buildHintSelected = selected;
+            buildMode = !!on;
+            buildHint.classList.toggle('hidden', !buildMode);
+            if (buildMode) {
+              buildHint.innerHTML = `Placing <b>${buildHintSelected}</b> — move cursor &amp; <b>click</b> (or press its key) to place · <b>Q</b> toggles · <b>Esc</b> exits`;
+            }
+            // touch-only build-mode banner (the ghost follows the last tap)
+            if (isTouch) el('touch-build').classList.toggle('hidden', !buildMode);
           };
           const updateInventory = (json) => {
             if (!json) return;
@@ -1217,17 +1245,7 @@
                 node.onclick = () => { craft(Number(node.dataset.idx)); playSfx('craft'); };
               });
             }
-            buildMode = !!d.buildMode;
-            if (buildMode) {
-              buildHint.classList.remove('hidden');
-              buildHint.innerHTML = `Placing <b>${d.selected || 'structure'}</b> — move cursor &amp; <b>click</b> (or press its key) to place · <b>Q</b> toggles · <b>Esc</b> exits`;
-            } else {
-              buildHint.classList.add('hidden');
-            }
-            // touch-only build-mode banner (the ghost follows the last tap)
-            if (isTouch) {
-              el('touch-build').classList.toggle('hidden', !buildMode);
-            }
+            syncBuildHint(d.buildMode, d.selected);
             el('invbtn').classList.toggle('active', invOpen);
           };
           // Close the contextual action overlay whenever another panel opens.
@@ -1534,7 +1552,18 @@
               const f = inp.files && inp.files[0]; if (!f) return;
               f.arrayBuffer().then((ab) => {
                 const ok = upload_save_zip(new Uint8Array(ab));
-                el('mp-note').textContent = ok ? 'Save loaded from file.' : 'Invalid save file.';
+                // mp-note lives in the hidden Multiplayer menu, so it was
+                // invisible from the boot screen where this button sits.
+                if (ok) {
+                  doSave();
+                  bootmenu.className = 'hidden';
+                  bootOpen = false;
+                  paused = false;
+                  gameStarted = true;
+                  toast('Save loaded from file', 'info');
+                } else {
+                  toast('Invalid save file', 'error');
+                }
               });
             };
             inp.click();
@@ -1651,7 +1680,19 @@
               el('btn-new').click();
             }
             if (e.code === 'Escape') {
-              if (settingsEl.classList.contains('hidden')) openSettings(); else closeSettings();
+              e.preventDefault();
+              // Close the topmost panel first; Esc only opens Settings when
+              // nothing else is covering the game. Rust clears build mode on
+              // the same keypress — that must not pop Settings open as well.
+              // Rust clears build mode before this window-level handler runs,
+              // so use the HUD-synchronised flag for the pre-keypress state.
+              const wasBuilding = buildMode;
+              if (!helpEl.classList.contains('hidden')) closeHelp();
+              else if (codexOpen) toggleCodex();
+              else if (eqOpen) toggleEquipment();
+              else if (invOpen) toggleInventory();
+              else if (!settingsEl.classList.contains('hidden')) closeSettings();
+              else if (!wasBuilding) openSettings();
             }
             if (e.code === 'KeyI') {
               e.preventDefault();
@@ -1659,9 +1700,11 @@
             }
             if (e.code === 'KeyU') {
               e.preventDefault();
-              toggleEquipment();
+              // Rust binds U to "place farm plot" only while build mode is
+              // active; outside it the key belongs to the Equipment panel.
+              if (!e.repeat && (eqOpen || parseStats(get_stats()).build !== 1)) toggleEquipment();
             }
-            if (e.code === 'KeyL') {
+            if (e.code === 'Tab' && !bootOpen) {
               e.preventDefault();
               toggleCodex();
               if (!e.repeat) playSfx('codex');

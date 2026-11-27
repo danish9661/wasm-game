@@ -376,7 +376,7 @@ body:not(.show-debug) #hud-near { display: none !important; }
   border-radius: 4px;
 }
 #invbtn::after { content: "I"; }
-#codexbtn::after { content: "L"; }
+#codexbtn::after { content: "Tab"; }
 #help::after { content: "?"; }
 #gear::after { content: "Esc"; }
 #invbtn:hover, #codexbtn:hover, #help:hover, #gear:hover,
@@ -1256,6 +1256,9 @@ body.mobile #touch.fab-open .touch-actions {
   right: 16px;
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   z-index: 22;
+  /* #touch is pointer-events:none so the playfield stays clickable; the FAB
+     must opt back in or every tap falls through to the canvas. */
+  pointer-events: auto;
   width: 56px;
   height: 56px;
   background: var(--sf-panel-solid);
