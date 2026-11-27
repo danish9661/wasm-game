@@ -2066,7 +2066,7 @@ impl App {
             .collect::<Vec<_>>()
             .join(",");
         format!(
-            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={} mode={} scene3d={}",
+            "quads={} frames={} player=({:.1},{:.1}) hp={:.0} hunger={:.0} stamina={:.0} thirst={:.0} alive={} inv=(w{},s{},f{},h{},g{},gold{}) structures={} structs={} mobs={} mob={} pack={} swings={} atk={} shots={} quest=S{} ruins=({},{}) chest={} time={}             near={} boss={} colossus={} frag={} altar={} nearaltar={} nearAnvil={} nearEnch={} ending={} weather={} ng={} seed={} biome={} bosshp={} altartile={} fps={:.0} spd={:.2}              kev={} klast={} weapon={} enchant={} level={} maxhp={:.0} xp={} near2={} online={} coopids={} maps={} objdx={:.1} objdy={:.1} win={} endpend={} wown={} block={} nearWater={} mode={} build={} scene3d={}",
 
             self.quad_count(),
             self.frames(),
@@ -2134,6 +2134,7 @@ impl App {
                self.player.blocking as u8,
                near_water,
                if self.render3d_enabled() { "3d" } else { "2.5d" },
+               self.build_mode.is_some() as u8,
                self.scene3d_status,
             )
     }
@@ -2475,7 +2476,14 @@ impl App {
                 "KeyN" => self.build(StructureKind::Anvil),
                 "KeyH" => self.build(StructureKind::Well),
                 "KeyX" => self.build(StructureKind::Spike),
-                "KeyU" => self.build(StructureKind::FarmPlot),
+                // U opens the Equipment panel (page shell). Farm plots use this
+                // key only while the build menu is active, so the two never
+                // fire on the same keypress.
+                "KeyU" => {
+                    if self.build_mode.is_some() {
+                        self.build(StructureKind::FarmPlot);
+                    }
+                },
                 "KeyZ" => self.try_sleep(),
                 "KeyP" => {
                     self.player.cycle_weapon();
@@ -2540,7 +2548,10 @@ impl App {
                 "Escape" => self.build_mode = None,
                 "Digit1" => self.select_build(0),
                 "Digit2" => self.select_build(1),
-                "Digit3" => self.select_build(2),
+                // Digit 3 belongs to the page shell's 3D / 2.5D renderer
+                // toggle. Never silently enter build mode on that keypress.
+                // (Fence, the slot-2 buildable, is still selectable by click
+                // in the build menu or by its own G hotkey.)
                 "Digit4" => self.select_build(3),
                 "Digit5" => self.select_build(4),
                 "Digit6" => self.select_build(5),
