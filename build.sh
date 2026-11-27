@@ -6,7 +6,7 @@ echo "==> Generating the runtime model list"
 python3 scripts/gen_model_list.py
 # Animation samples are generated from the authored GLB clips with Blender.
 # CI has no Blender, so use the committed web/src/generated_animations.rs there.
-if [ -x "$HOME/.local/blender/blender" ]; then
+if [ -x "$HOME/.local/blender/blender" ] && [ "${SKIP_BLENDER:-0}" != "1" ]; then
   "$HOME/.local/blender/blender" -b --python scripts/gen_animation_data.py 2>/dev/null | tail -1
 else
   echo "==> Blender unavailable — using committed generated_animations.rs"

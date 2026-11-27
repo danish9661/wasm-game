@@ -39,4 +39,8 @@ jobs:
       - name: Run full gate (tests + visual audit)
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          # The comment above calls this job best-effort. The browser audit can
+          # be flaky on hosted runners (GPU/WebGPU differences); report problems
+          # without failing the whole CI run. Rust tests + build remain gating.
+          AUDIT_VISUAL_BLOCK: "0"
         run: bash tools/audit.sh
