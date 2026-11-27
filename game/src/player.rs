@@ -343,7 +343,10 @@ impl Player {
         self.hurt_timer = (self.hurt_timer - dt).max(0.0);
         self.dodge_timer = (self.dodge_timer - dt).max(0.0);
         self.dodge_cd = (self.dodge_cd - dt).max(0.0);
-        let cold = ((temperature).min(0.0) / -10.0).max(0.0);
+        // Warm clothing blunts cold and heat exposure (tested in the armour
+        // module). It does not replace a campfire — warmth still stops drain.
+        let ins = self.equipment.insulation();
+        let cold = ((temperature).min(0.0) / -10.0).max(0.0) * (1.0 - ins);
         let harsh = matches!(
             biome,
             TileKind::Tundra | TileKind::Desert | TileKind::Jungle | TileKind::Volcanic
@@ -360,10 +363,10 @@ impl Player {
             drain += 0.03;
         }
         if heat {
-            drain += 0.03;
+            drain += 0.03 * (1.0 - ins * 0.7);
         }
         if harsh {
-            drain += 0.07;
+            drain += 0.07 * (1.0 - ins * 0.6);
         }
         self.hunger = (self.hunger - dt * drain).max(0.0);
         if self.hunger <= 0.0 && !warm {
@@ -382,10 +385,10 @@ impl Player {
             tdrain += 0.03;
         }
         if heat {
-            tdrain += 0.09;
+            tdrain += 0.09 * (1.0 - ins * 0.7);
         }
         if matches!(biome, TileKind::Desert | TileKind::Jungle | TileKind::Volcanic) {
-            tdrain += 0.10;
+            tdrain += 0.10 * (1.0 - ins * 0.6);
         } else if matches!(biome, TileKind::Tundra) {
             tdrain += 0.02;
         }
@@ -657,5 +660,23 @@ mod tests {
         assert!(!p.wear_tool(ToolKind::StoneAxe), "snaps at zero");
         assert!(!p.has_tool(ToolKind::StoneAxe));
         assert_eq!(p.chop_power(crate::resources::ResourceKind::Tree), 1, "back to hands");
+    }
+
+    #[test]
+    fn insulation_slows_cold_exposure() {
+        use crate::equipment::ArmorKind;
+        use crate::world::TileKind;
+        let mut bare = Player::new(0.0, 0.0);
+        let mut wrapped = Player::new(0.0, 0.0);
+        wrapped.equipment.equip(ArmorKind::WarmCloak);
+        for _ in 0..100 {
+            bare.tick(0.1, -5.0, false, false, TileKind::Tundra, 0);
+            wrapped.tick(0.1, -5.0, false, false, TileKind::Tundra, 0);
+        }
+        assert!(
+            wrapped.hunger > bare.hunger && wrapped.thirst > bare.thirst,
+            "cloak should reduce cold drain: hunger {} vs {}, thirst {} vs {}",
+            wrapped.hunger, bare.hunger, wrapped.thirst, bare.thirst
+        );
     }
 }
