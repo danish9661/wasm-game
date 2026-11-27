@@ -4,29 +4,29 @@
   "status": "final redesign - supersedes the earlier root-level humanoid clips",
   "source": {
     "glb": "assets/models/player.glb",
-    "sha256": "b0c4ecd24512f3f52b050b4a87d92d1e77bc7b5fe1ab90c5153173b877de7a47",
-    "metrics_height_m": 1.551,
+    "sha256": "4a0d4809160f8a7adf17031010b16f76f4b9d8fda8ce16229b8ccd55355f77bc",
+    "metrics_height_m": 1.55,
     "metrics_min": [
-      -0.4126,
+      -0.2953,
       0.0,
-      -0.22
+      -0.1391
     ],
     "metrics_max": [
-      0.4126,
-      1.551,
-      0.2298
+      0.2953,
+      1.55,
+      0.1391
     ]
   },
   "rig": {
     "kind": "object empties derived from mesh bounds",
     "derived_dimensions_m": {
-      "height_m": 1.551,
+      "height_m": 1.55,
       "boot_bottom_m": 0.0,
-      "leg_l1_m": 0.17,
-      "leg_l2_m": 0.18,
-      "arm_l1_m": 0.23,
-      "arm_l2_m": 0.22,
-      "foot_sole_m": 0.0
+      "leg_l1_m": 0.3565,
+      "leg_l2_m": 0.186,
+      "arm_l1_m": 0.186,
+      "arm_l2_m": 0.186,
+      "foot_sole_m": 0.004
     },
     "joints_m": {
       "root": [
@@ -37,102 +37,102 @@
       "hips": [
         0.0,
         0.0,
-        0.47
+        0.6665
       ],
       "spine": [
         0.0,
         0.0,
-        0.68
+        0.961
       ],
       "chest": [
         0.0,
         0.0,
-        0.98
+        1.209
       ],
       "neck": [
         0.0,
         0.0,
-        1.08
+        1.3175
       ],
       "head": [
         0.0,
         0.0,
-        1.26
+        1.4105
       ],
       "upper_arm_l": [
-        -0.25,
+        -0.1417,
         0.0,
-        1.05
+        1.271
       ],
       "lower_arm_l": [
-        -0.31,
+        -0.1417,
         0.0,
-        0.82
+        1.085
       ],
       "hand_l": [
-        -0.35,
+        -0.1417,
         0.0,
-        0.6
+        0.899
       ],
       "upper_leg_l": [
-        -0.13,
+        -0.0886,
         0.0,
-        0.47
+        0.6665
       ],
       "lower_leg_l": [
-        -0.13,
+        -0.0886,
         0.0,
-        0.3
+        0.31
       ],
       "foot_l": [
-        -0.14,
+        -0.0886,
         0.0,
-        0.12
+        0.124
       ],
       "toes_l": [
-        -0.14,
+        -0.0886,
         -0.12,
-        0.09
+        0.094
       ],
       "upper_arm_r": [
-        0.25,
+        0.1417,
         0.0,
-        1.05
+        1.271
       ],
       "lower_arm_r": [
-        0.31,
+        0.1417,
         0.0,
-        0.82
+        1.085
       ],
       "hand_r": [
-        0.35,
+        0.1417,
         0.0,
-        0.6
+        0.899
       ],
       "upper_leg_r": [
-        0.13,
+        0.0886,
         0.0,
-        0.47
+        0.6665
       ],
       "lower_leg_r": [
-        0.13,
+        0.0886,
         0.0,
-        0.3
+        0.31
       ],
       "foot_r": [
-        0.14,
+        0.0886,
         0.0,
-        0.12
+        0.124
       ],
       "toes_r": [
-        0.14,
+        0.0886,
         -0.12,
-        0.09
+        0.094
       ],
       "attach_hand_r": [
-        0.35,
+        0.1417,
         -0.06,
-        0.6
+        0.899
       ]
     },
     "root_motion": "all horizontal travel on root; hips vertical bob only"
@@ -180,9 +180,9 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.7142,
+      "foot_slide_cm": 0.6051,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -190,13 +190,13 @@
         "gltf_y": 0.0,
         "magnitude": 0.84
       },
-      "mean_speed_mps": 1.0536,
+      "mean_speed_mps": 1.05,
       "foot_plants": {
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 1.0,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 0.8333,
       "frames": 25,
       "fps": 30,
@@ -213,9 +213,9 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.7708,
+      "foot_slide_cm": 0.6738,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -223,13 +223,13 @@
         "gltf_y": 0.0,
         "magnitude": 0.96
       },
-      "mean_speed_mps": 1.604,
+      "mean_speed_mps": 1.6,
       "foot_plants": {
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.891,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 0.6333,
       "frames": 19,
       "fps": 30,
@@ -246,9 +246,9 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.0001,
+      "foot_slide_cm": 0.0,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -261,8 +261,8 @@
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.055,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 4.0333,
       "frames": 121,
       "fps": 30,
@@ -279,23 +279,23 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.311,
+      "foot_slide_cm": 0.0032,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": 0.14,
-        "gltf_y": -0.0001,
+        "gltf_y": 0.0,
         "magnitude": 0.14
       },
-      "mean_speed_mps": 0.0932,
+      "mean_speed_mps": 0.0894,
       "foot_plants": {
         "l": 1,
-        "r": 1
+        "r": 2
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.332,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 1.6,
       "frames": 48,
       "fps": 30,
@@ -312,23 +312,23 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.3116,
+      "foot_slide_cm": 0.0048,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": 0.16,
-        "gltf_y": -0.0001,
+        "gltf_y": 0.0,
         "magnitude": 0.16
       },
-      "mean_speed_mps": 0.106,
+      "mean_speed_mps": 0.1021,
       "foot_plants": {
         "l": 1,
-        "r": 1
+        "r": 2
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.332,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 1.6,
       "frames": 48,
       "fps": 30,
@@ -345,23 +345,23 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.5424,
+      "foot_slide_cm": 0.013,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": 0.22,
-        "gltf_y": -0.0001,
+        "gltf_y": 0.0,
         "magnitude": 0.22
       },
-      "mean_speed_mps": 0.128,
+      "mean_speed_mps": 0.1245,
       "foot_plants": {
         "l": 1,
-        "r": 1
+        "r": 2
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.332,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 1.8,
       "frames": 54,
       "fps": 30,
@@ -378,23 +378,23 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 1.8418,
+      "foot_slide_cm": 0.0192,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": 0.25,
-        "gltf_y": -0.0001,
+        "gltf_y": 0.0,
         "magnitude": 0.25
       },
-      "mean_speed_mps": 0.1182,
+      "mean_speed_mps": 0.1154,
       "foot_plants": {
         "l": 1,
-        "r": 2
+        "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.332,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 2.2,
       "frames": 66,
       "fps": 30,
@@ -411,9 +411,9 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.0004,
+      "foot_slide_cm": 0.0,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -421,13 +421,13 @@
         "gltf_y": 0.0,
         "magnitude": 0.0
       },
-      "mean_speed_mps": 0.0001,
+      "mean_speed_mps": 0.0,
       "foot_plants": {
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.055,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 2.0,
       "frames": 60,
       "fps": 30,
@@ -444,23 +444,23 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 1.0869,
+      "foot_slide_cm": 1.4228,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": 0.65,
-        "gltf_y": -0.021,
-        "magnitude": 0.6503
+        "gltf_y": 0.0,
+        "magnitude": 0.65
       },
-      "mean_speed_mps": 1.3129,
+      "mean_speed_mps": 0.3679,
       "foot_plants": {
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 85.02,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 1.8,
       "frames": 54,
       "fps": 30,
@@ -477,14 +477,14 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.3064,
+      "foot_slide_cm": 0.2421,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.2323,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": -0.13,
-        "gltf_y": -0.0005,
+        "gltf_y": 0.0,
         "magnitude": 0.13
       },
       "mean_speed_mps": 0.0951,
@@ -492,8 +492,8 @@
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.055,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 1.4,
       "frames": 42,
       "fps": 30,
@@ -510,14 +510,14 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 1.867,
+      "foot_slide_cm": 0.6102,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.9385,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": -0.2,
-        "gltf_y": -0.0005,
+        "gltf_y": 0.0,
         "magnitude": 0.2
       },
       "mean_speed_mps": 0.1277,
@@ -525,8 +525,8 @@
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.055,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 1.6,
       "frames": 48,
       "fps": 30,
@@ -543,31 +543,33 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.9043,
+      "foot_slide_cm": 3.7101,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
         "gltf_z": -0.56,
-        "gltf_y": 0.2855,
-        "magnitude": 0.6286
+        "gltf_y": 0.0,
+        "magnitude": 0.56
       },
-      "mean_speed_mps": 0.371,
+      "mean_speed_mps": 0.2366,
       "foot_plants": {
-        "l": 2,
-        "r": 2
+        "l": 3,
+        "r": 3
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 28.943,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 2.4,
       "frames": 72,
       "fps": 30,
       "loop": false,
       "root_motion": true,
-      "status": "PASS",
+      "status": "WARN",
       "fails": [],
-      "warns": [],
+      "warns": [
+        "foot_slide_cm 3.7101 > 2.0"
+      ],
       "notes": "Two staggers, 0.56 m back, laid-out ragdoll-ready end pose.",
       "path": "assets/animations/player/death.glb"
     },
@@ -576,9 +578,9 @@
       "seam_position_cm": 0.0,
       "seam_velocity_mps": 0.0,
       "root_velocity_mps": 0.0,
-      "foot_slide_cm": 0.0006,
+      "foot_slide_cm": 0.0,
       "ground_penetration_cm": 0.0,
-      "float_p10_cm": 0.1,
+      "float_p10_cm": 0.0,
       "end_settled_mps": 0.0,
       "root_offset_m": {
         "x": 0.0,
@@ -591,8 +593,8 @@
         "l": 1,
         "r": 1
       },
-      "min_z_m": 0.001,
-      "max_ground_lift_cm": 0.055,
+      "min_z_m": 0.0,
+      "max_ground_lift_cm": 0.1,
       "duration_s": 1.8,
       "frames": 54,
       "fps": 30,
@@ -607,11 +609,16 @@
   ],
   "summary": {
     "count": 13,
-    "pass": 13,
-    "warn": 0,
+    "pass": 12,
+    "warn": 1,
     "fail": 0
   },
   "fails": [],
-  "warnings": [],
+  "warnings": [
+    {
+      "clip": "death",
+      "check": "foot_slide_cm 3.7101 > 2.0"
+    }
+  ],
   "review_sheet": "assets/animations/player/review/contact_sheet.png"
 }

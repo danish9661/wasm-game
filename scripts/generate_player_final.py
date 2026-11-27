@@ -123,46 +123,94 @@ def build_rig():
     bpy.ops.import_scene.gltf(filepath=PLAYER)
     meshes = {o.name: o for o in bpy.data.objects if o.type == "MESH"}
     missing = set(MESH_TO_JOINT) - set(meshes)
+    # The polished player is a single merged mesh (char_player_lod0). Derive
+    # proportional joints from its overall bounds instead of named parts, so
+    # clips rebind to the final 1.55u character without a rig rewrite.
     if missing:
-        raise RuntimeError("player.glb changed; missing parts: %s" % sorted(missing))
-    B = {n: bounds(o) for n, o in meshes.items()}
-    C = {n: centre(o) for n, o in meshes.items()}
+        (gx0, gx1), (gy0, gy1), (gz0, gz1) = bounds(next(iter(meshes.values())))
+        height, width = gz1 - gz0, gx1 - gx0
+        hip_z = gz0 + 0.43 * height
+        knee_z = gz0 + 0.20 * height
+        ankle_z = gz0 + 0.08 * height
+        shoulder_z = gz0 + 0.82 * height
+        elbow_z = gz0 + 0.70 * height
+        wrist_z = gz0 + 0.58 * height
+        arm_x = 0.24 * width
+        leg_x = foot_x = 0.15 * width
+        J = {
+            "root": (0.0, 0.0, 0.0),
+            "hips": (0.0, 0.0, hip_z),
+            "spine": (0.0, 0.0, gz0 + 0.62 * height),
+            "chest": (0.0, 0.0, gz0 + 0.78 * height),
+            "neck": (0.0, 0.0, gz0 + 0.85 * height),
+            "head": (0.0, 0.0, gz0 + 0.91 * height),
+        }
+        for s, sign in (("l", -1), ("r", 1)):
+            J.update({
+                "upper_arm_" + s: (sign * arm_x, 0.0, shoulder_z),
+                "lower_arm_" + s: (sign * arm_x, 0.0, elbow_z),
+                "hand_" + s: (sign * arm_x, 0.0, wrist_z),
+                "upper_leg_" + s: (sign * leg_x, 0.0, hip_z),
+                "lower_leg_" + s: (sign * leg_x, 0.0, knee_z),
+                "foot_" + s: (sign * foot_x, 0.0, ankle_z),
+                "toes_" + s: (sign * foot_x, -0.12, ankle_z - 0.03),
+            })
+        J["attach_hand_r"] = (J["hand_r"][0], -0.06, J["hand_r"][2])
+        dims = {
+            "height_m": round(height, 4), "boot_bottom_m": round(gz0, 4),
+            "leg_l1_m": round(hip_z - knee_z, 4),
+            "leg_l2_m": round(knee_z - ankle_z, 4),
+            "arm_l1_m": round(shoulder_z - elbow_z, 4),
+            "arm_l2_m": round(elbow_z - wrist_z, 4),
+            "foot_sole_m": round(ankle_z - 0.12, 4),
+        }
+    else:
+        B = {n: bounds(o) for n, o in meshes.items()}
+        C = {n: centre(o) for n, o in meshes.items()}
 
-    # Joints derived from the real mesh bounds: all values scale with the GLB.
-    height = max(b[2][1] for b in B.values())
-    boot_z = B["boot_l"][2]
-    leg_z = B["leg_l"][2]
-    arm_z = B["arm_l"][2]
-    # Hip pivot at the top of the thigh, not the belt's lower edge, so the
-    # derived leg reach covers the stride without IK clamping.
-    hip_z = leg_z[1] - 0.01
-    knee_z = leg_z[0] + 0.4 * (leg_z[1] - leg_z[0])
-    ankle_z = C["boot_l"].z + 0.03
-    shoulder_z = arm_z[1]
-    elbow_z = C["arm_l"].z - 0.02
-    wrist_z = C["hand_l"].z
-    arm_x = abs(C["arm_l"].x) - 0.06
-    leg_x = abs(C["leg_l"].x)
-    foot_x = abs(C["boot_l"].x)
-    J = {
-        "root": (0.0, 0.0, 0.0),
-        "hips": (0.0, 0.0, hip_z),
-        "spine": (0.0, 0.0, C["tunic"].z - 0.11),
-        "chest": (0.0, 0.0, B["tunic"][2][1] - 0.08),
-        "neck": (0.0, 0.0, C["neck"].z),
-        "head": (0.0, 0.0, C["head"].z - 0.06),
-    }
-    for s, sign in (("l", -1), ("r", 1)):
-        J.update({
-            "upper_arm_" + s: (sign * arm_x, 0.0, shoulder_z),
-            "lower_arm_" + s: (sign * (abs(C["arm_" + s].x)), 0.0, elbow_z),
-            "hand_" + s: (sign * abs(C["hand_" + s].x), 0.0, wrist_z),
-            "upper_leg_" + s: (sign * leg_x, 0.0, hip_z),
-            "lower_leg_" + s: (sign * leg_x, 0.0, knee_z),
-            "foot_" + s: (sign * foot_x, 0.0, ankle_z),
-            "toes_" + s: (sign * foot_x, -0.12, ankle_z - 0.03),
-        })
-    J["attach_hand_r"] = (J["hand_r"][0], -0.06, J["hand_r"][2])
+        # Joints derived from the real mesh bounds: all values scale with the GLB.
+        height = max(b[2][1] for b in B.values())
+        boot_z = B["boot_l"][2]
+        leg_z = B["leg_l"][2]
+        arm_z = B["arm_l"][2]
+        # Hip pivot at the top of the thigh, not the belt's lower edge, so the
+        # derived leg reach covers the stride without IK clamping.
+        hip_z = leg_z[1] - 0.01
+        knee_z = leg_z[0] + 0.4 * (leg_z[1] - leg_z[0])
+        ankle_z = C["boot_l"].z + 0.03
+        shoulder_z = arm_z[1]
+        elbow_z = C["arm_l"].z - 0.02
+        wrist_z = C["hand_l"].z
+        arm_x = abs(C["arm_l"].x) - 0.06
+        leg_x = abs(C["leg_l"].x)
+        foot_x = abs(C["boot_l"].x)
+        J = {
+            "root": (0.0, 0.0, 0.0),
+            "hips": (0.0, 0.0, hip_z),
+            "spine": (0.0, 0.0, C["tunic"].z - 0.11),
+            "chest": (0.0, 0.0, B["tunic"][2][1] - 0.08),
+            "neck": (0.0, 0.0, C["neck"].z),
+            "head": (0.0, 0.0, C["head"].z - 0.06),
+        }
+        for s, sign in (("l", -1), ("r", 1)):
+            J.update({
+                "upper_arm_" + s: (sign * arm_x, 0.0, shoulder_z),
+                "lower_arm_" + s: (sign * (abs(C["arm_" + s].x)), 0.0, elbow_z),
+                "hand_" + s: (sign * abs(C["hand_" + s].x), 0.0, wrist_z),
+                "upper_leg_" + s: (sign * leg_x, 0.0, hip_z),
+                "lower_leg_" + s: (sign * leg_x, 0.0, knee_z),
+                "foot_" + s: (sign * foot_x, 0.0, ankle_z),
+                "toes_" + s: (sign * foot_x, -0.12, ankle_z - 0.03),
+            })
+        J["attach_hand_r"] = (J["hand_r"][0], -0.06, J["hand_r"][2])
+        dims = {
+            "height_m": round(height, 4), "boot_bottom_m": round(boot_z[0], 4),
+            "leg_l1_m": round(hip_z - knee_z, 4),
+            "leg_l2_m": round(knee_z - ankle_z, 4),
+            "arm_l1_m": round(shoulder_z - elbow_z, 4),
+            "arm_l2_m": round(elbow_z - wrist_z, 4),
+            "foot_sole_m": round(ankle_z - 0.12, 4),
+        }
     rig = {}
     for name in PARTS:
         e = bpy.data.objects.new(name, None)
@@ -176,22 +224,14 @@ def build_rig():
         e.parent = rig[parent]
         e.location = tuple(j - p for j, p in zip(J[name], J[parent]))
     bpy.context.view_layer.update()
-    for name, j in MESH_TO_JOINT.items():
-        o = meshes[name]
-        mw = o.matrix_world.copy()
-        o.parent = rig[j]
-        o.matrix_parent_inverse = rig[j].matrix_world.inverted()
-        o.matrix_world = mw
+    if not missing:  # named parts exist: parent them for the visual review
+        for name, j in MESH_TO_JOINT.items():
+            o = meshes[name]
+            mw = o.matrix_world.copy()
+            o.parent = rig[j]
+            o.matrix_parent_inverse = rig[j].matrix_world.inverted()
+            o.matrix_world = mw
     bpy.context.view_layer.update()
-    dims = {
-        "height_m": round(height, 4),
-        "boot_bottom_m": round(boot_z[0], 4),
-        "leg_l1_m": round(hip_z - knee_z, 4),
-        "leg_l2_m": round(knee_z - ankle_z, 4),
-        "arm_l1_m": round(shoulder_z - elbow_z, 4),
-        "arm_l2_m": round(elbow_z - wrist_z, 4),
-        "foot_sole_m": round(ankle_z - 0.12, 4),
-    }
     rest_loc = {n: tuple(e.location) for n, e in rig.items()}
     return rig, meshes, J, rest_loc, dims
 

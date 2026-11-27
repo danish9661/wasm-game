@@ -10,10 +10,10 @@
 // 2.5D toggle still works, and the browser reports zero console errors.
 import { spawn } from 'node:child_process';
 import { decodePng } from './png_analyze.mjs';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
-const root = resolve(new URL('..', import.meta.url).pathname);
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const port = Number(process.env.SMOKE_PORT || 8791);
 const playwrightModule =
   process.env.PLAYWRIGHT_MODULE || 'playwright-core';
