@@ -15,6 +15,12 @@
 > phase-2 pairs and NPC work loops on the same rig system (1.25× published
 > limb arcs). See `wave3/README.md`. VFX keyed to these clips live in
 > `wave2/fx/` with `wave2/fx_manifest.json`.
+>
+> **Fourth wave:** `wave4/` — 105 clips: 8-direction walk/run for wolf, goblin,
+> skeleton and archer with real metre-scale root travel and planted soles,
+> boss phase-2 telegraph + slam pairs, NPC work loops, NPC interactions and
+> hit/death variants per enemy family. Three new bound-derived rigs
+> (blacksmith, farmer, innkeeper). See `wave4/README.md`.
 
 Earlier exploratory set: 40 named 30 fps clips on the existing
 `assets/models/player.glb` doll.
@@ -84,6 +90,8 @@ blender -b --python scripts/generate_wave2_animations.py    # wave2/ (30 clips)
 blender -b --python scripts/verify_wave2_animations.py      # 30/30 reloaded
 blender -b --python scripts/generate_wave3_animations.py    # wave3/ (34 clips)
 blender -b --python scripts/verify_wave3_animations.py      # 34/34 reloaded
+blender -b --python scripts/generate_wave4_animations.py    # wave4/ (105 clips)
+blender -b --python scripts/verify_wave4_animations.py      # 105/105 reloaded
 blender -b --python scripts/generate_wave2_fx.py            # VFX keyed to clips
 blender -b --python scripts/verify_wave2_fx.py              # reload + verify
 ```
