@@ -4,6 +4,9 @@
 Every pivot rig is derived at generation time from the **actual mesh-node
 bounds** of its source GLB; travel, leans and contact compensation scale with
 `model_height / 1.55 u` (the verified player). No mocap, no hardcoded joints.
+For readability the published limb/torso arcs are amplified **1.25×**
+(`manifest.json` → `conventions.pose_amplify`); root travel and contact targets
+are unaffected and all gates were re-measured on the amplified poses.
 
 | Clip | Model | Group | Loop | Duration (s) | Root offset (m) | Gate |
 |---|---|---|---|---|---|---|

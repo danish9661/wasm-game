@@ -1,6 +1,6 @@
 # Animation clips
 
-> **Authoritative player set:** `player/` — a from-scratch redesign of 35 clips
+> **Authoritative player set:** `player/` — a from-scratch redesign of 50 clips
 > bound to the verified 1.551 u player, with source SHA-256, dimension-derived
 > rig, per-clip root offsets in metres and numeric gates. The root-level
 > humanoid clips below are retained as the earlier exploratory set and are
@@ -10,6 +10,11 @@
 > **Second wave:** `wave2/` — 30 enemy, boss and NPC clips on per-model pivot
 > rigs derived from each GLB's real node bounds and scaled against the 1.55 u
 > player. See `wave2/README.md` and `wave2/manifest.json`.
+>
+> **Third wave:** `wave3/` — 34 amplified enemy locomotion/idles/deaths, boss
+> phase-2 pairs and NPC work loops on the same rig system (1.25× published
+> limb arcs). See `wave3/README.md`. VFX keyed to these clips live in
+> `wave2/fx/` with `wave2/fx_manifest.json`.
 
 Earlier exploratory set: 40 named 30 fps clips on the existing
 `assets/models/player.glb` doll.
@@ -73,10 +78,14 @@ blender -b assets/animations/player_combat.blend \
 python3 scripts/assemble_combat_sheet.py                    # contact sheets
 
 # Authoritative sets
-blender -b --python scripts/generate_player_final.py        # player/ (35 clips)
-blender -b --python scripts/verify_player_final.py          # 35/35 reloaded
+blender -b --python scripts/generate_player_final.py        # player/ (50 clips)
+blender -b --python scripts/verify_player_final.py          # 50/50 reloaded
 blender -b --python scripts/generate_wave2_animations.py    # wave2/ (30 clips)
 blender -b --python scripts/verify_wave2_animations.py      # 30/30 reloaded
+blender -b --python scripts/generate_wave3_animations.py    # wave3/ (34 clips)
+blender -b --python scripts/verify_wave3_animations.py      # 34/34 reloaded
+blender -b --python scripts/generate_wave2_fx.py            # VFX keyed to clips
+blender -b --python scripts/verify_wave2_fx.py              # reload + verify
 ```
 
 Latest result: 40 clips generated, **0 FAIL**, 1 WARN (`death`: ~2.5 cm heel

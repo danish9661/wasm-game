@@ -1,0 +1,432 @@
+{
+  "schema": "fight-animations.wave2-fx/1",
+  "generator": "scripts/generate_wave2_fx.py",
+  "verifier": "scripts/verify_wave2_fx.py",
+  "tooling": {
+    "blender": "5.1.2",
+    "fps": 30,
+    "pipeline": "node-keyed flat-shaded primitives; one slotted Action per GLB"
+  },
+  "conventions": {
+    "fps": 30,
+    "samplers": "LINEAR",
+    "export_yup": true,
+    "one_action_per_glb": true,
+    "scale_keys": "allowed and intentional for FX (pop-in, expansion, fade-out); forbidden on character rigs",
+    "geometry": "named low-poly primitives only: cubes, 4-8 sided cones/cylinders, ico spheres subdiv 0-1; flat shaded; no textures",
+    "determinism": "no randomness; math.sin/cos plus seeded key patches",
+    "time": "keys at frames 0..(frames-1); sampler times span 0..(frames-1)/30 s; duration_s = frames/fps",
+    "loop": "loops sample one full period at N keys with no duplicate terminal key",
+    "sync": "frame/frames are source-clip frames at which to trigger the FX; the FX event itself starts at its own local frame 0",
+    "sync_sources": [
+      "assets/animations/wave2/manifest.json",
+      "assets/animations/player/manifest.json"
+    ]
+  },
+  "palette": {
+    "arcane": "#6B3FA0",
+    "enemy": "#C0392B",
+    "gold": "#D9A62E",
+    "steel": "#C8D0D8",
+    "fire": "#FF6A2A",
+    "water": "#3A7CA5",
+    "grass": "#5B8C3A",
+    "snow": "#E8F0FA"
+  },
+  "effects": [
+    {
+      "name": "fx_boss_telegraph_ring",
+      "path": "assets/animations/wave2/fx/fx_boss_telegraph_ring.glb",
+      "duration_s": 1.6,
+      "fps": 30,
+      "loop": false,
+      "frames": 48,
+      "primitive_count": 18,
+      "triangle_count": 264,
+      "palette": [
+        "arcane",
+        "enemy",
+        "gold"
+      ],
+      "colours": {
+        "arcane": "#6B3FA0",
+        "enemy": "#C0392B",
+        "gold": "#D9A62E"
+      },
+      "sync": {
+        "clips": [
+          "scorpion_queen_telegraph",
+          "toad_king_telegraph",
+          "stormcaller_telegraph",
+          "ocean_leviathan_telegraph",
+          "colossus_telegraph"
+        ],
+        "frame": 0,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Start at the first frame of every boss telegraph."
+      },
+      "notes": "Expanding ground ring; scales pop in and fade out."
+    },
+    {
+      "name": "fx_boss_impact_burst",
+      "path": "assets/animations/wave2/fx/fx_boss_impact_burst.glb",
+      "duration_s": 1.0,
+      "fps": 30,
+      "loop": false,
+      "frames": 30,
+      "primitive_count": 19,
+      "triangle_count": 248,
+      "palette": [
+        "enemy",
+        "fire",
+        "gold",
+        "steel"
+      ],
+      "colours": {
+        "enemy": "#C0392B",
+        "fire": "#FF6A2A",
+        "gold": "#D9A62E",
+        "steel": "#C8D0D8"
+      },
+      "sync": {
+        "clips": [
+          "goblin_attack",
+          "skeleton_attack",
+          "wolf_attack",
+          "spider_attack",
+          "scorpion_queen_attack",
+          "toad_king_attack",
+          "stormcaller_attack",
+          "ocean_leviathan_attack",
+          "colossus_attack"
+        ],
+        "frame": 15,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Trigger at the strike frame of *_attack clips (~frame 15); the FX peaks at its own local frame 0."
+      },
+      "notes": "Radial spikes, expanding shock disc and kicked-up dust."
+    },
+    {
+      "name": "fx_slash_arc",
+      "path": "assets/animations/wave2/fx/fx_slash_arc.glb",
+      "duration_s": 0.6,
+      "fps": 30,
+      "loop": false,
+      "frames": 18,
+      "primitive_count": 11,
+      "triangle_count": 148,
+      "palette": [
+        "steel",
+        "snow"
+      ],
+      "colours": {
+        "steel": "#C8D0D8",
+        "snow": "#E8F0FA"
+      },
+      "sync": {
+        "clips": [
+          "goblin_attack",
+          "skeleton_attack",
+          "wolf_attack",
+          "spider_attack"
+        ],
+        "frame": 15,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Sword/claw attacks; sweep trail starts at the chop/bite contact frame."
+      },
+      "notes": "Steel crescent sweep, staggered segment pop-in, snow-bright tips."
+    },
+    {
+      "name": "fx_hit_flash",
+      "path": "assets/animations/wave2/fx/fx_hit_flash.glb",
+      "duration_s": 0.5,
+      "fps": 30,
+      "loop": false,
+      "frames": 15,
+      "primitive_count": 9,
+      "triangle_count": 116,
+      "palette": [
+        "gold",
+        "fire",
+        "snow"
+      ],
+      "colours": {
+        "gold": "#D9A62E",
+        "fire": "#FF6A2A",
+        "snow": "#E8F0FA"
+      },
+      "sync": {
+        "clips": [
+          "goblin_hurt",
+          "skeleton_hurt",
+          "wolf_hurt"
+        ],
+        "frame": 4,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Peak recoil frame of every *_hurt clip."
+      },
+      "notes": "Bright cross/star flash with a hot centre and spin decay."
+    },
+    {
+      "name": "fx_death_puff",
+      "path": "assets/animations/wave2/fx/fx_death_puff.glb",
+      "duration_s": 1.5,
+      "fps": 30,
+      "loop": false,
+      "frames": 45,
+      "primitive_count": 18,
+      "triangle_count": 296,
+      "palette": [
+        "grass",
+        "snow",
+        "steel"
+      ],
+      "colours": {
+        "grass": "#5B8C3A",
+        "snow": "#E8F0FA",
+        "steel": "#C8D0D8"
+      },
+      "sync": {
+        "clips": [
+          "goblin_death",
+          "skeleton_death",
+          "wolf_death"
+        ],
+        "frame": 24,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Trigger as the body folds down at frame 24 of *_death clips."
+      },
+      "notes": "Low rolling dust ring plus falling stone/metal shards."
+    },
+    {
+      "name": "fx_hop_dust",
+      "path": "assets/animations/wave2/fx/fx_hop_dust.glb",
+      "duration_s": 0.8,
+      "fps": 30,
+      "loop": true,
+      "frames": 24,
+      "primitive_count": 12,
+      "triangle_count": 208,
+      "palette": [
+        "grass",
+        "snow"
+      ],
+      "colours": {
+        "grass": "#5B8C3A",
+        "snow": "#E8F0FA"
+      },
+      "sync": {
+        "clips": [
+          "slime_hop",
+          "spider_scuttle"
+        ],
+        "frame": 12,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Footfall/landing (slime_hop apex-to-land at frame 12; spider_scuttle footfalls repeat every 6 f)."
+      },
+      "notes": "Small periodic footfall dust ring; seamless 24-frame loop."
+    },
+    {
+      "name": "fx_staff_lightning",
+      "path": "assets/animations/wave2/fx/fx_staff_lightning.glb",
+      "duration_s": 0.8,
+      "fps": 30,
+      "loop": false,
+      "frames": 24,
+      "primitive_count": 13,
+      "triangle_count": 156,
+      "palette": [
+        "arcane",
+        "steel",
+        "snow"
+      ],
+      "colours": {
+        "arcane": "#6B3FA0",
+        "steel": "#C8D0D8",
+        "snow": "#E8F0FA"
+      },
+      "sync": {
+        "clip": "stormcaller_attack",
+        "frame": 12,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Staff slam / bolt release frame."
+      },
+      "notes": "Forked arcane bolt chain with flicker key patches."
+    },
+    {
+      "name": "fx_tongue_splash",
+      "path": "assets/animations/wave2/fx/fx_tongue_splash.glb",
+      "duration_s": 1.0,
+      "fps": 30,
+      "loop": false,
+      "frames": 30,
+      "primitive_count": 13,
+      "triangle_count": 152,
+      "palette": [
+        "water",
+        "snow"
+      ],
+      "colours": {
+        "water": "#3A7CA5",
+        "snow": "#E8F0FA"
+      },
+      "sync": {
+        "clip": "toad_king_attack",
+        "frame": 10,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Tongue/lunge contact frame."
+      },
+      "notes": "Water splash fan with ballistic droplets and foam beads."
+    },
+    {
+      "name": "fx_stinger_drip",
+      "path": "assets/animations/wave2/fx/fx_stinger_drip.glb",
+      "duration_s": 1.2,
+      "fps": 30,
+      "loop": false,
+      "frames": 36,
+      "primitive_count": 13,
+      "triangle_count": 228,
+      "palette": [
+        "grass",
+        "arcane"
+      ],
+      "colours": {
+        "grass": "#5B8C3A",
+        "arcane": "#6B3FA0"
+      },
+      "sync": {
+        "clip": "scorpion_queen_attack",
+        "frame": 12,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Tail stinger strike frame."
+      },
+      "notes": "Venom droplets arc down with staggered ground splashes."
+    },
+    {
+      "name": "fx_tentacle_wake",
+      "path": "assets/animations/wave2/fx/fx_tentacle_wake.glb",
+      "duration_s": 1.2,
+      "fps": 30,
+      "loop": false,
+      "frames": 36,
+      "primitive_count": 17,
+      "triangle_count": 244,
+      "palette": [
+        "water",
+        "snow"
+      ],
+      "colours": {
+        "water": "#3A7CA5",
+        "snow": "#E8F0FA"
+      },
+      "sync": {
+        "clip": "ocean_leviathan_attack",
+        "frame": 12,
+        "manifest": "assets/animations/wave2/manifest.json",
+        "note": "Tentacle sweep contact frame."
+      },
+      "notes": "Foam/water wake sweeping sideways with travelling crests."
+    },
+    {
+      "name": "fx_mine_sparks",
+      "path": "assets/animations/wave2/fx/fx_mine_sparks.glb",
+      "duration_s": 1.0,
+      "fps": 30,
+      "loop": false,
+      "frames": 30,
+      "primitive_count": 14,
+      "triangle_count": 84,
+      "palette": [
+        "gold",
+        "steel",
+        "fire"
+      ],
+      "colours": {
+        "gold": "#D9A62E",
+        "steel": "#C8D0D8",
+        "fire": "#FF6A2A"
+      },
+      "sync": {
+        "clip": "mine",
+        "frames": [
+          10,
+          21
+        ],
+        "manifest": "assets/animations/player/manifest.json",
+        "note": "Both two-handed pick strikes in the player mine clip."
+      },
+      "notes": "Gold/steel sparks bursting from a pick strike."
+    },
+    {
+      "name": "fx_build_dust",
+      "path": "assets/animations/wave2/fx/fx_build_dust.glb",
+      "duration_s": 0.8,
+      "fps": 30,
+      "loop": false,
+      "frames": 24,
+      "primitive_count": 11,
+      "triangle_count": 188,
+      "palette": [
+        "grass",
+        "snow",
+        "gold"
+      ],
+      "colours": {
+        "grass": "#5B8C3A",
+        "snow": "#E8F0FA",
+        "gold": "#D9A62E"
+      },
+      "sync": {
+        "clip": "build",
+        "frame": 8,
+        "manifest": "assets/animations/player/manifest.json",
+        "note": "Block placement / pat contact frame."
+      },
+      "notes": "Small dust puff and a few chips from placing a block."
+    }
+  ],
+  "summary": {
+    "count": 12,
+    "total_primitives": 168,
+    "total_triangles": 2332,
+    "loops": 1,
+    "total_duration_s": 12.0,
+    "palette_used": [
+      "arcane",
+      "enemy",
+      "fire",
+      "gold",
+      "grass",
+      "snow",
+      "steel",
+      "water"
+    ],
+    "sync_clips": [
+      "build",
+      "colossus_attack",
+      "colossus_telegraph",
+      "goblin_attack",
+      "goblin_death",
+      "goblin_hurt",
+      "mine",
+      "ocean_leviathan_attack",
+      "ocean_leviathan_telegraph",
+      "scorpion_queen_attack",
+      "scorpion_queen_telegraph",
+      "skeleton_attack",
+      "skeleton_death",
+      "skeleton_hurt",
+      "slime_hop",
+      "spider_attack",
+      "spider_scuttle",
+      "stormcaller_attack",
+      "stormcaller_telegraph",
+      "toad_king_attack",
+      "toad_king_telegraph",
+      "wolf_attack",
+      "wolf_death",
+      "wolf_hurt"
+    ]
+  }
+}

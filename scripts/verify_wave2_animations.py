@@ -18,6 +18,7 @@ import bpy
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(ROOT, "assets", "animations", "wave2")
 MANIFEST = os.path.join(OUT, "manifest.json")
+LABEL = "second-wave"
 FPS = 30
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -111,7 +112,7 @@ def main():
         manifest = json.load(fh)
     bad = []
     clips = manifest["clips"]
-    print("verifying %d second-wave clips" % len(clips))
+    print("verifying %d %s clips" % (len(clips), LABEL))
     for clip in clips:
         path = os.path.join(ROOT, clip["path"])
         errs = structural(clip, glb_json(path))

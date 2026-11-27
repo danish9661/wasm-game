@@ -43,6 +43,10 @@ GATES = {
     "end_settled_mps": (0.05, 0.15),
 }
 SETTLE_FRAMES = 12
+# Readability pass: limb and torso arcs are published 25% larger than the
+# first-pass key poses so the motion reads at diorama size. Root travel and
+# contact targets are unaffected; every gate is re-measured after scaling.
+POSE_AMPLIFY = 1.25
 
 
 # ---------------------------------------------------------------------------
@@ -358,7 +362,7 @@ def apply_pose(info, pose):
     for name, vals in pose.items():
         e = info["empties"][name]
         e.rotation_mode = "XYZ"
-        e.rotation_euler = vals[:3]
+        e.rotation_euler = tuple(v * POSE_AMPLIFY for v in vals[:3])
         e.location = tuple(r + d for r, d in zip(info["rest"][name], vals[3:]))
 
 
@@ -1109,6 +1113,7 @@ def main():
             "direction": "front is glTF +Z / Blender -Y",
             "root_motion": "horizontal travel on root only; no scale keys",
             "loop": "last key duplicates frame 0 in root-relative pose",
+            "pose_amplify": POSE_AMPLIFY,
             "gates_warn_fail": GATES,
         },
         "models": model_info,
