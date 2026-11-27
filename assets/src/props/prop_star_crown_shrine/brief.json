@@ -1,0 +1,55 @@
+{
+  "id": "prop_star_crown_shrine",
+  "category": "prop",
+  "tier": "S",
+  "status": "done",
+  "track": "invented",
+  "source": "make",
+  "what": "A recessed stone stele in the Starfall temple: a wide three-step base, an arched niche with two buttresses, and a five-point Star Crown floating above a low gold halo. The player claims the crown here; it must read from the isometric camera and at night.",
+  "dims": {
+    "x": 1.3,
+    "y": 0.72,
+    "z": 2.2,
+    "tol": 0.08,
+    "basis": "1u = 1 tile = 1m; deliberately wider and shallower than prop_altar (1.00x0.72): a 1.24u three-step base, 0.72u deep including the forward star halo, stepped stele top 2.02u and crown tip ~2.19u, below the 2.5u storey"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "prop",
+  "density_class": "prop",
+  "collider": "box",
+  "props": {},
+  "materials": [
+    "m_stone",
+    "m_niche",
+    "m_gold",
+    "m_gold_glow",
+    "m_star_gem"
+  ],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "commander camera looks down on the shrine; the arched niche and radial star crown must read at ~60px"
+  },
+  "review_views": [
+    "front",
+    "three_quarter",
+    "eye",
+    "iso",
+    "night"
+  ],
+  "review_focus": [
+    {
+      "name": "crown",
+      "center": [
+        0,
+        -0.06,
+        1.97
+      ],
+      "radius": 0.42
+    }
+  ],
+  "references": [],
+  "style_notes": "Low-poly diorama, palette-only. Stone #7A7F87, gold #D9A62E, arcane purple #6B3FA0 emissive. Never: smooth shading, invented hues, textures, un-beveled box stacks.",
+  "notes": "Skill-built hero prop: bmesh parts, selective bevels, weighted normals, UV pack, LOD/collider finish. Deliberately a recessed stele + radial star crown, NOT the stepped pedestal + bowl + posts of prop_altar or models/altar.glb."
+}

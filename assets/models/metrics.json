@@ -10,10 +10,10 @@
     "complex_name_pattern": "(interior|house|cabin|hut|inn|barn|hall|tower|castle|fort|keep|palace|temple|cathedral|church|abbey|shrine|dungeon|ruin|village|town|city|market|station|train|bridge|ship|mine|cave|complex|landmark|showcase|diorama|structure)"
   },
   "summary": {
-    "models": 222,
-    "passed": 222,
+    "models": 223,
+    "passed": 223,
     "failed": 0,
-    "total_triangles": 50536,
+    "total_triangles": 50946,
     "models_dir": "assets/models"
   },
   "models": [
@@ -4843,6 +4843,36 @@
       "center_z": 0.0,
       "footprint_x": 1.0733,
       "footprint_z": 0.8506,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "prop_star_crown_shrine",
+      "file": "assets/models/prop_star_crown_shrine.glb",
+      "category": "Building",
+      "triangles": 410,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 2,
+      "primitives": 5,
+      "materials": 4,
+      "min": [
+        -0.62,
+        0.0,
+        -0.36
+      ],
+      "max": [
+        0.62,
+        2.19,
+        0.36
+      ],
+      "height": 2.19,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.24,
+      "footprint_z": 0.72,
       "bounds_complete": true,
       "violations": [],
       "pass": true
