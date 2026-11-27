@@ -1,3 +1,4 @@
+use crate::equipment::{ArmorKind, Equipment};
 use crate::items::{Inventory, ItemKind};
 use crate::weapons::WeaponKind;
 use crate::world::{ChunkCache, TileKind, WorldGen, tile_at};
@@ -71,6 +72,9 @@ pub struct Player {
     /// cooldown. 0 = idle, ramps to 1 as a melee swing lands; the world renderer
     /// uses it to lunge the player's torso/arms forward on a strike.
     pub swing_t: f32,
+    /// Equipped armour (helmet / body / shield / accessory). Reduces incoming
+    /// damage and cold/heat exposure; crafted at an anvil.
+    pub equipment: Equipment,
 }
 
 impl Player {
@@ -97,6 +101,7 @@ impl Player {
             tools: 0, // bare hands until the anvil sings
             tool_hp: [0; 4],
             swing_t: 0.0,
+            equipment: Equipment::new(),
         }
     }
 
@@ -220,9 +225,12 @@ impl Player {
         if !self.alive || self.hurt_timer > 0.0 {
             return false;
         }
+        // Armour applies before blocking; the two stack, but damage is floored
+        // inside `damage_multiplier` so heavily geared players can still die.
+        let armoured = dmg * self.equipment.damage_multiplier();
         if self.blocking && self.stamina > 1.0 {
             self.stamina = (self.stamina - 10.0).max(0.0);
-            let reduced = dmg * 0.35;
+            let reduced = armoured * 0.35;
             self.hurt_timer = 0.25;
             self.hp = (self.hp - reduced).max(0.0);
             if self.hp <= 0.0 {
@@ -231,11 +239,16 @@ impl Player {
             return true;
         }
         self.hurt_timer = 0.6;
-        self.hp = (self.hp - dmg).max(0.0);
+        self.hp = (self.hp - armoured).max(0.0);
         if self.hp <= 0.0 {
             self.alive = false;
         }
         true
+    }
+
+    /// Craft and equip an armour piece from the inventory (anvil recipe).
+    pub fn craft_armor(&mut self, kind: ArmorKind, inv: &mut Inventory) -> bool {
+        self.equipment.craft(kind, inv)
     }
 
     /// Push the player away from a hit source by `force` tiles (knockback).

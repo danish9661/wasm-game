@@ -3,6 +3,7 @@ pub mod combat;
 pub mod craft;
 pub mod daynight;
 pub mod elements;
+pub mod equipment;
 pub mod enemy;
 pub mod iso;
 pub mod items;

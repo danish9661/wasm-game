@@ -3668,6 +3668,36 @@ impl App {
 
     /// Craft recipe `idx` at an Anvil. Returns false if no anvil, unaffordable,
     /// or out of range.
+    /// Craft and equip an armour piece (game/src/equipment.rs owns the
+    /// recipes and slot rules). Requires an anvil like other crafting.
+    pub fn forge_armor_piece(&mut self, kind: u8) -> bool {
+        if !self.has_anvil() {
+            return false;
+        }
+        let Some(k) = game::equipment::ArmorKind::from_u8(kind) else {
+            return false;
+        };
+        self.player.craft_armor(k, &mut self.inventory)
+    }
+
+    /// Compact armour summary for the HUD: "Helm:Armor:Shield:Accessory|def%|ins%".
+    pub fn armor_status(&self) -> String {
+        use game::equipment::SLOT_NAMES;
+        let mut parts = Vec::with_capacity(4);
+        for (i, slot) in self.player.equipment.slots.iter().enumerate() {
+            parts.push(match slot {
+                Some(k) => format!("{}:{}", SLOT_NAMES[i], k.name()),
+                None => format!("{}:-", SLOT_NAMES[i]),
+            });
+        }
+        format!(
+            "{}|{}%|{}%",
+            parts.join(","),
+            (self.player.equipment.total_defense() * 100.0).round() as u32,
+            (self.player.equipment.insulation() * 100.0).round() as u32
+        )
+    }
+
     pub fn craft(&mut self, idx: usize) -> bool {
         if !self.has_anvil() {
             return false;

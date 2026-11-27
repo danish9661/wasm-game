@@ -942,6 +942,45 @@ body.mobile .wslot { min-width: 52px; min-height: 52px; }
   scrollbar-color: var(--sf-faint) transparent;
 }
 #inventory.hidden { display: none; }
+
+/* Equipment drawer (U) — armour slots and anvil recipes. */
+#equipment {
+  position: fixed;
+  top: 60px;
+  left: 14px;
+  z-index: 18;
+  width: 268px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding: 14px;
+  font-size: 13px;
+  color: var(--sf-ink);
+  background: #171d2b;
+  border: 1px solid var(--sf-line-cool);
+  border-left: 3px solid var(--sf-gold, #d9a62e);
+  border-radius: 0 var(--sf-r-m) var(--sf-r-m) 0;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.72);
+  user-select: none;
+}
+#equipment.hidden { display: none; }
+#equipment h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: 1px; }
+#equipment h3 small { color: var(--sf-faint); font-weight: 400; }
+.eq-status { font-size: 11px; color: var(--sf-gold, #ffe7a0); line-height: 1.5; word-break: break-word; }
+.eq-note { font-size: 10px; color: var(--sf-faint); margin: 10px 0 0; }
+#eq-close {
+  position: absolute; top: 10px; right: 10px; width: 28px; height: 28px;
+  background: transparent; border: 1px solid var(--sf-line-cool);
+  color: var(--sf-ink); border-radius: 6px; cursor: pointer;
+}
+#eq-slots { display: grid; gap: 5px; }
+.eq-btn {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 7px 9px; text-align: left; cursor: pointer;
+  background: #20283a; color: var(--sf-ink);
+  border: 1px solid var(--sf-line-cool); border-radius: 6px;
+}
+.eq-btn:hover { background: #2b354b; border-color: var(--sf-gold, #d9a62e); }
+.eq-btn small { font-size: 10px; color: var(--sf-faint); white-space: nowrap; }
 .inv-top {
   position: sticky;
   top: -14px;

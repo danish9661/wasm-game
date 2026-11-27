@@ -250,6 +250,25 @@ pub fn equip_weapon_slot(idx: usize) -> bool {
     })
 }
 
+/// Craft and equip an armour piece (0=Leather Cap, 1=Iron Helm,
+/// 2=Iron Plate Armor, 3=Warm Cloak, 4=Wood Shield, 5=Crown Ring).
+#[wasm_bindgen]
+pub fn craft_armor(kind: u8) -> bool {
+    APP.with(|cell| match cell.borrow_mut().as_mut() {
+        Some(app) => app.forge_armor_piece(kind),
+        None => false,
+    })
+}
+
+/// HUD summary of equipped armour slots and their defence / insulation.
+#[wasm_bindgen]
+pub fn armor_status() -> String {
+    APP.with(|cell| match *cell.borrow() {
+        Some(ref app) => app.armor_status(),
+        None => String::from("no app"),
+    })
+}
+
 /// Debug/test hook: enter the interior of a building kind directly
 /// (0=House … 6=Dungeon) without walking to one. Powers interior art audits.
 #[wasm_bindgen]
