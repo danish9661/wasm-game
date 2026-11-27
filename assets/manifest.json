@@ -40,6 +40,16 @@
     "notes": "Replaces the 236-tri old house with pitched gables, shingled roof, timber frame, framed windows and a chimney, within the 1500-tri assembled budget."
   },
   {
+    "id": "prop_star_crown_shrine",
+    "path": "export/props/prop_star_crown_shrine.glb",
+    "category": "prop",
+    "tier": "S",
+    "status": "done",
+    "source": "make",
+    "license": "see LICENSES.md",
+    "notes": "Skill-built hero prop: bmesh parts, selective bevels, weighted normals, UV pack, LOD/collider finish. Deliberately a recessed stele + radial star crown, NOT the stepped pedestal + bowl + posts of prop_altar or models/altar.glb."
+  },
+  {
     "id": "prop_tree",
     "path": "export/props/prop_tree.glb",
     "category": "prop",
