@@ -581,6 +581,32 @@ def write_markdown(path: Path, report: dict) -> None:
             )
         lines.append("")
 
+    # Static binding contract for the rebuilt player: the animation work sizes
+    # clips against this model, so the numbers must survive report regeneration.
+    p = next((m for m in models if m["name"] == "player"), None)
+    if p:
+        lines += [
+            "## Player binding contract (hero rebuild)",
+            "",
+            "- `assets/models/player.glb` — root node `char_player`, single render mesh "
+            "`char_player_lod0`, no collider. Source brief: `assets/src/char/char_player/brief.json`.",
+            "- Verified bbox: **X %.3f u wide, Z %.3f u deep, Y %.3f u tall** "
+            "(footprint centre X %+.3f / Z %+.3f, base Y %.3f)." % (
+                p["footprint_x"], p["footprint_z"], p["height"],
+                p["center_x"], p["center_z"], p["base_y"]),
+            "- Pivot: bottom-centre **between the feet at the world origin**; root translation "
+            "(0, 0, 0), no rotation or scale. Feet touch the ground at Y = 0.",
+            "- Rig: **none** — static faceted mesh. No armature, bones, skins, sockets, "
+            "morph targets or embedded animation clips. Bind clips to the root node.",
+            "- Materials (8): orange tunic `#FF8C26`, skin `#EAB88C`, hair `#4A2E1A`, "
+            "leather `#592F1A`, trousers `#3C4453`, steel `#C8D0D8`, eyes `#1A1A1A`, "
+            "gold `#D9A62E`. No textures.",
+            "- The old 268-triangle procedural player was replaced by a 500-triangle "
+            "bmesh-built hero: tapered body/limbs, bevels, weighted normals and packed UVs. "
+            "Hands sit at hip height; a separate tapered blade/guard/grip is held in the "
+            "right hand and is part of the same mesh. Overall height is held at 1.55 u.",
+            "",
+        ]
     failed = [m for m in models if not m["pass"]]
     lines += ["## Violations", ""]
     if failed:

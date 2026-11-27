@@ -45,17 +45,17 @@
   {
    "level": "PASS",
    "check": "budget.lod0",
-   "detail": "1404 tris (budget 1500)"
+   "detail": "500 tris (budget 1500)"
   },
   {
    "level": "INFO",
    "check": "lod.skip",
-   "detail": "lod0 1404 tris <= 10000, LODs not required"
+   "detail": "lod0 500 tris <= 10000, LODs not required"
   },
   {
    "level": "INFO",
    "check": "dims",
-   "detail": "x 0.580  y 0.323  z 1.535 m (Blender axes: width, depth, height)"
+   "detail": "x 0.591  y 0.278  z 1.550 m (Blender axes: width, depth, height)"
   },
   {
    "level": "PASS",
@@ -89,31 +89,6 @@
   },
   {
    "level": "PASS",
-   "check": "mat.m_pants.name",
-   "detail": "m_pants"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_pants.workflow",
-   "detail": "metal/rough"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_pants.albedo_range",
-   "detail": "baseColorFactor sRGB [0.18, 0.204, 0.251]"
-  },
-  {
-   "level": "PASS",
-   "check": "palette.saturation.m_pants",
-   "detail": "mean color matches swatch pants"
-  },
-  {
-   "level": "PASS",
-   "check": "mat.m_pants.roughness",
-   "detail": "roughnessFactor 0.90 (S4: roughness high)"
-  },
-  {
-   "level": "PASS",
    "check": "mat.m_leather.name",
    "detail": "m_leather"
   },
@@ -135,6 +110,31 @@
   {
    "level": "PASS",
    "check": "mat.m_leather.roughness",
+   "detail": "roughnessFactor 0.90 (S4: roughness high)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.name",
+   "detail": "m_pants"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.workflow",
+   "detail": "metal/rough"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.albedo_range",
+   "detail": "baseColorFactor sRGB [0.235, 0.267, 0.325]"
+  },
+  {
+   "level": "PASS",
+   "check": "palette.saturation.m_pants",
+   "detail": "mean color sRGB [0.235, 0.267, 0.325]  sat 0.28 (max 1.00 unless an accent rule allows it)"
+  },
+  {
+   "level": "PASS",
+   "check": "mat.m_pants.roughness",
    "detail": "roughnessFactor 0.90 (S4: roughness high)"
   },
   {
@@ -185,7 +185,7 @@
   {
    "level": "PASS",
    "check": "mat.m_gold.roughness",
-   "detail": "roughnessFactor 0.50 (S4: roughness high)"
+   "detail": "roughnessFactor 0.60 (S4: roughness high)"
   },
   {
    "level": "PASS",
@@ -285,7 +285,7 @@
   {
    "level": "PASS",
    "check": "mat.m_steel.roughness",
-   "detail": "roughnessFactor 0.85 (S4: roughness high)"
+   "detail": "roughnessFactor 0.70 (S4: roughness high)"
   },
   {
    "level": "INFO",

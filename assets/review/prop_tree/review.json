@@ -1,0 +1,105 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/export/props/prop_tree.glb",
+ "id": "prop_tree",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "prop_tree_col",
+   "prop_tree_lod0_primitive0",
+   "prop_tree_lod0_primitive1",
+   "prop_tree_lod0_primitive2"
+  ],
+  "lod_tris": {
+   "0": 340
+  },
+  "col_meshes": [
+   "prop_tree_col"
+  ],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.644,
+    0,
+    -0.407
+   ],
+   "max": [
+    0.644,
+    2.97,
+    0.407
+   ]
+  },
+  "extras": {
+   "prop_tree_col": {
+    "ig_collider": "box"
+   }
+  },
+  "materials": [
+   "__GLTFLoader._default",
+   "m_wood",
+   "m_leaf",
+   "m_leaf_light"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/iso_context.png"
+  },
+  {
+   "view": "feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/feed.png"
+  },
+  {
+   "view": "collision",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/collision.png"
+  },
+  {
+   "view": "uv_density",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/uv_density.png"
+  },
+  {
+   "view": "ctx_front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/ctx_front.png"
+  },
+  {
+   "view": "ctx_street",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/ctx_street.png"
+  },
+  {
+   "view": "ctx_three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/ctx_three_quarter.png"
+  },
+  {
+   "view": "ctx_iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/ctx_iso_context.png"
+  },
+  {
+   "view": "ctx_feed",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree/ctx_feed.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/model-family-polish/assets/review/prop_tree.png"
+  }
+ ]
+}

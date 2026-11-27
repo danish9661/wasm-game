@@ -1,13 +1,18 @@
-"""Build script for char_player — Starfall's hero, built with the game-asset-modeling
-workflow: bmesh parts, real bevels, weighted normals, packed UVs, game-material palette.
+"""Build char_player: Starfall's orange-tunic hero, faceted and readable at iso scale.
 
+Replaces the old stacked-box version. All forms are bmesh lofts/cylinders with a
+few selective bevels, weighted normals and a packed UV0. Front faces -Y.
 Run: gam_cli.py build assets/src/char/char_player/brief.json
 """
-import os, sys
+import os
+import sys
+
 sys.path.insert(0, os.path.expanduser("~/.claude/skills/game-asset-modeling/scripts"))
-import bpy, bmesh, math
-from mathutils import Vector, Matrix
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+import bpy
 import gam
+import _family_hero as F
 
 ctx = gam.Ctx.from_argv()
 B = ctx.brief
@@ -15,30 +20,106 @@ gam.reset()
 lib = gam.load_material_lib(ctx)
 
 M = {
-    "tunic":   gam.material("m_tunic_orange", "#FF8C26", roughness=0.9),
-    "skin":    gam.material("m_skin", "#EAB88C", roughness=0.9),
-    "hair":    gam.material("m_hair", "#4A2E1A", roughness=0.9),
+    "tunic": gam.material("m_tunic_orange", "#FF8C26", roughness=0.9),
+    "skin": gam.material("m_skin", "#EAB88C", roughness=0.9),
+    "hair": gam.material("m_hair", "#4A2E1A", roughness=0.9),
     "leather": gam.material("m_leather", "#592F1A", roughness=0.9),
-    "pants":   gam.material("m_pants", "#2E3440", roughness=0.9),
-    "steel":   gam.material("m_steel", "#C8D0D8", roughness=0.85, metallic=0.4),
-    "eye":     gam.material("m_eye", "#1A1A1A", roughness=0.9),
-    "gold":    gam.material("m_gold", "#D9A62E", roughness=0.5, metallic=0.4),
+    "pants": gam.material("m_pants", "#3C4453", roughness=0.9),
+    "steel": gam.material("m_steel", "#C8D0D8", roughness=0.7, metallic=0.6),
+    "eye": gam.material("m_eye", "#1A1A1A", roughness=0.9),
+    "gold": gam.material("m_gold", "#D9A62E", roughness=0.6, metallic=0.6),
 }
 
 
-def part(name, mat_key, fn):
-    bm = bmesh.new()
-    fn(bm)
-    return gam.obj_from_bm(name, bm, [M[mat_key]])
+def ring_at(x, y, z, rx, ry, n=8, phase=0.0):
+    return F.ring(x, y, z, rx, ry, n=n, phase=phase)
 
 
-def box(lo, hi, skip=()):
-    return lambda bm: gam.bm_box(bm, lo, hi, skip=skip)
+def legs(bm, side):
+    x = side * 0.100
+    F.loft(bm, [ring_at(x, 0.0, 0.085, 0.062, 0.060, n=5),
+                ring_at(x, 0.0, 0.68, 0.050, 0.048, n=5)], mat=0)
 
 
-def cyl(r0, z0, z1, n=8, center=(0.0, 0.0), r1=None, matrix=None, skip_bot=False):
-    return lambda bm: gam.bm_cylinder(bm, r0, z0, z1, n=n, center=center, r1=r1,
-                                      top=True, bottom=not skip_bot, matrix=matrix)
+def boot(bm, side):
+    """A distinct ankle + forward toe, not a slab under both feet."""
+    x = side * 0.100
+    F.loft(bm, [ring_at(x, -0.035, 0.0, 0.064, 0.088, n=6),
+                ring_at(x, 0.0, 0.095, 0.058, 0.052, n=6)], mat=0)
+
+
+def hips(bm):
+    gam.bm_cylinder(bm, 0.135, 0.66, 0.82, n=6, r1=0.125)
+
+
+def torso(bm):
+    F.loft(bm, [ring_at(0, 0, 0.80, 0.130, 0.105),
+                ring_at(0, 0, 1.05, 0.158, 0.115),
+                ring_at(0, 0, 1.30, 0.168, 0.100)], mat=0)
+
+
+def belt(bm):
+    gam.bm_cylinder(bm, 0.148, 0.80, 0.88, n=6)
+
+
+def buckle(bm):
+    gam.bm_box(bm, (-0.032, -0.150, 0.84), (0.032, -0.138, 0.90))
+
+
+def arm(bm, side):
+    x = side * 0.200
+    F.loft(bm, [ring_at(x, 0, 0.90, 0.062, 0.058, n=5),
+                ring_at(x, 0, 1.28, 0.048, 0.046, n=5)], mat=0)
+
+
+def hand(bm, side):
+    x = side * 0.208
+    gam.bm_cylinder(bm, 0.050, 0.82, 0.91, n=5, center=(x, -0.025))
+
+
+def held_grip(bm):
+    gam.bm_box(bm, (0.280, -0.115, 0.83), (0.320, -0.075, 0.91))
+
+
+def neck(bm):
+    gam.bm_cylinder(bm, 0.050, 1.31, 1.36, n=6)
+
+
+def head(bm):
+    F.loft(bm, [ring_at(0, 0, 1.355, 0.088, 0.078),
+                ring_at(0, 0, 1.435, 0.114, 0.097),
+                ring_at(0, 0, 1.495, 0.105, 0.086)], mat=0)
+
+
+def hair(bm):
+    F.loft(bm, [ring_at(0, 0, 1.482, 0.110, 0.094, n=6),
+                ring_at(0, 0, 1.550, 0.082, 0.073, n=6)], mat=0)
+    # short fringe: keeps the eyes visible from the isometric camera
+    gam.bm_box(bm, (-0.105, -0.099, 1.480), (0.105, -0.090, 1.500))
+
+
+def eye(bm, side):
+    x = side * 0.050
+    gam.bm_box(bm, (x - 0.013, -0.106, 1.428), (x + 0.013, -0.098, 1.447))
+
+
+def brow(bm, side):
+    x = side * 0.050
+    gam.bm_box(bm, (x - 0.020, -0.105, 1.450), (x + 0.020, -0.095, 1.458))
+
+
+def held_blade(bm):
+    # Held OUTSIDE the right arm (arm reach x<=0.25): a thin diamond blade
+    # embedded in the sleeve is invisible from the isometric camera.
+    x, y = 0.300, -0.095
+    def d(w, t, z):
+        return [(x - w, y, z), (x, y - t, z), (x + w, y, z), (x, y + t, z)]
+    F.loft(bm, [d(0.020, 0.008, 0.92), d(0.021, 0.008, 1.16),
+                d(0.006, 0.003, 1.24)], mat=0)
+
+
+def held_guard(bm):
+    gam.bm_box(bm, (0.265, -0.130, 0.90), (0.335, -0.060, 0.925))
 
 
 def build_form():
@@ -48,62 +129,30 @@ def build_form():
         ob.data.materials.append(M["tunic"])
         gam.uv_world_box(ob, meters_per_tile=1.0)
         return ob
-
     parts = []
-    # legs: tapered octagonal shins, boots as beveled blocks
-    for side in (-1, 1):
-        x = side * 0.09
-        parts.append(part("leg_%s" % side, "pants",
-                          cyl(0.075, 0.06, 0.68, 8, (x, 0.0), r1=0.055)))
-        parts.append(part("boot_%s" % side, "leather",
-                          box((x - 0.085, -0.15, 0.0), (x + 0.085, 0.10, 0.10))))
-    # hips + tapered torso (octagonal, wider at shoulders)
-    parts.append(part("hips", "pants", cyl(0.145, 0.62, 0.78, 8, r1=0.13)))
-    parts.append(part("torso", "tunic", cyl(0.135, 0.76, 1.27, 8, r1=0.175)))
-    parts.append(part("belt", "leather", cyl(0.15, 0.83, 0.90, 8)))
-    parts.append(part("buckle", "gold", box((-0.035, -0.16, 0.84), (0.035, -0.145, 0.905))))
-    # shoulders / arms
-    for side in (-1, 1):
-        x = side * 0.205
-        parts.append(part("arm_%s" % side, "tunic",
-                          cyl(0.065, 0.90, 1.31, 8, (x, 0.0), r1=0.05)))
-        parts.append(part("hand_%s" % side, "skin",
-                          cyl(0.048, 1.29, 1.37, 8, (x, 0.0))))
-    # neck + head (beveled block) + hair cap + fringe
-    parts.append(part("neck", "skin", cyl(0.055, 1.26, 1.34, 8)))
-    parts.append(part("head", "skin",
-                      box((-0.115, -0.10, 1.34), (0.115, 0.10, 1.50))))
-    parts.append(part("hair_cap", "hair",
-                      box((-0.125, -0.105, 1.475), (0.125, 0.105, 1.535))))
-    parts.append(part("fringe", "hair",
-                      box((-0.12, -0.115, 1.44), (0.12, -0.095, 1.49))))
-    # eyes on the front (-Y)
-    for side in (-1, 1):
-        x = side * 0.05
-        parts.append(part("eye_%s" % side, "eye",
-                          box((x - 0.014, -0.106, 1.425), (x + 0.014, -0.098, 1.443))))
-    # sword at the right hand: blade + guard + grip (kept inside the 1.55u silhouette)
-    parts.append(part("blade", "steel",
-                      box((0.265, -0.012, 1.31), (0.295, 0.012, 1.53))))
-    parts.append(part("guard", "gold",
-                      box((0.245, -0.035, 1.29), (0.315, 0.035, 1.31))))
-    parts.append(part("grip", "leather",
-                      box((0.272, -0.014, 1.22), (0.288, 0.014, 1.29))))
-
-    obj = gam.join(parts, ctx.id + "_lod0")
-    # Real bevels + weighted normals: avoids the "stack of flat boxes" look.
-    gam.bevel(obj, 0.006, segments=1, angle_deg=35.0)
-    gam.shade_hard_surface(obj, angle_deg=35.0, weighted=True)
-    gam.uv_pack(obj, margin_frac=0.01)
-    return obj
-
-
-def placeholder_extras():
-    return []
+    for s in (-1, 1):
+        parts += [F.part("boot_%s" % s, [M["leather"]], lambda bm, s=s: boot(bm, s)),
+                  F.part("leg_%s" % s, [M["pants"]], lambda bm, s=s: legs(bm, s))]
+    parts += [F.part("hips", [M["pants"]], hips),
+              F.part("torso", [M["tunic"]], torso),
+              F.part("belt", [M["leather"]], belt),
+              F.part("buckle", [M["gold"]], buckle)]
+    for s in (-1, 1):
+        parts += [F.part("arm_%s" % s, [M["tunic"]], lambda bm, s=s: arm(bm, s)),
+                  F.part("hand_%s" % s, [M["skin"]], lambda bm, s=s: hand(bm, s))]
+    parts += [F.part("neck", [M["skin"]], neck),
+              F.part("head", [M["skin"]], head, bevel=0.004, segments=1),
+              F.part("hair", [M["hair"]], hair)]
+    for s in (-1, 1):
+        parts.append(F.part("eye_%s" % s, [M["eye"]], lambda bm, s=s: eye(bm, s)))
+        parts.append(F.part("brow_%s" % s, [M["skin"]], lambda bm, s=s: brow(bm, s)))
+    parts += [F.part("held_grip", [M["leather"]], held_grip),
+              F.part("held_blade", [M["steel"]], held_blade),
+              F.part("held_guard", [M["gold"]], held_guard)]
+    return F.assemble(parts, ctx.id + "_lod0", pack_margin=0.01, shade_angle=1.0)
 
 
 obj = build_form()
-extras = placeholder_extras() if ctx.placeholder else []
-root = gam.finish(ctx, obj, extra_children=extras)
+root = gam.finish(ctx, obj, shade=False)
 gam.export(ctx, root)
 print("GAM_REPORT", gam.mesh_report(bpy.data.objects[ctx.id + "_lod0"]))
