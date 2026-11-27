@@ -476,6 +476,8 @@
     "wave2_note": "second wave: 30 enemy/boss/NPC clips on per-model bound-derived pivot rigs, scaled against the 1.55 u player; loops slime_hop, spider_scuttle, villager_idle, guard_patrol, golem_standby",
     "wave3_manifest": "animations/wave3/manifest.json",
     "wave3_note": "third wave: 34 amplified enemy locomotion/idles/deaths, boss phase-2 pairs and NPC work loops; published limb arcs 1.25x",
+    "wave4_manifest": "animations/wave4/manifest.json",
+    "wave4_note": "fourth wave: 105 clips - 8-dir wolf/goblin/skeleton/archer walk+run with metre-scale root travel, five boss phase-2 telegraph/slam pairs, NPC work loops, NPC interactions and hit/death variants per enemy family"
     "wave2_fx_manifest": "animations/wave2/fx_manifest.json",
     "world_manifest": "animations/world_manifest.json",
     "action_spec": "animations/action_specs/combat.json",
