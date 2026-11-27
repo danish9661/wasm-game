@@ -1333,11 +1333,18 @@ impl App {
     /// `RefMut` across awaits: on GitHub Pages 223 requests take seconds, and
     /// the game must stay playable in 2.5D while they load.
     pub async fn fetch_3d_models() -> Result<Vec<Vec<u8>>, String> {
+        use futures::future::try_join_all;
         let mut bytes = Vec::with_capacity(GLB_MODELS.len());
-        for name in GLB_MODELS {
-            // Relative URL: Pages project sites live under /wasm-game/.
-            let url = format!("assets/models/{name}.glb");
-            bytes.push(pipeline3d::fetch_glb(&url).await?);
+        // Batch parallel requests: 223 sequential round-trips take tens of
+        // seconds on GitHub Pages. 16 at a time keeps servers happy and makes
+        // the 3D scene appear in a couple of seconds.
+        for chunk in GLB_MODELS.chunks(16) {
+            let pending = chunk.iter().map(|name| {
+                // Relative URL: Pages project sites live under /wasm-game/.
+                let url = format!("assets/models/{name}.glb");
+                async move { pipeline3d::fetch_glb(&url).await }
+            });
+            bytes.extend(try_join_all(pending).await?);
         }
         Ok(bytes)
     }

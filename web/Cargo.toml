@@ -11,6 +11,7 @@ wasm-opt = false
 
 [dependencies]
 bincode = "1.3"
+futures = "0.3"
 game = { path = "../game" }
 # glTF/GLB loading for the additive 3D render path (default features only).
 gltf = "1.4"
