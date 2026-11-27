@@ -1,3 +1,4 @@
+mod generated_models;
 mod model;
 mod network;
 mod pipeline3d;

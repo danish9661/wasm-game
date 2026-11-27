@@ -2,6 +2,9 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+echo "==> Generating the runtime model list from assets/models"
+python3 scripts/gen_model_list.py
+
 echo "==> Building Rust -> WASM (wasm-pack, web target)"
 wasm-pack build web --target web --out-dir ../pkg --release
 

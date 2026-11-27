@@ -1065,18 +1065,9 @@ const IDX_TERRAIN: usize = 0;
 const IDX_BILLBOARD: usize = 1;
 const IDX_GROUND: usize = 2;
 
-/// Every GLB the vertical slice uses. Unique names, matching `assets/models/`.
-const GLB_MODELS: &[&str] = &[
-    "player", "tree", "pine", "rock", "rock_pile", "house", "cabin", "hut", "inn", "barn",
-    "watchtower", "wall", "bush", "grass_tuft", "fern", "flower", "mushroom", "cactus",
-    "campfire", "torch", "brazier", "crystal", "ore", "chest", "banner", "altar", "anvil",
-    "bed", "well", "spike", "farm_plot", "turret", "healing_totem", "sign", "barrel", "totem",
-    "statue", "lantern", "crate_box", "pillar", "bone_pile", "lilypad", "reed", "rubble",
-    "ruin_tower", "portal", "enchanting_table", "dungeon", "fence", "vines", "slime", "goblin",
-    "skeleton", "ogre", "raider", "guard", "golem", "bat", "spider", "imp", "wraith",
-    "colossus", "scorpion_queen", "toad_king", "brute", "stormcaller", "ocean_leviathan",
-    "wolf", "archer", "car", "train", "rail",
-];
+/// Every GLB in `assets/models/`, generated at build time by
+/// `scripts/gen_model_list.py`. Newly authored assets are loaded automatically.
+use crate::generated_models::GLB_MODELS;
 const TERRAIN_RADIUS: i32 = 14;
 
 /// Number of models in `Scene3D`: generated pair + one per GLB above.
@@ -1170,6 +1161,23 @@ fn scene_model_for(style: SpriteStyle) -> &'static str {
         SpriteStyle::Car => "car",
         SpriteStyle::Train => "train",
         SpriteStyle::Rail => "rail",
+    }
+}
+
+/// Deterministic per-tile visual variants. Newly authored props are spread
+/// across matching gameplay styles so the expanded library actually shows up
+/// in the world instead of sitting unused in assets/models/.
+fn scene_model_variant(style: SpriteStyle, x: f32, y: f32) -> &'static str {
+    let seed = ((x.floor() as i32).wrapping_mul(73856093)
+        ^ (y.floor() as i32).wrapping_mul(19349663)).unsigned_abs() as usize;
+    let pick = |opts: &[&'static str]| opts[seed % opts.len()];
+    match style {
+        SpriteStyle::Tree => pick(&["tree", "pine", "dead_tree", "mangrove"]),
+        SpriteStyle::Bush => pick(&["bush", "berry_bush", "mushroom_cluster"]),
+        SpriteStyle::Rock => pick(&["rock", "dune_rock", "rock_pile"]),
+        SpriteStyle::Crystal => pick(&["crystal", "ice_crystal"]),
+        SpriteStyle::Cactus => pick(&["cactus", "dead_tree"]),
+        _ => scene_model_for(style),
     }
 }
 
@@ -1387,7 +1395,7 @@ impl App {
         // Every sprite from the sim is represented: GLBs for entities/props,
         // camera-facing quads for HP bars, arrows, loot and other overlays.
         for sp in sprites {
-            let idx = model_index(scene_model_for(sp.style));
+            let idx = model_index(scene_model_variant(sp.style, sp.x, sp.y));
             let h = tile_height_at(
                 &self.world,
                 &mut self.chunks,
