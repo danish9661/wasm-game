@@ -1,5 +1,7 @@
 /target
 /pkg
+__pycache__/
+*.pyc
 *.log
 __pycache__/
 *.blend1

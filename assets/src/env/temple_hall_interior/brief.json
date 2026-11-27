@@ -1,0 +1,31 @@
+{
+  "id": "temple_hall_interior",
+  "category": "env",
+  "tier": "S",
+  "status": "done",
+  "track": "kit",
+  "source": "make",
+  "what": "Complete 5x5-tile temple hall assembled from the expansion kit pieces: stone colonnade, altar, braziers and banners.",
+  "dims": {
+    "x": 5.18,
+    "y": 5.19,
+    "z": 2.5,
+    "tol": 0.05,
+    "basis": "measured from exported GLB; exactly one storey"
+  },
+  "pivot": "bottom_center",
+  "budget_class": "kit",
+  "density_class": "kit",
+  "collider": "box",
+  "props": {},
+  "materials": [],
+  "variants": [],
+  "sockets": [],
+  "views": {
+    "primary": "iso",
+    "why": "diorama cutaway from the isometric camera"
+  },
+  "references": [],
+  "style_notes": "Low-Poly Diorama: chunky, faceted, flat-shaded, saturated accent colours, readable at ~60 px. Palette-only (docs/ART_DIRECTION.md), no textures, no smooth shading. 1 tile = 1 u; player = 1.55 u; storey = 2.5 u; doors 0.9 x 2.0 u. Base at z=0, centred on (0,0). Never: smooth normals, external textures, invented hues, hidden geometry nobody sees.",
+  "notes": "Built from the same Frame-based piece builders as the standalone kit; 0.9x2.0 door with 0.5u transom, two windows at 1.1u sill, walls cut with real openings. 1476 tris."
+}

@@ -1,0 +1,77 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/models/blacksmith_hall_interior.glb",
+ "id": "blacksmith_hall_interior",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "floor_slab_primitive0",
+   "floor_slab_primitive1",
+   "floor_slab_primitive2",
+   "floor_slab_primitive3",
+   "floor_slab_primitive4",
+   "floor_slab_primitive5",
+   "floor_slab_primitive6",
+   "floor_slab_primitive7",
+   "floor_slab_primitive8",
+   "floor_slab_primitive9"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -2.575,
+    0,
+    -2.087
+   ],
+   "max": [
+    2.575,
+    2.5,
+    2.087
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "exp_wood",
+   "exp_wood_dark",
+   "exp_sand",
+   "exp_gold",
+   "exp_water",
+   "exp_stone_dark",
+   "exp_stone",
+   "exp_fire",
+   "exp_iron",
+   "exp_steel"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/blacksmith_hall_interior/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/blacksmith_hall_interior/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/blacksmith_hall_interior/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/blacksmith_hall_interior/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/blacksmith_hall_interior/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/blacksmith_hall_interior.png"
+  }
+ ]
+}

@@ -1,0 +1,226 @@
+{
+  "family": "npc_variants",
+  "player_height": 1.55,
+  "assets": [
+    {
+      "name": "npc_merchant",
+      "family": "npc_variants",
+      "target": {
+        "width": 0.95,
+        "depth": 0.85,
+        "height": 1.65
+      },
+      "measured": {
+        "width": 1.0142,
+        "depth": 0.725,
+        "height": 1.63,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.052,
+      "triangles": 184,
+      "materials": 6,
+      "hero": false,
+      "notes": "market vendor; wide pack silhouette"
+    },
+    {
+      "name": "npc_guard",
+      "family": "npc_variants",
+      "target": {
+        "width": 1.05,
+        "depth": 0.65,
+        "height": 1.95
+      },
+      "measured": {
+        "width": 1.1706,
+        "depth": 0.56,
+        "height": 1.96,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.265,
+      "triangles": 268,
+      "materials": 8,
+      "hero": false,
+      "notes": "town watch; shield + spear"
+    },
+    {
+      "name": "npc_villager_child",
+      "family": "npc_variants",
+      "target": {
+        "width": 0.7,
+        "depth": 0.5,
+        "height": 1.05
+      },
+      "measured": {
+        "width": 0.6977,
+        "depth": 0.4484,
+        "height": 1.0555,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.681,
+      "triangles": 192,
+      "materials": 6,
+      "hero": false,
+      "notes": "village child; oversized head"
+    },
+    {
+      "name": "npc_elder",
+      "family": "npc_variants",
+      "target": {
+        "width": 0.9,
+        "depth": 0.7,
+        "height": 1.82
+      },
+      "measured": {
+        "width": 0.9373,
+        "depth": 0.61,
+        "height": 1.82,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.174,
+      "triangles": 180,
+      "materials": 7,
+      "hero": false,
+      "notes": "village elder; hunched + staff"
+    },
+    {
+      "name": "npc_wolf_pup",
+      "family": "npc_variants",
+      "target": {
+        "width": 0.45,
+        "depth": 0.8,
+        "height": 0.62
+      },
+      "measured": {
+        "width": 0.4588,
+        "depth": 1.0954,
+        "height": 0.64,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.413,
+      "triangles": 128,
+      "materials": 5,
+      "hero": false,
+      "notes": "forest; small quadruped"
+    },
+    {
+      "name": "npc_dire_wolf",
+      "family": "npc_variants",
+      "target": {
+        "width": 0.75,
+        "depth": 1.25,
+        "height": 1.32
+      },
+      "measured": {
+        "width": 0.8873,
+        "depth": 1.8412,
+        "height": 1.22,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.787,
+      "triangles": 196,
+      "materials": 5,
+      "hero": false,
+      "notes": "forest; maned predator"
+    },
+    {
+      "name": "npc_swamp_toad",
+      "family": "npc_variants",
+      "target": {
+        "width": 0.9,
+        "depth": 0.8,
+        "height": 0.78
+      },
+      "measured": {
+        "width": 0.805,
+        "depth": 0.8588,
+        "height": 0.71,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.458,
+      "triangles": 256,
+      "materials": 5,
+      "hero": false,
+      "notes": "swamp; squat broad body"
+    },
+    {
+      "name": "npc_ice_elemental",
+      "family": "npc_variants",
+      "target": {
+        "width": 1.1,
+        "depth": 0.95,
+        "height": 2.2
+      },
+      "measured": {
+        "width": 1.2131,
+        "depth": 0.9274,
+        "height": 2.05,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.323,
+      "triangles": 148,
+      "materials": 4,
+      "hero": false,
+      "notes": "tundra; floating crystalline"
+    },
+    {
+      "name": "npc_desert_scorpion",
+      "family": "npc_variants",
+      "target": {
+        "width": 1.1,
+        "depth": 1.45,
+        "height": 1.12
+      },
+      "measured": {
+        "width": 1.18,
+        "depth": 1.44,
+        "height": 1.14,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.735,
+      "triangles": 264,
+      "materials": 4,
+      "hero": false,
+      "notes": "desert; low + raised sting"
+    },
+    {
+      "name": "npc_forest_warden",
+      "family": "npc_variants",
+      "target": {
+        "width": 1.28,
+        "depth": 0.69,
+        "height": 2.38
+      },
+      "measured": {
+        "width": 1.2794,
+        "depth": 0.6855,
+        "height": 2.3174,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.495,
+      "triangles": 494,
+      "materials": 9,
+      "hero": true,
+      "notes": "forest; HERO mini-boss"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+ "glb": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/models/npc_forest_warden.glb",
+ "id": "npc_forest_warden",
+ "errors": [],
+ "warnings": [],
+ "stats": {
+  "meshes": [
+   "leg_0.002_primitive0",
+   "leg_0.002_primitive1",
+   "leg_0.002_primitive2",
+   "leg_0.002_primitive3",
+   "leg_0.002_primitive4",
+   "leg_0.002_primitive5",
+   "leg_0.002_primitive6",
+   "leg_0.002_primitive7",
+   "leg_0.002_primitive8"
+  ],
+  "lod_tris": {},
+  "col_meshes": [],
+  "sockets": [],
+  "states": [],
+  "broken": 0,
+  "bbox_gltf": {
+   "min": [
+    -0.64,
+    0,
+    -0.343
+   ],
+   "max": [
+    1.913,
+    2.317,
+    0.343
+   ]
+  },
+  "extras": {},
+  "materials": [
+   "exp_wood_dark",
+   "exp_leaf_dark",
+   "exp_arcane",
+   "exp_leaf",
+   "exp_wood",
+   "exp_leaf_light",
+   "exp_skin",
+   "exp_wood_light",
+   "exp_arcane_light"
+  ],
+  "texture_widths": {}
+ },
+ "views": [
+  {
+   "view": "front",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/npc_forest_warden/front.png"
+  },
+  {
+   "view": "three_quarter",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/npc_forest_warden/three_quarter.png"
+  },
+  {
+   "view": "eye",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/npc_forest_warden/eye.png"
+  },
+  {
+   "view": "iso",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/npc_forest_warden/iso.png"
+  },
+  {
+   "view": "iso_context",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/npc_forest_warden/iso_context.png"
+  },
+  {
+   "view": "sheet",
+   "file": "/home/danish1075/.local/share/opencode/worktree/36f28cfe722f7ec6731f1d8a712bebe630db953c/asset-expansion/assets/review/npc_forest_warden.png"
+  }
+ ]
+}

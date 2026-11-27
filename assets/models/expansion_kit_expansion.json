@@ -1,0 +1,226 @@
+{
+  "family": "kit_expansion",
+  "player_height": 1.55,
+  "assets": [
+    {
+      "name": "kit_floor",
+      "family": "kit_expansion",
+      "target": {
+        "width": 1.0,
+        "depth": 1.0,
+        "height": 0.1
+      },
+      "measured": {
+        "width": 1.0,
+        "depth": 1.0,
+        "height": 0.1,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.065,
+      "triangles": 48,
+      "materials": 2,
+      "hero": false,
+      "notes": "grid kit; 4 planks"
+    },
+    {
+      "name": "kit_wall_wood",
+      "family": "kit_expansion",
+      "target": {
+        "width": 1.0,
+        "depth": 0.15,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 1.0,
+        "depth": 0.15,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 36,
+      "materials": 3,
+      "hero": false,
+      "notes": "grid kit; timber/stud"
+    },
+    {
+      "name": "kit_wall_stone",
+      "family": "kit_expansion",
+      "target": {
+        "width": 1.0,
+        "depth": 0.18,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 1.0,
+        "depth": 0.18,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 36,
+      "materials": 3,
+      "hero": false,
+      "notes": "grid kit; 3 courses"
+    },
+    {
+      "name": "kit_door",
+      "family": "kit_expansion",
+      "target": {
+        "width": 0.9,
+        "depth": 0.12,
+        "height": 2.0
+      },
+      "measured": {
+        "width": 0.9,
+        "depth": 0.1583,
+        "height": 2.0,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.29,
+      "triangles": 92,
+      "materials": 3,
+      "hero": false,
+      "notes": "grid kit;  centred on X"
+    },
+    {
+      "name": "kit_window",
+      "family": "kit_expansion",
+      "target": {
+        "width": 0.8,
+        "depth": 0.1,
+        "height": 0.9
+      },
+      "measured": {
+        "width": 0.8,
+        "depth": 0.1,
+        "height": 0.9,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.581,
+      "triangles": 84,
+      "materials": 2,
+      "hero": false,
+      "notes": "grid kit; raise to 1.1 sill"
+    },
+    {
+      "name": "kit_stairs",
+      "family": "kit_expansion",
+      "target": {
+        "width": 1.0,
+        "depth": 1.5,
+        "height": 1.5
+      },
+      "measured": {
+        "width": 1.0,
+        "depth": 1.5,
+        "height": 1.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.968,
+      "triangles": 144,
+      "materials": 2,
+      "hero": false,
+      "notes": "grid kit; 6 treads"
+    },
+    {
+      "name": "kit_roof_gable",
+      "family": "kit_expansion",
+      "target": {
+        "width": 1.0,
+        "depth": 1.0,
+        "height": 0.65
+      },
+      "measured": {
+        "width": 1.02,
+        "depth": 1.0,
+        "height": 0.6,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.387,
+      "triangles": 72,
+      "materials": 3,
+      "hero": false,
+      "notes": "grid kit; ridge along Y"
+    },
+    {
+      "name": "kit_pillar",
+      "family": "kit_expansion",
+      "target": {
+        "width": 0.3,
+        "depth": 0.3,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 0.3,
+        "depth": 0.3,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 56,
+      "materials": 3,
+      "hero": false,
+      "notes": "grid kit; column"
+    },
+    {
+      "name": "blacksmith_hall_interior",
+      "family": "kit_expansion",
+      "target": {
+        "width": 5.15,
+        "depth": 4.15,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 5.15,
+        "depth": 4.1733,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 1380,
+      "materials": 10,
+      "hero": true,
+      "notes": "interior; hero; 5x4 tiles, forge + 0.9x2.0 door"
+    },
+    {
+      "name": "temple_hall_interior",
+      "family": "kit_expansion",
+      "target": {
+        "width": 5.2,
+        "depth": 5.2,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 5.18,
+        "depth": 5.1883,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 1476,
+      "materials": 11,
+      "hero": true,
+      "notes": "interior; hero; 5x5 tiles, colonnade + altar"
+    }
+  ]
+}

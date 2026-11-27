@@ -10,10 +10,10 @@
     "complex_name_pattern": "(interior|house|cabin|hut|inn|barn|hall|tower|castle|fort|keep|palace|temple|cathedral|church|abbey|shrine|dungeon|ruin|village|town|city|market|station|train|bridge|ship|mine|cave|complex|landmark|showcase|diorama|structure)"
   },
   "summary": {
-    "models": 109,
-    "passed": 109,
+    "models": 141,
+    "passed": 141,
     "failed": 0,
-    "total_triangles": 25274,
+    "total_triangles": 33468,
     "models_dir": "assets/models"
   },
   "models": [
@@ -313,6 +313,66 @@
       "center_z": 0.0,
       "footprint_x": 0.98,
       "footprint_z": 1.96,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "berry_bush",
+      "file": "assets/models/berry_bush.glb",
+      "category": "Biome Props",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 9,
+      "primitives": 9,
+      "materials": 4,
+      "min": [
+        -0.532,
+        0.0,
+        -0.4347
+      ],
+      "max": [
+        0.532,
+        0.703,
+        0.4347
+      ],
+      "height": 0.703,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.064,
+      "footprint_z": 0.8694,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "blacksmith_hall_interior",
+      "file": "assets/models/blacksmith_hall_interior.glb",
+      "category": "Building",
+      "triangles": 1380,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 10,
+      "materials": 10,
+      "min": [
+        -2.575,
+        0.0,
+        -2.0866
+      ],
+      "max": [
+        2.575,
+        2.5,
+        2.0866
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 5.15,
+      "footprint_z": 4.1733,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -768,6 +828,36 @@
       "pass": true
     },
     {
+      "name": "coral",
+      "file": "assets/models/coral.glb",
+      "category": "Biome Props",
+      "triangles": 224,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 12,
+      "primitives": 12,
+      "materials": 3,
+      "min": [
+        -0.3581,
+        0.0,
+        -0.3041
+      ],
+      "max": [
+        0.3581,
+        1.055,
+        0.3041
+      ],
+      "height": 1.055,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.7163,
+      "footprint_z": 0.6082,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "crate_box",
       "file": "assets/models/crate_box.glb",
       "category": "Nature",
@@ -883,6 +973,66 @@
       "center_z": 0.0,
       "footprint_x": 0.275,
       "footprint_z": 0.0851,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "dead_tree",
+      "file": "assets/models/dead_tree.glb",
+      "category": "Biome Props",
+      "triangles": 132,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 8,
+      "primitives": 8,
+      "materials": 2,
+      "min": [
+        -0.5631,
+        0.0,
+        -0.4727
+      ],
+      "max": [
+        0.5631,
+        2.4034,
+        0.4727
+      ],
+      "height": 2.4034,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1261,
+      "footprint_z": 0.9455,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "dune_rock",
+      "file": "assets/models/dune_rock.glb",
+      "category": "Biome Props",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 5,
+      "primitives": 5,
+      "materials": 3,
+      "min": [
+        -0.5608,
+        0.0,
+        -0.4041
+      ],
+      "max": [
+        0.5608,
+        0.6,
+        0.4041
+      ],
+      "height": 0.6,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1217,
+      "footprint_z": 0.8081,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1068,6 +1218,36 @@
       "pass": true
     },
     {
+      "name": "fishing_net",
+      "file": "assets/models/fishing_net.glb",
+      "category": "Biome Props",
+      "triangles": 216,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 14,
+      "primitives": 14,
+      "materials": 4,
+      "min": [
+        -0.4671,
+        0.0,
+        -0.4238
+      ],
+      "max": [
+        0.4671,
+        0.735,
+        0.4238
+      ],
+      "height": 0.735,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.9342,
+      "footprint_z": 0.8476,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "flower",
       "file": "assets/models/flower.glb",
       "category": "Nature",
@@ -1093,6 +1273,36 @@
       "center_z": 0.0,
       "footprint_x": 0.4862,
       "footprint_z": 0.4915,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "fossil",
+      "file": "assets/models/fossil.glb",
+      "category": "Biome Props",
+      "triangles": 228,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 16,
+      "primitives": 16,
+      "materials": 3,
+      "min": [
+        -0.6532,
+        0.0,
+        -0.3255
+      ],
+      "max": [
+        0.6532,
+        0.4326,
+        0.3255
+      ],
+      "height": 0.4326,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.3064,
+      "footprint_z": 0.6509,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1278,6 +1488,36 @@
       "pass": true
     },
     {
+      "name": "herb_patch",
+      "file": "assets/models/herb_patch.glb",
+      "category": "Biome Props",
+      "triangles": 300,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 20,
+      "primitives": 20,
+      "materials": 4,
+      "min": [
+        -0.4497,
+        0.0,
+        -0.2565
+      ],
+      "max": [
+        0.4497,
+        0.4,
+        0.2565
+      ],
+      "height": 0.4,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.8994,
+      "footprint_z": 0.513,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "house",
       "file": "assets/models/house.glb",
       "category": "Building",
@@ -1363,6 +1603,36 @@
       "center_z": 0.0,
       "footprint_x": 1.98,
       "footprint_z": 1.98,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "ice_crystal",
+      "file": "assets/models/ice_crystal.glb",
+      "category": "Biome Props",
+      "triangles": 74,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 6,
+      "primitives": 6,
+      "materials": 4,
+      "min": [
+        -0.3695,
+        0.0,
+        -0.3232
+      ],
+      "max": [
+        0.3695,
+        1.322,
+        0.3232
+      ],
+      "height": 1.322,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.739,
+      "footprint_z": 0.6465,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1818,6 +2088,246 @@
       "pass": true
     },
     {
+      "name": "kit_door",
+      "file": "assets/models/kit_door.glb",
+      "category": "Kit Expansion",
+      "triangles": 92,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 7,
+      "primitives": 7,
+      "materials": 3,
+      "min": [
+        -0.45,
+        0.0,
+        -0.0791
+      ],
+      "max": [
+        0.45,
+        2.0,
+        0.0791
+      ],
+      "height": 2.0,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.9,
+      "footprint_z": 0.1583,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "kit_floor",
+      "file": "assets/models/kit_floor.glb",
+      "category": "Kit Expansion",
+      "triangles": 48,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 4,
+      "primitives": 4,
+      "materials": 2,
+      "min": [
+        -0.5,
+        0.0,
+        -0.5
+      ],
+      "max": [
+        0.5,
+        0.1,
+        0.5
+      ],
+      "height": 0.1,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.0,
+      "footprint_z": 1.0,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "kit_pillar",
+      "file": "assets/models/kit_pillar.glb",
+      "category": "Kit Expansion",
+      "triangles": 56,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 4,
+      "primitives": 4,
+      "materials": 3,
+      "min": [
+        -0.15,
+        0.0,
+        -0.15
+      ],
+      "max": [
+        0.15,
+        2.5,
+        0.15
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3,
+      "footprint_z": 0.3,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "kit_roof_gable",
+      "file": "assets/models/kit_roof_gable.glb",
+      "category": "Kit Expansion",
+      "triangles": 72,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 6,
+      "primitives": 6,
+      "materials": 3,
+      "min": [
+        -0.51,
+        0.0,
+        -0.5
+      ],
+      "max": [
+        0.51,
+        0.6,
+        0.5
+      ],
+      "height": 0.6,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.02,
+      "footprint_z": 1.0,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "kit_stairs",
+      "file": "assets/models/kit_stairs.glb",
+      "category": "Kit Expansion",
+      "triangles": 144,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 12,
+      "primitives": 12,
+      "materials": 2,
+      "min": [
+        -0.5,
+        0.0,
+        -0.75
+      ],
+      "max": [
+        0.5,
+        1.5,
+        0.75
+      ],
+      "height": 1.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.0,
+      "footprint_z": 1.5,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "kit_wall_stone",
+      "file": "assets/models/kit_wall_stone.glb",
+      "category": "Kit Expansion",
+      "triangles": 36,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 3,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.5,
+        0.0,
+        -0.09
+      ],
+      "max": [
+        0.5,
+        2.5,
+        0.09
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.0,
+      "footprint_z": 0.18,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "kit_wall_wood",
+      "file": "assets/models/kit_wall_wood.glb",
+      "category": "Kit Expansion",
+      "triangles": 36,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 3,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.5,
+        0.0,
+        -0.075
+      ],
+      "max": [
+        0.5,
+        2.5,
+        0.075
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.0,
+      "footprint_z": 0.15,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "kit_window",
+      "file": "assets/models/kit_window.glb",
+      "category": "Kit Expansion",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 7,
+      "primitives": 7,
+      "materials": 2,
+      "min": [
+        -0.4,
+        0.0,
+        -0.05
+      ],
+      "max": [
+        0.4,
+        0.9,
+        0.05
+      ],
+      "height": 0.9,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.8,
+      "footprint_z": 0.1,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "lantern",
       "file": "assets/models/lantern.glb",
       "category": "Structure",
@@ -1843,6 +2353,36 @@
       "center_z": 0.0,
       "footprint_x": 0.48,
       "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "lava_vent",
+      "file": "assets/models/lava_vent.glb",
+      "category": "Biome Props",
+      "triangles": 254,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 14,
+      "primitives": 14,
+      "materials": 4,
+      "min": [
+        -0.5671,
+        0.0,
+        -0.5342
+      ],
+      "max": [
+        0.5671,
+        0.7775,
+        0.5342
+      ],
+      "height": 0.7775,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1342,
+      "footprint_z": 1.0683,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1908,6 +2448,36 @@
       "pass": true
     },
     {
+      "name": "mangrove",
+      "file": "assets/models/mangrove.glb",
+      "category": "Biome Props",
+      "triangles": 460,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.2966,
+        0.0,
+        -0.8766
+      ],
+      "max": [
+        1.2966,
+        2.7191,
+        0.8766
+      ],
+      "height": 2.7191,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.5932,
+      "footprint_z": 1.7532,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "market_stall",
       "file": "assets/models/market_stall.glb",
       "category": "Building",
@@ -1963,6 +2533,336 @@
       "center_z": -0.009,
       "footprint_x": 0.7093,
       "footprint_z": 0.5283,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "mushroom_cluster",
+      "file": "assets/models/mushroom_cluster.glb",
+      "category": "Biome Props",
+      "triangles": 168,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 9,
+      "primitives": 9,
+      "materials": 3,
+      "min": [
+        -0.3884,
+        0.0,
+        -0.3081
+      ],
+      "max": [
+        0.3884,
+        0.5762,
+        0.3081
+      ],
+      "height": 0.5762,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.7767,
+      "footprint_z": 0.6162,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_desert_scorpion",
+      "file": "assets/models/npc_desert_scorpion.glb",
+      "category": "Npc Variants",
+      "triangles": 264,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 20,
+      "primitives": 20,
+      "materials": 4,
+      "min": [
+        -0.59,
+        0.0,
+        -0.72
+      ],
+      "max": [
+        0.59,
+        1.14,
+        0.72
+      ],
+      "height": 1.14,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.18,
+      "footprint_z": 1.44,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_dire_wolf",
+      "file": "assets/models/npc_dire_wolf.glb",
+      "category": "Npc Variants",
+      "triangles": 196,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 15,
+      "primitives": 15,
+      "materials": 5,
+      "min": [
+        -0.4436,
+        0.0,
+        -0.9206
+      ],
+      "max": [
+        0.4436,
+        1.22,
+        0.9206
+      ],
+      "height": 1.22,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.8873,
+      "footprint_z": 1.8412,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_elder",
+      "file": "assets/models/npc_elder.glb",
+      "category": "Npc Variants",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 10,
+      "primitives": 10,
+      "materials": 7,
+      "min": [
+        -0.4687,
+        0.0,
+        -0.305
+      ],
+      "max": [
+        0.4687,
+        1.82,
+        0.305
+      ],
+      "height": 1.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.9373,
+      "footprint_z": 0.61,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_forest_warden",
+      "file": "assets/models/npc_forest_warden.glb",
+      "category": "Npc Variants",
+      "triangles": 494,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 9,
+      "materials": 9,
+      "min": [
+        -0.6397,
+        0.0,
+        -0.3427
+      ],
+      "max": [
+        0.6397,
+        2.3174,
+        0.3427
+      ],
+      "height": 2.3174,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2794,
+      "footprint_z": 0.6855,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_guard",
+      "file": "assets/models/npc_guard.glb",
+      "category": "Npc Variants",
+      "triangles": 268,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 17,
+      "primitives": 17,
+      "materials": 8,
+      "min": [
+        -0.5853,
+        0.0,
+        -0.28
+      ],
+      "max": [
+        0.5853,
+        1.96,
+        0.28
+      ],
+      "height": 1.96,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1706,
+      "footprint_z": 0.56,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_ice_elemental",
+      "file": "assets/models/npc_ice_elemental.glb",
+      "category": "Npc Variants",
+      "triangles": 148,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 11,
+      "primitives": 11,
+      "materials": 4,
+      "min": [
+        -0.6065,
+        0.0,
+        -0.4637
+      ],
+      "max": [
+        0.6065,
+        2.05,
+        0.4637
+      ],
+      "height": 2.05,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2131,
+      "footprint_z": 0.9274,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_merchant",
+      "file": "assets/models/npc_merchant.glb",
+      "category": "Npc Variants",
+      "triangles": 184,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 12,
+      "primitives": 12,
+      "materials": 6,
+      "min": [
+        -0.5071,
+        0.0,
+        -0.3625
+      ],
+      "max": [
+        0.5071,
+        1.63,
+        0.3625
+      ],
+      "height": 1.63,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.0142,
+      "footprint_z": 0.725,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_swamp_toad",
+      "file": "assets/models/npc_swamp_toad.glb",
+      "category": "Npc Variants",
+      "triangles": 256,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 14,
+      "primitives": 14,
+      "materials": 5,
+      "min": [
+        -0.4025,
+        0.0,
+        -0.4294
+      ],
+      "max": [
+        0.4025,
+        0.71,
+        0.4294
+      ],
+      "height": 0.71,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.805,
+      "footprint_z": 0.8588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_villager_child",
+      "file": "assets/models/npc_villager_child.glb",
+      "category": "Building",
+      "triangles": 192,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 12,
+      "primitives": 12,
+      "materials": 6,
+      "min": [
+        -0.3489,
+        0.0,
+        -0.2242
+      ],
+      "max": [
+        0.3489,
+        1.0555,
+        0.2242
+      ],
+      "height": 1.0555,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.6977,
+      "footprint_z": 0.4484,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_wolf_pup",
+      "file": "assets/models/npc_wolf_pup.glb",
+      "category": "Npc Variants",
+      "triangles": 128,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 10,
+      "primitives": 10,
+      "materials": 5,
+      "min": [
+        -0.2294,
+        0.0,
+        -0.5477
+      ],
+      "max": [
+        0.2294,
+        0.64,
+        0.5477
+      ],
+      "height": 0.64,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4588,
+      "footprint_z": 1.0954,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2808,6 +3708,36 @@
       "pass": true
     },
     {
+      "name": "temple_hall_interior",
+      "file": "assets/models/temple_hall_interior.glb",
+      "category": "Building",
+      "triangles": 1476,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 11,
+      "materials": 11,
+      "min": [
+        -2.59,
+        0.0,
+        -2.5941
+      ],
+      "max": [
+        2.59,
+        2.5,
+        2.5941
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 5.18,
+      "footprint_z": 5.1883,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "toad_king",
       "file": "assets/models/toad_king.glb",
       "category": "Character",
@@ -3283,6 +4213,36 @@
       "center_z": 0.0,
       "footprint_x": 1.1,
       "footprint_z": 0.84,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "wreck_plank",
+      "file": "assets/models/wreck_plank.glb",
+      "category": "Biome Props",
+      "triangles": 124,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 7,
+      "primitives": 7,
+      "materials": 5,
+      "min": [
+        -0.7581,
+        0.0,
+        -0.2126
+      ],
+      "max": [
+        0.7581,
+        0.215,
+        0.2126
+      ],
+      "height": 0.215,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.5163,
+      "footprint_z": 0.4252,
       "bounds_complete": true,
       "violations": [],
       "pass": true
