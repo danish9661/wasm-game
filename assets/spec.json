@@ -426,6 +426,56 @@
       "azimuth_deg": 45
     }
   },
+  "animation": {
+    "fps": 30,
+    "export_dir": "animations",
+    "src_dir": "src/anim",
+    "owner": "animation",
+    "spec_source": "docs/ART_DIRECTION.md + game-animation conventions; video->GVHMR->Mixamo path unavailable (no estimator env, checkpoints, Mixamo FBX or plate)",
+    "target_mesh": "models/player.glb",
+    "rig_kind": "object empties over the 19 unskinned player parts (no armature in this asset)",
+    "position_tracks": ["root", "hips"],
+    "unkeyed_bones": ["eye_l", "eye_r", "attach_hand_r"],
+    "allow_scale_keys": false,
+    "naming": {
+      "clip_regex": "^[a-z][a-z0-9_]*$",
+      "loop_clips": ["idle", "walk_f", "walk_fl", "walk_l", "walk_bl", "walk_b", "walk_br", "walk_r", "walk_fr", "run_f", "run_fl", "run_l", "run_bl", "run_b", "run_br", "run_r", "run_fr", "sprint_f", "sprint_fl", "sprint_l", "sprint_bl", "sprint_b", "sprint_br", "sprint_r", "sprint_fr", "sleep", "cook", "craft", "climb"],
+      "direction_codes": ["f", "fl", "l", "bl", "b", "br", "r", "fr"]
+    },
+    "directions_gltf": {
+      "f": [0, 1], "fl": [0.7071, 0.7071], "l": [1, 0], "bl": [0.7071, -0.7071],
+      "b": [0, -1], "br": [-0.7071, -0.7071], "r": [-1, 0], "fr": [-0.7071, 0.7071]
+    },
+    "root_motion": {
+      "travel_on": "root",
+      "hips": "vertical bob only",
+      "in_place": ["idle"],
+      "decision": "walk 1.09 m/s, run 1.46 m/s, sprint 1.98 m/s on root; slash/hit/death/jump/door_open carry one-shot travel; dodge and climb move on root; idle/bow/sleep/drink/eat/cook/craft/block/interact are in place; no scale keys"
+    },
+    "engine": {
+      "bone_frames": "world_aligned object tracks",
+      "loop_convention": "frame N duplicates frame 0 in root-relative pose; root translation advances one stride",
+      "samplers": "LINEAR"
+    },
+    "durations_s": {"idle": 4.033, "walk_cycle": 0.8, "run_cycle": 0.667, "sprint_cycle": 0.533,
+                    "attack_sword_slash": 1.4, "hit": 1.0, "death": 1.8, "bow": 1.6,
+                    "jump": 1.8, "sleep_cycle": 4.0, "drink": 1.8, "eat": 2.2,
+                    "cook_cycle": 2.0, "craft_cycle": 1.6, "door_open": 1.8,
+                    "block": 1.6, "dodge": 1.2, "interact": 1.4, "climb_cycle": 1.2},
+    "thresholds": {
+      "loop_seam_position_cm": [0.5, 2.0],
+      "loop_seam_velocity_mps": [0.3, 0.8],
+      "root_velocity_mps": [0.1, 0.3],
+      "foot_slide_cm": [2.0, 5.0],
+      "ground_penetration_cm": [1.0, 3.0],
+      "end_settled_mps": [0.05, 0.15]
+    },
+    "clip_manifest": "animations/manifest.json",
+    "final_player_manifest": "animations/player/manifest.json",
+    "world_manifest": "animations/world_manifest.json",
+    "action_spec": "animations/action_specs/combat.json",
+    "life_action_spec": "animations/action_specs/life.json"
+  },
   "manifest_fields": [
     "id",
     "path",

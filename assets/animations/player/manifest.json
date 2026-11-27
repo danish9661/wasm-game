@@ -1,0 +1,617 @@
+{
+  "schema": "fight-animations.player-final/1",
+  "generator": "scripts/generate_player_final.py",
+  "status": "final redesign - supersedes the earlier root-level humanoid clips",
+  "source": {
+    "glb": "assets/models/player.glb",
+    "sha256": "b0c4ecd24512f3f52b050b4a87d92d1e77bc7b5fe1ab90c5153173b877de7a47",
+    "metrics_height_m": 1.551,
+    "metrics_min": [
+      -0.4126,
+      0.0,
+      -0.22
+    ],
+    "metrics_max": [
+      0.4126,
+      1.551,
+      0.2298
+    ]
+  },
+  "rig": {
+    "kind": "object empties derived from mesh bounds",
+    "derived_dimensions_m": {
+      "height_m": 1.551,
+      "boot_bottom_m": 0.0,
+      "leg_l1_m": 0.17,
+      "leg_l2_m": 0.18,
+      "arm_l1_m": 0.23,
+      "arm_l2_m": 0.22,
+      "foot_sole_m": 0.0
+    },
+    "joints_m": {
+      "root": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "hips": [
+        0.0,
+        0.0,
+        0.47
+      ],
+      "spine": [
+        0.0,
+        0.0,
+        0.68
+      ],
+      "chest": [
+        0.0,
+        0.0,
+        0.98
+      ],
+      "neck": [
+        0.0,
+        0.0,
+        1.08
+      ],
+      "head": [
+        0.0,
+        0.0,
+        1.26
+      ],
+      "upper_arm_l": [
+        -0.25,
+        0.0,
+        1.05
+      ],
+      "lower_arm_l": [
+        -0.31,
+        0.0,
+        0.82
+      ],
+      "hand_l": [
+        -0.35,
+        0.0,
+        0.6
+      ],
+      "upper_leg_l": [
+        -0.13,
+        0.0,
+        0.47
+      ],
+      "lower_leg_l": [
+        -0.13,
+        0.0,
+        0.3
+      ],
+      "foot_l": [
+        -0.14,
+        0.0,
+        0.12
+      ],
+      "toes_l": [
+        -0.14,
+        -0.12,
+        0.09
+      ],
+      "upper_arm_r": [
+        0.25,
+        0.0,
+        1.05
+      ],
+      "lower_arm_r": [
+        0.31,
+        0.0,
+        0.82
+      ],
+      "hand_r": [
+        0.35,
+        0.0,
+        0.6
+      ],
+      "upper_leg_r": [
+        0.13,
+        0.0,
+        0.47
+      ],
+      "lower_leg_r": [
+        0.13,
+        0.0,
+        0.3
+      ],
+      "foot_r": [
+        0.14,
+        0.0,
+        0.12
+      ],
+      "toes_r": [
+        0.14,
+        -0.12,
+        0.09
+      ],
+      "attach_hand_r": [
+        0.35,
+        -0.06,
+        0.6
+      ]
+    },
+    "root_motion": "all horizontal travel on root; hips vertical bob only"
+  },
+  "conventions": {
+    "fps": 30,
+    "samplers": "LINEAR",
+    "scale_keys": false,
+    "direction_suffix": "f is glTF +Z / Blender -Y",
+    "loop": "last key duplicates frame 0 in root-relative pose; root advances one cycle"
+  },
+  "gates_warn_fail": {
+    "seam_position_cm": [
+      0.5,
+      2.0
+    ],
+    "seam_velocity_mps": [
+      0.3,
+      0.8
+    ],
+    "root_velocity_mps": [
+      0.1,
+      0.3
+    ],
+    "foot_slide_cm": [
+      2.0,
+      5.0
+    ],
+    "ground_penetration_cm": [
+      1.0,
+      3.0
+    ],
+    "float_p10_cm": [
+      2.0,
+      5.0
+    ],
+    "end_settled_mps": [
+      0.05,
+      0.15
+    ]
+  },
+  "clips": [
+    {
+      "clip": "walk",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.7142,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": 0.84,
+        "gltf_y": 0.0,
+        "magnitude": 0.84
+      },
+      "mean_speed_mps": 1.0536,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 1.0,
+      "duration_s": 0.8333,
+      "frames": 25,
+      "fps": 30,
+      "loop": true,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "1.05 m/s forward, 24 f cycle; planted feet, root carries travel.",
+      "path": "assets/animations/player/walk.glb"
+    },
+    {
+      "clip": "run",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.7708,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": 0.96,
+        "gltf_y": 0.0,
+        "magnitude": 0.96
+      },
+      "mean_speed_mps": 1.604,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.891,
+      "duration_s": 0.6333,
+      "frames": 19,
+      "fps": 30,
+      "loop": true,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "1.60 m/s forward, 18 f cycle; deeper crouch and arm drive.",
+      "path": "assets/animations/player/run.glb"
+    },
+    {
+      "clip": "idle",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0001,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": -0.0,
+        "gltf_y": 0.0,
+        "magnitude": 0.0
+      },
+      "mean_speed_mps": 0.0,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.055,
+      "duration_s": 4.0333,
+      "frames": 121,
+      "fps": 30,
+      "loop": true,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Combat-ready guard, 4 s loop, in place; weight shift and breath.",
+      "path": "assets/animations/player/idle.glb"
+    },
+    {
+      "clip": "attack_1",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.311,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": 0.14,
+        "gltf_y": -0.0001,
+        "magnitude": 0.14
+      },
+      "mean_speed_mps": 0.0932,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.332,
+      "duration_s": 1.6,
+      "frames": 48,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Windup 0-12 f, cut 12-19 f, recovery 19-36 f; 0.14 m step-in.",
+      "path": "assets/animations/player/attack_1.glb"
+    },
+    {
+      "clip": "attack_2",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.3116,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": 0.16,
+        "gltf_y": -0.0001,
+        "magnitude": 0.16
+      },
+      "mean_speed_mps": 0.106,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.332,
+      "duration_s": 1.6,
+      "frames": 48,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Windup 0-12 f, cut 12-19 f, recovery 19-36 f; 0.16 m step-in.",
+      "path": "assets/animations/player/attack_2.glb"
+    },
+    {
+      "clip": "attack_3",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.5424,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": 0.22,
+        "gltf_y": -0.0001,
+        "magnitude": 0.22
+      },
+      "mean_speed_mps": 0.128,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.332,
+      "duration_s": 1.8,
+      "frames": 54,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Windup 0-15 f, cut 15-25 f, recovery 25-42 f; 0.22 m step-in.",
+      "path": "assets/animations/player/attack_3.glb"
+    },
+    {
+      "clip": "heavy_attack",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 1.8418,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": 0.25,
+        "gltf_y": -0.0001,
+        "magnitude": 0.25
+      },
+      "mean_speed_mps": 0.1182,
+      "foot_plants": {
+        "l": 1,
+        "r": 2
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.332,
+      "duration_s": 2.2,
+      "frames": 66,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Windup 0-23 f, cut 23-34 f, recovery 34-54 f; 0.25 m lunge.",
+      "path": "assets/animations/player/heavy_attack.glb"
+    },
+    {
+      "clip": "block",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0004,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": -0.0,
+        "gltf_y": 0.0,
+        "magnitude": 0.0
+      },
+      "mean_speed_mps": 0.0001,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.055,
+      "duration_s": 2.0,
+      "frames": 60,
+      "fps": 30,
+      "loop": false,
+      "root_motion": false,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Guard raised by frame 10, held to frame 34, released by 48; in place.",
+      "path": "assets/animations/player/block.glb"
+    },
+    {
+      "clip": "dodge_roll",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 1.0869,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": 0.65,
+        "gltf_y": -0.021,
+        "magnitude": 0.6503
+      },
+      "mean_speed_mps": 1.3129,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 85.02,
+      "duration_s": 1.8,
+      "frames": 54,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "0.65 m forward tumble, tucked through frame 32, low guard at end.",
+      "path": "assets/animations/player/dodge_roll.glb"
+    },
+    {
+      "clip": "hit_light",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.3064,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.2323,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": -0.13,
+        "gltf_y": -0.0005,
+        "magnitude": 0.13
+      },
+      "mean_speed_mps": 0.0951,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.055,
+      "duration_s": 1.4,
+      "frames": 42,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Small recoil, 0.13 m back, settles by frame 30.",
+      "path": "assets/animations/player/hit_light.glb"
+    },
+    {
+      "clip": "hit_heavy",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 1.867,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.9385,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": -0.2,
+        "gltf_y": -0.0005,
+        "magnitude": 0.2
+      },
+      "mean_speed_mps": 0.1277,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.055,
+      "duration_s": 1.6,
+      "frames": 48,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Large recoil, 0.20 m back, settles by frame 36.",
+      "path": "assets/animations/player/hit_heavy.glb"
+    },
+    {
+      "clip": "death",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.9043,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": -0.56,
+        "gltf_y": 0.2855,
+        "magnitude": 0.6286
+      },
+      "mean_speed_mps": 0.371,
+      "foot_plants": {
+        "l": 2,
+        "r": 2
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 28.943,
+      "duration_s": 2.4,
+      "frames": 72,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Two staggers, 0.56 m back, laid-out ragdoll-ready end pose.",
+      "path": "assets/animations/player/death.glb"
+    },
+    {
+      "clip": "interact",
+      "seam_position_cm": 0.0,
+      "seam_velocity_mps": 0.0,
+      "root_velocity_mps": 0.0,
+      "foot_slide_cm": 0.0006,
+      "ground_penetration_cm": 0.0,
+      "float_p10_cm": 0.1,
+      "end_settled_mps": 0.0,
+      "root_offset_m": {
+        "x": 0.0,
+        "gltf_z": -0.0,
+        "gltf_y": 0.0,
+        "magnitude": 0.0
+      },
+      "mean_speed_mps": 0.1358,
+      "foot_plants": {
+        "l": 1,
+        "r": 1
+      },
+      "min_z_m": 0.001,
+      "max_ground_lift_cm": 0.055,
+      "duration_s": 1.8,
+      "frames": 54,
+      "fps": 30,
+      "loop": false,
+      "root_motion": true,
+      "status": "PASS",
+      "fails": [],
+      "warns": [],
+      "notes": "Reach forward with 0.12 m step at the apex, hold, return to origin (net root offset 0).",
+      "path": "assets/animations/player/interact.glb"
+    }
+  ],
+  "summary": {
+    "count": 13,
+    "pass": 13,
+    "warn": 0,
+    "fail": 0
+  },
+  "fails": [],
+  "warnings": [],
+  "review_sheet": "assets/animations/player/review/contact_sheet.png"
+}
