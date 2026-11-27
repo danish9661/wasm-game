@@ -294,6 +294,7 @@ def guard(p, breath=0.0):
 LOCO = {
     "walk": {"cycle": 24, "speed": 1.05, "drop": 0.08, "arm": 0.30, "lean": 0.0},
     "run": {"cycle": 18, "speed": 1.60, "drop": 0.10, "arm": 0.55, "lean": -0.10},
+    "sprint": {"cycle": 16, "speed": 1.80, "drop": 0.12, "arm": 0.70, "lean": -0.18},
 }
 
 
@@ -518,6 +519,265 @@ def interact_pose(f, pf):
 
 
 # ---------------------------------------------------------------------------
+# Second wave: interaction clips on the same bound-derived player rig
+# ---------------------------------------------------------------------------
+
+
+def harvest_pose(f, pf):
+    """Crouch, pull two handfuls of crop, step 0.08 m in, return to origin."""
+    t = f / 42.0
+    p = pose()
+    step = keys_at(t, [(0, 0), (0.30, 0.08), (0.72, 0.08), (1.0, 0)])
+    r = keys_at(t, [(0, 0), (0.25, 1), (0.45, 0.55), (0.65, 1), (1.0, 0)])
+    p["root"]["loc"] = (0.0, -step, 0.0)
+    p["hips"]["loc"] = (0.0, 0.0, -0.02 - 0.11 * r)
+    p["spine"]["rot"] = (0.40 * r, 0.0, 0.02 * r)
+    p["head"]["rot"] = (0.12 * r, 0.0, 0.0)
+    arm_ik(p, "r", -0.30 * r - 0.14, JOINTS["hand_r"][2] - 0.06 * r)
+    arm_ik(p, "l", -0.18 * r - 0.10, JOINTS["hand_l"][2] + 0.02)
+    leg_ik(p, "l", step, JOINTS["foot_l"][2])
+    leg_ik(p, "r", step, JOINTS["foot_r"][2])
+    return p
+
+
+def build_pose(f, pf):
+    """Set a block down with both hands, pat it level, stand; 0.09 m step in."""
+    t = f / 42.0
+    p = pose()
+    step = keys_at(t, [(0, 0), (0.28, 0.09), (0.75, 0.09), (1.0, 0)])
+    b = keys_at(t, [(0, 0), (0.25, 1), (0.50, 0.80), (0.70, 1), (1.0, 0)])
+    p["root"]["loc"] = (0.0, -step, 0.0)
+    p["hips"]["loc"] = (0.0, 0.0, -0.02 - 0.09 * b)
+    p["spine"]["rot"] = (0.30 * b, 0.0, 0.0)
+    p["head"]["rot"] = (0.10 * b, 0.0, 0.0)
+    for side in ("l", "r"):
+        arm_ik(p, side, -0.34 * b - 0.12, JOINTS["hand_" + side][2] + 0.06 * b)
+        leg_ik(p, side, step, JOINTS["foot_" + side][2])
+    return p
+
+
+def mine_pose(f, pf):
+    """Two two-handed overhead pick swings, 0.12 m step in held at the finish."""
+    t = f / 36.0
+    p = pose()
+    step = keys_at(t, [(0, 0), (0.30, 0.12), (1.0, 0.12)])
+    swing = keys_at(t, [(0, -0.90), (0.34, 2.00), (0.52, -0.85),
+                        (0.70, 1.60), (1.0, -0.85)])
+    p["root"]["loc"] = (0.0, -step, 0.0)
+    p["hips"]["loc"] = (0.0, 0.0, -0.02 - 0.04 * abs(swing))
+    p["hips"]["rot"] = (-0.14 * max(0.0, swing) + 0.16 * min(0.0, swing), 0.0, 0.0)
+    p["spine"]["rot"] = (-0.10 * max(0.0, swing) + 0.10 * min(0.0, swing), 0.0, 0.0)
+    p["upper_arm_r"]["rot"] = (swing, 0.0, 0.08)
+    p["lower_arm_r"]["rot"] = (-0.50 - 0.20 * max(0.0, swing), 0.0, 0.0)
+    p["upper_arm_l"]["rot"] = (0.72 * swing, 0.0, -0.08)
+    p["lower_arm_l"]["rot"] = (-0.45 - 0.15 * max(0.0, swing), 0.0, 0.0)
+    for side in ("l", "r"):
+        leg_ik(p, side, step, JOINTS["foot_" + side][2])
+    return p
+
+
+def open_chest_pose(f, pf):
+    """Step 0.14 m to the chest, lift the lid, lean in, lower, step back."""
+    t = f / 42.0
+    p = pose()
+    step = keys_at(t, [(0, 0), (0.30, 0.14), (0.72, 0.14), (1.0, 0)])
+    reach = keys_at(t, [(0, 0), (0.28, 1), (0.68, 1), (1.0, 0)])
+    lift = keys_at(t, [(0, 0), (0.34, 0), (0.54, 1), (0.72, 1), (1.0, 0)])
+    p["root"]["loc"] = (0.0, -step, 0.0)
+    p["hips"]["loc"] = (0.0, 0.0, -0.02 - 0.06 * reach)
+    p["spine"]["rot"] = (0.12 * reach + 0.10 * lift, 0.0, 0.0)
+    p["head"]["rot"] = (0.08 * lift, 0.0, 0.0)
+    arm_ik(p, "r", -0.42 * reach - 0.12, JOINTS["hand_r"][2] + 0.22 * lift)
+    arm_ik(p, "l", -0.20, JOINTS["hand_l"][2] + 0.05 * reach)
+    for side in ("l", "r"):
+        leg_ik(p, side, step, JOINTS["foot_" + side][2])
+    return p
+
+
+def eat_pose(f, pf):
+    """Two quick bites with the right hand, small chew, return to rest."""
+    t = f / 48.0
+    p = pose()
+    w = keys_at(t, [(0, 0), (0.18, 1), (0.32, 0.25), (0.48, 1),
+                    (0.62, 0.25), (0.78, 0), (1.0, 0)])
+    p["spine"]["rot"] = (0.05 * w, 0.0, 0.0)
+    p["head"]["rot"] = (-0.14 * w, 0.0, 0.0)
+    arm_ik(p, "r", -0.22, JOINTS["hand_r"][2] + 0.42 * w)
+    arm_ik(p, "l", -0.20, JOINTS["hand_l"][2] + 0.04)
+    for side in ("l", "r"):
+        leg_ik(p, side, 0.0, JOINTS["foot_" + side][2])
+    return p
+
+
+def drink_pose(f, pf):
+    """Raise the right hand, tip the head back for a sip, lower the hand."""
+    t = f / 42.0
+    p = pose()
+    w = keys_at(t, [(0, 0), (0.25, 1), (0.60, 1), (0.90, 0), (1.0, 0)])
+    p["spine"]["rot"] = (-0.05 * w, 0.0, 0.0)
+    p["head"]["rot"] = (-0.30 * w, 0.0, 0.0)
+    arm_ik(p, "r", -0.20, JOINTS["hand_r"][2] + 0.45 * w)
+    arm_ik(p, "l", -0.20, JOINTS["hand_l"][2] + 0.04)
+    for side in ("l", "r"):
+        leg_ik(p, side, 0.0, JOINTS["foot_" + side][2])
+    return p
+
+
+# ---------------------------------------------------------------------------
+# Third wave: traversal / life clips on the same bound-derived player rig
+# ---------------------------------------------------------------------------
+
+
+def jump_pose(f, pf):
+    """Crouch, vertical leap on root, tuck, land, settle; 0.28 m forward step."""
+    t = f / 54.0
+    p = pose()
+    h = keys_at(t, [(0, 0), (0.12, 0), (0.27, 0.44), (0.37, 0.44),
+                    (0.49, 0), (1.0, 0)])
+    travel = keys_at(t, [(0, 0), (0.14, 0), (0.50, 0.28), (1.0, 0.28)])
+    crouch = keys_at(t, [(0, 0), (0.10, 1), (0.20, 0), (0.49, 0.6),
+                         (0.59, 0), (1.0, 0)])
+    p["root"]["loc"] = (0.0, -travel, max(0.0, h))
+    p["hips"]["loc"] = (0.0, 0.0, -0.14 * crouch)
+    p["spine"]["rot"] = (-0.16 * crouch, 0.0, 0.0)
+    p["head"]["rot"] = (-0.10 * crouch, 0.0, 0.0)
+    air = clamp(max(0.0, h) / 0.44, 0.0, 1.0)
+    for side, sgn in (("l", -1), ("r", 1)):
+        p["upper_arm_" + side]["rot"] = (-0.10 - 1.30 * air - 0.25 * crouch,
+                                          0.0, sgn * 0.12)
+        p["lower_arm_" + side]["rot"] = (-0.30 + 0.25 * air, 0.0, 0.0)
+        if h > 0.02:
+            # Tucked in the air: thigh up, shin folded under, toe pointed.
+            p["upper_leg_" + side]["rot"] = (-0.45 * air + 0.20 * crouch, 0.0, 0.0)
+            p["lower_leg_" + side]["rot"] = (-0.90 * air - 0.30 * crouch, 0.0, 0.0)
+            p["foot_" + side]["rot"] = (0.20 * air, 0.0, 0.0)
+        else:
+            # Grounded before takeoff / after landing: keep the sole planted.
+            leg_ik(p, side, travel, JOINTS["foot_" + side][2] - 0.10 * crouch)
+    return p
+
+
+def climb_pose(f, pf):
+    """Looping climb: alternating hand/foot reaches, 0.35 m rise per cycle."""
+    c = 36
+    rise = 0.35 * f / c
+    u = (pf % c) / c
+    step = 0.35 * 0.5
+    p = pose()
+    p["root"]["loc"] = (0.0, 0.0, rise)
+    p["hips"]["loc"] = (0.0, 0.0, -0.06)
+    p["spine"]["rot"] = (-0.10, 0.0, 0.05 * sin(2 * pi * u))
+    p["head"]["rot"] = (0.08, 0.0, 0.0)
+    for side, off in (("l", 0.0), ("r", 0.5)):
+        q = (u + off) % 1.0
+        reach = 0.5 * (1.0 - cos(2 * pi * q))
+        base = JOINTS["foot_" + side][2] - off * step
+        if q < 0.5:
+            # Stance: world ankle height is constant as the root climbs.
+            local_z = base - 2 * step * q
+        else:
+            # Swing back to the next hold with matching endpoint slopes so the
+            # loop seam has no velocity jump; the foot lifts a full step.
+            w = (q - 0.5) / 0.5
+            h00 = 2 * w ** 3 - 3 * w ** 2 + 1
+            h10 = w ** 3 - 2 * w ** 2 + w
+            h01 = -2 * w ** 3 + 3 * w ** 2
+            h11 = w ** 3 - w ** 2
+            local_z = (h00 * (base - step) + (h10 + h11) * 0.5 * (-0.35)
+                       + h01 * base)
+        arm_ik(p, side, -0.24 - 0.12 * reach,
+               JOINTS["hand_" + side][2] + 0.32 * reach)
+        leg_ik(p, side, 0.0, local_z)
+    return p
+
+
+def dodge_pose(f, pf):
+    """Quick 0.42 m lateral sidestep; net root offset returns to zero."""
+    t = f / 36.0
+    p = pose()
+    s = keys_at(t, [(0, 0), (0.20, 0.42), (0.55, 0.42), (1.0, 0)])
+    p["root"]["loc"] = (-s, 0.0, 0.0)
+    p["hips"]["loc"] = (0.0, 0.0, -0.06 * s)
+    p["spine"]["rot"] = (0.0, -0.20 * s, 0.0)
+    p["head"]["rot"] = (0.0, 0.08 * s, 0.0)
+    arm_ik(p, "l", -0.26, JOINTS["hand_l"][2] + 0.02)
+    arm_ik(p, "r", -0.26, JOINTS["hand_r"][2] + 0.05)
+    for side in ("l", "r"):
+        leg_ik(p, side, 0.0, JOINTS["foot_" + side][2],
+               foot_x=JOINTS["foot_" + side][0] + s)
+    return p
+
+
+def sleep_pose(f, pf):
+    """Laid-out sleep with a slow breath; in place."""
+    ph = 2 * pi * (pf / 120.0)
+    p = pose()
+    p["hips"]["loc"] = (0.0, 0.0, -0.72 + 0.004 * sin(ph))
+    p["hips"]["rot"] = (-1.50, 0.0, 0.0)
+    p["spine"]["rot"] = (0.32 + 0.012 * sin(ph), 0.0, 0.04)
+    p["chest"]["rot"] = (0.16 + 0.012 * sin(ph), 0.0, 0.0)
+    p["head"]["rot"] = (-0.22, 0.0, 0.0)
+    p["upper_arm_l"]["rot"] = (0.45, 0.0, -0.22)
+    p["upper_arm_r"]["rot"] = (0.55, 0.0, 0.22)
+    p["lower_arm_l"]["rot"] = (-0.30, 0.0, 0.0)
+    p["lower_arm_r"]["rot"] = (-0.35, 0.0, 0.0)
+    for side in ("l", "r"):
+        p["upper_leg_" + side]["rot"] = (0.08, 0.0, 0.0)
+        p["lower_leg_" + side]["rot"] = (-0.22, 0.0, 0.0)
+        p["foot_" + side]["rot"] = (0.06, 0.0, 0.0)
+    return p
+
+
+def cook_pose(f, pf):
+    """Looping stir over an imaginary pot; the other hand holds a bowl."""
+    ph = 2 * pi * (pf / 60.0)
+    p = pose()
+    p["hips"]["loc"] = (0.0, 0.0, -0.02 + 0.004 * sin(2 * ph))
+    p["spine"]["rot"] = (0.12, 0.0, 0.045 * sin(ph))
+    p["head"]["rot"] = (0.06, 0.0, -0.03 * sin(ph))
+    arm_ik(p, "r", -0.30 - 0.07 * sin(ph),
+           JOINTS["hand_r"][2] + 0.07 + 0.06 * sin(ph + 1.2))
+    arm_ik(p, "l", -0.26, JOINTS["hand_l"][2] + 0.02)
+    for side in ("l", "r"):
+        leg_ik(p, side, 0.0, JOINTS["foot_" + side][2])
+    return p
+
+
+def craft_pose(f, pf):
+    """Looping hammer strike; off-hand steadies the work."""
+    ph = 2 * pi * (pf / 48.0)
+    h = 0.5 * (1.0 - cos(ph))            # one hammer strike per cycle
+    p = pose()
+    p["hips"]["loc"] = (0.0, 0.0, -0.02 - 0.02 * h)
+    p["spine"]["rot"] = (0.06 + 0.10 * h, 0.0, 0.0)
+    p["head"]["rot"] = (0.10 * h, 0.0, 0.0)
+    arm_ik(p, "r", -0.30 - 0.08 * h, JOINTS["hand_r"][2] + 0.38 - 0.30 * h)
+    arm_ik(p, "l", -0.27, JOINTS["hand_l"][2] + 0.01)
+    for side in ("l", "r"):
+        leg_ik(p, side, 0.0, JOINTS["foot_" + side][2])
+    return p
+
+
+def door_open_pose(f, pf):
+    """Step 0.26 m to the door, reach/push, hold, then return the arm."""
+    t = f / 54.0
+    p = pose()
+    travel = keys_at(t, [(0, 0), (0.45, 0.26), (0.95, 0.26), (1.0, 0.26)])
+    reach = keys_at(t, [(0, 0), (0.35, 1), (0.70, 1), (1.0, 0)])
+    p["root"]["loc"] = (0.0, -travel, 0.0)
+    p["hips"]["loc"] = (0.0, 0.0, -0.02 - 0.04 * reach)
+    p["spine"]["rot"] = (0.14 * reach, 0.0, 0.0)
+    arm_ik(p, "r", -0.20 - 0.42 * reach,
+           JOINTS["hand_r"][2] + 0.12 + 0.10 * reach)
+    arm_ik(p, "l", -0.24, JOINTS["hand_l"][2] + 0.01)
+    # Both soles stay planted as the root steps in; the push is carried by the
+    # spine lean and reaching arm, so no contact point sweeps along the floor.
+    leg_ik(p, "l", travel, JOINTS["foot_l"][2])
+    leg_ik(p, "r", travel, JOINTS["foot_r"][2])
+    return p
+
+
+# ---------------------------------------------------------------------------
 # Keying, ground clamp, measurement
 # ---------------------------------------------------------------------------
 
@@ -733,7 +993,31 @@ NOTES = {
     "hit_heavy": "Large recoil, 0.20 m back, settles by frame 36.",
     "death": "Two staggers, 0.56 m back, laid-out ragdoll-ready end pose.",
     "interact": "Reach forward with 0.12 m step at the apex, hold, return to origin (net root offset 0).",
+    "harvest": "Crouch, two crops pulled, 0.08 m step in, return to origin (net root offset 0).",
+    "build": "Place and pat a block with both hands, 0.09 m step in, return to origin.",
+    "mine": "Two two-handed overhead pick swings, 0.12 m step-in held through recovery.",
+    "open_chest": "Step 0.14 m to the chest, lift the lid, lean in, lower, step back (net root offset 0).",
+    "eat": "Two bites to the mouth with the right hand and a small chew; in place.",
+    "drink": "Right hand to mouth, head tips back for the sip, lower; in place.",
+    "jump": ("Crouch, 0.44 m vertical leap on root, 0.28 m forward step, tuck, "
+             "land and settle."),
+    "climb": ("Looping climb: alternating hand/foot reaches, 0.35 m rise per "
+              "cycle on root; uniform ground clamp."),
+    "dodge": ("Quick 0.42 m lateral sidestep; returns to origin so net root "
+              "offset is zero (direction check skipped)."),
+    "sleep": "Laid-out sleep with a slow breath; 4 s loop, in place.",
+    "cook": "Looping stir over an imaginary pot, other hand holding a bowl; in place.",
+    "craft": "Looping hammer strike, off-hand steadying the work; in place.",
+    "door_open": ("Step 0.26 m to the door, reach/push, hold, then return the "
+                  "arm; step held through the settle tail."),
 }
+for _band, _cycle, _speed in (("walk", 24, 1.05), ("run", 18, 1.60),
+                              ("sprint", 16, 1.80)):
+    for _dir in ("f", "fl", "l", "bl", "b", "br", "r", "fr"):
+        NOTES["%s_%s" % (_band, _dir)] = (
+            "%s cycle in direction %s; %.2f m/s on root, %d f, planted feet, "
+            "hips bob only; derived from the 1.55 u mesh bounds." %
+            (_band, _dir, _speed, _cycle))
 
 
 def main():
@@ -752,6 +1036,14 @@ def main():
         specs.append((name, LOCO[band]["cycle"], True,
                       lambda f, pf, band=band, direction=direction:
                           loco_pose(f, pf, band, direction)))
+    # Second wave: 8-direction aliases on the authoritative 1.55 u rig. The
+    # plain `walk` / `run` entries above stay as engine-compatible aliases.
+    for band in ("walk", "run", "sprint"):
+        for direction in ("f", "fl", "l", "bl", "b", "br", "r", "fr"):
+            name = "%s_%s" % (band, direction)
+            specs.append((name, LOCO[band]["cycle"], True,
+                          lambda f, pf, band=band, direction=direction:
+                              loco_pose(f, pf, band, direction)))
     specs.append(("idle", 120, True, idle_pose))
     for name in ("attack_1", "attack_2", "attack_3", "heavy_attack"):
         fn, frames = attack_pose(name)
@@ -765,6 +1057,20 @@ def main():
         ("hit_heavy", hframes2, False, hf2),
         ("death", 60, False, death_pose),
         ("interact", 42, False, interact_pose),
+        ("harvest", 42, False, harvest_pose),
+        ("build", 42, False, build_pose),
+        ("mine", 36, False, mine_pose),
+        ("open_chest", 42, False, open_chest_pose),
+        ("eat", 48, False, eat_pose),
+        ("drink", 42, False, drink_pose),
+        # Third wave: traversal / life clips.
+        ("jump", 54, False, jump_pose),
+        ("climb", 36, True, climb_pose),
+        ("dodge", 36, False, dodge_pose),
+        ("sleep", 120, True, sleep_pose),
+        ("cook", 60, True, cook_pose),
+        ("craft", 48, True, craft_pose),
+        ("door_open", 54, False, door_open_pose),
     ]
 
     specs = [(name, frames + (0 if loop else SETTLE_FRAMES), loop,
@@ -775,7 +1081,8 @@ def main():
     for name, frames, loop, fn in specs:
         action, slots = author(rig, name, fn, frames, loop)
         bind(rig, action, slots)
-        lift = ground_clamp(rig, meshes, frames + 1 if loop else frames, loop)
+        lift = ground_clamp(rig, meshes, frames + 1 if loop else frames, loop,
+                            uniform=(name == "climb"))
         export_glb(name, os.path.join(OUT, name + ".glb"))
         res = measure(rig, meshes, frames, loop)
         fails, warns = gate(res, loop, name)
@@ -786,7 +1093,8 @@ def main():
         res["loop"] = loop
         res["root_motion"] = bool(loop or name in (
             "attack_1", "attack_2", "attack_3", "heavy_attack", "dodge_roll",
-            "hit_light", "hit_heavy", "death", "interact"))
+            "hit_light", "hit_heavy", "death", "interact", "jump", "dodge",
+            "door_open"))
         res["status"] = "FAIL" if fails else ("WARN" if warns else "PASS")
         res["fails"] = fails
         res["warns"] = warns
