@@ -245,6 +245,119 @@ pub fn state_from_signals(walk: f32, attack: f32, hurt: f32, dead: bool) -> Anim
     }
 }
 
+// ---- Baked pose frame lookup ----------------------------------------------
+// The renderer's NPC/prop pose tables are generated from optional manifests in
+// `assets/models`. The resolution rules live here (pure Rust, no wasm-bindgen
+// and no GPU types) so `cargo test -p game` can regression-test them on host.
+
+/// One row of a generated baked-pose table. Implemented by the generated
+/// `ExtraPoseClip` in the web crate and by `BakedClip` below (tests/fixtures).
+pub trait BakedClipRow {
+    /// NPC family or prop name the row belongs to.
+    fn group(&self) -> &str;
+    /// Semantic clip for NPCs (`idle`, `walk`, ...); empty for props.
+    fn clip(&self) -> &str;
+    /// GLB stems in playback order.
+    fn frames(&self) -> &[&str];
+    /// Authored playback rate, frames per second.
+    fn fps(&self) -> f32;
+}
+
+/// A plain baked-pose row, used as a test fixture and as a runtime-friendly
+/// shape for callers that build tables by hand.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct BakedClip<'a> {
+    pub group: &'a str,
+    pub clip: &'a str,
+    pub frames: &'a [&'a str],
+    pub fps: f32,
+}
+
+impl<'a> BakedClipRow for BakedClip<'a> {
+    fn group(&self) -> &str { self.group }
+    fn clip(&self) -> &str { self.clip }
+    fn frames(&self) -> &[&str] { self.frames }
+    fn fps(&self) -> f32 { self.fps }
+}
+
+/// Compare generated names ignoring case and `_`/`-`/space separators, so
+/// `ScorpionQueen`, `scorpion_queen` and `SCORPION-QUEEN` all resolve.
+fn normalized_name(s: &str) -> impl Iterator<Item = char> + '_ {
+    s.chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .flat_map(char::to_lowercase)
+}
+
+fn name_eq(a: &str, b: &str) -> bool {
+    normalized_name(a).eq(normalized_name(b))
+}
+
+/// Frame stem at time `t` seconds, wrapping at the end of the clip. Returns
+/// `None` for an empty clip, a non-positive fps, or a non-finite time; callers
+/// then keep their original static GLB (clean fallback when data is absent).
+pub fn baked_frame_at<'a>(frames: &[&'a str], fps: f32, t: f32) -> Option<&'a str> {
+    if frames.is_empty() || !fps.is_finite() || fps <= 0.0 || !t.is_finite() {
+        return None;
+    }
+    let step = (t * fps) as i64;
+    let idx = step.rem_euclid(frames.len() as i64) as usize;
+    Some(frames[idx])
+}
+
+/// Resolve `(group, clip, t)` against a generated table to a baked GLB stem.
+/// An empty `clip` matches the neutral/default row of `group` (props have no
+/// gameplay states), falling back to its first row.
+pub fn resolve_baked_frame<'a, C: BakedClipRow>(
+    table: &'a [C],
+    group: &str,
+    clip: &str,
+    t: f32,
+) -> Option<&'a str> {
+    let row = if clip.is_empty() {
+        // Props have no state: prefer the neutral/default clip when a manifest
+        // has several, then fall back to the first row for that group.
+        table
+            .iter()
+            .find(|row| {
+                name_eq(row.group(), group)
+                    && ["", "loop", "idle", "default"].iter().any(|c| name_eq(row.clip(), c))
+            })
+            .or_else(|| table.iter().find(|row| name_eq(row.group(), group)))?
+    } else {
+        table
+            .iter()
+            .find(|row| name_eq(row.group(), group) && name_eq(row.clip(), clip))?
+    };
+    baked_frame_at(row.frames(), row.fps(), t)
+}
+
+/// Candidate baked family names for a sprite style, most specific first.
+/// Tolerates manifests named after gameplay kinds, families or sprite styles.
+/// Only styles with a baked NPC table are listed; props use their model name.
+pub fn npc_family_names(style: SpriteStyle) -> &'static [&'static str] {
+    match style {
+        SpriteStyle::Goblin => &["goblin", "armored_goblin"],
+        SpriteStyle::Skeleton | SpriteStyle::Wraith => &["skeleton", "wraith"],
+        SpriteStyle::Wolf => &["wolf"],
+        SpriteStyle::Archer => &["archer"],
+        SpriteStyle::Spider => &["spider", "scorpion_queen"],
+        SpriteStyle::Slime => &["slime", "toad_king"],
+        SpriteStyle::Brute | SpriteStyle::Ogre => &["brute", "ogre"],
+        SpriteStyle::Humanoid => &["villager", "civilian", "humanoid", "guard"],
+        SpriteStyle::Guard => &["guard", "civilian", "villager"],
+        SpriteStyle::Golem => &["golem"],
+        SpriteStyle::Bat | SpriteStyle::Imp => &["imp", "bat"],
+        SpriteStyle::Stoneslinger => &["stoneslinger", "archer"],
+        SpriteStyle::Raider => &["raider", "goblin"],
+        SpriteStyle::Colossus => &["colossus", "golem"],
+        SpriteStyle::ScorpionQueen => &["scorpion_queen", "spider"],
+        SpriteStyle::ToadKing => &["toad_king", "slime"],
+        SpriteStyle::Stormcaller => &["stormcaller", "archer"],
+        SpriteStyle::OceanLeviathan => &["ocean_leviathan", "slime"],
+        _ => &[],
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -328,5 +441,127 @@ mod tests {
         ] {
             assert_eq!(clips_for_style(style), None, "{:?} must not animate", style);
         }
+    }
+
+    // --- Baked pose frame resolution (NPC + prop manifests) ------------------
+
+    const F_IDLE: &[&str] = &["npcpose_goblin_idle_00", "npcpose_goblin_idle_01"];
+    const F_WALK: &[&str] = &["npcpose_goblin_walk_00", "npcpose_goblin_walk_01"];
+    const F_RUN: &[&str] = &["npcpose_goblin_run_00", "npcpose_goblin_run_01"];
+    const F_ATTACK: &[&str] = &["npcpose_goblin_attack_00", "npcpose_goblin_attack_01"];
+    const F_HURT: &[&str] = &["npcpose_goblin_hurt_00", "npcpose_goblin_hurt_01"];
+    const F_DEATH: &[&str] = &["npcpose_goblin_death_00", "npcpose_goblin_death_01"];
+    const F_SKELETON: &[&str] = &["npcpose_skeleton_idle_00", "npcpose_skeleton_idle_01"];
+
+    fn npc_table() -> [BakedClip<'static>; 7] {
+        let row = |clip: &'static str, frames: &'static [&'static str]| BakedClip {
+            group: "goblin",
+            clip,
+            frames,
+            fps: 12.0,
+        };
+        [
+            row("idle", F_IDLE),
+            row("walk", F_WALK),
+            row("run", F_RUN),
+            row("attack", F_ATTACK),
+            row("hurt", F_HURT),
+            row("death", F_DEATH),
+            BakedClip { group: "skeleton", clip: "idle", frames: F_SKELETON, fps: 12.0 },
+        ]
+    }
+
+    #[test]
+    fn baked_npc_states_select_distinct_frames() {
+        let table = npc_table();
+        let states = [
+            AnimState::Idle,
+            AnimState::Walk,
+            AnimState::Run,
+            AnimState::Attack,
+            AnimState::Hurt,
+            AnimState::Death,
+        ];
+        let picked: Vec<_> = states
+            .iter()
+            .map(|s| resolve_baked_frame(&table, "goblin", s.as_str(), 0.1).expect("baked frame"))
+            .collect();
+        let distinct: std::collections::BTreeSet<_> = picked.iter().copied().collect();
+        assert_eq!(distinct.len(), states.len(), "states collapsed onto one frame: {:?}", picked);
+        assert_eq!(picked[0], F_IDLE[1]);
+        assert_eq!(picked[3], F_ATTACK[1]);
+        assert_eq!(picked[5], F_DEATH[1]);
+        // A different family with the same state must not reuse the frame.
+        let skeleton = resolve_baked_frame(&table, "skeleton", "idle", 0.1).unwrap();
+        assert_ne!(skeleton, picked[0]);
+        // Name normalisation tolerates asset-style capitalisation/separators.
+        assert_eq!(
+            resolve_baked_frame(&table, "SKELETON", "Idle", 0.1),
+            Some(skeleton)
+        );
+    }
+
+    #[test]
+    fn baked_frames_wrap_in_both_directions() {
+        let table = npc_table();
+        let at = |t| resolve_baked_frame(&table, "goblin", "idle", t).unwrap();
+        // 12 fps, two frames: one full 1/12 s step advances one frame, and the
+        // clip loops forever (including negative or very large times).
+        assert_eq!(at(0.0), F_IDLE[0]);
+        assert_eq!(at(1.0 / 12.0), F_IDLE[1]);
+        assert_eq!(at(2.0 / 12.0), F_IDLE[0]);
+        assert_eq!(at(25.0 / 12.0), F_IDLE[1]);
+        assert_eq!(at(-1.0 / 12.0), F_IDLE[1]);
+        // Props use the same resolver with an empty clip name.
+        let props = [BakedClip {
+            group: "campfire",
+            clip: "",
+            frames: &["animprop_campfire_00", "animprop_campfire_01", "animprop_campfire_02"],
+            fps: 15.0,
+        }];
+        assert_eq!(
+            resolve_baked_frame(&props, "camp_fire", "", 0.0),
+            Some("animprop_campfire_00")
+        );
+        assert_eq!(
+            resolve_baked_frame(&props, "campfire", "", 3.0 / 15.0),
+            Some("animprop_campfire_00")
+        );
+        assert_eq!(
+            resolve_baked_frame(&props, "campfire", "", 2.0 / 15.0),
+            Some("animprop_campfire_02")
+        );
+        // A prop with multiple clips uses its neutral loop by default.
+        let multi = [
+            BakedClip { group: "torch", clip: "burst", frames: &["burst_00"], fps: 8.0 },
+            BakedClip { group: "torch", clip: "loop", frames: &["loop_00"], fps: 8.0 },
+        ];
+        assert_eq!(resolve_baked_frame(&multi, "torch", "", 0.0), Some("loop_00"));
+    }
+
+    #[test]
+    fn missing_manifest_falls_back_to_no_frame() {
+        // No manifests -> generated tables are empty -> every lookup is None,
+        // which is exactly the signal the renderer uses to keep its static GLB.
+        let empty: [BakedClip<'static>; 0] = [];
+        for state in [AnimState::Idle, AnimState::Walk, AnimState::Attack] {
+            assert_eq!(resolve_baked_frame(&empty, "goblin", state.as_str(), 0.5), None);
+        }
+        let table = npc_table();
+        assert_eq!(resolve_baked_frame(&table, "unknown_family", "idle", 0.1), None);
+        assert_eq!(resolve_baked_frame(&table, "goblin", "unknown_clip", 0.1), None);
+        let broken = [BakedClip { group: "goblin", clip: "idle", frames: &[], fps: 12.0 }];
+        assert_eq!(resolve_baked_frame(&broken, "goblin", "idle", 0.1), None);
+        let still = [BakedClip { group: "goblin", clip: "idle", frames: F_IDLE, fps: 0.0 }];
+        assert_eq!(resolve_baked_frame(&still, "goblin", "idle", 0.1), None);
+        assert_eq!(resolve_baked_frame(&table, "goblin", "idle", f32::NAN), None);
+    }
+
+    #[test]
+    fn sprite_styles_have_baked_family_aliases() {
+        assert!(npc_family_names(SpriteStyle::Goblin).contains(&"goblin"));
+        assert!(npc_family_names(SpriteStyle::ScorpionQueen).contains(&"scorpion_queen"));
+        assert!(npc_family_names(SpriteStyle::Humanoid).contains(&"villager"));
+        assert!(npc_family_names(SpriteStyle::Tree).is_empty());
     }
 }

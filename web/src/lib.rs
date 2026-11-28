@@ -1,4 +1,5 @@
 mod generated_animations;
+mod generated_extra_poses;
 mod generated_models;
 mod generated_poses;
 mod model;
