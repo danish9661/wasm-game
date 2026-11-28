@@ -1356,6 +1356,20 @@ fn player_anim_clip(walk: f32, swing: f32, dodge: f32, hurt: f32) -> &'static st
     else { "idle" }
 }
 
+/// Pick a baked Blender pose frame for the current clip/time. Returns "player"
+/// (the rigid fallback model) when no pose frames have been baked yet.
+fn player_pose_model(clip: &str, t: f32) -> &'static str {
+    use crate::generated_poses::POSE_CLIPS;
+    let Some(entry) = POSE_CLIPS.iter().find(|c| c.name == clip) else {
+        return "player";
+    };
+    if entry.frames.is_empty() {
+        return "player";
+    }
+    let idx = ((t * 30.0) as usize) % entry.frames.len();
+    entry.frames[idx]
+}
+
 /// Style families that represent walking characters (bob/stride in 3D).
 fn is_character_style(style: SpriteStyle) -> bool {
     matches!(
@@ -1612,16 +1626,22 @@ impl App {
             self.player.dodge_timer,
             self.player.hurt_timer,
         );
+        let pose = player_pose_model(clip, self.anim_clock);
+        let baked = pose != "player";
         let (side, bob, forward) = anim_offset(clip, self.anim_clock);
-        // Amplify the sampled clip motion: the source rig's hip bob is only a
-        // couple of centimetres, which is invisible at gameplay zoom. Add a
-        // small stride hop and a squash/stretch pulse so the walk reads.
-        let hop = (self.anim_clock * 12.0).sin() * 0.07 * walk_amount;
-        let bob = bob * 6.0 + hop;
-        let scale = 1.0 + 0.035 * walk_amount * (self.anim_clock * 12.0 + 1.57).sin();
+        // Baked rig frames already contain limb motion and hip bob. When they
+        // are unavailable, keep the amplified whole-body motion so the player
+        // still reads as moving instead of a statue.
+        let hop = if baked { 0.0 } else { (self.anim_clock * 12.0).sin() * 0.07 * walk_amount };
+        let bob = if baked { bob } else { bob * 6.0 + hop };
+        let scale = if baked {
+            1.0
+        } else {
+            1.0 + 0.035 * walk_amount * (self.anim_clock * 12.0 + 1.57).sin()
+        };
         let fx = self.player.facing.0;
         let fy = self.player.facing.1;
-        placements[model_index("player")].push(pipeline3d::instance_at(
+        placements[model_index(pose)].push(pipeline3d::instance_at(
             self.player.x + side * 1.5 * fx - forward * 2.0 * fy,
             player_h + bob.max(-0.12),
             self.player.y + side * 1.5 * fy + forward * 2.0 * fx,

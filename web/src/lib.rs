@@ -1,5 +1,6 @@
 mod generated_animations;
 mod generated_models;
+mod generated_poses;
 mod model;
 mod network;
 mod pipeline3d;

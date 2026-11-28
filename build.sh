@@ -4,6 +4,7 @@ cd "$(dirname "$0")"
 
 echo "==> Generating the runtime model list"
 python3 scripts/gen_model_list.py
+python3 scripts/gen_pose_list.py
 # Animation samples are generated from the authored GLB clips with Blender.
 # CI has no Blender, so use the committed web/src/generated_animations.rs there.
 if [ -x "$HOME/.local/blender/blender" ] && [ "${SKIP_BLENDER:-0}" != "1" ]; then
