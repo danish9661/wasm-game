@@ -141,6 +141,24 @@ try {
   check((await panelClass('settings')).includes('hidden'), 'Esc does not open Settings while exiting build mode',
     'exiting build mode also opened Settings');
 
+  // Round-2 regression: a rejected placement must explain itself. Before the
+  // fix, pressing F with no resources / on a blocked tile did nothing at all.
+  await clearToasts();
+  const stBeforeF = Number(await field(/structures=(\d+)/));
+  await page.keyboard.press('f'); await sleep(300);
+  const stAfterF = Number(await field(/structures=(\d+)/));
+  const buildFeedback = await toasts();
+  check(stAfterF > stBeforeF || buildFeedback.some((t) => /can't place/i.test(t)),
+    `F builds or explains why it failed (structures ${stBeforeF} -> ${stAfterF})`,
+    `F was silently ignored (structures ${stBeforeF} -> ${stAfterF}, toasts ${JSON.stringify(buildFeedback)})`);
+  await clearToasts();
+
+  // Round-2 regression: the help text must advertise the live Codex glyph.
+  // The mechanics merge left "(L)" behind even though Tab opens the Codex.
+  const helpText = await page.evaluate(() => document.getElementById('help-panel').textContent);
+  check(/Codex \(Tab\)/i.test(helpText) && !/Codex \(L\)/i.test(helpText),
+    'help text advertises Tab for the Codex', 'help text still advertises L for the Codex');
+
   // Regression: codex uses Tab; L keeps its documented cooking binding.
   await clearToasts();
   await page.keyboard.press('Tab'); await sleep(250);
@@ -154,6 +172,9 @@ try {
   await page.keyboard.press('l'); await sleep(250);
   check((await panelClass('codex')).includes('hidden'), 'L no longer opens the Codex', 'L still opens the Codex');
   check((await toasts()).some((t) => /campfire/i.test(t)), 'L still cooks at a campfire', 'L lost its cook binding');
+  await clearToasts();
+  await page.keyboard.press('0'); await sleep(250);
+  check((await toasts()).some((t) => /campfire/i.test(t)), '0 also cooks (documented hotkey)', 'Digit0 lost its cook binding');
   await clearToasts();
 
   // Regression: 3 toggles the renderer without selecting build slot 2.
