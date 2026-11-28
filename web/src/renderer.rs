@@ -1,4 +1,6 @@
-use game::anim::{AnimState, clip_for as anim_clip_for};
+use game::anim::{
+    AnimState, clip_for as anim_clip_for, npc_family_names, resolve_baked_frame,
+};
 use game::building::{BUILDABLE, CHEST_RANGE, Structure, StructureKind, try_build};
 use game::iso::iso_to_world;
 use game::combat::{
@@ -1086,6 +1088,7 @@ const IDX_GROUND: usize = 2;
 /// Every GLB in `assets/models/`, generated at build time by
 /// `scripts/gen_model_list.py`. Newly authored assets are loaded automatically.
 use crate::generated_models::GLB_MODELS;
+use crate::generated_extra_poses::{NPC_POSE_CLIPS, PROP_POSE_CLIPS};
 /// How many tiles around the player the 3D terrain mesh covers. Raised from
 /// 14 to 26 so the world reads as an open landscape instead of a small stage;
 /// the heightfield is a single generated mesh, so this costs vertices, not
@@ -1368,6 +1371,84 @@ fn player_pose_model(clip: &str, t: f32) -> &'static str {
     }
     let idx = ((t * 30.0) as usize) % entry.frames.len();
     entry.frames[idx]
+}
+
+// --- Baked NPC / prop pose frames -----------------------------------------
+// These helpers are plain Rust (no wasm-bindgen / JS calls). They resolve a
+// generated manifest row to a GLB stem, and only accept stems that are in the
+// generated model list, so an absent or stale manifest degrades cleanly to
+// the original static GLB.
+
+/// Model-list index of a baked frame, or `None` when that GLB was not part of
+/// the last `gen_model_list.py` run (manifest arrived after the build).
+fn baked_model_index(name: &str) -> Option<usize> {
+    GLB_MODELS.iter().position(|n| *n == name).map(|i| 3 + i)
+}
+
+/// Resolve an NPC family + semantic clip at time `t` to a baked GLB stem.
+fn npc_pose_model(family: &str, clip: &str, t: f32) -> Option<&'static str> {
+    let frame = resolve_baked_frame(NPC_POSE_CLIPS, family, clip, t)?;
+    baked_model_index(frame).map(|_| frame)
+}
+
+/// Try the semantic state (`idle`, `walk`, ...) first, then the authored clip
+/// name (`goblin_idle`, ...) across family aliases: manifests may be keyed by
+/// gameplay kind, sprite style or body family.
+fn npc_pose_model_for_style(
+    style: SpriteStyle,
+    state: AnimState,
+    t: f32,
+) -> Option<&'static str> {
+    let authored = anim_clip_for(style, state).unwrap_or("");
+    for family in npc_family_names(style) {
+        for clip in [state.as_str(), authored] {
+            if clip.is_empty() {
+                continue;
+            }
+            if let Some(frame) = npc_pose_model(family, clip, t) {
+                return Some(frame);
+            }
+        }
+    }
+    None
+}
+
+/// Resolve an animated prop by manifest name/time to a baked GLB stem.
+fn prop_pose_model(name: &str, t: f32) -> Option<&'static str> {
+    let frame = resolve_baked_frame(PROP_POSE_CLIPS, name, "", t)?;
+    baked_model_index(frame).map(|_| frame)
+}
+
+/// Alternate manifest names for props whose model stem differs from the short
+/// name an animator would use (`crate_box` vs `crate`, etc.).
+fn prop_alt_names(style: SpriteStyle) -> &'static [&'static str] {
+    match style {
+        SpriteStyle::Crate => &["crate"],
+        SpriteStyle::RockPile => &["rock"],
+        SpriteStyle::BonePile => &["bones"],
+        SpriteStyle::RuinTower => &["ruins"],
+        SpriteStyle::FarmPlot => &["farm"],
+        SpriteStyle::HealingTotem => &["totem"],
+        SpriteStyle::Treasure => &["chest"],
+        SpriteStyle::Lilypad => &["lily"],
+        _ => &[],
+    }
+}
+
+fn prop_pose_model_for_style(
+    style: SpriteStyle,
+    model: &'static str,
+    t: f32,
+) -> Option<&'static str> {
+    if let Some(frame) = prop_pose_model(model, t) {
+        return Some(frame);
+    }
+    for alt in prop_alt_names(style) {
+        if let Some(frame) = prop_pose_model(alt, t) {
+            return Some(frame);
+        }
+    }
+    None
 }
 
 /// Style families that represent walking characters (bob/stride in 3D).
@@ -1653,7 +1734,8 @@ impl App {
         // Every sprite from the sim is represented: GLBs for entities/props,
         // camera-facing quads for HP bars, arrows, loot and other overlays.
         for sp in sprites {
-            let idx = model_index(scene_model_variant(sp.style, sp.x, sp.y));
+            let static_model = scene_model_variant(sp.style, sp.x, sp.y);
+            let mut idx = model_index(static_model);
             let h = tile_height_at(
                 &self.world,
                 &mut self.chunks,
@@ -1694,19 +1776,39 @@ impl App {
                     | SpriteStyle::Fern | SpriteStyle::Mushroom => 0.9,
                     _ => 1.0,
                 };
-                // Characters sample their authored clip for the current AI
-                // state (idle/walk/run/attack/hurt/death), then get a small
-                // per-instance bob/stride/lean. Non-characters keep the plain
-                // transform, so props and the 2.5D fallback are untouched.
+                // Position-derived seed keeps neighbouring entities out of
+                // lockstep without any per-entity runtime storage. It only
+                // offsets the animation phase, never the placement itself.
+                let seed = sp.x * 2.0 + sp.y * 3.0;
+                let t = self.anim_clock + seed;
+                // Baked frames replace the static GLB for animated characters
+                // and props. The GLB already carries authored limb motion, so
+                // the procedural bob/stride/lean is skipped for those frames.
+                // When a manifest is absent (or its GLBs are not in the
+                // generated model list) the original path runs unchanged.
+                let baked = if is_character_style(sp.style) {
+                    match npc_pose_model_for_style(sp.style, sp.anim, t) {
+                        Some(frame) => {
+                            idx = model_index(frame);
+                            true
+                        }
+                        None => false,
+                    }
+                } else {
+                    match prop_pose_model_for_style(sp.style, static_model, t) {
+                        Some(frame) => {
+                            idx = model_index(frame);
+                            true
+                        }
+                        None => false,
+                    }
+                };
                 let mut y = h;
                 let mut lean = 0.0;
                 let mut roll = 0.0;
                 let mut dx = 0.0;
                 let mut dz = 0.0;
-                if is_character_style(sp.style) {
-                    // Position-derived seed keeps neighbouring enemies out of
-                    // lockstep without any per-entity runtime storage.
-                    let seed = sp.x * 2.0 + sp.y * 3.0;
+                if !baked && is_character_style(sp.style) {
                     let anim = character_anim(
                         sp.style,
                         sp.anim,

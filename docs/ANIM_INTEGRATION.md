@@ -9,12 +9,16 @@ the compact runtime table that connects every enemy/NPC family to its clips.
 
 | File | Role |
 |---|---|
-| `game/src/anim.rs` | Pure `AnimState` / `ClipSet` / style→clip table and state selection. No GPU dependency, so `cargo test -p game` covers it. |
+| `game/src/anim.rs` | Pure `AnimState` / `ClipSet` / style→clip table, state selection, and baked-frame resolution (`BakedClipRow`, `resolve_baked_frame`). No GPU dependency, so `cargo test -p game` covers it. |
 | `game/src/render.rs` | `Sprite` carries `anim: AnimState` alongside the existing `walk`/`attack`/`flash` signals. |
 | `scripts/gen_animation_data.py` | Blender export of sampled root/hip (`torso` for enemies) motion to Rust. |
 | `web/src/generated_animations.rs` | Generated per-frame samples: `[root_x, root_y, root_z, hip_x, hip_y, hip_z]` in metres, first frame subtracted. 30 fps authored rate. |
-| `web/src/renderer.rs` | `anim_motion`, `character_anim`, the unchanged player path, and the 3D instance loop that applies offsets/lean. |
-| `web/src/model.rs`, `web/src/pipeline3d.rs` | `rotation_x`/`rotation_z` helpers and `instance_leaning`, which composes yaw + lean + roll + uniform scale. Props use `instance_at` (zero lean) and are unchanged. |
+| `assets/models/poses.json` | Optional player baked-pose manifest (`pose_<clip>_<NN>.glb`). |
+| `scripts/gen_pose_list.py` | Generates `web/src/generated_poses.rs` from the player manifest (empty if absent). |
+| `assets/models/npc_poses.json`, `assets/models/prop_poses.json` | Optional NPC/prop baked-pose manifests (`npcpose_<family>_<clip>_<NN>.glb`, `animprop_<name>_<NN>.glb`). |
+| `scripts/gen_extra_poses.py` | Generates `web/src/generated_extra_poses.rs` (NPC + prop clip tables, empty if manifests are absent). |
+| `web/src/renderer.rs` | `anim_motion`, `character_anim`, the unchanged player path, the baked-frame helpers (`npc_pose_model`, `prop_pose_model`), and the 3D instance loop that applies offsets/lean and swaps baked GLBs. |
+| `web/src/model.rs`, `web/src/pipeline3d.rs` | `rotation_x`/`rotation_z` helpers and `instance_leaning`, which composes yaw + lean + roll + uniform scale. Props keep zero lean/roll; only their model index can change when a baked frame is available. |
 
 ## States and priority
 
@@ -86,18 +90,61 @@ The player keeps its original path (`player_anim_clip` → `anim_offset` →
 hit_light`). `anim_offset` now delegates to `anim_motion`, but returns the same
 `(right, up, forward)` tuple, so player placement is unchanged.
 
+## Baked NPC / prop pose frames
+
+Two optional asset pipelines can supply per-frame GLBs instead of relying on
+the procedural root/hip offsets above:
+
+| Manifest | GLB name pattern | Generated table |
+|---|---|---|
+| `assets/models/npc_poses.json` | `npcpose_<family>_<clip>_<NN>.glb` | `NPC_POSE_CLIPS` |
+| `assets/models/prop_poses.json` | `animprop_<name>_<NN>.glb` | `PROP_POSE_CLIPS` |
+
+`scripts/gen_extra_poses.py` (called by `build.sh`) reads them into
+`web/src/generated_extra_poses.rs`: one row per `(group, clip)` with GLB stems
+and an `fps`. Nested `family → clip → {frames, fps}` maps, flat
+`"<family>_<clip>"` keys and plain `name → frames` maps are all accepted;
+`fps` falls back to one clip-second (frame count) when unspecified. **Neither
+manifest is required**: when one is missing, its table is emitted empty and
+the runtime behaves exactly as before.
+
+Resolution lives in the pure `game::anim` helpers (`baked_frame_at`,
+`resolve_baked_frame`) so it is covered by `cargo test -p game`:
+
+* names are compared case-insensitively with `_`/`-`/spaces ignored, so
+  `ScorpionQueen` and `scorpion_queen` resolve to the same row;
+* an NPC tries semantic states (`idle`, `walk`, `run`, `attack`, `hurt`,
+  `death`) first, then authored clip names (`goblin_idle`, ...), across family
+  aliases (`npc_family_names`); a prop is resolved by its generated model name
+  (plus short aliases such as `crate` for `crate_box`);
+* `(t * fps)` indexes the frames with `rem_euclid`, so clips loop in both
+  directions and large/negative times never panic; a position-derived seed
+  offsets each instance's phase (the player keeps its unseeded path);
+* `None` means no manifest, no matching family/clip, empty frames, or an
+  invalid rate — the caller keeps the original static GLB.
+
+In `update_3d_scene` the baked stem is used only if it also appears in the
+generated `GLB_MODELS` list, which keeps stale manifests harmless. Only the
+model index changes inside the GLB branch: ground quads, billboards/HP bars,
+camera yaw, tile height, tint and particles stay on their original paths, and
+the procedural bob/stride/lean is skipped because the GLB already has authored
+motion. Nothing in the player path or the 2.5D raster path is altered.
+
 ## Regenerate / verify
 
 ```bash
 blender -b --python scripts/gen_animation_data.py   # rebuild generated_animations.rs
-cargo test -p game                                  # clip-table regression tests
+python3 scripts/gen_extra_poses.py                  # rebuild NPC/prop tables (empty if absent)
+cargo test -p game                                  # clip-table + baked-frame regression tests
 cargo check --target wasm32-unknown-unknown -p wasm_game
-./build.sh                                          # regenerates samples when Blender is present
+./build.sh                                          # regenerates tables/samples when Blender is present
 node tests/smoke_3d.mjs                             # 3D pass + 2.5D fallback (port 8879)
 python3 scripts/verify_models.py && python3 scripts/check_metrics.py
 ```
 
 `cargo test -p game anim::tests` covers the regression requirement: one goblin
 resolves five distinct clip names for its five states, distinct kinds choose
-distinct clips, distinct gameplay signals map to distinct states, and props
-resolve to no clip at all.
+distinct clips, distinct gameplay signals map to distinct states, props resolve
+to no clip at all, and baked-frame tests cover distinct states → distinct
+frames, wrapping (including negative time), prop lookup and the missing-manifest
+fallback.
