@@ -4139,8 +4139,8 @@ impl App {
             });
         }
         format!(
-            "{}|def {}%|ins {}%",
-            parts.join(", "),
+            "{}\nDef {}% · Ins {}%",
+            parts.join("\n"),
             (self.player.equipment.total_defense() * 100.0).round() as u32,
             (self.player.equipment.insulation() * 100.0).round() as u32
         )

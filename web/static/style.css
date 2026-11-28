@@ -887,10 +887,33 @@ body.mobile .wslot { min-width: 52px; min-height: 52px; }
   font-size: 13px;
 }
 #settings input[type="checkbox"] {
-  accent-color: var(--sf-ember);
+  /* Custom box: the native unchecked checkbox renders as a bright white
+     square in dark-themed Chrome, which clashes with the panel. */
+  appearance: none;
   width: 24px;
   height: 24px;
+  border: 2px solid var(--sf-line-cool);
+  border-radius: 6px;
+  background: #20283a;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
 }
+#settings input[type="checkbox"]::after {
+  content: "";
+  width: 11px;
+  height: 6px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) scale(0);
+  transition: transform 0.12s ease;
+  margin-top: -3px;
+}
+#settings input[type="checkbox"]:checked {
+  background: var(--sf-ember);
+  border-color: var(--sf-ember);
+}
+#settings input[type="checkbox"]:checked::after { transform: rotate(-45deg) scale(1); }
 #settings .res-auto-val {
   font-variant-numeric: tabular-nums;
   color: var(--sf-ink);
@@ -955,7 +978,8 @@ body.mobile .wslot { min-width: 52px; min-height: 52px; }
 /* Equipment drawer (U) — armour slots and anvil recipes. */
 #equipment {
   position: fixed;
-  top: 60px;
+  /* Below the vitals HUD so it never covers health/hunger/stamina. */
+  top: 212px;
   left: 14px;
   z-index: 18;
   width: 268px;
@@ -974,7 +998,13 @@ body.mobile .wslot { min-width: 52px; min-height: 52px; }
 #equipment.hidden { display: none; }
 #equipment h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: 1px; }
 #equipment h3 small { color: var(--sf-faint); font-weight: 400; }
-.eq-status { font-size: 11px; color: var(--sf-gold, #ffe7a0); line-height: 1.5; word-break: break-word; }
+.eq-status {
+  font-size: 11px;
+  color: var(--sf-gold, #ffe7a0);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
 .eq-note { font-size: 10px; color: var(--sf-faint); margin: 10px 0 0; }
 #eq-close {
   position: absolute; top: 10px; right: 10px; width: 28px; height: 28px;
