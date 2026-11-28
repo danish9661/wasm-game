@@ -1,51 +1,123 @@
-"""Export sampled root/hip motion from player animation GLBs into Rust data.
+"""Export sampled root/hip motion from authored animation GLBs into Rust data.
 
 Run with Blender:  blender -b --python scripts/gen_animation_data.py
 Output: web/src/generated_animations.rs
 
-Each clip stores one sample per frame: [root_x, root_y, root_z, hip_x, hip_y, hip_z]
+Each clip stores one sample per authored 30fps frame:
+    [root_x, root_y, root_z, hip_x, hip_y, hip_z]
 in metres, with the first sample subtracted so applying it never teleports.
+
+The authoritative `player/` set keeps its historical 30-frame sampling. The
+enemy/NPC clips referenced by the runtime clip table in game/src/anim.rs are
+sampled from wave2/wave3/wave4 with their real frame counts (manifest `frames`)
+and their `torso` pivot in place of the human rig's `hips`. Wave files have no
+`hips` empty: `root` carries horizontal travel, `torso` carries the bob/lean.
 """
 import bpy
-import os
 import json
+import os
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-CLIPS = os.path.join(ROOT, "assets", "animations", "player")
+ANIM = os.path.join(ROOT, "assets", "animations")
 OUT = os.path.join(ROOT, "web", "src", "generated_animations.rs")
 
-WANTED = [
+# Player set: unchanged for backwards compatibility with the existing path.
+PLAYER_WANTED = [
     "idle", "walk", "run", "attack_1", "attack_2", "attack_3", "heavy_attack",
     "block", "dodge_roll", "hit_light", "hit_heavy", "death", "interact",
 ]
+PLAYER_FRAMES = 30
 
-samples = {}
-for name in WANTED:
-    path = os.path.join(CLIPS, name + ".glb")
+# Every clip name in game/src/anim.rs's clip table that is not already in the
+# player set. Values are the subfolder holding the GLB; frame counts come from
+# that folder's manifest.json so loops/one-shots keep their authored length.
+EXTRA_SOURCES = {
+    # goblin
+    "goblin_idle": "wave3", "goblin_walk_f": "wave4", "goblin_run_f": "wave4",
+    "goblin_attack": "wave2", "goblin_hit_light": "wave4", "goblin_death": "wave2",
+    # skeleton
+    "skeleton_idle": "wave3", "skeleton_walk_f": "wave4", "skeleton_run_f": "wave4",
+    "skeleton_attack": "wave2", "skeleton_hit_light": "wave4", "skeleton_death": "wave2",
+    # wolf
+    "wolf_idle": "wave3", "wolf_walk_f": "wave4", "wolf_run_f": "wave4",
+    "wolf_attack": "wave2", "wolf_hit_light": "wave4", "wolf_death": "wave2",
+    # archer
+    "archer_idle": "wave3", "archer_walk_f": "wave4", "archer_run_f": "wave4",
+    "archer_shoot": "wave2", "archer_hit_light": "wave4", "archer_death": "wave3",
+    # spider / slime / brute
+    "spider_idle": "wave3", "spider_scuttle": "wave2", "spider_attack": "wave2",
+    "spider_hit_light": "wave4", "spider_death_alt": "wave4",
+    "slime_idle": "wave3", "slime_hop": "wave2", "slime_hit_light": "wave4",
+    "slime_death_alt": "wave4",
+    "brute_idle": "wave3", "brute_walk": "wave3", "brute_run": "wave3",
+    "brute_smash": "wave2", "brute_hit_light": "wave4", "brute_death": "wave3",
+    # townsfolk / guards / golems
+    "villager_idle": "wave2", "guard_patrol": "wave2", "guard_watch": "wave3",
+    "guard_salute": "wave2", "villager_gather": "wave3", "golem_standby": "wave2",
+    "golem_work": "wave3",
+    # legacy root-rig creatures (raider / imp)
+    "raider_sneak": "", "raider_slash": "", "imp_hover": "", "imp_mischief": "",
+    # boss attacks (locomotion/hurt/death fallbacks are shared with creatures)
+    "colossus_ultimate": "wave3", "scorpion_queen_attack": "wave2",
+    "toad_king_attack": "wave2", "stormcaller_attack": "wave2",
+    "ocean_leviathan_attack": "wave2",
+}
+
+_manifests = {}
+
+
+def manifest(folder):
+    if folder not in _manifests:
+        path = os.path.join(ANIM, folder, "manifest.json") if folder else None
+        _manifests[folder] = (
+            {c["clip"]: c for c in json.load(open(path))["clips"]}
+            if path and os.path.exists(path) else {}
+        )
+    return _manifests[folder]
+
+
+def sample(name, folder, frame_count, hip_names):
+    path = os.path.join(ANIM, folder, name + ".glb") if folder else os.path.join(ANIM, name + ".glb")
     if not os.path.exists(path):
-        continue
+        print("SKIP (no file)", name)
+        return None
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=path)
     root = bpy.data.objects.get("root")
-    hips = bpy.data.objects.get("hips")
-    if not root or not hips:
+    hip = next((bpy.data.objects.get(n) for n in hip_names if bpy.data.objects.get(n)), None)
+    if not root or not hip:
         print("SKIP (no rig)", name)
-        continue
+        return None
     sc = bpy.context.scene
-    frames = list(range(1, 31))  # clips are 30fps, <= 30 frames
     vals = []
-    for f in frames:
+    for f in range(1, frame_count + 1):
         sc.frame_set(f)
         r = root.matrix_world.translation
-        h = hips.matrix_world.translation
+        h = hip.matrix_world.translation
         vals.append([r.x, r.y, r.z, h.x, h.y, h.z])
     base = vals[0]
-    vals = [[round(v - b, 4) for v, b in zip(row, base)] for row in vals]
-    samples[name] = vals
+    return [[round(v - b, 4) for v, b in zip(row, base)] for row in vals]
+
+
+samples = {}
+for name in PLAYER_WANTED:
+    vals = sample(name, "player", PLAYER_FRAMES, ("hips", "torso"))
+    if vals:
+        samples[name] = vals
+
+for name, folder in EXTRA_SOURCES.items():
+    if name in samples:
+        continue
+    info = manifest(folder).get(name, {})
+    frames = int(info.get("frames", 30))
+    vals = sample(name, folder, frames, ("torso", "hips"))
+    if vals:
+        samples[name] = vals
 
 lines = [
     "// GENERATED by scripts/gen_animation_data.py — do not edit by hand.",
     "// One sample per 30fps frame: [root_x, root_y, root_z, hip_x, hip_y, hip_z].",
+    "// Player clips use `hips`; wave clips use the bound-derived `torso` pivot.",
     "pub struct AnimClip {",
     "    pub name: &'static str,",
     "    pub frames: &'static [[f32; 6]],",

@@ -1,3 +1,4 @@
+use crate::anim::AnimState;
 use crate::elements::prim::{facing_offset, rasterize, rasterize_flash, sway, Part};
 use crate::iso::{depth_order, iso_to_world, world_to_iso, HALF_H, HALF_W};
 use crate::player::Player;
@@ -237,6 +238,10 @@ pub struct Sprite {
     pub flash: f32,
     /// Attack lunge 0..1: humanoid figures lean/extend toward the facing on strike.
     pub attack: f32,
+    /// Authored-clip state for the additive 3D pass. The 2.5D raster path keeps
+    /// using `walk`/`attack`/`flash` for its own procedural poses; this field
+    /// carries the AI state so the 3D pass can pick the matching GLB clip.
+    pub anim: AnimState,
 }
 
 impl Sprite {
@@ -260,6 +265,7 @@ impl Sprite {
             walk: 0.0,
             flash: 0.0,
             attack: 0.0,
+            anim: AnimState::Idle,
         }
     }
 
@@ -290,6 +296,12 @@ impl Sprite {
     /// Set the attack-lunge intensity (0..1) for the strike animation.
     pub fn with_attack(mut self, attack: f32) -> Self {
         self.attack = attack;
+        self
+    }
+
+    /// Set the authored-clip state consumed by the additive 3D pass.
+    pub fn with_anim(mut self, anim: AnimState) -> Self {
+        self.anim = anim;
         self
     }
 }

@@ -1,3 +1,4 @@
+pub mod anim;
 pub mod building;
 pub mod combat;
 pub mod craft;

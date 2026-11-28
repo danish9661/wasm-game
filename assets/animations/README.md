@@ -21,6 +21,11 @@
 > boss phase-2 telegraph + slam pairs, NPC work loops, NPC interactions and
 > hit/death variants per enemy family. Three new bound-derived rigs
 > (blacksmith, farmer, innkeeper). See `wave4/README.md`.
+>
+> **Runtime integration:** these clips are sampled by
+> `scripts/gen_animation_data.py` into `web/src/generated_animations.rs` and
+> selected per instance by `game/src/anim.rs` from the AI state. See
+> `docs/ANIM_INTEGRATION.md`.
 
 Earlier exploratory set: 40 named 30 fps clips on the existing
 `assets/models/player.glb` doll.

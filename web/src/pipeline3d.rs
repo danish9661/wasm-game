@@ -636,7 +636,29 @@ const DEMO_MODELS: &[&str] = &[
 
 /// translation(x, y, z) * rotationY(yaw) * uniform scale.
 pub(crate) fn instance_at(x: f32, y: f32, z: f32, yaw: f32, scale: f32, tint: [f32; 4]) -> Instance {
+    instance_leaning(x, y, z, yaw, 0.0, 0.0, scale, tint)
+}
+
+/// Like `instance_at`, but adds authored-clip lean around the character's
+/// local axes: `lean` pitches forward/back after yaw, `roll` leans sideways.
+/// Props pass zero and get the exact old transform.
+pub(crate) fn instance_leaning(
+    x: f32,
+    y: f32,
+    z: f32,
+    yaw: f32,
+    lean: f32,
+    roll: f32,
+    scale: f32,
+    tint: [f32; 4],
+) -> Instance {
     let mut transform = math4::multiply(&math4::translation(x, y, z), &math4::rotation_y(yaw));
+    if lean.abs() > 1e-5 {
+        transform = math4::multiply(&transform, &math4::rotation_x(lean));
+    }
+    if roll.abs() > 1e-5 {
+        transform = math4::multiply(&transform, &math4::rotation_z(roll));
+    }
     transform = math4::multiply(&transform, &math4::scaling(scale, scale, scale));
     Instance { transform, tint }
 }

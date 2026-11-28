@@ -62,6 +62,29 @@ pub(crate) mod math4 {
         ]
     }
 
+    /// Right-handed rotation around +X: tips a figure forward/back after the
+    /// yaw has been applied (pitch lean for animated characters).
+    pub fn rotation_x(rad: f32) -> Mat4 {
+        let (c, s) = (rad.cos(), rad.sin());
+        [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, c, s, 0.0],
+            [0.0, -s, c, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    }
+
+    /// Right-handed rotation around +Z: side-to-side lean in local space.
+    pub fn rotation_z(rad: f32) -> Mat4 {
+        let (c, s) = (rad.cos(), rad.sin());
+        [
+            [c, s, 0.0, 0.0],
+            [-s, c, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    }
+
     /// Transform a point (applies translation + w divide).
     pub fn transform_point(m: &Mat4, p: [f32; 3]) -> [f32; 3] {
         let x = m[0][0] * p[0] + m[1][0] * p[1] + m[2][0] * p[2] + m[3][0];

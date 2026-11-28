@@ -1,3 +1,4 @@
+use game::anim::{AnimState, clip_for as anim_clip_for};
 use game::building::{BUILDABLE, CHEST_RANGE, Structure, StructureKind, try_build};
 use game::iso::iso_to_world;
 use game::combat::{
@@ -10,7 +11,7 @@ use game::reputation::Reputation;
 use game::daynight::{DAY_LENGTH, START_TIME, NIGHTFALL, clock, daylight as daylight_at, shattered_night, temperature};
 use game::enemy::{AGGRO_RANGE, AiState, Enemy, EnemyRegistry, EnemyKind, Telegraph, WINDUP, spawner_on, telegraph_progress};
 use game::items::{Inventory, ItemKind};
-use game::npc::{Npc, NpcKind};
+use game::npc::{Npc, NpcKind, NpcState};
 use game::player::{self, Player};
 use game::poi::{poi_structures, ruins_at, ruins_walls, town_name, town_site, village_sites, village_name};
 use game::weapons::WeaponKind;
@@ -1196,32 +1197,151 @@ fn scene_model_variant(style: SpriteStyle, x: f32, y: f32) -> &'static str {
     }
 }
 
-/// Sample an authored animation clip at time `t` and return its body motion in
-/// world units: (right, up, forward). Clips store sampled root/hip transforms;
-/// applying them to the instanced player model makes the existing GLB visibly
-/// walk, strike, dodge and react instead of standing rigid.
-fn anim_offset(name: &str, t: f32) -> (f32, f32, f32) {
-    use crate::generated_animations::ANIM_CLIPS;
-    let Some(clip) = ANIM_CLIPS.iter().find(|c| c.name == name) else {
-        return (0.0, 0.0, 0.0);
-    };
-    if clip.frames.is_empty() {
-        return (0.0, 0.0, 0.0);
-    }
-    let idx = ((t * 30.0) as usize) % clip.frames.len();
-    let a = clip.frames[idx];
-    let b = clip.frames[(idx + 1) % clip.frames.len()];
-    let f = (t * 30.0).fract();
-    let lerp = |x: f32, y: f32| x + (y - x) * f;
-    // glTF/Blender: +Z up, -Y forward. Convert to enginespace right/up/forward.
-    (
-        lerp(a[0], b[0]),
-        lerp(a[5], b[5]),
-        -lerp(a[1], b[1]),
-    )
+/// One sampled frame of body motion from an authored clip, in world units.
+/// `lean`/`roll` come from the hip (or torso pivot) travelling further than the
+/// root — a torso that pushes ahead of its feet is leaning into the step/strike.
+#[derive(Debug, Clone, Copy, Default)]
+struct AnimMotion {
+    side: f32,
+    bob: f32,
+    forward: f32,
+    /// Half the authored cycle's total travel. Characters already move in
+    /// world space from AI, so enemy strides are centred on this instead of
+    /// adding the whole ramp on top of the sprite position.
+    center_side: f32,
+    center_forward: f32,
+    lean: f32,
+    roll: f32,
 }
 
-/// Pick the clip that matches the live player state.
+/// Sample an authored clip at time `t` (30 fps authored rate). Every clip in
+/// `ANIM_CLIPS` stores `[root_x, root_y, root_z, hip_x, hip_y, hip_z]` in metres
+/// with the first frame subtracted, so applying it never teleports a body.
+fn anim_motion(name: &str, t: f32) -> AnimMotion {
+    use crate::generated_animations::ANIM_CLIPS;
+    let Some(clip) = ANIM_CLIPS.iter().find(|c| c.name == name) else {
+        return AnimMotion::default();
+    };
+    if clip.frames.is_empty() {
+        return AnimMotion::default();
+    }
+    let pos = t * 30.0;
+    let idx = (pos as usize) % clip.frames.len();
+    let a = clip.frames[idx];
+    let b = clip.frames[(idx + 1) % clip.frames.len()];
+    let f = pos.fract();
+    let lerp = |x: f32, y: f32| x + (y - x) * f;
+    let root_x = lerp(a[0], b[0]);
+    let root_y = lerp(a[1], b[1]);
+    let hip_x = lerp(a[3], b[3]);
+    let hip_y = lerp(a[4], b[4]);
+    let hip_z = lerp(a[5], b[5]);
+    // Wave-rig torso pivots mostly carry rotation, not translation, so their
+    // hip/root offsets are often zero. Derive lean from the *rate* of authored
+    // root travel as well: a body accelerating into a stride or a lunge tips
+    // forward, which is the visible cue at gameplay zoom.
+    let n = clip.frames.len();
+    let prev = clip.frames[(idx + n - 1) % n];
+    let next = clip.frames[(idx + 2) % n];
+    let forward_vel = -(next[1] - prev[1]) * 15.0; // metres/second, glTF -Y
+    let side_vel = (next[0] - prev[0]) * 15.0;
+    let last = clip.frames[n - 1]; // first frame was subtracted by the generator
+    // glTF/Blender: +Z up, -Y forward. Convert to enginespace right/up/forward.
+    AnimMotion {
+        side: root_x,
+        bob: hip_z,
+        forward: -root_y,
+        center_side: last[0] * 0.5,
+        center_forward: -last[1] * 0.5,
+        lean: (-(hip_y - root_y) * 1.2 + forward_vel * 0.25).clamp(-0.35, 0.35),
+        roll: ((hip_x - root_x) * 1.2 + side_vel * 0.18).clamp(-0.25, 0.25),
+    }
+}
+
+/// Legacy player-facing accessor: (right, up, forward). The player placement
+/// below keeps using this exact mapping so the authored player path is stable.
+fn anim_offset(name: &str, t: f32) -> (f32, f32, f32) {
+    let m = anim_motion(name, t);
+    (m.side, m.bob, m.forward)
+}
+
+/// Per-instance body motion derived from the authored clip chosen for a
+/// character's AI state. Offsets are amplified from the source rig's small
+/// centimetre-scale motion so they read at gameplay zoom.
+#[derive(Debug, Clone, Copy, Default)]
+struct CharacterAnim {
+    /// Travel along the facing (root motion).
+    stride: f32,
+    /// Travel across the facing (hip sway).
+    lateral: f32,
+    /// Vertical bob above the tile height.
+    bob: f32,
+    /// Forward/back pitch in radians.
+    lean: f32,
+    /// Side roll in radians.
+    roll: f32,
+    /// Squash/stretch pulse.
+    scale: f32,
+}
+
+fn character_anim(
+    style: SpriteStyle,
+    state: AnimState,
+    walk: f32,
+    attack: f32,
+    t: f32,
+    seed: f32,
+) -> CharacterAnim {
+    let Some(clip) = anim_clip_for(style, state) else {
+        return CharacterAnim { scale: 1.0, ..Default::default() };
+    };
+    let m = anim_motion(clip, t + seed);
+    let moving = matches!(state, AnimState::Walk | AnimState::Run);
+    let stride_gain = match state {
+        AnimState::Walk => 1.0,
+        AnimState::Run => 1.3,
+        AnimState::Attack => 0.8,
+        AnimState::Hurt => 0.5,
+        AnimState::Death => 0.3,
+        AnimState::Idle => 0.2,
+    };
+    let bob_gain = match state {
+        AnimState::Walk => 5.0,
+        AnimState::Run => 6.0,
+        AnimState::Attack => 4.0,
+        AnimState::Hurt => 3.0,
+        AnimState::Death => 2.0,
+        AnimState::Idle => 4.0,
+    };
+    let phase = t * 11.0 + seed;
+    let intensity = walk.clamp(0.0, 1.0);
+    let mut out = CharacterAnim {
+        // Centre the authored travel: the sprite's own position already
+        // advances with AI movement, so only the cyclic shuffle is added here.
+        stride: (m.forward - m.center_forward) * stride_gain,
+        lateral: (m.side - m.center_side) * stride_gain,
+        bob: m.bob * bob_gain + if moving { phase.sin() * 0.05 * intensity } else { 0.0 },
+        lean: m.lean,
+        roll: m.roll,
+        scale: 1.0 + if moving { 0.025 * (phase + 1.57).sin() * intensity } else { 0.0 },
+    };
+    match state {
+        // The sim telegraphs strikes with `attack`; lean into it on top of the
+        // clip's own torso travel.
+        AnimState::Attack => out.lean += 0.22 * attack.clamp(0.0, 1.0),
+        AnimState::Hurt => out.lean -= 0.18,
+        AnimState::Death => {
+            out.lean += 0.42;
+            out.bob -= 0.08;
+            out.scale = 0.94;
+        }
+        AnimState::Idle => out.roll += 0.02 * (t * 1.7 + seed).sin(),
+        _ => {}
+    }
+    out
+}
+
+/// Pick the clip that matches the live player state (unchanged player path).
 fn player_anim_clip(walk: f32, swing: f32, dodge: f32, hurt: f32) -> &'static str {
     if hurt > 0.01 { "hit_light" }
     else if dodge > 0.01 { "dodge_roll" }
@@ -1548,19 +1668,43 @@ impl App {
                     | SpriteStyle::Fern | SpriteStyle::Mushroom => 0.9,
                     _ => 1.0,
                 };
-                // Walking NPCs/enemies get the same visible stride hop as the
-                // player; idle characters stay planted.
+                // Characters sample their authored clip for the current AI
+                // state (idle/walk/run/attack/hurt/death), then get a small
+                // per-instance bob/stride/lean. Non-characters keep the plain
+                // transform, so props and the 2.5D fallback are untouched.
                 let mut y = h;
-                if is_character_style(sp.style) && sp.walk > 0.05 {
-                    let phase = self.anim_clock * 11.0 + sp.x * 2.0;
-                    y += phase.sin() * 0.05;
-                    scale *= 1.0 + 0.025 * (phase + 1.57).sin();
+                let mut lean = 0.0;
+                let mut roll = 0.0;
+                let mut dx = 0.0;
+                let mut dz = 0.0;
+                if is_character_style(sp.style) {
+                    // Position-derived seed keeps neighbouring enemies out of
+                    // lockstep without any per-entity runtime storage.
+                    let seed = sp.x * 2.0 + sp.y * 3.0;
+                    let anim = character_anim(
+                        sp.style,
+                        sp.anim,
+                        sp.walk,
+                        sp.attack,
+                        self.anim_clock,
+                        seed,
+                    );
+                    y += anim.bob.max(-0.15);
+                    let fx = sp.facing.0;
+                    let fy = sp.facing.1;
+                    dx = anim.stride * fx - anim.lateral * fy;
+                    dz = anim.stride * fy + anim.lateral * fx;
+                    lean = anim.lean;
+                    roll = anim.roll;
+                    scale *= anim.scale;
                 }
-                placements[idx].push(pipeline3d::instance_at(
-                    sp.x,
+                placements[idx].push(pipeline3d::instance_leaning(
+                    sp.x + dx,
                     y,
-                    sp.y,
+                    sp.y + dz,
                     yaw,
+                    lean,
+                    roll,
                     scale,
                     scene_tint(sp.style, sp.color, sp.alpha),
                 ));
@@ -7126,6 +7270,22 @@ impl App {
             } else {
                 0.0
             };
+            // Authored-clip state for the 3D pass: mirror the AI state, with
+            // the hit flash and a corpse taking priority over locomotion.
+            sp.anim = if e.hp <= 0.0 {
+                AnimState::Death
+            } else if f > 0.25 {
+                AnimState::Hurt
+            } else if e.windup > 0.0 {
+                AnimState::Attack
+            } else {
+                match e.state {
+                    AiState::Idle => AnimState::Idle,
+                    AiState::Chase => AnimState::Walk,
+                    AiState::Flee => AnimState::Run,
+                    AiState::Attack => AnimState::Attack,
+                }
+            };
             // Per-boss strike telegraph: a kind-specific tell that swells as
             // the wind-up completes, so each guardian reads differently in its
             // dodge window. Enraged bosses throb twice as fast.
@@ -7244,7 +7404,8 @@ impl App {
                 Sprite::new_center(rp.x, rp.y, col, 16.0, 22.0, 0.0)
                     .with_style(SpriteStyle::Humanoid)
                     .with_facing(rp.facing)
-                    .with_walk(0.6),
+                    .with_walk(0.6)
+                    .with_anim(AnimState::Walk),
             );
             sprites.push(
                 Sprite::new_center(rp.x, rp.y, [0.0, 0.0, 0.0], 11.0, 2.5, 28.0)
@@ -7304,11 +7465,20 @@ impl App {
                 NpcKind::Golem => (SpriteStyle::Golem, 11.0, 28.0),
                 _ => (SpriteStyle::Humanoid, 7.5, 17.0),
             };
+            // The AI state (not the bob phase in `n.walk`) decides which
+            // authored clip a townsfolk plays: patrol/wander/alert walk,
+            // fleeing runs, greetings/trade/sleep stay on the idle loop.
+            let anim_state = match n.state {
+                NpcState::Wander | NpcState::Patrol | NpcState::Alert => AnimState::Walk,
+                NpcState::Flee => AnimState::Run,
+                _ => AnimState::Idle,
+            };
             sprites.push(
                 Sprite::new_center(n.x, n.y, n.kind.color(), hw, hh, 0.0)
                     .with_style(style)
                     .with_facing(n.facing)
-                    .with_walk((n.walk * 0.15).min(1.0)),
+                    .with_walk((n.walk * 0.15).min(1.0))
+                    .with_anim(anim_state),
             );
         }
         // build-mode ghost preview: a translucent tinted copy of the selected
