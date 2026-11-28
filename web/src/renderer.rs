@@ -2630,8 +2630,10 @@ impl App {
                 "KeyM" => self.craft_weapon(),
                 "KeyY" => self.place_block(),
                 "KeyO" => self.talk_nearest_npc(),
-                // 0 cooks at a campfire (L stays the Codex key in the page).
-                "Digit0" => self.cook(),
+                // 0 is the documented cook key; L is kept as a legacy alias
+                // (the Codex moved to Tab in the first QA round). Both must
+                // cook — qa_loop.mjs locks the L binding down.
+                "KeyL" | "Digit0" => self.cook(),
                 "Enter" => {
                     // OS key-repeat while held must not strobe enter/leave;
                     // a hold is one entry (or one exit), never a lottery.
@@ -5079,11 +5081,27 @@ impl App {
 
     fn place(&mut self, kind: StructureKind, tx: i32, ty: i32) {
         if !self.can_place(kind, tx, ty) {
+            // A build hotkey that just returns reads as a broken control.
+            // Name the failed precondition so the player can act on it.
+            let tile = self.etile(tx, ty);
+            let reason = if self.structures.iter().any(|s| s.tx == tx && s.ty == ty) {
+                "the tile is occupied"
+            } else if !tile.walkable() {
+                "the ground is blocked"
+            } else if resource_on(tx, ty, tile).is_some() && !self.nodes.is_depleted(tx, ty) {
+                "a resource is in the way"
+            } else {
+                "not enough resources"
+            };
+            toast(&format!("Can't place {:?} — {}", kind, reason));
             return;
         }
-        if let Ok(s) = try_build(kind, tx, ty, &mut self.inventory) {
-            self.structures.push(s);
-            self.maybe_house_merchant();
+        match try_build(kind, tx, ty, &mut self.inventory) {
+            Ok(s) => {
+                self.structures.push(s);
+                self.maybe_house_merchant();
+            }
+            Err(item) => toast(&format!("Can't place {:?} — need more {}", kind, item.name())),
         }
     }
 

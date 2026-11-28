@@ -105,3 +105,105 @@ layout with working touch actions.
 or scale contract. All edits are in `web/src/renderer.rs`,
 `web/static/index.html`, `web/static/style.css`, `tests/assert.js` (harness
 only), plus the new regression test and this report.
+
+---
+
+# Round 2 — post-merge re-QA (branch `qa-round2` from `main` @ `3abde47`)
+
+Re-ran every gate and drove both the deployed page
+(`https://danish9661.github.io/wasm-game/`, served build `?v=3abde47`) and a
+real browser on the freshly built local `pkg/`. The cooking/fishing/reputation
+merge (`21cf691`) had invalidated two round-1 contracts; a third defect was
+found only by pressing the build hotkey in the live UI.
+
+## Baseline (before round-2 fixes)
+
+| Check | Result |
+|---|---|
+| `cargo test -p game` | 207 passed, 0 failed |
+| `cargo check --target wasm32-unknown-unknown -p wasm_game` | OK |
+| `./build.sh` | OK |
+| `python3 scripts/verify_models.py` | 254 GLBs: 254 passed, 0 failed |
+| `python3 scripts/check_metrics.py` | OK (player 1.55u, house 3.10u, base ≈ 0) |
+| `tools/audit.sh` | RESULT: OK (all visual gates passed) |
+| `tests/smoke_3d.mjs` (port 8879) | 8 passed, 0 failed; 257 GLBs, 1147 instances; 0 console errors |
+| `tests/qa_loop.mjs` | **39 passed, 1 failed** — `L lost its cook binding` |
+| Deployed browser driver | **31 passed, 2 failed** — `F gave no feedback`, `help still advertises Codex (L)` |
+
+`cargo test` / `audit.sh` needed
+`CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker-features=-lld"` in
+this machine: the default native `rust-lld` crashed with `signal 7 [Bus error]`
+while linking build scripts. This is an environment/toolchain issue, not a
+code defect; the wasm target is unaffected.
+
+## Findings → fixes (round 2)
+
+| # | Observed defect (reproduced in a real browser) | Root cause | Surgical fix | Regression test |
+|---|---|---|---|---|
+| 11 | Pressing **L** no longer cooked; the round-1 contract `L still cooks at a campfire` failed (local QA loop), and the cook toast was gone. | The cooking merge rebound cooking to `Digit0` only and dropped the legacy `KeyL` arm; the Codex had already moved to Tab, so the key was free. | `renderer.rs::set_key`: `"KeyL" \| "Digit0" => self.cook()` — L restored as a harmless alias, 0 remains the documented key. | Existing `L still cooks at a campfire` now passes; added `0 also cooks (documented hotkey)`. |
+| 12 | Pressing **F** with an empty pack silently did nothing: no toast, no structure, no hint — looked like a dead control. | `App::place()` returned early from `can_place()` / `try_build()` without any feedback. | `place()` now toasts the concrete reason (`the tile is occupied`, `the ground is blocked`, `a resource is in the way`, `not enough resources`, `need more <item>`) and uses a single `try_build` call. | `F builds or explains why it failed (structures …)` in `tests/qa_loop.mjs`. |
+| 13 | Help → GOALS still said “read the Codex **(L)**”; the live binding is **Tab** and L now cooks. | Stale glyph left behind by the mechanics merge (the controls grid and button badge were already updated). | `index.html`: GOALS text now reads `Codex (Tab)`. | `help text advertises Tab for the Codex` in `tests/qa_loop.mjs`. |
+
+No other broken controls, console errors, layout overflow or wrong HUD values
+were reproduced. Craft, cook and fish were driven to **success**, not just to
+their “blocked” hints: see the deep-probe evidence below.
+
+## Evidence — screenshots (all captured from live browsers)
+
+* `docs/qa-evidence/01-boot.jpg` … `15-mobile-settings.jpg` — final local
+  `tests/qa_loop.mjs` run (1280×720 desktop / 390×844 phone @2x), regenerated
+  after the fixes.
+* `docs/qa-evidence/local-01-boot.jpg` … `local-18-mobile-settings.jpg` —
+  independent local driver: boot, New Game, WASD in all four directions, J
+  attack, E harvest/build hint, inventory, equipment, codex, cook/fish keys,
+  settings, 3D toggle, help panel, save/reload/Continue, clock, phone layout.
+* `docs/qa-evidence/local-21-craft.jpg`, `local-22-cook.jpg`, `local-23-fish.jpg`
+  — successful craft (wood 20→15 at an Anvil), cook (raw 4→2, cooked 0→1) and
+  fish (cast → BITE → “Caught a fish!”) on the fixed local build.
+* `docs/qa-evidence/deployed-01-boot.jpg` … `deployed-23-fish.jpg` — the same
+  flows on the deployed GitHub Pages URL. Its
+  `deployed-11-help.jpg`, `deployed-04-build-hint.jpg` and the driver log show
+  findings 11–13 are **still present on the deployed build**: fixes are local
+  only; no deploy was performed by this task.
+
+Key log lines (round 2):
+
+```
+# local, after fixes
+PASS F builds or explains why it failed (structures 201->201)
+      toast="Can't place Campfire — not enough resources"
+PASS L still cooks at a campfire
+PASS 0 also cooks (documented hotkey)
+PASS help text advertises Tab for the Codex
+QA loop: 43 passed, 0 failed. Screenshots: docs/qa-evidence/
+local: 33 passed, 0 failed, 2 notes / 0 console errors
+local deep: 7 passed, 0 failed  (craft, cook, fish)
+
+# deployed, unchanged build ?v=3abde47
+FAIL F silently ignored (structures 196->196)
+FAIL L cook alias broken
+FAIL help still advertises Codex (L)
+deployed: 30 passed, 3 failed
+deployed deep: 7 passed, 0 failed  (craft, cook, fish work there too)
+```
+
+## Final verification (after round-2 fixes)
+
+| Check | Result |
+|---|---|
+| `cargo test -p game` | 207 passed, 0 failed |
+| `cargo check --target wasm32-unknown-unknown -p wasm_game` | OK |
+| `./build.sh` | OK |
+| `python3 scripts/verify_models.py` | 254 passed, 0 failed (metrics unchanged) |
+| `python3 scripts/check_metrics.py` | OK |
+| `tools/audit.sh` (Chrome + puppeteer-core) | RESULT: OK — houses/player/movement/attack/quest/crafting/interior gates passed |
+| `tests/smoke_3d.mjs` (port 8879) | 8 passed, 0 failed; 0 console errors |
+| `tests/qa_loop.mjs` | **43 passed, 0 failed**; 0 console errors on desktop + mobile |
+| Local full browser driver | **33 passed, 0 failed**; 0 console errors |
+| Local + deployed deep probe (craft/cook/fish) | **7 passed, 0 failed** on each |
+| Deployed full browser driver | 30 passed, 3 failed — the three fixes are not deployed (expected) |
+
+**Not changed:** `game/src/*`, asset generators/GLBs, animation data, palette
+or scale contract. Round-2 edits are confined to `web/src/renderer.rs`,
+`web/static/index.html`, `tests/qa_loop.mjs`, this report and the screenshots
+under `docs/qa-evidence/`.
