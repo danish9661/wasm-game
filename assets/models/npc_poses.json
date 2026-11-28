@@ -1,0 +1,1074 @@
+{
+  "goblin_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_goblin_idle_00.glb",
+      "npcpose_goblin_idle_01.glb",
+      "npcpose_goblin_idle_02.glb",
+      "npcpose_goblin_idle_03.glb",
+      "npcpose_goblin_idle_04.glb",
+      "npcpose_goblin_idle_05.glb",
+      "npcpose_goblin_idle_06.glb",
+      "npcpose_goblin_idle_07.glb",
+      "npcpose_goblin_idle_08.glb",
+      "npcpose_goblin_idle_09.glb",
+      "npcpose_goblin_idle_10.glb",
+      "npcpose_goblin_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "goblin_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_goblin_walk_00.glb",
+      "npcpose_goblin_walk_01.glb",
+      "npcpose_goblin_walk_02.glb",
+      "npcpose_goblin_walk_03.glb",
+      "npcpose_goblin_walk_04.glb",
+      "npcpose_goblin_walk_05.glb",
+      "npcpose_goblin_walk_06.glb",
+      "npcpose_goblin_walk_07.glb",
+      "npcpose_goblin_walk_08.glb",
+      "npcpose_goblin_walk_09.glb",
+      "npcpose_goblin_walk_10.glb",
+      "npcpose_goblin_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "goblin_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_goblin_attack_00.glb",
+      "npcpose_goblin_attack_01.glb",
+      "npcpose_goblin_attack_02.glb",
+      "npcpose_goblin_attack_03.glb",
+      "npcpose_goblin_attack_04.glb",
+      "npcpose_goblin_attack_05.glb",
+      "npcpose_goblin_attack_06.glb",
+      "npcpose_goblin_attack_07.glb",
+      "npcpose_goblin_attack_08.glb",
+      "npcpose_goblin_attack_09.glb",
+      "npcpose_goblin_attack_10.glb",
+      "npcpose_goblin_attack_11.glb",
+      "npcpose_goblin_attack_12.glb",
+      "npcpose_goblin_attack_13.glb",
+      "npcpose_goblin_attack_14.glb",
+      "npcpose_goblin_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "skeleton_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_skeleton_idle_00.glb",
+      "npcpose_skeleton_idle_01.glb",
+      "npcpose_skeleton_idle_02.glb",
+      "npcpose_skeleton_idle_03.glb",
+      "npcpose_skeleton_idle_04.glb",
+      "npcpose_skeleton_idle_05.glb",
+      "npcpose_skeleton_idle_06.glb",
+      "npcpose_skeleton_idle_07.glb",
+      "npcpose_skeleton_idle_08.glb",
+      "npcpose_skeleton_idle_09.glb",
+      "npcpose_skeleton_idle_10.glb",
+      "npcpose_skeleton_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "skeleton_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_skeleton_walk_00.glb",
+      "npcpose_skeleton_walk_01.glb",
+      "npcpose_skeleton_walk_02.glb",
+      "npcpose_skeleton_walk_03.glb",
+      "npcpose_skeleton_walk_04.glb",
+      "npcpose_skeleton_walk_05.glb",
+      "npcpose_skeleton_walk_06.glb",
+      "npcpose_skeleton_walk_07.glb",
+      "npcpose_skeleton_walk_08.glb",
+      "npcpose_skeleton_walk_09.glb",
+      "npcpose_skeleton_walk_10.glb",
+      "npcpose_skeleton_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "skeleton_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_skeleton_attack_00.glb",
+      "npcpose_skeleton_attack_01.glb",
+      "npcpose_skeleton_attack_02.glb",
+      "npcpose_skeleton_attack_03.glb",
+      "npcpose_skeleton_attack_04.glb",
+      "npcpose_skeleton_attack_05.glb",
+      "npcpose_skeleton_attack_06.glb",
+      "npcpose_skeleton_attack_07.glb",
+      "npcpose_skeleton_attack_08.glb",
+      "npcpose_skeleton_attack_09.glb",
+      "npcpose_skeleton_attack_10.glb",
+      "npcpose_skeleton_attack_11.glb",
+      "npcpose_skeleton_attack_12.glb",
+      "npcpose_skeleton_attack_13.glb",
+      "npcpose_skeleton_attack_14.glb",
+      "npcpose_skeleton_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "wolf_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_wolf_idle_00.glb",
+      "npcpose_wolf_idle_01.glb",
+      "npcpose_wolf_idle_02.glb",
+      "npcpose_wolf_idle_03.glb",
+      "npcpose_wolf_idle_04.glb",
+      "npcpose_wolf_idle_05.glb",
+      "npcpose_wolf_idle_06.glb",
+      "npcpose_wolf_idle_07.glb",
+      "npcpose_wolf_idle_08.glb",
+      "npcpose_wolf_idle_09.glb",
+      "npcpose_wolf_idle_10.glb",
+      "npcpose_wolf_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "wolf_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_wolf_walk_00.glb",
+      "npcpose_wolf_walk_01.glb",
+      "npcpose_wolf_walk_02.glb",
+      "npcpose_wolf_walk_03.glb",
+      "npcpose_wolf_walk_04.glb",
+      "npcpose_wolf_walk_05.glb",
+      "npcpose_wolf_walk_06.glb",
+      "npcpose_wolf_walk_07.glb",
+      "npcpose_wolf_walk_08.glb",
+      "npcpose_wolf_walk_09.glb",
+      "npcpose_wolf_walk_10.glb",
+      "npcpose_wolf_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "wolf_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_wolf_attack_00.glb",
+      "npcpose_wolf_attack_01.glb",
+      "npcpose_wolf_attack_02.glb",
+      "npcpose_wolf_attack_03.glb",
+      "npcpose_wolf_attack_04.glb",
+      "npcpose_wolf_attack_05.glb",
+      "npcpose_wolf_attack_06.glb",
+      "npcpose_wolf_attack_07.glb",
+      "npcpose_wolf_attack_08.glb",
+      "npcpose_wolf_attack_09.glb",
+      "npcpose_wolf_attack_10.glb",
+      "npcpose_wolf_attack_11.glb",
+      "npcpose_wolf_attack_12.glb",
+      "npcpose_wolf_attack_13.glb",
+      "npcpose_wolf_attack_14.glb",
+      "npcpose_wolf_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "archer_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_archer_idle_00.glb",
+      "npcpose_archer_idle_01.glb",
+      "npcpose_archer_idle_02.glb",
+      "npcpose_archer_idle_03.glb",
+      "npcpose_archer_idle_04.glb",
+      "npcpose_archer_idle_05.glb",
+      "npcpose_archer_idle_06.glb",
+      "npcpose_archer_idle_07.glb",
+      "npcpose_archer_idle_08.glb",
+      "npcpose_archer_idle_09.glb",
+      "npcpose_archer_idle_10.glb",
+      "npcpose_archer_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "archer_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_archer_walk_00.glb",
+      "npcpose_archer_walk_01.glb",
+      "npcpose_archer_walk_02.glb",
+      "npcpose_archer_walk_03.glb",
+      "npcpose_archer_walk_04.glb",
+      "npcpose_archer_walk_05.glb",
+      "npcpose_archer_walk_06.glb",
+      "npcpose_archer_walk_07.glb",
+      "npcpose_archer_walk_08.glb",
+      "npcpose_archer_walk_09.glb",
+      "npcpose_archer_walk_10.glb",
+      "npcpose_archer_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "archer_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_archer_attack_00.glb",
+      "npcpose_archer_attack_01.glb",
+      "npcpose_archer_attack_02.glb",
+      "npcpose_archer_attack_03.glb",
+      "npcpose_archer_attack_04.glb",
+      "npcpose_archer_attack_05.glb",
+      "npcpose_archer_attack_06.glb",
+      "npcpose_archer_attack_07.glb",
+      "npcpose_archer_attack_08.glb",
+      "npcpose_archer_attack_09.glb",
+      "npcpose_archer_attack_10.glb",
+      "npcpose_archer_attack_11.glb",
+      "npcpose_archer_attack_12.glb",
+      "npcpose_archer_attack_13.glb",
+      "npcpose_archer_attack_14.glb",
+      "npcpose_archer_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "raider_idle": {
+    "fps": 7.659574,
+    "frames": [
+      "npcpose_raider_idle_00.glb",
+      "npcpose_raider_idle_01.glb",
+      "npcpose_raider_idle_02.glb",
+      "npcpose_raider_idle_03.glb",
+      "npcpose_raider_idle_04.glb",
+      "npcpose_raider_idle_05.glb",
+      "npcpose_raider_idle_06.glb",
+      "npcpose_raider_idle_07.glb",
+      "npcpose_raider_idle_08.glb",
+      "npcpose_raider_idle_09.glb",
+      "npcpose_raider_idle_10.glb",
+      "npcpose_raider_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "raider_walk": {
+    "fps": 7.659574,
+    "frames": [
+      "npcpose_raider_walk_00.glb",
+      "npcpose_raider_walk_01.glb",
+      "npcpose_raider_walk_02.glb",
+      "npcpose_raider_walk_03.glb",
+      "npcpose_raider_walk_04.glb",
+      "npcpose_raider_walk_05.glb",
+      "npcpose_raider_walk_06.glb",
+      "npcpose_raider_walk_07.glb",
+      "npcpose_raider_walk_08.glb",
+      "npcpose_raider_walk_09.glb",
+      "npcpose_raider_walk_10.glb",
+      "npcpose_raider_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "raider_attack": {
+    "fps": 11.428571,
+    "frames": [
+      "npcpose_raider_attack_00.glb",
+      "npcpose_raider_attack_01.glb",
+      "npcpose_raider_attack_02.glb",
+      "npcpose_raider_attack_03.glb",
+      "npcpose_raider_attack_04.glb",
+      "npcpose_raider_attack_05.glb",
+      "npcpose_raider_attack_06.glb",
+      "npcpose_raider_attack_07.glb",
+      "npcpose_raider_attack_08.glb",
+      "npcpose_raider_attack_09.glb",
+      "npcpose_raider_attack_10.glb",
+      "npcpose_raider_attack_11.glb",
+      "npcpose_raider_attack_12.glb",
+      "npcpose_raider_attack_13.glb",
+      "npcpose_raider_attack_14.glb",
+      "npcpose_raider_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "guard_idle": {
+    "fps": 3.75,
+    "frames": [
+      "npcpose_guard_idle_00.glb",
+      "npcpose_guard_idle_01.glb",
+      "npcpose_guard_idle_02.glb",
+      "npcpose_guard_idle_03.glb",
+      "npcpose_guard_idle_04.glb",
+      "npcpose_guard_idle_05.glb",
+      "npcpose_guard_idle_06.glb",
+      "npcpose_guard_idle_07.glb",
+      "npcpose_guard_idle_08.glb",
+      "npcpose_guard_idle_09.glb",
+      "npcpose_guard_idle_10.glb",
+      "npcpose_guard_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "guard_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_guard_walk_00.glb",
+      "npcpose_guard_walk_01.glb",
+      "npcpose_guard_walk_02.glb",
+      "npcpose_guard_walk_03.glb",
+      "npcpose_guard_walk_04.glb",
+      "npcpose_guard_walk_05.glb",
+      "npcpose_guard_walk_06.glb",
+      "npcpose_guard_walk_07.glb",
+      "npcpose_guard_walk_08.glb",
+      "npcpose_guard_walk_09.glb",
+      "npcpose_guard_walk_10.glb",
+      "npcpose_guard_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "guard_attack": {
+    "fps": 12.0,
+    "frames": [
+      "npcpose_guard_attack_00.glb",
+      "npcpose_guard_attack_01.glb",
+      "npcpose_guard_attack_02.glb",
+      "npcpose_guard_attack_03.glb",
+      "npcpose_guard_attack_04.glb",
+      "npcpose_guard_attack_05.glb",
+      "npcpose_guard_attack_06.glb",
+      "npcpose_guard_attack_07.glb",
+      "npcpose_guard_attack_08.glb",
+      "npcpose_guard_attack_09.glb",
+      "npcpose_guard_attack_10.glb",
+      "npcpose_guard_attack_11.glb",
+      "npcpose_guard_attack_12.glb",
+      "npcpose_guard_attack_13.glb",
+      "npcpose_guard_attack_14.glb",
+      "npcpose_guard_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "golem_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_golem_idle_00.glb",
+      "npcpose_golem_idle_01.glb",
+      "npcpose_golem_idle_02.glb",
+      "npcpose_golem_idle_03.glb",
+      "npcpose_golem_idle_04.glb",
+      "npcpose_golem_idle_05.glb",
+      "npcpose_golem_idle_06.glb",
+      "npcpose_golem_idle_07.glb",
+      "npcpose_golem_idle_08.glb",
+      "npcpose_golem_idle_09.glb",
+      "npcpose_golem_idle_10.glb",
+      "npcpose_golem_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "golem_walk": {
+    "fps": 7.5,
+    "frames": [
+      "npcpose_golem_walk_00.glb",
+      "npcpose_golem_walk_01.glb",
+      "npcpose_golem_walk_02.glb",
+      "npcpose_golem_walk_03.glb",
+      "npcpose_golem_walk_04.glb",
+      "npcpose_golem_walk_05.glb",
+      "npcpose_golem_walk_06.glb",
+      "npcpose_golem_walk_07.glb",
+      "npcpose_golem_walk_08.glb",
+      "npcpose_golem_walk_09.glb",
+      "npcpose_golem_walk_10.glb",
+      "npcpose_golem_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "golem_attack": {
+    "fps": 7.5,
+    "frames": [
+      "npcpose_golem_attack_00.glb",
+      "npcpose_golem_attack_01.glb",
+      "npcpose_golem_attack_02.glb",
+      "npcpose_golem_attack_03.glb",
+      "npcpose_golem_attack_04.glb",
+      "npcpose_golem_attack_05.glb",
+      "npcpose_golem_attack_06.glb",
+      "npcpose_golem_attack_07.glb",
+      "npcpose_golem_attack_08.glb",
+      "npcpose_golem_attack_09.glb",
+      "npcpose_golem_attack_10.glb",
+      "npcpose_golem_attack_11.glb"
+    ],
+    "loop": true
+  },
+  "brute_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_brute_idle_00.glb",
+      "npcpose_brute_idle_01.glb",
+      "npcpose_brute_idle_02.glb",
+      "npcpose_brute_idle_03.glb",
+      "npcpose_brute_idle_04.glb",
+      "npcpose_brute_idle_05.glb",
+      "npcpose_brute_idle_06.glb",
+      "npcpose_brute_idle_07.glb",
+      "npcpose_brute_idle_08.glb",
+      "npcpose_brute_idle_09.glb",
+      "npcpose_brute_idle_10.glb",
+      "npcpose_brute_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "brute_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_brute_walk_00.glb",
+      "npcpose_brute_walk_01.glb",
+      "npcpose_brute_walk_02.glb",
+      "npcpose_brute_walk_03.glb",
+      "npcpose_brute_walk_04.glb",
+      "npcpose_brute_walk_05.glb",
+      "npcpose_brute_walk_06.glb",
+      "npcpose_brute_walk_07.glb",
+      "npcpose_brute_walk_08.glb",
+      "npcpose_brute_walk_09.glb",
+      "npcpose_brute_walk_10.glb",
+      "npcpose_brute_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "brute_attack": {
+    "fps": 8.888889,
+    "frames": [
+      "npcpose_brute_attack_00.glb",
+      "npcpose_brute_attack_01.glb",
+      "npcpose_brute_attack_02.glb",
+      "npcpose_brute_attack_03.glb",
+      "npcpose_brute_attack_04.glb",
+      "npcpose_brute_attack_05.glb",
+      "npcpose_brute_attack_06.glb",
+      "npcpose_brute_attack_07.glb",
+      "npcpose_brute_attack_08.glb",
+      "npcpose_brute_attack_09.glb",
+      "npcpose_brute_attack_10.glb",
+      "npcpose_brute_attack_11.glb",
+      "npcpose_brute_attack_12.glb",
+      "npcpose_brute_attack_13.glb",
+      "npcpose_brute_attack_14.glb",
+      "npcpose_brute_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "slime_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_slime_idle_00.glb",
+      "npcpose_slime_idle_01.glb",
+      "npcpose_slime_idle_02.glb",
+      "npcpose_slime_idle_03.glb",
+      "npcpose_slime_idle_04.glb",
+      "npcpose_slime_idle_05.glb",
+      "npcpose_slime_idle_06.glb",
+      "npcpose_slime_idle_07.glb",
+      "npcpose_slime_idle_08.glb",
+      "npcpose_slime_idle_09.glb",
+      "npcpose_slime_idle_10.glb",
+      "npcpose_slime_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "slime_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_slime_walk_00.glb",
+      "npcpose_slime_walk_01.glb",
+      "npcpose_slime_walk_02.glb",
+      "npcpose_slime_walk_03.glb",
+      "npcpose_slime_walk_04.glb",
+      "npcpose_slime_walk_05.glb",
+      "npcpose_slime_walk_06.glb",
+      "npcpose_slime_walk_07.glb",
+      "npcpose_slime_walk_08.glb",
+      "npcpose_slime_walk_09.glb",
+      "npcpose_slime_walk_10.glb",
+      "npcpose_slime_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "slime_attack": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_slime_attack_00.glb",
+      "npcpose_slime_attack_01.glb",
+      "npcpose_slime_attack_02.glb",
+      "npcpose_slime_attack_03.glb",
+      "npcpose_slime_attack_04.glb",
+      "npcpose_slime_attack_05.glb",
+      "npcpose_slime_attack_06.glb",
+      "npcpose_slime_attack_07.glb",
+      "npcpose_slime_attack_08.glb",
+      "npcpose_slime_attack_09.glb",
+      "npcpose_slime_attack_10.glb",
+      "npcpose_slime_attack_11.glb"
+    ],
+    "loop": true
+  },
+  "spider_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_spider_idle_00.glb",
+      "npcpose_spider_idle_01.glb",
+      "npcpose_spider_idle_02.glb",
+      "npcpose_spider_idle_03.glb",
+      "npcpose_spider_idle_04.glb",
+      "npcpose_spider_idle_05.glb",
+      "npcpose_spider_idle_06.glb",
+      "npcpose_spider_idle_07.glb",
+      "npcpose_spider_idle_08.glb",
+      "npcpose_spider_idle_09.glb",
+      "npcpose_spider_idle_10.glb",
+      "npcpose_spider_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "spider_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_spider_walk_00.glb",
+      "npcpose_spider_walk_01.glb",
+      "npcpose_spider_walk_02.glb",
+      "npcpose_spider_walk_03.glb",
+      "npcpose_spider_walk_04.glb",
+      "npcpose_spider_walk_05.glb",
+      "npcpose_spider_walk_06.glb",
+      "npcpose_spider_walk_07.glb",
+      "npcpose_spider_walk_08.glb",
+      "npcpose_spider_walk_09.glb",
+      "npcpose_spider_walk_10.glb",
+      "npcpose_spider_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "spider_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_spider_attack_00.glb",
+      "npcpose_spider_attack_01.glb",
+      "npcpose_spider_attack_02.glb",
+      "npcpose_spider_attack_03.glb",
+      "npcpose_spider_attack_04.glb",
+      "npcpose_spider_attack_05.glb",
+      "npcpose_spider_attack_06.glb",
+      "npcpose_spider_attack_07.glb",
+      "npcpose_spider_attack_08.glb",
+      "npcpose_spider_attack_09.glb",
+      "npcpose_spider_attack_10.glb",
+      "npcpose_spider_attack_11.glb",
+      "npcpose_spider_attack_12.glb",
+      "npcpose_spider_attack_13.glb",
+      "npcpose_spider_attack_14.glb",
+      "npcpose_spider_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "imp_idle": {
+    "fps": 7.659574,
+    "frames": [
+      "npcpose_imp_idle_00.glb",
+      "npcpose_imp_idle_01.glb",
+      "npcpose_imp_idle_02.glb",
+      "npcpose_imp_idle_03.glb",
+      "npcpose_imp_idle_04.glb",
+      "npcpose_imp_idle_05.glb",
+      "npcpose_imp_idle_06.glb",
+      "npcpose_imp_idle_07.glb",
+      "npcpose_imp_idle_08.glb",
+      "npcpose_imp_idle_09.glb",
+      "npcpose_imp_idle_10.glb",
+      "npcpose_imp_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "imp_walk": {
+    "fps": 13.333333,
+    "frames": [
+      "npcpose_imp_walk_00.glb",
+      "npcpose_imp_walk_01.glb",
+      "npcpose_imp_walk_02.glb",
+      "npcpose_imp_walk_03.glb",
+      "npcpose_imp_walk_04.glb",
+      "npcpose_imp_walk_05.glb",
+      "npcpose_imp_walk_06.glb",
+      "npcpose_imp_walk_07.glb",
+      "npcpose_imp_walk_08.glb",
+      "npcpose_imp_walk_09.glb",
+      "npcpose_imp_walk_10.glb",
+      "npcpose_imp_walk_11.glb",
+      "npcpose_imp_walk_12.glb",
+      "npcpose_imp_walk_13.glb",
+      "npcpose_imp_walk_14.glb",
+      "npcpose_imp_walk_15.glb"
+    ],
+    "loop": false
+  },
+  "imp_attack": {
+    "fps": 13.333333,
+    "frames": [
+      "npcpose_imp_attack_00.glb",
+      "npcpose_imp_attack_01.glb",
+      "npcpose_imp_attack_02.glb",
+      "npcpose_imp_attack_03.glb",
+      "npcpose_imp_attack_04.glb",
+      "npcpose_imp_attack_05.glb",
+      "npcpose_imp_attack_06.glb",
+      "npcpose_imp_attack_07.glb",
+      "npcpose_imp_attack_08.glb",
+      "npcpose_imp_attack_09.glb",
+      "npcpose_imp_attack_10.glb",
+      "npcpose_imp_attack_11.glb",
+      "npcpose_imp_attack_12.glb",
+      "npcpose_imp_attack_13.glb",
+      "npcpose_imp_attack_14.glb",
+      "npcpose_imp_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "wraith_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_wraith_idle_00.glb",
+      "npcpose_wraith_idle_01.glb",
+      "npcpose_wraith_idle_02.glb",
+      "npcpose_wraith_idle_03.glb",
+      "npcpose_wraith_idle_04.glb",
+      "npcpose_wraith_idle_05.glb",
+      "npcpose_wraith_idle_06.glb",
+      "npcpose_wraith_idle_07.glb",
+      "npcpose_wraith_idle_08.glb",
+      "npcpose_wraith_idle_09.glb",
+      "npcpose_wraith_idle_10.glb",
+      "npcpose_wraith_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "wraith_walk": {
+    "fps": 15.0,
+    "frames": [
+      "npcpose_wraith_walk_00.glb",
+      "npcpose_wraith_walk_01.glb",
+      "npcpose_wraith_walk_02.glb",
+      "npcpose_wraith_walk_03.glb",
+      "npcpose_wraith_walk_04.glb",
+      "npcpose_wraith_walk_05.glb",
+      "npcpose_wraith_walk_06.glb",
+      "npcpose_wraith_walk_07.glb",
+      "npcpose_wraith_walk_08.glb",
+      "npcpose_wraith_walk_09.glb",
+      "npcpose_wraith_walk_10.glb",
+      "npcpose_wraith_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "wraith_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_wraith_attack_00.glb",
+      "npcpose_wraith_attack_01.glb",
+      "npcpose_wraith_attack_02.glb",
+      "npcpose_wraith_attack_03.glb",
+      "npcpose_wraith_attack_04.glb",
+      "npcpose_wraith_attack_05.glb",
+      "npcpose_wraith_attack_06.glb",
+      "npcpose_wraith_attack_07.glb",
+      "npcpose_wraith_attack_08.glb",
+      "npcpose_wraith_attack_09.glb",
+      "npcpose_wraith_attack_10.glb",
+      "npcpose_wraith_attack_11.glb",
+      "npcpose_wraith_attack_12.glb",
+      "npcpose_wraith_attack_13.glb",
+      "npcpose_wraith_attack_14.glb",
+      "npcpose_wraith_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "scorpion_queen_idle": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_scorpion_queen_idle_00.glb",
+      "npcpose_scorpion_queen_idle_01.glb",
+      "npcpose_scorpion_queen_idle_02.glb",
+      "npcpose_scorpion_queen_idle_03.glb",
+      "npcpose_scorpion_queen_idle_04.glb",
+      "npcpose_scorpion_queen_idle_05.glb",
+      "npcpose_scorpion_queen_idle_06.glb",
+      "npcpose_scorpion_queen_idle_07.glb",
+      "npcpose_scorpion_queen_idle_08.glb",
+      "npcpose_scorpion_queen_idle_09.glb",
+      "npcpose_scorpion_queen_idle_10.glb",
+      "npcpose_scorpion_queen_idle_11.glb",
+      "npcpose_scorpion_queen_idle_12.glb",
+      "npcpose_scorpion_queen_idle_13.glb",
+      "npcpose_scorpion_queen_idle_14.glb",
+      "npcpose_scorpion_queen_idle_15.glb"
+    ],
+    "loop": false
+  },
+  "scorpion_queen_walk": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_scorpion_queen_walk_00.glb",
+      "npcpose_scorpion_queen_walk_01.glb",
+      "npcpose_scorpion_queen_walk_02.glb",
+      "npcpose_scorpion_queen_walk_03.glb",
+      "npcpose_scorpion_queen_walk_04.glb",
+      "npcpose_scorpion_queen_walk_05.glb",
+      "npcpose_scorpion_queen_walk_06.glb",
+      "npcpose_scorpion_queen_walk_07.glb",
+      "npcpose_scorpion_queen_walk_08.glb",
+      "npcpose_scorpion_queen_walk_09.glb",
+      "npcpose_scorpion_queen_walk_10.glb",
+      "npcpose_scorpion_queen_walk_11.glb",
+      "npcpose_scorpion_queen_walk_12.glb",
+      "npcpose_scorpion_queen_walk_13.glb",
+      "npcpose_scorpion_queen_walk_14.glb",
+      "npcpose_scorpion_queen_walk_15.glb"
+    ],
+    "loop": false
+  },
+  "scorpion_queen_attack": {
+    "fps": 8.888889,
+    "frames": [
+      "npcpose_scorpion_queen_attack_00.glb",
+      "npcpose_scorpion_queen_attack_01.glb",
+      "npcpose_scorpion_queen_attack_02.glb",
+      "npcpose_scorpion_queen_attack_03.glb",
+      "npcpose_scorpion_queen_attack_04.glb",
+      "npcpose_scorpion_queen_attack_05.glb",
+      "npcpose_scorpion_queen_attack_06.glb",
+      "npcpose_scorpion_queen_attack_07.glb",
+      "npcpose_scorpion_queen_attack_08.glb",
+      "npcpose_scorpion_queen_attack_09.glb",
+      "npcpose_scorpion_queen_attack_10.glb",
+      "npcpose_scorpion_queen_attack_11.glb",
+      "npcpose_scorpion_queen_attack_12.glb",
+      "npcpose_scorpion_queen_attack_13.glb",
+      "npcpose_scorpion_queen_attack_14.glb",
+      "npcpose_scorpion_queen_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "toad_king_idle": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_toad_king_idle_00.glb",
+      "npcpose_toad_king_idle_01.glb",
+      "npcpose_toad_king_idle_02.glb",
+      "npcpose_toad_king_idle_03.glb",
+      "npcpose_toad_king_idle_04.glb",
+      "npcpose_toad_king_idle_05.glb",
+      "npcpose_toad_king_idle_06.glb",
+      "npcpose_toad_king_idle_07.glb",
+      "npcpose_toad_king_idle_08.glb",
+      "npcpose_toad_king_idle_09.glb",
+      "npcpose_toad_king_idle_10.glb",
+      "npcpose_toad_king_idle_11.glb",
+      "npcpose_toad_king_idle_12.glb",
+      "npcpose_toad_king_idle_13.glb",
+      "npcpose_toad_king_idle_14.glb",
+      "npcpose_toad_king_idle_15.glb"
+    ],
+    "loop": false
+  },
+  "toad_king_walk": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_toad_king_walk_00.glb",
+      "npcpose_toad_king_walk_01.glb",
+      "npcpose_toad_king_walk_02.glb",
+      "npcpose_toad_king_walk_03.glb",
+      "npcpose_toad_king_walk_04.glb",
+      "npcpose_toad_king_walk_05.glb",
+      "npcpose_toad_king_walk_06.glb",
+      "npcpose_toad_king_walk_07.glb",
+      "npcpose_toad_king_walk_08.glb",
+      "npcpose_toad_king_walk_09.glb",
+      "npcpose_toad_king_walk_10.glb",
+      "npcpose_toad_king_walk_11.glb",
+      "npcpose_toad_king_walk_12.glb",
+      "npcpose_toad_king_walk_13.glb",
+      "npcpose_toad_king_walk_14.glb",
+      "npcpose_toad_king_walk_15.glb"
+    ],
+    "loop": false
+  },
+  "toad_king_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_toad_king_attack_00.glb",
+      "npcpose_toad_king_attack_01.glb",
+      "npcpose_toad_king_attack_02.glb",
+      "npcpose_toad_king_attack_03.glb",
+      "npcpose_toad_king_attack_04.glb",
+      "npcpose_toad_king_attack_05.glb",
+      "npcpose_toad_king_attack_06.glb",
+      "npcpose_toad_king_attack_07.glb",
+      "npcpose_toad_king_attack_08.glb",
+      "npcpose_toad_king_attack_09.glb",
+      "npcpose_toad_king_attack_10.glb",
+      "npcpose_toad_king_attack_11.glb",
+      "npcpose_toad_king_attack_12.glb",
+      "npcpose_toad_king_attack_13.glb",
+      "npcpose_toad_king_attack_14.glb",
+      "npcpose_toad_king_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "stormcaller_idle": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_stormcaller_idle_00.glb",
+      "npcpose_stormcaller_idle_01.glb",
+      "npcpose_stormcaller_idle_02.glb",
+      "npcpose_stormcaller_idle_03.glb",
+      "npcpose_stormcaller_idle_04.glb",
+      "npcpose_stormcaller_idle_05.glb",
+      "npcpose_stormcaller_idle_06.glb",
+      "npcpose_stormcaller_idle_07.glb",
+      "npcpose_stormcaller_idle_08.glb",
+      "npcpose_stormcaller_idle_09.glb",
+      "npcpose_stormcaller_idle_10.glb",
+      "npcpose_stormcaller_idle_11.glb",
+      "npcpose_stormcaller_idle_12.glb",
+      "npcpose_stormcaller_idle_13.glb",
+      "npcpose_stormcaller_idle_14.glb",
+      "npcpose_stormcaller_idle_15.glb"
+    ],
+    "loop": false
+  },
+  "stormcaller_walk": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_stormcaller_walk_00.glb",
+      "npcpose_stormcaller_walk_01.glb",
+      "npcpose_stormcaller_walk_02.glb",
+      "npcpose_stormcaller_walk_03.glb",
+      "npcpose_stormcaller_walk_04.glb",
+      "npcpose_stormcaller_walk_05.glb",
+      "npcpose_stormcaller_walk_06.glb",
+      "npcpose_stormcaller_walk_07.glb",
+      "npcpose_stormcaller_walk_08.glb",
+      "npcpose_stormcaller_walk_09.glb",
+      "npcpose_stormcaller_walk_10.glb",
+      "npcpose_stormcaller_walk_11.glb",
+      "npcpose_stormcaller_walk_12.glb",
+      "npcpose_stormcaller_walk_13.glb",
+      "npcpose_stormcaller_walk_14.glb",
+      "npcpose_stormcaller_walk_15.glb"
+    ],
+    "loop": false
+  },
+  "stormcaller_attack": {
+    "fps": 10.0,
+    "frames": [
+      "npcpose_stormcaller_attack_00.glb",
+      "npcpose_stormcaller_attack_01.glb",
+      "npcpose_stormcaller_attack_02.glb",
+      "npcpose_stormcaller_attack_03.glb",
+      "npcpose_stormcaller_attack_04.glb",
+      "npcpose_stormcaller_attack_05.glb",
+      "npcpose_stormcaller_attack_06.glb",
+      "npcpose_stormcaller_attack_07.glb",
+      "npcpose_stormcaller_attack_08.glb",
+      "npcpose_stormcaller_attack_09.glb",
+      "npcpose_stormcaller_attack_10.glb",
+      "npcpose_stormcaller_attack_11.glb",
+      "npcpose_stormcaller_attack_12.glb",
+      "npcpose_stormcaller_attack_13.glb",
+      "npcpose_stormcaller_attack_14.glb",
+      "npcpose_stormcaller_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "colossus_idle": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_colossus_idle_00.glb",
+      "npcpose_colossus_idle_01.glb",
+      "npcpose_colossus_idle_02.glb",
+      "npcpose_colossus_idle_03.glb",
+      "npcpose_colossus_idle_04.glb",
+      "npcpose_colossus_idle_05.glb",
+      "npcpose_colossus_idle_06.glb",
+      "npcpose_colossus_idle_07.glb",
+      "npcpose_colossus_idle_08.glb",
+      "npcpose_colossus_idle_09.glb",
+      "npcpose_colossus_idle_10.glb",
+      "npcpose_colossus_idle_11.glb",
+      "npcpose_colossus_idle_12.glb",
+      "npcpose_colossus_idle_13.glb",
+      "npcpose_colossus_idle_14.glb",
+      "npcpose_colossus_idle_15.glb"
+    ],
+    "loop": false
+  },
+  "colossus_walk": {
+    "fps": 8.0,
+    "frames": [
+      "npcpose_colossus_walk_00.glb",
+      "npcpose_colossus_walk_01.glb",
+      "npcpose_colossus_walk_02.glb",
+      "npcpose_colossus_walk_03.glb",
+      "npcpose_colossus_walk_04.glb",
+      "npcpose_colossus_walk_05.glb",
+      "npcpose_colossus_walk_06.glb",
+      "npcpose_colossus_walk_07.glb",
+      "npcpose_colossus_walk_08.glb",
+      "npcpose_colossus_walk_09.glb",
+      "npcpose_colossus_walk_10.glb",
+      "npcpose_colossus_walk_11.glb",
+      "npcpose_colossus_walk_12.glb",
+      "npcpose_colossus_walk_13.glb",
+      "npcpose_colossus_walk_14.glb",
+      "npcpose_colossus_walk_15.glb"
+    ],
+    "loop": false
+  },
+  "colossus_attack": {
+    "fps": 8.888889,
+    "frames": [
+      "npcpose_colossus_attack_00.glb",
+      "npcpose_colossus_attack_01.glb",
+      "npcpose_colossus_attack_02.glb",
+      "npcpose_colossus_attack_03.glb",
+      "npcpose_colossus_attack_04.glb",
+      "npcpose_colossus_attack_05.glb",
+      "npcpose_colossus_attack_06.glb",
+      "npcpose_colossus_attack_07.glb",
+      "npcpose_colossus_attack_08.glb",
+      "npcpose_colossus_attack_09.glb",
+      "npcpose_colossus_attack_10.glb",
+      "npcpose_colossus_attack_11.glb",
+      "npcpose_colossus_attack_12.glb",
+      "npcpose_colossus_attack_13.glb",
+      "npcpose_colossus_attack_14.glb",
+      "npcpose_colossus_attack_15.glb"
+    ],
+    "loop": false
+  },
+  "villager_idle": {
+    "fps": 3.0,
+    "frames": [
+      "npcpose_villager_idle_00.glb",
+      "npcpose_villager_idle_01.glb",
+      "npcpose_villager_idle_02.glb",
+      "npcpose_villager_idle_03.glb",
+      "npcpose_villager_idle_04.glb",
+      "npcpose_villager_idle_05.glb",
+      "npcpose_villager_idle_06.glb",
+      "npcpose_villager_idle_07.glb",
+      "npcpose_villager_idle_08.glb",
+      "npcpose_villager_idle_09.glb",
+      "npcpose_villager_idle_10.glb",
+      "npcpose_villager_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "villager_walk": {
+    "fps": 7.5,
+    "frames": [
+      "npcpose_villager_walk_00.glb",
+      "npcpose_villager_walk_01.glb",
+      "npcpose_villager_walk_02.glb",
+      "npcpose_villager_walk_03.glb",
+      "npcpose_villager_walk_04.glb",
+      "npcpose_villager_walk_05.glb",
+      "npcpose_villager_walk_06.glb",
+      "npcpose_villager_walk_07.glb",
+      "npcpose_villager_walk_08.glb",
+      "npcpose_villager_walk_09.glb",
+      "npcpose_villager_walk_10.glb",
+      "npcpose_villager_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "villager_wave": {
+    "fps": 8.888889,
+    "frames": [
+      "npcpose_villager_wave_00.glb",
+      "npcpose_villager_wave_01.glb",
+      "npcpose_villager_wave_02.glb",
+      "npcpose_villager_wave_03.glb",
+      "npcpose_villager_wave_04.glb",
+      "npcpose_villager_wave_05.glb",
+      "npcpose_villager_wave_06.glb",
+      "npcpose_villager_wave_07.glb",
+      "npcpose_villager_wave_08.glb",
+      "npcpose_villager_wave_09.glb",
+      "npcpose_villager_wave_10.glb",
+      "npcpose_villager_wave_11.glb",
+      "npcpose_villager_wave_12.glb",
+      "npcpose_villager_wave_13.glb",
+      "npcpose_villager_wave_14.glb",
+      "npcpose_villager_wave_15.glb"
+    ],
+    "loop": false
+  },
+  "merchant_idle": {
+    "fps": 6.0,
+    "frames": [
+      "npcpose_merchant_idle_00.glb",
+      "npcpose_merchant_idle_01.glb",
+      "npcpose_merchant_idle_02.glb",
+      "npcpose_merchant_idle_03.glb",
+      "npcpose_merchant_idle_04.glb",
+      "npcpose_merchant_idle_05.glb",
+      "npcpose_merchant_idle_06.glb",
+      "npcpose_merchant_idle_07.glb",
+      "npcpose_merchant_idle_08.glb",
+      "npcpose_merchant_idle_09.glb",
+      "npcpose_merchant_idle_10.glb",
+      "npcpose_merchant_idle_11.glb"
+    ],
+    "loop": true
+  },
+  "merchant_walk": {
+    "fps": 8.571429,
+    "frames": [
+      "npcpose_merchant_walk_00.glb",
+      "npcpose_merchant_walk_01.glb",
+      "npcpose_merchant_walk_02.glb",
+      "npcpose_merchant_walk_03.glb",
+      "npcpose_merchant_walk_04.glb",
+      "npcpose_merchant_walk_05.glb",
+      "npcpose_merchant_walk_06.glb",
+      "npcpose_merchant_walk_07.glb",
+      "npcpose_merchant_walk_08.glb",
+      "npcpose_merchant_walk_09.glb",
+      "npcpose_merchant_walk_10.glb",
+      "npcpose_merchant_walk_11.glb"
+    ],
+    "loop": true
+  },
+  "merchant_greet": {
+    "fps": 8.888889,
+    "frames": [
+      "npcpose_merchant_greet_00.glb",
+      "npcpose_merchant_greet_01.glb",
+      "npcpose_merchant_greet_02.glb",
+      "npcpose_merchant_greet_03.glb",
+      "npcpose_merchant_greet_04.glb",
+      "npcpose_merchant_greet_05.glb",
+      "npcpose_merchant_greet_06.glb",
+      "npcpose_merchant_greet_07.glb",
+      "npcpose_merchant_greet_08.glb",
+      "npcpose_merchant_greet_09.glb",
+      "npcpose_merchant_greet_10.glb",
+      "npcpose_merchant_greet_11.glb",
+      "npcpose_merchant_greet_12.glb",
+      "npcpose_merchant_greet_13.glb",
+      "npcpose_merchant_greet_14.glb",
+      "npcpose_merchant_greet_15.glb"
+    ],
+    "loop": false
+  }
+}
