@@ -10,10 +10,10 @@
     "complex_name_pattern": "(interior|house|cabin|hut|inn|barn|hall|tower|castle|fort|keep|palace|temple|cathedral|church|abbey|shrine|dungeon|ruin|village|town|city|market|station|train|bridge|ship|mine|cave|complex|landmark|showcase|diorama|structure)"
   },
   "summary": {
-    "models": 274,
-    "passed": 274,
+    "models": 442,
+    "passed": 442,
     "failed": 0,
-    "total_triangles": 75041,
+    "total_triangles": 128129,
     "models_dir": "assets/models"
   },
   "models": [
@@ -5833,6 +5833,5046 @@
       "center_z": 0.0,
       "footprint_x": 1.7,
       "footprint_z": 0.4,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_00",
+      "file": "assets/models/pose_attack_1_00.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.2088,
+        1.5846,
+        0.24
+      ],
+      "height": 1.5846,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.4799,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_01",
+      "file": "assets/models/pose_attack_1_01.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2114,
+        0.0,
+        -0.2377
+      ],
+      "max": [
+        0.2114,
+        1.5788,
+        0.2377
+      ],
+      "height": 1.5788,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4227,
+      "footprint_z": 0.4754,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_02",
+      "file": "assets/models/pose_attack_1_02.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2155,
+        0.0,
+        -0.2313
+      ],
+      "max": [
+        0.2155,
+        1.5721,
+        0.2313
+      ],
+      "height": 1.5721,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4311,
+      "footprint_z": 0.4625,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_03",
+      "file": "assets/models/pose_attack_1_03.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2163,
+        0.0,
+        -0.237
+      ],
+      "max": [
+        0.2163,
+        1.5623,
+        0.237
+      ],
+      "height": 1.5623,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4327,
+      "footprint_z": 0.4739,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_04",
+      "file": "assets/models/pose_attack_1_04.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2018,
+        0.0,
+        -0.2422
+      ],
+      "max": [
+        0.2018,
+        1.5502,
+        0.2422
+      ],
+      "height": 1.5502,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4037,
+      "footprint_z": 0.4844,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_05",
+      "file": "assets/models/pose_attack_1_05.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1865,
+        0.0,
+        -0.2799
+      ],
+      "max": [
+        0.1865,
+        1.537,
+        0.2799
+      ],
+      "height": 1.537,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.373,
+      "footprint_z": 0.5598,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_06",
+      "file": "assets/models/pose_attack_1_06.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1841,
+        0.0,
+        -0.3408
+      ],
+      "max": [
+        0.1841,
+        1.5239,
+        0.3408
+      ],
+      "height": 1.5239,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3682,
+      "footprint_z": 0.6817,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_07",
+      "file": "assets/models/pose_attack_1_07.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1844,
+        0.0,
+        -0.379
+      ],
+      "max": [
+        0.1844,
+        1.512,
+        0.379
+      ],
+      "height": 1.512,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3689,
+      "footprint_z": 0.758,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_08",
+      "file": "assets/models/pose_attack_1_08.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1845,
+        0.0,
+        -0.3862
+      ],
+      "max": [
+        0.1845,
+        1.5026,
+        0.3862
+      ],
+      "height": 1.5026,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.369,
+      "footprint_z": 0.7724,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_09",
+      "file": "assets/models/pose_attack_1_09.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1845,
+        0.0,
+        -0.3822
+      ],
+      "max": [
+        0.1845,
+        1.4976,
+        0.3822
+      ],
+      "height": 1.4976,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3691,
+      "footprint_z": 0.7644,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_10",
+      "file": "assets/models/pose_attack_1_10.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1847,
+        0.0,
+        -0.3859
+      ],
+      "max": [
+        0.1847,
+        1.496,
+        0.3859
+      ],
+      "height": 1.496,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3694,
+      "footprint_z": 0.7718,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_11",
+      "file": "assets/models/pose_attack_1_11.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1845,
+        0.0,
+        -0.3833
+      ],
+      "max": [
+        0.1845,
+        1.4929,
+        0.3833
+      ],
+      "height": 1.4929,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3691,
+      "footprint_z": 0.7666,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_12",
+      "file": "assets/models/pose_attack_1_12.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1964,
+        0.0,
+        -0.2841
+      ],
+      "max": [
+        0.1964,
+        1.4855,
+        0.2841
+      ],
+      "height": 1.4855,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3929,
+      "footprint_z": 0.5682,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_13",
+      "file": "assets/models/pose_attack_1_13.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2228,
+        0.0,
+        -0.2428
+      ],
+      "max": [
+        0.2228,
+        1.474,
+        0.2428
+      ],
+      "height": 1.474,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4457,
+      "footprint_z": 0.4856,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_14",
+      "file": "assets/models/pose_attack_1_14.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2415,
+        0.0,
+        -0.3222
+      ],
+      "max": [
+        0.2415,
+        1.4614,
+        0.3222
+      ],
+      "height": 1.4614,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4829,
+      "footprint_z": 0.6445,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_15",
+      "file": "assets/models/pose_attack_1_15.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2541,
+        0.0,
+        -0.3537
+      ],
+      "max": [
+        0.2541,
+        1.4533,
+        0.3537
+      ],
+      "height": 1.4533,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5081,
+      "footprint_z": 0.7074,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_16",
+      "file": "assets/models/pose_attack_1_16.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2549,
+        0.0,
+        -0.3561
+      ],
+      "max": [
+        0.2549,
+        1.4529,
+        0.3561
+      ],
+      "height": 1.4529,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5098,
+      "footprint_z": 0.7122,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_17",
+      "file": "assets/models/pose_attack_1_17.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2513,
+        0.0,
+        -0.3575
+      ],
+      "max": [
+        0.2513,
+        1.4563,
+        0.3575
+      ],
+      "height": 1.4563,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.5026,
+      "footprint_z": 0.7151,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_18",
+      "file": "assets/models/pose_attack_1_18.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2454,
+        0.0,
+        -0.3587
+      ],
+      "max": [
+        0.2454,
+        1.4616,
+        0.3587
+      ],
+      "height": 1.4616,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4909,
+      "footprint_z": 0.7173,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_19",
+      "file": "assets/models/pose_attack_1_19.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2399,
+        0.0,
+        -0.3582
+      ],
+      "max": [
+        0.2399,
+        1.4685,
+        0.3582
+      ],
+      "height": 1.4685,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4799,
+      "footprint_z": 0.7163,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_20",
+      "file": "assets/models/pose_attack_1_20.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2352,
+        0.0,
+        -0.3551
+      ],
+      "max": [
+        0.2352,
+        1.4765,
+        0.3551
+      ],
+      "height": 1.4765,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4705,
+      "footprint_z": 0.7103,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_21",
+      "file": "assets/models/pose_attack_1_21.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2288,
+        0.0,
+        -0.3492
+      ],
+      "max": [
+        0.2288,
+        1.4852,
+        0.3492
+      ],
+      "height": 1.4852,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4577,
+      "footprint_z": 0.6985,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_22",
+      "file": "assets/models/pose_attack_1_22.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2217,
+        0.0,
+        -0.3412
+      ],
+      "max": [
+        0.2217,
+        1.494,
+        0.3412
+      ],
+      "height": 1.494,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4435,
+      "footprint_z": 0.6824,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_23",
+      "file": "assets/models/pose_attack_1_23.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2153,
+        0.0,
+        -0.3321
+      ],
+      "max": [
+        0.2153,
+        1.5026,
+        0.3321
+      ],
+      "height": 1.5026,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4306,
+      "footprint_z": 0.6643,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_24",
+      "file": "assets/models/pose_attack_1_24.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2112,
+        0.0,
+        -0.3236
+      ],
+      "max": [
+        0.2112,
+        1.5106,
+        0.3236
+      ],
+      "height": 1.5106,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4224,
+      "footprint_z": 0.6473,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_25",
+      "file": "assets/models/pose_attack_1_25.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2099,
+        0.0,
+        -0.3168
+      ],
+      "max": [
+        0.2099,
+        1.5177,
+        0.3168
+      ],
+      "height": 1.5177,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4198,
+      "footprint_z": 0.6335,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_26",
+      "file": "assets/models/pose_attack_1_26.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2074,
+        0.0,
+        -0.3091
+      ],
+      "max": [
+        0.2074,
+        1.5235,
+        0.3091
+      ],
+      "height": 1.5235,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4149,
+      "footprint_z": 0.6183,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_27",
+      "file": "assets/models/pose_attack_1_27.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.206,
+        0.0,
+        -0.3016
+      ],
+      "max": [
+        0.206,
+        1.528,
+        0.3016
+      ],
+      "height": 1.528,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.412,
+      "footprint_z": 0.6032,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_28",
+      "file": "assets/models/pose_attack_1_28.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2082,
+        0.0,
+        -0.2957
+      ],
+      "max": [
+        0.2082,
+        1.5329,
+        0.2957
+      ],
+      "height": 1.5329,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4164,
+      "footprint_z": 0.5914,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_29",
+      "file": "assets/models/pose_attack_1_29.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_30",
+      "file": "assets/models/pose_attack_1_30.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_31",
+      "file": "assets/models/pose_attack_1_31.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_32",
+      "file": "assets/models/pose_attack_1_32.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_33",
+      "file": "assets/models/pose_attack_1_33.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_34",
+      "file": "assets/models/pose_attack_1_34.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_35",
+      "file": "assets/models/pose_attack_1_35.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_36",
+      "file": "assets/models/pose_attack_1_36.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_37",
+      "file": "assets/models/pose_attack_1_37.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_38",
+      "file": "assets/models/pose_attack_1_38.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_39",
+      "file": "assets/models/pose_attack_1_39.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_40",
+      "file": "assets/models/pose_attack_1_40.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_41",
+      "file": "assets/models/pose_attack_1_41.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_42",
+      "file": "assets/models/pose_attack_1_42.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_43",
+      "file": "assets/models/pose_attack_1_43.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_44",
+      "file": "assets/models/pose_attack_1_44.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_45",
+      "file": "assets/models/pose_attack_1_45.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_46",
+      "file": "assets/models/pose_attack_1_46.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_attack_1_47",
+      "file": "assets/models/pose_attack_1_47.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2088,
+        0.0,
+        -0.294
+      ],
+      "max": [
+        0.2088,
+        1.5346,
+        0.294
+      ],
+      "height": 1.5346,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4176,
+      "footprint_z": 0.588,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_00",
+      "file": "assets/models/pose_dodge_roll_00.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.241
+      ],
+      "max": [
+        0.2537,
+        1.6015,
+        0.241
+      ],
+      "height": 1.6015,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 0.4819,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_01",
+      "file": "assets/models/pose_dodge_roll_01.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2542,
+        0.0,
+        -0.2416
+      ],
+      "max": [
+        0.2542,
+        1.6032,
+        0.2416
+      ],
+      "height": 1.6032,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5084,
+      "footprint_z": 0.4831,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_02",
+      "file": "assets/models/pose_dodge_roll_02.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2545,
+        0.0,
+        -0.2504
+      ],
+      "max": [
+        0.2545,
+        1.5953,
+        0.2504
+      ],
+      "height": 1.5953,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.509,
+      "footprint_z": 0.5008,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_03",
+      "file": "assets/models/pose_dodge_roll_03.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2531,
+        0.0,
+        -0.2629
+      ],
+      "max": [
+        0.2531,
+        1.585,
+        0.2629
+      ],
+      "height": 1.585,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5062,
+      "footprint_z": 0.5257,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_04",
+      "file": "assets/models/pose_dodge_roll_04.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2497,
+        0.0,
+        -0.2764
+      ],
+      "max": [
+        0.2497,
+        1.5659,
+        0.2764
+      ],
+      "height": 1.5659,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4993,
+      "footprint_z": 0.5527,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_05",
+      "file": "assets/models/pose_dodge_roll_05.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2459,
+        0.0,
+        -0.2836
+      ],
+      "max": [
+        0.2459,
+        1.5441,
+        0.2836
+      ],
+      "height": 1.5441,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4919,
+      "footprint_z": 0.5671,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_06",
+      "file": "assets/models/pose_dodge_roll_06.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.244,
+        0.0,
+        -0.2877
+      ],
+      "max": [
+        0.244,
+        1.5288,
+        0.2877
+      ],
+      "height": 1.5288,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.488,
+      "footprint_z": 0.5754,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_07",
+      "file": "assets/models/pose_dodge_roll_07.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.2785
+      ],
+      "max": [
+        0.2438,
+        1.5243,
+        0.2785
+      ],
+      "height": 1.5243,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 0.5571,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_08",
+      "file": "assets/models/pose_dodge_roll_08.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.2434
+      ],
+      "max": [
+        0.2438,
+        1.5245,
+        0.2434
+      ],
+      "height": 1.5245,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 0.4867,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_09",
+      "file": "assets/models/pose_dodge_roll_09.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.2251
+      ],
+      "max": [
+        0.2438,
+        1.513,
+        0.2251
+      ],
+      "height": 1.513,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 0.4503,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_10",
+      "file": "assets/models/pose_dodge_roll_10.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.3065
+      ],
+      "max": [
+        0.2438,
+        1.4689,
+        0.3065
+      ],
+      "height": 1.4689,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 0.613,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_11",
+      "file": "assets/models/pose_dodge_roll_11.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.4113
+      ],
+      "max": [
+        0.2438,
+        1.377,
+        0.4113
+      ],
+      "height": 1.377,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 0.8227,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_12",
+      "file": "assets/models/pose_dodge_roll_12.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.5147
+      ],
+      "max": [
+        0.2438,
+        1.29,
+        0.5147
+      ],
+      "height": 1.29,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.0295,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_13",
+      "file": "assets/models/pose_dodge_roll_13.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.6002
+      ],
+      "max": [
+        0.2438,
+        1.1699,
+        0.6002
+      ],
+      "height": 1.1699,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.2005,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_14",
+      "file": "assets/models/pose_dodge_roll_14.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.6646
+      ],
+      "max": [
+        0.2438,
+        1.0143,
+        0.6646
+      ],
+      "height": 1.0143,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.3292,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_15",
+      "file": "assets/models/pose_dodge_roll_15.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.7043
+      ],
+      "max": [
+        0.2438,
+        0.8359,
+        0.7043
+      ],
+      "height": 0.8359,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.4086,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_16",
+      "file": "assets/models/pose_dodge_roll_16.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.7208
+      ],
+      "max": [
+        0.2438,
+        0.6598,
+        0.7208
+      ],
+      "height": 0.6598,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.4415,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_17",
+      "file": "assets/models/pose_dodge_roll_17.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.7227
+      ],
+      "max": [
+        0.2438,
+        0.5766,
+        0.7227
+      ],
+      "height": 0.5766,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.4454,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_18",
+      "file": "assets/models/pose_dodge_roll_18.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.7204
+      ],
+      "max": [
+        0.2438,
+        0.5509,
+        0.7204
+      ],
+      "height": 0.5509,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.4408,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_19",
+      "file": "assets/models/pose_dodge_roll_19.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.7238
+      ],
+      "max": [
+        0.2438,
+        0.5457,
+        0.7238
+      ],
+      "height": 0.5457,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.4476,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_20",
+      "file": "assets/models/pose_dodge_roll_20.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.7227
+      ],
+      "max": [
+        0.2438,
+        0.6308,
+        0.7227
+      ],
+      "height": 0.6308,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.4454,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_21",
+      "file": "assets/models/pose_dodge_roll_21.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.6946
+      ],
+      "max": [
+        0.2438,
+        0.7564,
+        0.6946
+      ],
+      "height": 0.7564,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.3891,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_22",
+      "file": "assets/models/pose_dodge_roll_22.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.6532
+      ],
+      "max": [
+        0.2438,
+        0.9389,
+        0.6532
+      ],
+      "height": 0.9389,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.3064,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_23",
+      "file": "assets/models/pose_dodge_roll_23.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.5884
+      ],
+      "max": [
+        0.2438,
+        1.1436,
+        0.5884
+      ],
+      "height": 1.1436,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.1768,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_24",
+      "file": "assets/models/pose_dodge_roll_24.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2438,
+        0.0,
+        -0.5103
+      ],
+      "max": [
+        0.2438,
+        1.2673,
+        0.5103
+      ],
+      "height": 1.2673,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4876,
+      "footprint_z": 1.0207,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_25",
+      "file": "assets/models/pose_dodge_roll_25.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2439,
+        0.0,
+        -0.4653
+      ],
+      "max": [
+        0.2439,
+        1.314,
+        0.4653
+      ],
+      "height": 1.314,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4878,
+      "footprint_z": 0.9306,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_26",
+      "file": "assets/models/pose_dodge_roll_26.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.245,
+        0.0,
+        -0.4947
+      ],
+      "max": [
+        0.245,
+        1.3041,
+        0.4947
+      ],
+      "height": 1.3041,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.49,
+      "footprint_z": 0.9894,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_27",
+      "file": "assets/models/pose_dodge_roll_27.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.248,
+        0.0,
+        -0.5924
+      ],
+      "max": [
+        0.248,
+        1.1994,
+        0.5924
+      ],
+      "height": 1.1994,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.496,
+      "footprint_z": 1.1849,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_28",
+      "file": "assets/models/pose_dodge_roll_28.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2515,
+        0.0,
+        -0.6829
+      ],
+      "max": [
+        0.2515,
+        0.9501,
+        0.6829
+      ],
+      "height": 0.9501,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5029,
+      "footprint_z": 1.3657,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_29",
+      "file": "assets/models/pose_dodge_roll_29.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2539,
+        0.0,
+        -0.756
+      ],
+      "max": [
+        0.2539,
+        0.6527,
+        0.756
+      ],
+      "height": 0.6527,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5077,
+      "footprint_z": 1.5121,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_30",
+      "file": "assets/models/pose_dodge_roll_30.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2546,
+        0.0,
+        -0.7755
+      ],
+      "max": [
+        0.2546,
+        0.5433,
+        0.7755
+      ],
+      "height": 0.5433,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5091,
+      "footprint_z": 1.551,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_31",
+      "file": "assets/models/pose_dodge_roll_31.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2541,
+        0.0,
+        -0.7873
+      ],
+      "max": [
+        0.2541,
+        0.5271,
+        0.7873
+      ],
+      "height": 0.5271,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5082,
+      "footprint_z": 1.5746,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_32",
+      "file": "assets/models/pose_dodge_roll_32.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7985
+      ],
+      "max": [
+        0.2537,
+        0.5971,
+        0.7985
+      ],
+      "height": 0.5971,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5969,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_33",
+      "file": "assets/models/pose_dodge_roll_33.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7951
+      ],
+      "max": [
+        0.2537,
+        0.727,
+        0.7951
+      ],
+      "height": 0.727,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5901,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_34",
+      "file": "assets/models/pose_dodge_roll_34.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_35",
+      "file": "assets/models/pose_dodge_roll_35.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_36",
+      "file": "assets/models/pose_dodge_roll_36.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_37",
+      "file": "assets/models/pose_dodge_roll_37.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_38",
+      "file": "assets/models/pose_dodge_roll_38.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_39",
+      "file": "assets/models/pose_dodge_roll_39.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_40",
+      "file": "assets/models/pose_dodge_roll_40.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_41",
+      "file": "assets/models/pose_dodge_roll_41.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_42",
+      "file": "assets/models/pose_dodge_roll_42.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_43",
+      "file": "assets/models/pose_dodge_roll_43.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_44",
+      "file": "assets/models/pose_dodge_roll_44.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_45",
+      "file": "assets/models/pose_dodge_roll_45.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_46",
+      "file": "assets/models/pose_dodge_roll_46.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_47",
+      "file": "assets/models/pose_dodge_roll_47.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_48",
+      "file": "assets/models/pose_dodge_roll_48.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_49",
+      "file": "assets/models/pose_dodge_roll_49.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_50",
+      "file": "assets/models/pose_dodge_roll_50.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_51",
+      "file": "assets/models/pose_dodge_roll_51.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_52",
+      "file": "assets/models/pose_dodge_roll_52.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_dodge_roll_53",
+      "file": "assets/models/pose_dodge_roll_53.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2537,
+        0.0,
+        -0.7918
+      ],
+      "max": [
+        0.2537,
+        0.7638,
+        0.7918
+      ],
+      "height": 0.7638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.5074,
+      "footprint_z": 1.5836,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_00",
+      "file": "assets/models/pose_hit_light_00.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.136
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.136
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.2719,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_01",
+      "file": "assets/models/pose_hit_light_01.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1996,
+        0.0,
+        -0.2178
+      ],
+      "max": [
+        0.1996,
+        1.5214,
+        0.2178
+      ],
+      "height": 1.5214,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3992,
+      "footprint_z": 0.4355,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_02",
+      "file": "assets/models/pose_hit_light_02.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2079,
+        0.0,
+        -0.3344
+      ],
+      "max": [
+        0.2079,
+        1.3854,
+        0.3344
+      ],
+      "height": 1.3854,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4159,
+      "footprint_z": 0.6687,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_03",
+      "file": "assets/models/pose_hit_light_03.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2104,
+        0.0,
+        -0.3647
+      ],
+      "max": [
+        0.2104,
+        1.3499,
+        0.3647
+      ],
+      "height": 1.3499,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.4207,
+      "footprint_z": 0.7294,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_04",
+      "file": "assets/models/pose_hit_light_04.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2084,
+        0.0,
+        -0.3512
+      ],
+      "max": [
+        0.2084,
+        1.3805,
+        0.3512
+      ],
+      "height": 1.3805,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4169,
+      "footprint_z": 0.7025,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_05",
+      "file": "assets/models/pose_hit_light_05.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.206,
+        0.0,
+        -0.33
+      ],
+      "max": [
+        0.206,
+        1.4241,
+        0.33
+      ],
+      "height": 1.4241,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.412,
+      "footprint_z": 0.66,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_06",
+      "file": "assets/models/pose_hit_light_06.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2039,
+        0.0,
+        -0.308
+      ],
+      "max": [
+        0.2039,
+        1.4578,
+        0.308
+      ],
+      "height": 1.4578,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4078,
+      "footprint_z": 0.6161,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_07",
+      "file": "assets/models/pose_hit_light_07.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2027,
+        0.0,
+        -0.2968
+      ],
+      "max": [
+        0.2027,
+        1.4736,
+        0.2968
+      ],
+      "height": 1.4736,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4053,
+      "footprint_z": 0.5937,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_08",
+      "file": "assets/models/pose_hit_light_08.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2023,
+        0.0,
+        -0.2951
+      ],
+      "max": [
+        0.2023,
+        1.4785,
+        0.2951
+      ],
+      "height": 1.4785,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4045,
+      "footprint_z": 0.5903,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_09",
+      "file": "assets/models/pose_hit_light_09.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2013,
+        0.0,
+        -0.2876
+      ],
+      "max": [
+        0.2013,
+        1.4918,
+        0.2876
+      ],
+      "height": 1.4918,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4027,
+      "footprint_z": 0.5753,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_10",
+      "file": "assets/models/pose_hit_light_10.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.2003,
+        0.0,
+        -0.2768
+      ],
+      "max": [
+        0.2003,
+        1.5114,
+        0.2768
+      ],
+      "height": 1.5114,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.4006,
+      "footprint_z": 0.5537,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_11",
+      "file": "assets/models/pose_hit_light_11.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1991,
+        0.0,
+        -0.2633
+      ],
+      "max": [
+        0.1991,
+        1.531,
+        0.2633
+      ],
+      "height": 1.531,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3983,
+      "footprint_z": 0.5266,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_12",
+      "file": "assets/models/pose_hit_light_12.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1981,
+        0.0,
+        -0.2482
+      ],
+      "max": [
+        0.1981,
+        1.5475,
+        0.2482
+      ],
+      "height": 1.5475,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3962,
+      "footprint_z": 0.4964,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_13",
+      "file": "assets/models/pose_hit_light_13.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1981,
+        0.0,
+        -0.2352
+      ],
+      "max": [
+        0.1981,
+        1.5586,
+        0.2352
+      ],
+      "height": 1.5586,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3963,
+      "footprint_z": 0.4705,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_14",
+      "file": "assets/models/pose_hit_light_14.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1982,
+        0.0,
+        -0.228
+      ],
+      "max": [
+        0.1982,
+        1.5639,
+        0.228
+      ],
+      "height": 1.5639,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3963,
+      "footprint_z": 0.4559,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_15",
+      "file": "assets/models/pose_hit_light_15.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1982,
+        0.0,
+        -0.226
+      ],
+      "max": [
+        0.1982,
+        1.5652,
+        0.226
+      ],
+      "height": 1.5652,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3963,
+      "footprint_z": 0.452,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_16",
+      "file": "assets/models/pose_hit_light_16.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1982,
+        0.0,
+        -0.2241
+      ],
+      "max": [
+        0.1982,
+        1.5665,
+        0.2241
+      ],
+      "height": 1.5665,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3963,
+      "footprint_z": 0.4482,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_17",
+      "file": "assets/models/pose_hit_light_17.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1981,
+        0.0,
+        -0.2206
+      ],
+      "max": [
+        0.1981,
+        1.5687,
+        0.2206
+      ],
+      "height": 1.5687,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3963,
+      "footprint_z": 0.4412,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_18",
+      "file": "assets/models/pose_hit_light_18.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1981,
+        0.0,
+        -0.2162
+      ],
+      "max": [
+        0.1981,
+        1.5713,
+        0.2162
+      ],
+      "height": 1.5713,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3962,
+      "footprint_z": 0.4324,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_19",
+      "file": "assets/models/pose_hit_light_19.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1981,
+        0.0,
+        -0.2112
+      ],
+      "max": [
+        0.1981,
+        1.574,
+        0.2112
+      ],
+      "height": 1.574,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3961,
+      "footprint_z": 0.4225,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_20",
+      "file": "assets/models/pose_hit_light_20.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.198,
+        0.0,
+        -0.2061
+      ],
+      "max": [
+        0.198,
+        1.5764,
+        0.2061
+      ],
+      "height": 1.5764,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.396,
+      "footprint_z": 0.4123,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_21",
+      "file": "assets/models/pose_hit_light_21.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1979,
+        0.0,
+        -0.2041
+      ],
+      "max": [
+        0.1979,
+        1.5785,
+        0.2041
+      ],
+      "height": 1.5785,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3958,
+      "footprint_z": 0.4082,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_22",
+      "file": "assets/models/pose_hit_light_22.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1978,
+        0.0,
+        -0.2025
+      ],
+      "max": [
+        0.1978,
+        1.5801,
+        0.2025
+      ],
+      "height": 1.5801,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3956,
+      "footprint_z": 0.405,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_23",
+      "file": "assets/models/pose_hit_light_23.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1978,
+        0.0,
+        -0.2014
+      ],
+      "max": [
+        0.1978,
+        1.5811,
+        0.2014
+      ],
+      "height": 1.5811,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4028,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_24",
+      "file": "assets/models/pose_hit_light_24.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_25",
+      "file": "assets/models/pose_hit_light_25.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_26",
+      "file": "assets/models/pose_hit_light_26.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_27",
+      "file": "assets/models/pose_hit_light_27.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_28",
+      "file": "assets/models/pose_hit_light_28.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_29",
+      "file": "assets/models/pose_hit_light_29.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_30",
+      "file": "assets/models/pose_hit_light_30.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_31",
+      "file": "assets/models/pose_hit_light_31.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_32",
+      "file": "assets/models/pose_hit_light_32.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_33",
+      "file": "assets/models/pose_hit_light_33.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_34",
+      "file": "assets/models/pose_hit_light_34.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_35",
+      "file": "assets/models/pose_hit_light_35.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_36",
+      "file": "assets/models/pose_hit_light_36.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_37",
+      "file": "assets/models/pose_hit_light_37.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_38",
+      "file": "assets/models/pose_hit_light_38.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_39",
+      "file": "assets/models/pose_hit_light_39.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_40",
+      "file": "assets/models/pose_hit_light_40.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_hit_light_41",
+      "file": "assets/models/pose_hit_light_41.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.201
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.201
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4019,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_00",
+      "file": "assets/models/pose_idle_00.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.2343
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.2343
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4687,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_01",
+      "file": "assets/models/pose_idle_01.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1982,
+        0.0,
+        -0.2366
+      ],
+      "max": [
+        0.1982,
+        1.5851,
+        0.2366
+      ],
+      "height": 1.5851,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3965,
+      "footprint_z": 0.4733,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_02",
+      "file": "assets/models/pose_idle_02.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1985,
+        0.0,
+        -0.238
+      ],
+      "max": [
+        0.1985,
+        1.5872,
+        0.238
+      ],
+      "height": 1.5872,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3971,
+      "footprint_z": 0.4759,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_03",
+      "file": "assets/models/pose_idle_03.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1985,
+        0.0,
+        -0.2378
+      ],
+      "max": [
+        0.1985,
+        1.587,
+        0.2378
+      ],
+      "height": 1.587,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.397,
+      "footprint_z": 0.4756,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_04",
+      "file": "assets/models/pose_idle_04.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1982,
+        0.0,
+        -0.2362
+      ],
+      "max": [
+        0.1982,
+        1.5845,
+        0.2362
+      ],
+      "height": 1.5845,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3963,
+      "footprint_z": 0.4724,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_05",
+      "file": "assets/models/pose_idle_05.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1978,
+        0.0,
+        -0.2344
+      ],
+      "max": [
+        0.1978,
+        1.5807,
+        0.2344
+      ],
+      "height": 1.5807,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3957,
+      "footprint_z": 0.4689,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_06",
+      "file": "assets/models/pose_idle_06.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1983,
+        0.0,
+        -0.2349
+      ],
+      "max": [
+        0.1983,
+        1.5772,
+        0.2349
+      ],
+      "height": 1.5772,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3966,
+      "footprint_z": 0.4698,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_07",
+      "file": "assets/models/pose_idle_07.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1986,
+        0.0,
+        -0.2351
+      ],
+      "max": [
+        0.1986,
+        1.5755,
+        0.2351
+      ],
+      "height": 1.5755,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3971,
+      "footprint_z": 0.4702,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_08",
+      "file": "assets/models/pose_idle_08.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1985,
+        0.0,
+        -0.235
+      ],
+      "max": [
+        0.1985,
+        1.5762,
+        0.235
+      ],
+      "height": 1.5762,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3969,
+      "footprint_z": 0.47,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_09",
+      "file": "assets/models/pose_idle_09.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1981,
+        0.0,
+        -0.2346
+      ],
+      "max": [
+        0.1981,
+        1.5792,
+        0.2346
+      ],
+      "height": 1.5792,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3961,
+      "footprint_z": 0.4693,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_10",
+      "file": "assets/models/pose_idle_10.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.2343
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.2343
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4687,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_idle_11",
+      "file": "assets/models/pose_idle_11.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.2343
+      ],
+      "max": [
+        0.1977,
+        1.5815,
+        0.2343
+      ],
+      "height": 1.5815,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.4687,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_00",
+      "file": "assets/models/pose_walk_00.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.33
+      ],
+      "max": [
+        0.1977,
+        1.5035,
+        0.33
+      ],
+      "height": 1.5035,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.66,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_01",
+      "file": "assets/models/pose_walk_01.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1985,
+        0.0,
+        -0.3227
+      ],
+      "max": [
+        0.1985,
+        1.5106,
+        0.3227
+      ],
+      "height": 1.5106,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3969,
+      "footprint_z": 0.6454,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_02",
+      "file": "assets/models/pose_walk_02.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1988,
+        0.0,
+        -0.2725
+      ],
+      "max": [
+        0.1988,
+        1.5203,
+        0.2725
+      ],
+      "height": 1.5203,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3977,
+      "footprint_z": 0.545,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_03",
+      "file": "assets/models/pose_walk_03.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1988,
+        0.0,
+        -0.2652
+      ],
+      "max": [
+        0.1988,
+        1.519,
+        0.2652
+      ],
+      "height": 1.519,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3976,
+      "footprint_z": 0.5305,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_04",
+      "file": "assets/models/pose_walk_04.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1983,
+        0.0,
+        -0.3004
+      ],
+      "max": [
+        0.1983,
+        1.508,
+        0.3004
+      ],
+      "height": 1.508,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3967,
+      "footprint_z": 0.6008,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_05",
+      "file": "assets/models/pose_walk_05.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1979,
+        0.0,
+        -0.3254
+      ],
+      "max": [
+        0.1979,
+        1.5046,
+        0.3254
+      ],
+      "height": 1.5046,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3958,
+      "footprint_z": 0.6509,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_06",
+      "file": "assets/models/pose_walk_06.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1986,
+        0.0,
+        -0.3188
+      ],
+      "max": [
+        0.1986,
+        1.5125,
+        0.3188
+      ],
+      "height": 1.5125,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3972,
+      "footprint_z": 0.6376,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_07",
+      "file": "assets/models/pose_walk_07.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1988,
+        0.0,
+        -0.2566
+      ],
+      "max": [
+        0.1988,
+        1.5212,
+        0.2566
+      ],
+      "height": 1.5212,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0,
+      "footprint_x": 0.3977,
+      "footprint_z": 0.5131,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_08",
+      "file": "assets/models/pose_walk_08.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1987,
+        0.0,
+        -0.2719
+      ],
+      "max": [
+        0.1987,
+        1.517,
+        0.2719
+      ],
+      "height": 1.517,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3975,
+      "footprint_z": 0.5437,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_09",
+      "file": "assets/models/pose_walk_09.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1982,
+        0.0,
+        -0.3115
+      ],
+      "max": [
+        0.1982,
+        1.5067,
+        0.3115
+      ],
+      "height": 1.5067,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3964,
+      "footprint_z": 0.623,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_10",
+      "file": "assets/models/pose_walk_10.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.33
+      ],
+      "max": [
+        0.1977,
+        1.5035,
+        0.33
+      ],
+      "height": 1.5035,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.66,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "pose_walk_11",
+      "file": "assets/models/pose_walk_11.glb",
+      "category": "Other",
+      "triangles": 316,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1977,
+        0.0,
+        -0.33
+      ],
+      "max": [
+        0.1977,
+        1.5035,
+        0.33
+      ],
+      "height": 1.5035,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3955,
+      "footprint_z": 0.66,
       "bounds_complete": true,
       "violations": [],
       "pass": true
