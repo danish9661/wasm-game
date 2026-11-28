@@ -10,10 +10,10 @@
     "complex_name_pattern": "(interior|house|cabin|hut|inn|barn|hall|tower|castle|fort|keep|palace|temple|cathedral|church|abbey|shrine|dungeon|ruin|village|town|city|market|station|train|bridge|ship|mine|cave|complex|landmark|showcase|diorama|structure)"
   },
   "summary": {
-    "models": 442,
-    "passed": 442,
+    "models": 528,
+    "passed": 528,
     "failed": 0,
-    "total_triangles": 128129,
+    "total_triangles": 140545,
     "models_dir": "assets/models"
   },
   "models": [
@@ -73,6 +73,2586 @@
       "center_z": 0.0,
       "footprint_x": 1.3423,
       "footprint_z": 0.2714,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_00",
+      "file": "assets/models/animprop_banner_00.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1899
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0001,
+      "footprint_x": 0.95,
+      "footprint_z": 0.38,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_01",
+      "file": "assets/models/animprop_banner_01.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1899
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0001,
+      "footprint_x": 0.95,
+      "footprint_z": 0.38,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_02",
+      "file": "assets/models/animprop_banner_02.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1901
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.95,
+      "footprint_z": 0.3801,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_03",
+      "file": "assets/models/animprop_banner_03.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1899
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0001,
+      "footprint_x": 0.95,
+      "footprint_z": 0.38,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_04",
+      "file": "assets/models/animprop_banner_04.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1899
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0001,
+      "footprint_x": 0.95,
+      "footprint_z": 0.38,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_05",
+      "file": "assets/models/animprop_banner_05.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1899
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0001,
+      "footprint_x": 0.95,
+      "footprint_z": 0.38,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_06",
+      "file": "assets/models/animprop_banner_06.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1899
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0001,
+      "footprint_x": 0.95,
+      "footprint_z": 0.38,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_banner_07",
+      "file": "assets/models/animprop_banner_07.glb",
+      "category": "Structure",
+      "triangles": 120,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -0.475,
+        0.0,
+        -0.1901
+      ],
+      "max": [
+        0.475,
+        2.3351,
+        0.1899
+      ],
+      "height": 2.3351,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0001,
+      "footprint_x": 0.95,
+      "footprint_z": 0.38,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_brazier_00",
+      "file": "assets/models/animprop_brazier_00.glb",
+      "category": "Structure",
+      "triangles": 108,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.38,
+        0.0,
+        -0.38
+      ],
+      "max": [
+        0.38,
+        1.36,
+        0.38
+      ],
+      "height": 1.36,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.76,
+      "footprint_z": 0.76,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_brazier_01",
+      "file": "assets/models/animprop_brazier_01.glb",
+      "category": "Structure",
+      "triangles": 108,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.38,
+        0.0,
+        -0.38
+      ],
+      "max": [
+        0.38,
+        1.4553,
+        0.38
+      ],
+      "height": 1.4553,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.76,
+      "footprint_z": 0.76,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_brazier_02",
+      "file": "assets/models/animprop_brazier_02.glb",
+      "category": "Structure",
+      "triangles": 108,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.38,
+        0.0,
+        -0.38
+      ],
+      "max": [
+        0.38,
+        1.4553,
+        0.38
+      ],
+      "height": 1.4553,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.76,
+      "footprint_z": 0.76,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_brazier_03",
+      "file": "assets/models/animprop_brazier_03.glb",
+      "category": "Structure",
+      "triangles": 108,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.38,
+        0.0,
+        -0.38
+      ],
+      "max": [
+        0.38,
+        1.36,
+        0.38
+      ],
+      "height": 1.36,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.76,
+      "footprint_z": 0.76,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_brazier_04",
+      "file": "assets/models/animprop_brazier_04.glb",
+      "category": "Structure",
+      "triangles": 108,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.38,
+        0.0,
+        -0.38
+      ],
+      "max": [
+        0.38,
+        1.2647,
+        0.38
+      ],
+      "height": 1.2647,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.76,
+      "footprint_z": 0.76,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_brazier_05",
+      "file": "assets/models/animprop_brazier_05.glb",
+      "category": "Structure",
+      "triangles": 108,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.38,
+        0.0,
+        -0.38
+      ],
+      "max": [
+        0.38,
+        1.2647,
+        0.38
+      ],
+      "height": 1.2647,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.76,
+      "footprint_z": 0.76,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_00",
+      "file": "assets/models/animprop_campfire_00.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        1.0759,
+        0.5083
+      ],
+      "height": 1.0759,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_01",
+      "file": "assets/models/animprop_campfire_01.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        1.1324,
+        0.5083
+      ],
+      "height": 1.1324,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_02",
+      "file": "assets/models/animprop_campfire_02.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        1.1213,
+        0.5083
+      ],
+      "height": 1.1213,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_03",
+      "file": "assets/models/animprop_campfire_03.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        1.1833,
+        0.5083
+      ],
+      "height": 1.1833,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_04",
+      "file": "assets/models/animprop_campfire_04.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        1.0041,
+        0.5083
+      ],
+      "height": 1.0041,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_05",
+      "file": "assets/models/animprop_campfire_05.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        0.9476,
+        0.5083
+      ],
+      "height": 0.9476,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_06",
+      "file": "assets/models/animprop_campfire_06.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        0.9587,
+        0.5083
+      ],
+      "height": 0.9587,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_07",
+      "file": "assets/models/animprop_campfire_07.glb",
+      "category": "Structure",
+      "triangles": 242,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.5646,
+        0.0,
+        -0.5083
+      ],
+      "max": [
+        0.5646,
+        0.8967,
+        0.5083
+      ],
+      "height": 0.8967,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1292,
+      "footprint_z": 1.0167,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_00",
+      "file": "assets/models/animprop_campfire_ember_00.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.411,
+        0.3811
+      ],
+      "height": 0.411,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_01",
+      "file": "assets/models/animprop_campfire_ember_01.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.4183,
+        0.3811
+      ],
+      "height": 0.4183,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_02",
+      "file": "assets/models/animprop_campfire_ember_02.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.3383,
+        0.3811
+      ],
+      "height": 0.3383,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_03",
+      "file": "assets/models/animprop_campfire_ember_03.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.3716,
+        0.3811
+      ],
+      "height": 0.3716,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_04",
+      "file": "assets/models/animprop_campfire_ember_04.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.411,
+        0.3811
+      ],
+      "height": 0.411,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_05",
+      "file": "assets/models/animprop_campfire_ember_05.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.4183,
+        0.3811
+      ],
+      "height": 0.4183,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_06",
+      "file": "assets/models/animprop_campfire_ember_06.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.3383,
+        0.3811
+      ],
+      "height": 0.3383,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_campfire_ember_07",
+      "file": "assets/models/animprop_campfire_ember_07.glb",
+      "category": "Structure",
+      "triangles": 180,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.44,
+        0.0,
+        -0.3811
+      ],
+      "max": [
+        0.44,
+        0.3716,
+        0.3811
+      ],
+      "height": 0.3716,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.88,
+      "footprint_z": 0.7621,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_door_00",
+      "file": "assets/models/animprop_door_00.glb",
+      "category": "Other",
+      "triangles": 104,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.45,
+        0.0,
+        -0.465
+      ],
+      "max": [
+        0.45,
+        2.0,
+        0.035
+      ],
+      "height": 2.0,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.215,
+      "footprint_x": 0.9,
+      "footprint_z": 0.5,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_door_01",
+      "file": "assets/models/animprop_door_01.glb",
+      "category": "Other",
+      "triangles": 104,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.45,
+        0.0,
+        -0.465
+      ],
+      "max": [
+        0.45,
+        2.0,
+        0.0695
+      ],
+      "height": 2.0,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.1977,
+      "footprint_x": 0.9,
+      "footprint_z": 0.5344,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_door_02",
+      "file": "assets/models/animprop_door_02.glb",
+      "category": "Other",
+      "triangles": 104,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.45,
+        0.0,
+        -0.465
+      ],
+      "max": [
+        0.45,
+        2.0,
+        0.3591
+      ],
+      "height": 2.0,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0529,
+      "footprint_x": 0.9,
+      "footprint_z": 0.8241,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_door_03",
+      "file": "assets/models/animprop_door_03.glb",
+      "category": "Other",
+      "triangles": 104,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.45,
+        0.0,
+        -0.465
+      ],
+      "max": [
+        0.45,
+        2.0,
+        0.465
+      ],
+      "height": 2.0,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.9,
+      "footprint_z": 0.9299,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_door_04",
+      "file": "assets/models/animprop_door_04.glb",
+      "category": "Other",
+      "triangles": 104,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.45,
+        0.0,
+        -0.465
+      ],
+      "max": [
+        0.45,
+        2.0,
+        0.3591
+      ],
+      "height": 2.0,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0529,
+      "footprint_x": 0.9,
+      "footprint_z": 0.8241,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_door_05",
+      "file": "assets/models/animprop_door_05.glb",
+      "category": "Other",
+      "triangles": 104,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.45,
+        0.0,
+        -0.465
+      ],
+      "max": [
+        0.45,
+        2.0,
+        0.0695
+      ],
+      "height": 2.0,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.1977,
+      "footprint_x": 0.9,
+      "footprint_z": 0.5344,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_lantern_00",
+      "file": "assets/models/animprop_lantern_00.glb",
+      "category": "Structure",
+      "triangles": 174,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.24,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.24,
+        0.92,
+        0.24
+      ],
+      "height": 0.92,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.48,
+      "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_lantern_01",
+      "file": "assets/models/animprop_lantern_01.glb",
+      "category": "Structure",
+      "triangles": 174,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.24,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.24,
+        0.92,
+        0.24
+      ],
+      "height": 0.92,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.48,
+      "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_lantern_02",
+      "file": "assets/models/animprop_lantern_02.glb",
+      "category": "Structure",
+      "triangles": 174,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.24,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.24,
+        0.92,
+        0.24
+      ],
+      "height": 0.92,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.48,
+      "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_lantern_03",
+      "file": "assets/models/animprop_lantern_03.glb",
+      "category": "Structure",
+      "triangles": 174,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.24,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.24,
+        0.92,
+        0.24
+      ],
+      "height": 0.92,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.48,
+      "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_lantern_04",
+      "file": "assets/models/animprop_lantern_04.glb",
+      "category": "Structure",
+      "triangles": 174,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.24,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.24,
+        0.92,
+        0.24
+      ],
+      "height": 0.92,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.48,
+      "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_lantern_05",
+      "file": "assets/models/animprop_lantern_05.glb",
+      "category": "Structure",
+      "triangles": 174,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.24,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.24,
+        0.92,
+        0.24
+      ],
+      "height": 0.92,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.48,
+      "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_00",
+      "file": "assets/models/animprop_pine_00.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.62,
+        0.0,
+        -0.62
+      ],
+      "max": [
+        0.62,
+        3.25,
+        0.62
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.24,
+      "footprint_z": 1.24,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_01",
+      "file": "assets/models/animprop_pine_01.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.6198,
+        0.0,
+        -0.62
+      ],
+      "max": [
+        0.6198,
+        3.25,
+        0.62
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2397,
+      "footprint_z": 1.2399,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_02",
+      "file": "assets/models/animprop_pine_02.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.6197,
+        0.0,
+        -0.6199
+      ],
+      "max": [
+        0.6197,
+        3.25,
+        0.6199
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2393,
+      "footprint_z": 1.2398,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_03",
+      "file": "assets/models/animprop_pine_03.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.6198,
+        0.0,
+        -0.62
+      ],
+      "max": [
+        0.6198,
+        3.25,
+        0.62
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2397,
+      "footprint_z": 1.2399,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_04",
+      "file": "assets/models/animprop_pine_04.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.62,
+        0.0,
+        -0.62
+      ],
+      "max": [
+        0.62,
+        3.25,
+        0.62
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.24,
+      "footprint_z": 1.24,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_05",
+      "file": "assets/models/animprop_pine_05.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.6198,
+        0.0,
+        -0.62
+      ],
+      "max": [
+        0.6198,
+        3.25,
+        0.62
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2397,
+      "footprint_z": 1.2399,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_06",
+      "file": "assets/models/animprop_pine_06.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.6197,
+        0.0,
+        -0.6199
+      ],
+      "max": [
+        0.6197,
+        3.25,
+        0.6199
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2393,
+      "footprint_z": 1.2398,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_pine_07",
+      "file": "assets/models/animprop_pine_07.glb",
+      "category": "Nature",
+      "triangles": 98,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.6198,
+        0.0,
+        -0.62
+      ],
+      "max": [
+        0.6198,
+        3.25,
+        0.62
+      ],
+      "height": 3.25,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.2397,
+      "footprint_z": 1.2399,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_00",
+      "file": "assets/models/animprop_portal_00.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_01",
+      "file": "assets/models/animprop_portal_01.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_02",
+      "file": "assets/models/animprop_portal_02.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_03",
+      "file": "assets/models/animprop_portal_03.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_04",
+      "file": "assets/models/animprop_portal_04.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_05",
+      "file": "assets/models/animprop_portal_05.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_06",
+      "file": "assets/models/animprop_portal_06.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_portal_07",
+      "file": "assets/models/animprop_portal_07.glb",
+      "category": "Structure",
+      "triangles": 308,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 6,
+      "materials": 6,
+      "min": [
+        -1.0,
+        0.0,
+        -0.425
+      ],
+      "max": [
+        1.0,
+        2.82,
+        0.425
+      ],
+      "height": 2.82,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0,
+      "footprint_z": 0.85,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_torch_00",
+      "file": "assets/models/animprop_torch_00.glb",
+      "category": "Structure",
+      "triangles": 58,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1678,
+        0.0,
+        -0.1455
+      ],
+      "max": [
+        0.1678,
+        1.18,
+        0.1455
+      ],
+      "height": 1.18,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3355,
+      "footprint_z": 0.291,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_torch_01",
+      "file": "assets/models/animprop_torch_01.glb",
+      "category": "Structure",
+      "triangles": 58,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.158,
+        0.0,
+        -0.1377
+      ],
+      "max": [
+        0.158,
+        1.2638,
+        0.1377
+      ],
+      "height": 1.2638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.316,
+      "footprint_z": 0.2754,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_torch_02",
+      "file": "assets/models/animprop_torch_02.glb",
+      "category": "Structure",
+      "triangles": 58,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1407,
+        0.0,
+        -0.1221
+      ],
+      "max": [
+        0.1407,
+        1.2638,
+        0.1221
+      ],
+      "height": 1.2638,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.2813,
+      "footprint_z": 0.2442,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_torch_03",
+      "file": "assets/models/animprop_torch_03.glb",
+      "category": "Structure",
+      "triangles": 58,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1318,
+        0.0,
+        -0.1143
+      ],
+      "max": [
+        0.1318,
+        1.18,
+        0.1143
+      ],
+      "height": 1.18,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.2636,
+      "footprint_z": 0.2286,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_torch_04",
+      "file": "assets/models/animprop_torch_04.glb",
+      "category": "Structure",
+      "triangles": 58,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1391,
+        0.0,
+        -0.1221
+      ],
+      "max": [
+        0.1391,
+        1.0962,
+        0.1221
+      ],
+      "height": 1.0962,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.2781,
+      "footprint_z": 0.2442,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_torch_05",
+      "file": "assets/models/animprop_torch_05.glb",
+      "category": "Structure",
+      "triangles": 58,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.1582,
+        0.0,
+        -0.1377
+      ],
+      "max": [
+        0.1582,
+        1.0962,
+        0.1377
+      ],
+      "height": 1.0962,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.3164,
+      "footprint_z": 0.2754,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_00",
+      "file": "assets/models/animprop_tree_00.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.8168,
+        0.0,
+        -0.628
+      ],
+      "max": [
+        0.8168,
+        2.7207,
+        0.628
+      ],
+      "height": 2.7207,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.6336,
+      "footprint_z": 1.256,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_01",
+      "file": "assets/models/animprop_tree_01.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.7391,
+        0.0,
+        -0.6212
+      ],
+      "max": [
+        0.7391,
+        2.718,
+        0.6131
+      ],
+      "height": 2.718,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0041,
+      "footprint_x": 1.4781,
+      "footprint_z": 1.2343,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_02",
+      "file": "assets/models/animprop_tree_02.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.7068,
+        0.0,
+        -0.6039
+      ],
+      "max": [
+        0.7068,
+        2.7113,
+        0.576
+      ],
+      "height": 2.7113,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.014,
+      "footprint_x": 1.4136,
+      "footprint_z": 1.1799,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_03",
+      "file": "assets/models/animprop_tree_03.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.7391,
+        0.0,
+        -0.5859
+      ],
+      "max": [
+        0.7391,
+        2.718,
+        0.588
+      ],
+      "height": 2.718,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.001,
+      "footprint_x": 1.4781,
+      "footprint_z": 1.1739,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_04",
+      "file": "assets/models/animprop_tree_04.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.8168,
+        0.0,
+        -0.578
+      ],
+      "max": [
+        0.8168,
+        2.7207,
+        0.5925
+      ],
+      "height": 2.7207,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0072,
+      "footprint_x": 1.6336,
+      "footprint_z": 1.1705,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_05",
+      "file": "assets/models/animprop_tree_05.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.8946,
+        0.0,
+        -0.5859
+      ],
+      "max": [
+        0.8946,
+        2.718,
+        0.588
+      ],
+      "height": 2.718,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.001,
+      "footprint_x": 1.7893,
+      "footprint_z": 1.1739,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_06",
+      "file": "assets/models/animprop_tree_06.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.9268,
+        0.0,
+        -0.6039
+      ],
+      "max": [
+        0.9268,
+        2.7113,
+        0.576
+      ],
+      "height": 2.7113,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.014,
+      "footprint_x": 1.8536,
+      "footprint_z": 1.1799,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_tree_07",
+      "file": "assets/models/animprop_tree_07.glb",
+      "category": "Nature",
+      "triangles": 100,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.8946,
+        0.0,
+        -0.6212
+      ],
+      "max": [
+        0.8946,
+        2.718,
+        0.6131
+      ],
+      "height": 2.718,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0041,
+      "footprint_x": 1.7893,
+      "footprint_z": 1.2343,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_00",
+      "file": "assets/models/animprop_water_00.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.085,
+        0.9
+      ],
+      "height": 0.085,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_01",
+      "file": "assets/models/animprop_water_01.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.1017,
+        0.9
+      ],
+      "height": 0.1017,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_02",
+      "file": "assets/models/animprop_water_02.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.1056,
+        0.9
+      ],
+      "height": 0.1056,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_03",
+      "file": "assets/models/animprop_water_03.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.0964,
+        0.9
+      ],
+      "height": 0.0964,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_04",
+      "file": "assets/models/animprop_water_04.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.0917,
+        0.9
+      ],
+      "height": 0.0917,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_05",
+      "file": "assets/models/animprop_water_05.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.1168,
+        0.9
+      ],
+      "height": 0.1168,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_06",
+      "file": "assets/models/animprop_water_06.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.13,
+        0.9
+      ],
+      "height": 0.13,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_water_07",
+      "file": "assets/models/animprop_water_07.glb",
+      "category": "Other",
+      "triangles": 84,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 2,
+      "materials": 2,
+      "min": [
+        -0.9,
+        0.0,
+        -0.9
+      ],
+      "max": [
+        0.9,
+        0.1168,
+        0.9
+      ],
+      "height": 0.1168,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.8,
+      "footprint_z": 1.8,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_window_00",
+      "file": "assets/models/animprop_window_00.glb",
+      "category": "Other",
+      "triangles": 116,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.4,
+        0.0,
+        -0.0764
+      ],
+      "max": [
+        0.4,
+        0.9,
+        0.0764
+      ],
+      "height": 0.9,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.8,
+      "footprint_z": 0.1527,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_window_01",
+      "file": "assets/models/animprop_window_01.glb",
+      "category": "Other",
+      "triangles": 116,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.4,
+        0.0,
+        -0.0764
+      ],
+      "max": [
+        0.4,
+        0.9,
+        0.0744
+      ],
+      "height": 0.9,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.001,
+      "footprint_x": 0.8,
+      "footprint_z": 0.1507,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_window_02",
+      "file": "assets/models/animprop_window_02.glb",
+      "category": "Other",
+      "triangles": 116,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.4,
+        0.0,
+        -0.0764
+      ],
+      "max": [
+        0.4,
+        0.9,
+        0.0636
+      ],
+      "height": 0.9,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0064,
+      "footprint_x": 0.8,
+      "footprint_z": 0.14,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_window_03",
+      "file": "assets/models/animprop_window_03.glb",
+      "category": "Other",
+      "triangles": 116,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.4,
+        0.0,
+        -0.0764
+      ],
+      "max": [
+        0.4,
+        0.9,
+        0.0764
+      ],
+      "height": 0.9,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 0.8,
+      "footprint_z": 0.1527,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_window_04",
+      "file": "assets/models/animprop_window_04.glb",
+      "category": "Other",
+      "triangles": 116,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.4,
+        0.0,
+        -0.0764
+      ],
+      "max": [
+        0.4,
+        0.9,
+        0.0744
+      ],
+      "height": 0.9,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.001,
+      "footprint_x": 0.8,
+      "footprint_z": 0.1507,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "animprop_window_05",
+      "file": "assets/models/animprop_window_05.glb",
+      "category": "Other",
+      "triangles": 116,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.4,
+        0.0,
+        -0.0764
+      ],
+      "max": [
+        0.4,
+        0.9,
+        0.0636
+      ],
+      "height": 0.9,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": -0.0064,
+      "footprint_x": 0.8,
+      "footprint_z": 0.14,
       "bounds_complete": true,
       "violations": [],
       "pass": true

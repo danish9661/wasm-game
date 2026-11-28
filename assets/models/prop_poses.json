@@ -1,0 +1,160 @@
+{
+  "campfire": {
+    "fps": 8.0,
+    "frames": [
+      "animprop_campfire_00.glb",
+      "animprop_campfire_01.glb",
+      "animprop_campfire_02.glb",
+      "animprop_campfire_03.glb",
+      "animprop_campfire_04.glb",
+      "animprop_campfire_05.glb",
+      "animprop_campfire_06.glb",
+      "animprop_campfire_07.glb"
+    ],
+    "loop": true
+  },
+  "campfire_ember": {
+    "fps": 6.0,
+    "frames": [
+      "animprop_campfire_ember_00.glb",
+      "animprop_campfire_ember_01.glb",
+      "animprop_campfire_ember_02.glb",
+      "animprop_campfire_ember_03.glb",
+      "animprop_campfire_ember_04.glb",
+      "animprop_campfire_ember_05.glb",
+      "animprop_campfire_ember_06.glb",
+      "animprop_campfire_ember_07.glb"
+    ],
+    "loop": true
+  },
+  "torch": {
+    "fps": 8.0,
+    "frames": [
+      "animprop_torch_00.glb",
+      "animprop_torch_01.glb",
+      "animprop_torch_02.glb",
+      "animprop_torch_03.glb",
+      "animprop_torch_04.glb",
+      "animprop_torch_05.glb"
+    ],
+    "loop": true
+  },
+  "brazier": {
+    "fps": 8.0,
+    "frames": [
+      "animprop_brazier_00.glb",
+      "animprop_brazier_01.glb",
+      "animprop_brazier_02.glb",
+      "animprop_brazier_03.glb",
+      "animprop_brazier_04.glb",
+      "animprop_brazier_05.glb"
+    ],
+    "loop": true
+  },
+  "lantern": {
+    "fps": 6.0,
+    "frames": [
+      "animprop_lantern_00.glb",
+      "animprop_lantern_01.glb",
+      "animprop_lantern_02.glb",
+      "animprop_lantern_03.glb",
+      "animprop_lantern_04.glb",
+      "animprop_lantern_05.glb"
+    ],
+    "loop": true
+  },
+  "portal": {
+    "fps": 8.0,
+    "frames": [
+      "animprop_portal_00.glb",
+      "animprop_portal_01.glb",
+      "animprop_portal_02.glb",
+      "animprop_portal_03.glb",
+      "animprop_portal_04.glb",
+      "animprop_portal_05.glb",
+      "animprop_portal_06.glb",
+      "animprop_portal_07.glb"
+    ],
+    "loop": true
+  },
+  "banner": {
+    "fps": 6.0,
+    "frames": [
+      "animprop_banner_00.glb",
+      "animprop_banner_01.glb",
+      "animprop_banner_02.glb",
+      "animprop_banner_03.glb",
+      "animprop_banner_04.glb",
+      "animprop_banner_05.glb",
+      "animprop_banner_06.glb",
+      "animprop_banner_07.glb"
+    ],
+    "loop": true
+  },
+  "tree": {
+    "fps": 4.0,
+    "frames": [
+      "animprop_tree_00.glb",
+      "animprop_tree_01.glb",
+      "animprop_tree_02.glb",
+      "animprop_tree_03.glb",
+      "animprop_tree_04.glb",
+      "animprop_tree_05.glb",
+      "animprop_tree_06.glb",
+      "animprop_tree_07.glb"
+    ],
+    "loop": true
+  },
+  "pine": {
+    "fps": 4.0,
+    "frames": [
+      "animprop_pine_00.glb",
+      "animprop_pine_01.glb",
+      "animprop_pine_02.glb",
+      "animprop_pine_03.glb",
+      "animprop_pine_04.glb",
+      "animprop_pine_05.glb",
+      "animprop_pine_06.glb",
+      "animprop_pine_07.glb"
+    ],
+    "loop": true
+  },
+  "water": {
+    "fps": 6.0,
+    "frames": [
+      "animprop_water_00.glb",
+      "animprop_water_01.glb",
+      "animprop_water_02.glb",
+      "animprop_water_03.glb",
+      "animprop_water_04.glb",
+      "animprop_water_05.glb",
+      "animprop_water_06.glb",
+      "animprop_water_07.glb"
+    ],
+    "loop": true
+  },
+  "door": {
+    "fps": 6.0,
+    "frames": [
+      "animprop_door_00.glb",
+      "animprop_door_01.glb",
+      "animprop_door_02.glb",
+      "animprop_door_03.glb",
+      "animprop_door_04.glb",
+      "animprop_door_05.glb"
+    ],
+    "loop": true
+  },
+  "window": {
+    "fps": 6.0,
+    "frames": [
+      "animprop_window_00.glb",
+      "animprop_window_01.glb",
+      "animprop_window_02.glb",
+      "animprop_window_03.glb",
+      "animprop_window_04.glb",
+      "animprop_window_05.glb"
+    ],
+    "loop": true
+  }
+}
