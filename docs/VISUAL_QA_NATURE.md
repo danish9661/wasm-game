@@ -193,3 +193,14 @@ python3 scripts/build_nature_sheet.py \
   --out /tmp/opencode/nature_qa/sheets --title "Nature / Biome props"
 python3 scripts/verify_models.py --quiet && python3 scripts/check_metrics.py
 ```
+
+## Remaining known issues (after models-v6)
+
+- Closed in wave 6: `apple_tree` now has four larger apples, two boughs and a
+  measured height of 2.601 u (inside the 2.5–3.0 u tree band); `hay_bale` is a
+  rounded elliptical bale with leather bands; `volcanic_bomb` has wide
+  fire/gold lava cracks instead of thin glow lines.
+- Still cosmetic: `lily_pad`, `driftwood`, `wreck_plank` and `flower` are
+  intentionally small ground props and stay under ~30 px at gameplay scale;
+  they read correctly in the zoom view but cannot carry detail at 60 px.
+- No BLOCKER or MAJOR finding remains open.

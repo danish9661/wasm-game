@@ -137,3 +137,15 @@ All fourteen rebuilt assets pass the skill validator with `0 fail, 0 warn`, incl
 `khronos.errors: 0 errors, 0 warnings`. The GLB filenames in `assets/models/`
 and the base-at-zero / centred-pivot contract are unchanged. `assets/spec.json`
 had a missing comma (invalid JSON) that blocked the skill validator; it was fixed.
+
+## Remaining known issues (after models-v6)
+
+- Closed in wave 6: `crossbow` was rebuilt at 1.17 u (was 0.62 u) with a visible
+  stock, limbs, string and bolt; `arrow` has broad gold/sand flights; and
+  `coral_brain` uses saturated arcane/fire/bone palette values instead of a
+  muted sand body.
+- Still cosmetic: small food and debris props (e.g. `potato`, `carrot`,
+  `wreck_debris`) remain sub-60 px by design. They are scene scatter, not hero
+  reads, and were deliberately left unchanged to preserve their filenames and
+  existing QA evidence.
+- No BLOCKER, CRITICAL or MAJOR finding remains open.

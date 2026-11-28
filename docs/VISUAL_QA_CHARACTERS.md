@@ -172,3 +172,16 @@ preserved.
 - `assets/spec.json` had a missing comma after `wave4_note` (invalid JSON), which
   blocked the skill validator and Babylon harness. Fixed in place; no semantic
   change to the spec.
+
+## Remaining known issues (after models-v6)
+
+- `npc_blacksmith` still has no clearly readable held tool at gameplay scale.
+  Its GLB SHA-256 is locked in `assets/animations/wave4/manifest.json` and the
+  wave-4 rig enumerates its exact mesh nodes (`tongs_0`, `tongs_1`, `apron`, …);
+  adding a hammer would force regeneration of all 105 wave-4 clips. Deferred
+  deliberately rather than risking the animation contract.
+- The other four Round-3 MINOR notes are closed in wave 6: `bat` now has a
+  lighter wing/bone palette and gold eyes, `fire_elemental` is one connected
+  flame body, and `stone_elemental` was rebuilt as a tall obsidian/arcane
+  figure so it no longer echoes the broad grey `golem`.
+- No BLOCKER or MAJOR finding remains open.
