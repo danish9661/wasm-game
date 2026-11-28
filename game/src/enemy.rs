@@ -24,6 +24,9 @@ pub enum Telegraph {
     TidalRing,
     /// Double shockwave ring (Colossus slam).
     SlamRing,
+    /// Phase-two transition: a one-shot expanding burst when a guardian
+    /// crosses its HP threshold, drawn in the renderer for ~1.5s.
+    EnrageBurst,
 }
 
 /// 0..1 charge progress from remaining wind-up seconds: 0 at wind-up start,
@@ -282,6 +285,72 @@ impl EnemyKind {
         }
     }
 
+    /// HP fraction at which a boss enters its second phase. Each Crown
+    /// Fragment guardian flips at its own threshold; non-bosses never flip
+    /// (`1.0` means "only at zero HP", which is death). Pure data, no RNG.
+    pub fn phase2_threshold(self) -> f32 {
+        match self {
+            EnemyKind::Boss => 0.45,
+            EnemyKind::ScorpionQueen => 0.50,
+            EnemyKind::FrostGolem => 0.40,
+            EnemyKind::ToadKing => 0.45,
+            EnemyKind::OceanLeviathan => 0.55,
+            EnemyKind::Colossus => 0.40,
+            _ => 1.0,
+        }
+    }
+
+    /// Speed multiplier applied to the *kind's base speed* in phase two, so a
+    /// Frost Golem stays slower than a Scorpion Queen even when both enrage.
+    pub fn phase2_speed_mult(self) -> f32 {
+        match self {
+            EnemyKind::Boss => 1.6,
+            EnemyKind::ScorpionQueen => 1.5,
+            EnemyKind::FrostGolem => 1.8,
+            EnemyKind::ToadKing => 1.6,
+            EnemyKind::OceanLeviathan => 1.7,
+            EnemyKind::Colossus => 1.7,
+            _ => 1.0,
+        }
+    }
+
+    /// Attack cooldown multiplier in phase two (< 1 = strikes more often).
+    pub fn phase2_cooldown_mult(self) -> f32 {
+        match self {
+            EnemyKind::Boss => 0.6,
+            EnemyKind::ScorpionQueen => 0.65,
+            EnemyKind::FrostGolem => 0.55,
+            EnemyKind::ToadKing => 0.6,
+            EnemyKind::OceanLeviathan => 0.6,
+            EnemyKind::Colossus => 0.55,
+            _ => 1.0,
+        }
+    }
+
+    /// Contact-damage multiplier in phase two. The stat change is visible on
+    /// the telegraph and testable without stepping the full AI.
+    pub fn phase2_damage_mult(self) -> f32 {
+        match self {
+            EnemyKind::Boss => 1.25,
+            EnemyKind::ScorpionQueen => 1.3,
+            EnemyKind::FrostGolem => 1.4,
+            EnemyKind::ToadKing => 1.25,
+            EnemyKind::OceanLeviathan => 1.35,
+            EnemyKind::Colossus => 1.3,
+            _ => 1.0,
+        }
+    }
+
+    /// The phase-two visual tell: an expanding burst keyed to the boss's own
+    /// palette (the renderer draws the ring; `phase2_flash` drives its life).
+    pub fn phase2_telegraph(self) -> Telegraph {
+        if self.is_boss() {
+            Telegraph::EnrageBurst
+        } else {
+            Telegraph::None
+        }
+    }
+
     /// What this enemy drops on death (used by the Bestiary / Codex too).
     /// Combat now yields a spread of crafting materials (Iron scrap, Gems, Wood,
     /// Herbs) so the forge economy isn't gated entirely on node farming.
@@ -513,9 +582,13 @@ pub struct Enemy {
     /// Set during `update` when the enemy fires: a unit direction toward the
     /// player. The caller (renderer) turns this into an enemy arrow.
     pub pending_shot: Option<(f32, f32)>,
-    /// Boss only: latches true once it drops below 40% HP, entering an enraged
-    /// second phase (faster, shorter wind-ups). Purely an AI flag.
+    /// Boss only: latches true once HP crosses the kind's phase-2 threshold
+    /// (faster, harder-hitting, shorter wind-ups). Session state: `Enemy` is
+    /// not serialised (snapshots use `EnemySnapshot` in `sim.rs`).
     pub enraged: bool,
+    /// Seconds left of the phase-two entrance burst (1 -> 0). Rendered as a
+    /// distinct telegraph so the stat change is visible, not just numerical.
+    pub phase2_flash: f32,
     /// Elite multiplier: scales max HP, contact damage and XP reward. 1.0 for
     /// ordinary spawner enemies; >1 for roaming mini-bosses.
     pub elite: f32,
@@ -554,6 +627,7 @@ impl Enemy {
             charge_cd: 0.0,
             pending_shot: None,
             enraged: false,
+            phase2_flash: 0.0,
             elite: 1.0,
             speed_mult: 1.0,
             nocturnal: kind.nocturnal(),
@@ -582,8 +656,37 @@ impl Enemy {
         self.flash = 1.0;
         if self.hp <= 0.0 {
             self.hp = 0.0;
+        } else {
+            self.check_phase2();
         }
         true
+    }
+
+    /// Flip to phase two when this guardian's own HP threshold is crossed.
+    /// Returns true exactly on the transition (so the caller can toast/SFX),
+    /// and is idempotent — repeated calls at low HP do not restart the burst.
+    pub fn check_phase2(&mut self) -> bool {
+        if self.enraged || !self.alive() || !self.kind.is_boss() {
+            return false;
+        }
+        let full = self.kind.max_hp() * self.elite;
+        if self.hp > full * self.kind.phase2_threshold() {
+            return false;
+        }
+        self.enraged = true;
+        self.phase2_flash = 1.0;
+        self.flash = 1.0;
+        true
+    }
+
+    /// Phase-two damage for the current enemy (base × elite × boss multiplier).
+    pub fn strike_damage(&self) -> f32 {
+        let mult = if self.enraged {
+            self.kind.phase2_damage_mult()
+        } else {
+            1.0
+        };
+        self.kind.damage() * self.elite * mult
     }
 
     /// Sunlight damage for nocturnal enemies. `daylight` is the day/night
@@ -630,6 +733,8 @@ impl Enemy {
     ) -> Option<f32> {
         self.attack_timer = (self.attack_timer - dt).max(0.0);
         self.flash = (self.flash - dt * 5.0).max(0.0);
+        // One full burst lasts 1.5s; the renderer scales the ring by this.
+        self.phase2_flash = (self.phase2_flash - dt / 1.5).max(0.0);
         self.burn = (self.burn - dt * 2.5).max(0.0);
         self.shoot_timer = (self.shoot_timer - dt).max(0.0);
         self.charge_t = (self.charge_t - dt).max(0.0);
@@ -659,13 +764,16 @@ impl Enemy {
             // a Goblin, with a shorter cooldown so they keep pressure on a base.
             EnemyKind::Raider => (AGGRO_RANGE + 2.0, ATTACK_RANGE, ENEMY_SPEED * 1.15, 0.7),
         };
-        // Boss second phase: below 45% HP every Crown Fragment guardian enrages —
-        // faster, shorter wind-ups — so a drawn-out fight turns frantic at the end.
-        let (speed, cooldown) = if self.kind.is_boss()
-            && self.hp < self.kind.max_hp() * 0.45
-        {
-            self.enraged = true;
-            (BOSS_SPEED * 1.6, BOSS_ATTACK_COOLDOWN * 0.6)
+        // Boss second phase: each guardian flips at its own HP threshold.
+        // Stats scale the kind's *own* base values, so the Frost Golem stays
+        // slower than the Scorpion Queen even after both enrage. Also catches
+        // enemies loaded from snapshots whose HP was already below the line.
+        self.check_phase2();
+        let (speed, cooldown) = if self.enraged {
+            (
+                speed * self.kind.phase2_speed_mult(),
+                cooldown * self.kind.phase2_cooldown_mult(),
+            )
         } else {
             (speed, cooldown)
         };
@@ -689,7 +797,7 @@ impl Enemy {
                 self.windup -= dt;
                 if self.windup <= 0.0 {
                     self.attack_timer = cooldown;
-                    return Some(self.kind.damage() * self.elite);
+                    return Some(self.strike_damage());
                 }
                 return None;
             }
@@ -1416,5 +1524,74 @@ mod tests {
         // Mid-game brutes stay fair to trade with food backup.
         let brute = trade(EnemyKind::Brute);
         assert!((30.0..=70.0).contains(&brute), "brute trade cost {brute} out of band");
+    }
+
+    #[test]
+    fn every_biome_boss_has_its_own_phase_two() {
+        let bosses = [
+            EnemyKind::Boss,
+            EnemyKind::ScorpionQueen,
+            EnemyKind::FrostGolem,
+            EnemyKind::ToadKing,
+            EnemyKind::OceanLeviathan,
+            EnemyKind::Colossus,
+        ];
+        for k in bosses {
+            let threshold = k.phase2_threshold();
+            assert!((0.2..=0.8).contains(&threshold), "{k:?} threshold {threshold}");
+            assert!(k.phase2_speed_mult() > 1.0, "{k:?} must speed up");
+            assert!(k.phase2_cooldown_mult() < 1.0, "{k:?} must strike more often");
+            assert!(k.phase2_damage_mult() > 1.0, "{k:?} must hit harder");
+            assert_eq!(k.phase2_telegraph(), Telegraph::EnrageBurst);
+        }
+        // Thresholds are not all identical, and each guardian is distinct.
+        let mut ts: Vec<u32> = bosses.iter().map(|k| (k.phase2_threshold() * 100.0) as u32).collect();
+        ts.sort_unstable();
+        ts.dedup();
+        assert!(ts.len() >= 4, "bosses should not all flip at one HP value");
+        for k in [EnemyKind::Slime, EnemyKind::Brute, EnemyKind::Wolf] {
+            assert_eq!(k.phase2_threshold(), 1.0, "{k:?} never enrages");
+            assert_eq!(k.phase2_damage_mult(), 1.0);
+            assert_eq!(k.phase2_telegraph(), Telegraph::None);
+        }
+    }
+
+    #[test]
+    fn phase_two_flips_once_with_a_visible_and_stat_change() {
+        let mut e = Enemy::new(0.5, 0.5, EnemyKind::FrostGolem);
+        let base = e.strike_damage();
+        // Just above the threshold: still phase one, no burst.
+        e.hp = e.kind.max_hp() * e.kind.phase2_threshold() + 0.5;
+        assert!(!e.check_phase2());
+        assert!(!e.enraged);
+        assert_eq!(e.phase2_flash, 0.0);
+
+        e.take_damage(1.0);
+        assert!(e.enraged, "crossing the threshold must flip the boss");
+        assert_eq!(e.phase2_flash, 1.0, "a visible burst announces the flip");
+        assert!(e.strike_damage() > base, "phase two must change stats");
+        assert!(!e.check_phase2(), "the transition is idempotent");
+
+        // Burst decays over ~1.5s but the enraged flag latches.
+        let (_w, mut c) = world();
+        let mut blocked = blocked(&_w, &mut c);
+        for _ in 0..31 {
+            e.update((8.0, 8.0), 0.05, &mut blocked);
+        }
+        assert_eq!(e.phase2_flash, 0.0);
+        assert!(e.enraged);
+    }
+
+    #[test]
+    fn low_hp_snapshot_enrages_without_a_new_hit() {
+        // Enemies arrive from co-op snapshots with HP already low; the AI tick
+        // must catch them up rather than waiting for another local damage call.
+        let mut e = Enemy::new(0.5, 0.5, EnemyKind::ScorpionQueen);
+        e.hp = 1.0;
+        let (w, mut c) = world();
+        let mut blocked = blocked(&w, &mut c);
+        e.update((0.6, 0.6), 0.01, &mut blocked);
+        assert!(e.enraged);
+        assert_eq!(e.phase2_flash, 1.0);
     }
 }

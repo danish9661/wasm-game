@@ -163,6 +163,12 @@ pub struct EnemySnapshot {
     pub state: AiState,
     pub windup: f32,
     pub flash: f32,
+    /// Boss phase-two flag / entrance burst. Defaulted so old protocol peers
+    /// still decode snapshots; clients can also re-derive them from HP.
+    #[serde(default)]
+    pub enraged: bool,
+    #[serde(default)]
+    pub phase2_flash: f32,
 }
 
 /// Something worth a toast/XP happened inside a shared room. Sequenced per
@@ -1839,6 +1845,8 @@ fn step_player(
                 state: e.state,
                 windup: e.windup,
                 flash: e.flash,
+                enraged: e.enraged,
+                phase2_flash: e.phase2_flash,
             })
             .collect();
 
@@ -1949,6 +1957,8 @@ fn room_snapshot(room: &ServerRoom, bx: i32, by: i32, floor: u8) -> RoomSnapshot
                 state: e.state,
                 windup: e.windup,
                 flash: e.flash,
+                enraged: e.enraged,
+                phase2_flash: e.phase2_flash,
             })
             .collect(),
         events: room.events.iter().cloned().collect(),

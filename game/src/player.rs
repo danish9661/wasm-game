@@ -217,7 +217,7 @@ impl Player {
     /// (+15% per enchant level). Both the client and server use this so co-op
     /// damage stays consistent.
     pub fn weapon_damage(&self) -> f32 {
-        self.weapon.damage() * (1.0 + 0.15 * self.enchant as f32)
+        self.weapon.damage() * crate::weapons::enchant_multiplier(self.enchant)
     }
 
     /// Applies damage; respects the hurt-timer (brief invulnerability after
@@ -231,6 +231,9 @@ impl Player {
         // Armour applies before blocking; the two stack, but damage is floored
         // inside `damage_multiplier` so heavily geared players can still die.
         let armoured = dmg * self.equipment.damage_multiplier();
+        // Every landed hit wears equipped pieces (heavier blows wear more).
+        // The renderer toasts any slot that snaps to zero.
+        self.equipment.wear(dmg);
         if self.blocking && self.stamina > 1.0 {
             self.stamina = (self.stamina - 10.0).max(0.0);
             let reduced = armoured * 0.35;
@@ -252,6 +255,12 @@ impl Player {
     /// Craft and equip an armour piece from the inventory (anvil recipe).
     pub fn craft_armor(&mut self, kind: ArmorKind, inv: &mut Inventory) -> bool {
         self.equipment.craft(kind, inv)
+    }
+
+    /// Repair an equipped armour piece at an anvil (iron/gold). Fails without
+    /// changing the inventory when the piece is pristine or the bill is short.
+    pub fn repair_armor(&mut self, kind: ArmorKind, inv: &mut Inventory) -> bool {
+        self.equipment.repair(kind, inv)
     }
 
     /// Push the player away from a hit source by `force` tiles (knockback).

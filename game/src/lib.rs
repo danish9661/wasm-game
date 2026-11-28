@@ -19,6 +19,7 @@ pub mod reputation;
  pub mod sim;
 pub mod tools;
  pub mod world;
+pub mod weather;
 pub mod weapons;
 pub mod npc;
 pub mod trade;

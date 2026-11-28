@@ -14,8 +14,9 @@ use game::items::{Inventory, ItemKind};
 use game::npc::{Npc, NpcKind, NpcState};
 use game::player::{self, Player};
 use game::poi::{poi_structures, ruins_at, ruins_walls, town_name, town_site, village_sites, village_name};
-use game::weapons::WeaponKind;
-use game::quest::QuestLog;
+use game::weapons::{MAX_ENCHANT, WeaponKind, enchant_cost, enchant_percent};
+use game::quest::{QuestLog, scaled_reward};
+use game::weather::WeatherFireState;
 use game::elements::humanoid;
 use game::render::{self, tile_height_at, Camera, Sprite, SpriteStyle, VERTEX_STRIDE_BYTES};
 use game::iso::{HALF_H, HALF_W};
@@ -1002,12 +1003,17 @@ pub struct App {
     craft_armor: f32,
     /// Healing salves crafted at an Anvil (consumed with the R key).
     salves: u32,
+    /// Last Enchanting Table result, shown under the HUD prompt. Session-only
+    /// feedback, so it is deliberately absent from saves.
+    enchant_feedback: String,
     /// Enemy kinds the player has seen (for the Bestiary / Codex panel).
     discovered: std::collections::HashSet<EnemyKind>,
     /// Weather state: 0 = clear, 1 = rain, 2 = snow. Drives the visual effect.
     weather: u8,
     /// Seconds until the weather may change again.
     weather_timer: f32,
+    /// Rain exposure per campfire + lightning cooldown (session state).
+    weather_fires: WeatherFireState,
     /// Seconds until the next roaming elite (mini-boss) spawns into the world.
     elite_timer: f32,
     /// Seconds until the next night-raider band sweeps the player's base.
@@ -2598,9 +2604,11 @@ impl App {
             craft_harvest: 0,
             craft_armor: 0.0,
             salves: 0,
+            enchant_feedback: String::new(),
             discovered: std::collections::HashSet::new(),
             weather: 0,
             weather_timer: 25.0,
+            weather_fires: WeatherFireState::new(),
             farm_cd: std::collections::HashMap::new(),
             turret_cd: std::collections::HashMap::new(),
             node_shake: std::collections::HashMap::new(),
@@ -2992,31 +3000,36 @@ impl App {
         // --- Enchanting Table path: spend Gems to enchant the equipped weapon ---
         if self.near_enchanting_table() {
             if self.player.weapon == game::weapons::WeaponKind::Fists {
-                toast("Equip a weapon first to enchant it");
+                self.enchant_feedback = "Equip a weapon first to enchant it".into();
+                toast(&self.enchant_feedback);
                 return;
             }
-            if self.player.enchant >= 5 {
-                toast("Weapon is already maximally enchanted (★★★★★)");
+            if self.player.enchant >= MAX_ENCHANT {
+                self.enchant_feedback = "Weapon is already maximally enchanted (★★★★★)".into();
+                toast(&self.enchant_feedback);
                 return;
             }
-            let cost = 1 + self.player.enchant as u32;
+            let cost = enchant_cost(self.player.enchant);
             if self.inventory.count(ItemKind::Gem) < cost {
-                toast(&format!(
+                self.enchant_feedback = format!(
                     "Need {} gems to enchant (have {})",
                     cost,
                     self.inventory.count(ItemKind::Gem)
-                ));
+                );
+                toast(&self.enchant_feedback);
                 return;
             }
             self.inventory.remove(ItemKind::Gem, cost);
             self.player.enchant += 1;
             play_sfx("craft");
-            toast(&format!(
-                "Enchanted {}! ({}★) +{}% damage",
+            self.enchant_feedback = format!(
+                "Enchanted {}! {}★ (+{}% damage, -{} gems)",
                 self.player.weapon.name(),
                 self.player.enchant,
-                self.player.enchant * 15
-            ));
+                enchant_percent(self.player.enchant),
+                cost
+            );
+            toast(&self.enchant_feedback);
             return;
         }
         // --- Anvil path: forge weapons + Iron Plate ---
@@ -3108,6 +3121,9 @@ impl App {
             self.npcs[idx].home.0.floor() as i32,
             self.npcs[idx].home.1.floor() as i32,
         );
+        // Level + standing scale the payout; both are plain integers, so the
+        // reward is identical for the same save on client and server.
+        let standing = self.reputation.standing(village);
         if matches!(self.npcs[idx].kind, NpcKind::Guard | NpcKind::Golem) {
             toast(self.reputation.guard_line_of(village));
         }
@@ -3116,18 +3132,25 @@ impl App {
         // Fulfill an active quest if the player carries the goods.
         if let Some((item, need, xp, ritem, rcount)) = npc.quest {
             let have = self.inventory.count(item);
+            let scaled = scaled_reward(xp, rcount, self.player.level, standing);
             if have >= need {
                 self.inventory.remove(item, need);
-                self.inventory.add(ritem, rcount);
+                self.inventory.add(ritem, scaled.count);
                 let lvl_before = self.player.level;
-                self.player.add_xp(xp);
+                self.player.add_xp(scaled.xp);
                 self.reputation.adjust(village, 5);
                 let rep_tier = self.reputation.tier(village).label();
                 let reward_name = ritem.name();
                 let mut msg = format!(
                     "{}: Quest done! +{}xp, +{} {} · {} standing {}",
-                    npc.name, xp, rcount, reward_name, rep_tier, village.0
+                    npc.name, scaled.xp, scaled.count, reward_name, rep_tier, village.0
                 );
+                if scaled.xp != xp || scaled.count != rcount {
+                    msg.push_str(&format!(
+                        " (Lv{} / {} rate: was {}xp +{}, now {}xp +{})",
+                        self.player.level, rep_tier, xp, rcount, scaled.xp, scaled.count
+                    ));
+                }
                 if self.player.level > lvl_before {
                     play_sfx("levelup");
                     msg.push_str(&format!(" — Level {}!", self.player.level));
@@ -3170,13 +3193,14 @@ impl App {
         ];
         let q = pool[(seed as usize) % pool.len()];
         npc.quest = Some(q);
+        let offer = scaled_reward(q.2, q.4, self.player.level, standing);
         toast(&format!(
             "{}: \"Bring me {} {}. I'll pay {}xp and {} {}.\"",
             npc.name,
             q.1,
             q.0.name(),
-            q.2,
-            q.4,
+            offer.xp,
+            offer.count,
             q.3.name()
         ));
         play_sfx("pickup");
@@ -4076,21 +4100,74 @@ impl App {
         self.player.craft_armor(k, &mut self.inventory)
     }
 
-    /// Compact armour summary for the HUD: "Helm:Armor:Shield:Accessory|def%|ins%".
+    /// Repair a worn equipped piece at an anvil (iron/gold bill).
+    pub fn repair_armor_piece(&mut self, kind: u8) -> bool {
+        if !self.has_anvil() {
+            toast("Stand near an anvil to repair armour");
+            return false;
+        }
+        let Some(k) = game::equipment::ArmorKind::from_u8(kind) else {
+            return false;
+        };
+        if self.player.repair_armor(k, &mut self.inventory) {
+            play_sfx("craft");
+            toast(&format!("{} repaired to full at the anvil", k.name()));
+            true
+        } else {
+            toast(&format!("Cannot repair {} — check condition and iron/gold", k.name()));
+            false
+        }
+    }
+
+    /// Compact armour summary for the equipment (U) panel. Each equipped
+    /// piece carries its condition percentage; the tail holds total def/ins.
+    /// Format: "Helmet:Iron Helm 92%, Armor:-|def 18%|ins 8%".
     pub fn armor_status(&self) -> String {
         use game::equipment::SLOT_NAMES;
         let mut parts = Vec::with_capacity(4);
         for (i, slot) in self.player.equipment.slots.iter().enumerate() {
             parts.push(match slot {
-                Some(k) => format!("{}:{}", SLOT_NAMES[i], k.name()),
+                Some(k) => format!(
+                    "{}:{} {}%",
+                    SLOT_NAMES[i],
+                    k.name(),
+                    (self.player.equipment.condition(i) * 100.0).round() as u32
+                ),
                 None => format!("{}:-", SLOT_NAMES[i]),
             });
         }
         format!(
-            "{}|{}%|{}%",
-            parts.join(","),
+            "{}|def {}%|ins {}%",
+            parts.join(", "),
             (self.player.equipment.total_defense() * 100.0).round() as u32,
             (self.player.equipment.insulation() * 100.0).round() as u32
+        )
+    }
+
+    /// Enchanting Table HUD data: level, exact next-level gem cost and the
+    /// current damage bonus. Also returns the last success/failure message so
+    /// the page can show feedback without guessing from inventory changes.
+    pub fn enchant_status(&self) -> String {
+        let level = self.player.enchant.min(MAX_ENCHANT);
+        let cost = enchant_cost(level);
+        let gems = self.inventory.count(ItemKind::Gem);
+        let stars = "★".repeat(level as usize);
+        let empty = "☆".repeat((MAX_ENCHANT - level) as usize);
+        format!(
+            "{} {}{} | level {}/{} | +{}% dmg | next {} gems (have {}) | {}",
+            self.player.weapon.name(),
+            stars,
+            empty,
+            level,
+            MAX_ENCHANT,
+            enchant_percent(level),
+            cost,
+            gems,
+            if self.enchant_feedback.is_empty() {
+                if self.near_enchanting_table() { "press M to enchant" } else { "stand at an Enchanting Table" }
+            } else {
+                self.enchant_feedback.as_str()
+            }
         )
     }
 
@@ -5536,6 +5613,8 @@ impl App {
         self.discovered.clear();
         self.weather = 0;
         self.weather_timer = 25.0;
+        self.weather_fires = WeatherFireState::new();
+        self.enchant_feedback.clear();
         self.elite_timer = 60.0;
         self.raider_timer = 75.0;
         self.boss_spawned = false;
@@ -6212,6 +6291,66 @@ impl App {
                 }
             });
         let warm = warm || sheltered;
+
+        // Weather vs fire: rain soaks uncovered campfires until they die;
+        // storms can ignite a new fire in the open. Roofs block both effects.
+        // The pure state machine lives in game::weather, so the same rules are
+        // unit-tested without a browser and cannot branch on frame timing.
+        let fire_tiles: Vec<(i32, i32)> = self
+            .structures
+            .iter()
+            .filter(|s| s.kind == StructureKind::Campfire)
+            .map(|s| (s.tx, s.ty))
+            .collect();
+        let roof_tiles: Vec<(i32, i32)> = self
+            .structures
+            .iter()
+            .filter(|s| {
+                matches!(
+                    s.kind,
+                    StructureKind::House
+                        | StructureKind::Cabin
+                        | StructureKind::Hut
+                        | StructureKind::Inn
+                        | StructureKind::Barn
+                        | StructureKind::Watchtower
+                )
+            })
+            .map(|s| (s.tx, s.ty))
+            .collect();
+        let covered = |tile: (i32, i32)| {
+            roof_tiles
+                .iter()
+                .any(|r| (r.0 - tile.0).abs() <= 1 && (r.1 - tile.1).abs() <= 1)
+        };
+        let events = self.weather_fires.tick(
+            dt,
+            self.weather,
+            &fire_tiles,
+            covered,
+            sheltered,
+            (self.player.x.floor() as i32, self.player.y.floor() as i32),
+            self.frames as u32,
+        );
+        if !events.doused.is_empty() {
+            self.structures.retain(|s| {
+                !(s.kind == StructureKind::Campfire && events.doused.contains(&(s.tx, s.ty)))
+            });
+            toast(&format!(
+                "Rain extinguished {} campfire{} — build a shelter or relight",
+                events.doused.len(),
+                if events.doused.len() == 1 { "" } else { "s" }
+            ));
+            play_sfx("splash");
+        }
+        if let Some((tx, ty)) = events.lightning {
+            let occupied = self.structures.iter().any(|s| s.tx == tx && s.ty == ty);
+            if !occupied && self.etile(tx, ty).walkable() {
+                self.structures.push(Structure { tx, ty, kind: StructureKind::Campfire });
+                play_sfx("roar");
+                toast("Lightning struck the wilds — a fire has taken hold!");
+            }
+        }
         // Tile under the player drives biome-specific survival + movement.
         let ptx = self.player.x.floor() as i32;
         let pty = self.player.y.floor() as i32;
@@ -6972,6 +7111,8 @@ impl App {
             e.state = es.state;
             e.windup = es.windup;
             e.flash = es.flash;
+            e.enraged = es.enraged;
+            e.phase2_flash = es.phase2_flash;
             enemies.push(e);
         }
         self.enemies.render_sync(enemies);
@@ -7044,6 +7185,8 @@ impl App {
                 e.state = f.state;
                 e.windup = f.windup;
                 e.flash = f.flash;
+                e.enraged = f.enraged;
+                e.phase2_flash = f.phase2_flash;
                 e
             })
             .collect();
@@ -7347,7 +7490,33 @@ impl App {
                         tell(e.x, e.y, 17.0 - prog * 8.0, 17.0 - prog * 8.0, 0.02, [0.8, 0.75, 0.7], 0.45);
                         tell(e.x, e.y, 10.0 + prog * 15.0, 10.0 + prog * 15.0, 0.02, [0.9, 0.85, 0.8], 0.25 + 0.25 * throb);
                     }
+                    // The phase-two entrance burst is drawn from
+                    // `phase2_flash` below, independent of the wind-up tell.
+                    Telegraph::EnrageBurst => {}
                 }
+            }
+            // Phase-two entrance tell: a distinct expanding ring when the
+            // guardian crosses its own HP threshold. It fades over 1.5s while
+            // the boss's speed / cooldown / damage have already changed.
+            if e.phase2_flash > 0.0 && e.kind.phase2_telegraph() == Telegraph::EnrageBurst {
+                let p = 1.0 - e.phase2_flash.clamp(0.0, 1.0);
+                let col = e.kind.color();
+                let r = 10.0 + p * 26.0;
+                let mut ring = Sprite::new_center(e.x, e.y, col, r, r * 0.5, 0.03)
+                    .with_style(SpriteStyle::Generic);
+                ring.alpha = 0.7 * e.phase2_flash.clamp(0.0, 1.0);
+                sprites.push(ring);
+                let mut core = Sprite::new_center(
+                    e.x,
+                    e.y,
+                    [1.0, 0.85, 0.35],
+                    sp.half_w * 1.2,
+                    sp.half_h * 1.2,
+                    0.04,
+                )
+                .with_style(SpriteStyle::Generic);
+                core.alpha = 0.35 * e.phase2_flash.clamp(0.0, 1.0);
+                sprites.push(core);
             }
             // Flash is already baked into sp.color above; keep the generic path idle.
             sp.flash = 0.0;
