@@ -1,0 +1,644 @@
+{
+  "family": "models_v6",
+  "player_height": 1.55,
+  "assets": [
+    {
+      "name": "library_interior",
+      "family": "models_v6",
+      "target": {
+        "width": 4.2,
+        "depth": 4.2,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 4.7,
+        "depth": 4.7,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 1216,
+      "materials": 15,
+      "hero": true,
+      "notes": "4x4 library; shelves, reading desk, globe, scrolls"
+    },
+    {
+      "name": "guard_post_interior",
+      "family": "models_v6",
+      "target": {
+        "width": 4.2,
+        "depth": 4.2,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 4.7,
+        "depth": 4.7,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 664,
+      "materials": 14,
+      "hero": true,
+      "notes": "4x4 guard post; bunks, weapon rack, map, chest"
+    },
+    {
+      "name": "market_stall_interior",
+      "family": "models_v6",
+      "target": {
+        "width": 4.2,
+        "depth": 4.2,
+        "height": 2.7
+      },
+      "measured": {
+        "width": 4.7,
+        "depth": 4.7,
+        "height": 2.5,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.613,
+      "triangles": 820,
+      "materials": 11,
+      "hero": true,
+      "notes": "4x4 market stall; counter, crates, awning, scales"
+    },
+    {
+      "name": "desert_obelisk_landmark",
+      "family": "models_v6",
+      "target": {
+        "width": 1.9,
+        "depth": 1.5,
+        "height": 3.1
+      },
+      "measured": {
+        "width": 1.9491,
+        "depth": 1.5,
+        "height": 3.104,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 2.003,
+      "triangles": 190,
+      "materials": 3,
+      "hero": true,
+      "notes": "sandstone obelisk + gold cap"
+    },
+    {
+      "name": "tundra_totem_landmark",
+      "family": "models_v6",
+      "target": {
+        "width": 1.4,
+        "depth": 1.3,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 1.4,
+        "depth": 1.3,
+        "height": 2.45,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.581,
+      "triangles": 208,
+      "materials": 5,
+      "hero": true,
+      "notes": "ice totem + frost antlers"
+    },
+    {
+      "name": "swamp_shrine_landmark",
+      "family": "models_v6",
+      "target": {
+        "width": 1.7,
+        "depth": 1.4,
+        "height": 2.2
+      },
+      "measured": {
+        "width": 1.7,
+        "depth": 1.52,
+        "height": 2.46,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.587,
+      "triangles": 248,
+      "materials": 8,
+      "hero": true,
+      "notes": "rooted swamp idol + charms"
+    },
+    {
+      "name": "volcanic_forge_landmark",
+      "family": "models_v6",
+      "target": {
+        "width": 1.5,
+        "depth": 1.3,
+        "height": 1.9
+      },
+      "measured": {
+        "width": 1.84,
+        "depth": 1.3712,
+        "height": 1.96,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.265,
+      "triangles": 234,
+      "materials": 4,
+      "hero": true,
+      "notes": "basalt forge + lava channels"
+    },
+    {
+      "name": "ocean_lighthouse_landmark",
+      "family": "models_v6",
+      "target": {
+        "width": 1.4,
+        "depth": 1.3,
+        "height": 3.4
+      },
+      "measured": {
+        "width": 2.0035,
+        "depth": 1.5482,
+        "height": 3.615,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 2.332,
+      "triangles": 298,
+      "materials": 7,
+      "hero": true,
+      "notes": "banded lighthouse + lamp"
+    },
+    {
+      "name": "npc_alchemist",
+      "family": "models_v6",
+      "target": {
+        "width": 0.9,
+        "depth": 0.7,
+        "height": 2.1
+      },
+      "measured": {
+        "width": 1.0926,
+        "depth": 0.57,
+        "height": 2.14,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.381,
+      "triangles": 432,
+      "materials": 8,
+      "hero": true,
+      "notes": "hooded alchemist with flask and vials"
+    },
+    {
+      "name": "npc_cartographer",
+      "family": "models_v6",
+      "target": {
+        "width": 1.0,
+        "depth": 0.7,
+        "height": 1.9
+      },
+      "measured": {
+        "width": 1.1546,
+        "depth": 0.6919,
+        "height": 1.96,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.265,
+      "triangles": 368,
+      "materials": 8,
+      "hero": true,
+      "notes": "map, quill and wide-brim hat"
+    },
+    {
+      "name": "npc_chef",
+      "family": "models_v6",
+      "target": {
+        "width": 1.0,
+        "depth": 0.7,
+        "height": 2.0
+      },
+      "measured": {
+        "width": 1.1552,
+        "depth": 0.5753,
+        "height": 2.08,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.342,
+      "triangles": 384,
+      "materials": 9,
+      "hero": true,
+      "notes": "white uniform, tall hat and ladle"
+    },
+    {
+      "name": "npc_herbalist",
+      "family": "models_v6",
+      "target": {
+        "width": 1.0,
+        "depth": 0.8,
+        "height": 1.9
+      },
+      "measured": {
+        "width": 1.1984,
+        "depth": 0.51,
+        "height": 1.98,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.277,
+      "triangles": 416,
+      "materials": 9,
+      "hero": true,
+      "notes": "hood, herb bundle and satchel"
+    },
+    {
+      "name": "npc_jeweler",
+      "family": "models_v6",
+      "target": {
+        "width": 0.9,
+        "depth": 0.7,
+        "height": 1.8
+      },
+      "measured": {
+        "width": 1.12,
+        "depth": 0.52,
+        "height": 1.79,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.155,
+      "triangles": 384,
+      "materials": 7,
+      "hero": true,
+      "notes": "loupe, gem tray and gold-trimmed vest"
+    },
+    {
+      "name": "npc_shepherd",
+      "family": "models_v6",
+      "target": {
+        "width": 1.0,
+        "depth": 0.7,
+        "height": 2.2
+      },
+      "measured": {
+        "width": 1.4,
+        "depth": 0.56,
+        "height": 2.2,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.419,
+      "triangles": 376,
+      "materials": 7,
+      "hero": true,
+      "notes": "crook, cloak and wool sack"
+    },
+    {
+      "name": "npc_physician",
+      "family": "models_v6",
+      "target": {
+        "width": 0.9,
+        "depth": 0.7,
+        "height": 1.8
+      },
+      "measured": {
+        "width": 1.0593,
+        "depth": 0.48,
+        "height": 1.79,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.155,
+      "triangles": 412,
+      "materials": 9,
+      "hero": true,
+      "notes": "coat with red cross, spectacles and tonic"
+    },
+    {
+      "name": "granary",
+      "family": "models_v6",
+      "target": {
+        "width": 2.6,
+        "depth": 2.0,
+        "height": 2.7
+      },
+      "measured": {
+        "width": 2.6379,
+        "depth": 2.0138,
+        "height": 2.4941,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.609,
+      "triangles": 304,
+      "materials": 5,
+      "hero": true,
+      "notes": "raised timber granary with gable roof and ladder"
+    },
+    {
+      "name": "chapel",
+      "family": "models_v6",
+      "target": {
+        "width": 2.1,
+        "depth": 1.7,
+        "height": 3.2
+      },
+      "measured": {
+        "width": 2.2841,
+        "depth": 2.06,
+        "height": 3.18,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 2.052,
+      "triangles": 290,
+      "materials": 8,
+      "hero": true,
+      "notes": "stone chapel with arched door, windows and belfry"
+    },
+    {
+      "name": "fisher_hut",
+      "family": "models_v6",
+      "target": {
+        "width": 2.6,
+        "depth": 1.9,
+        "height": 2.6
+      },
+      "measured": {
+        "width": 2.6,
+        "depth": 2.3,
+        "height": 2.5886,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.67,
+      "triangles": 328,
+      "materials": 7,
+      "hero": true,
+      "notes": "stilted hut on a pier with net and lantern"
+    },
+    {
+      "name": "gatehouse",
+      "family": "models_v6",
+      "target": {
+        "width": 3.2,
+        "depth": 1.5,
+        "height": 3.2
+      },
+      "measured": {
+        "width": 3.24,
+        "depth": 2.11,
+        "height": 3.12,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 2.013,
+      "triangles": 344,
+      "materials": 7,
+      "hero": true,
+      "notes": "twin-tower gatehouse with portcullis and bridge"
+    },
+    {
+      "name": "observatory",
+      "family": "models_v6",
+      "target": {
+        "width": 1.8,
+        "depth": 1.8,
+        "height": 2.5
+      },
+      "measured": {
+        "width": 1.6,
+        "depth": 1.7897,
+        "height": 2.6249,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.693,
+      "triangles": 244,
+      "materials": 8,
+      "hero": true,
+      "notes": "stone observatory with dome, telescope and stairs"
+    },
+    {
+      "name": "bat",
+      "family": "models_v6",
+      "target": {
+        "width": 0.9,
+        "depth": 0.8,
+        "height": 1.2
+      },
+      "measured": {
+        "width": 1.658,
+        "depth": 0.8823,
+        "height": 1.2,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.774,
+      "triangles": 168,
+      "materials": 6,
+      "hero": true,
+      "notes": "brighter wing/bone palette and readable eyes at 60 px"
+    },
+    {
+      "name": "fire_elemental",
+      "family": "models_v6",
+      "target": {
+        "width": 1.6,
+        "depth": 0.9,
+        "height": 2.0
+      },
+      "measured": {
+        "width": 1.7262,
+        "depth": 0.698,
+        "height": 2.36,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.523,
+      "triangles": 288,
+      "materials": 3,
+      "hero": true,
+      "notes": "continuous flame body, seated arms and feet"
+    },
+    {
+      "name": "stone_elemental",
+      "family": "models_v6",
+      "target": {
+        "width": 1.0,
+        "depth": 0.8,
+        "height": 2.4
+      },
+      "measured": {
+        "width": 1.2104,
+        "depth": 0.6796,
+        "height": 2.47,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.594,
+      "triangles": 256,
+      "materials": 4,
+      "hero": true,
+      "notes": "tall obsidian crowned silhouette, unlike the golem"
+    },
+    {
+      "name": "crossbow",
+      "family": "models_v6",
+      "target": {
+        "width": 1.0,
+        "depth": 0.8,
+        "height": 1.1
+      },
+      "measured": {
+        "width": 1.0741,
+        "depth": 0.8,
+        "height": 1.1699,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.755,
+      "triangles": 118,
+      "materials": 6,
+      "hero": true,
+      "notes": "raised from 0.62u to a readable 1.05u with a visible bolt"
+    },
+    {
+      "name": "arrow",
+      "family": "models_v6",
+      "target": {
+        "width": 0.3,
+        "depth": 0.3,
+        "height": 1.0
+      },
+      "measured": {
+        "width": 0.274,
+        "depth": 0.3164,
+        "height": 1.07,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.69,
+      "triangles": 146,
+      "materials": 5,
+      "hero": true,
+      "notes": "broad gold/sand flights readable at 60 px"
+    },
+    {
+      "name": "coral_brain",
+      "family": "models_v6",
+      "target": {
+        "width": 1.1,
+        "depth": 0.9,
+        "height": 0.7
+      },
+      "measured": {
+        "width": 0.9391,
+        "depth": 0.7503,
+        "height": 0.6224,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.402,
+      "triangles": 152,
+      "materials": 4,
+      "hero": true,
+      "notes": "saturated arcane body with fire/bone ridges"
+    },
+    {
+      "name": "apple_tree",
+      "family": "models_v6",
+      "target": {
+        "width": 1.9,
+        "depth": 1.6,
+        "height": 2.6
+      },
+      "measured": {
+        "width": 1.8733,
+        "depth": 1.4153,
+        "height": 2.601,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 1.678,
+      "triangles": 240,
+      "materials": 4,
+      "hero": true,
+      "notes": "four larger apples, boughs, 2.6u height"
+    },
+    {
+      "name": "hay_bale",
+      "family": "models_v6",
+      "target": {
+        "width": 1.2,
+        "depth": 0.9,
+        "height": 0.8
+      },
+      "measured": {
+        "width": 1.0626,
+        "depth": 0.88,
+        "height": 0.7824,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.505,
+      "triangles": 112,
+      "materials": 3,
+      "hero": true,
+      "notes": "rounded elliptical bale with leather bands and straw tufts"
+    },
+    {
+      "name": "volcanic_bomb",
+      "family": "models_v6",
+      "target": {
+        "width": 1.0,
+        "depth": 0.9,
+        "height": 0.9
+      },
+      "measured": {
+        "width": 0.8803,
+        "depth": 0.8086,
+        "height": 0.88,
+        "base_z": 0.0,
+        "centre_x": 0.0,
+        "centre_y": 0.0
+      },
+      "ratio_to_player": 0.568,
+      "triangles": 188,
+      "materials": 3,
+      "hero": true,
+      "notes": "wide fire/gold lava cracks and seated embers"
+    }
+  ]
+}

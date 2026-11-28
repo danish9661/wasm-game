@@ -137,3 +137,16 @@ unchanged; the rendered LOD triangle counts are 1226 / 398 / 456 respectively.
 
 The white cubes are gone, the top-ten findings are closed, and a second
 independent critique found no finding above MAJOR. No merge into `main`.
+
+## Remaining known issues (after models-v6)
+
+- No open MINOR finding required a rebuild of an audited building/structure
+  model. Items the first critic called out below the top ten (`kit_pillar`,
+  `wall`, `castle_keep`, `interior_rug`, `dungeon_floor_grate`, `torch`,
+  `torch_sconce`) were re-judged flat **by function** in the after pass; their
+  silhouettes and gameplay reads were accepted.
+- Wave 6 adds five new building silhouettes (`granary`, `chapel`,
+  `fisher_hut`, `gatehouse`, `observatory`) and three interiors; they use the
+  same bmesh/bevel/weighted-normal/UV-pack pipeline but are new names, not
+  replacements, so this QA evidence is untouched.
+- No BLOCKER or MAJOR finding remains open.

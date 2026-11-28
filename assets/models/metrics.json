@@ -10,10 +10,10 @@
     "complex_name_pattern": "(interior|house|cabin|hut|inn|barn|hall|tower|castle|fort|keep|palace|temple|cathedral|church|abbey|shrine|dungeon|ruin|village|town|city|market|station|train|bridge|ship|mine|cave|complex|landmark|showcase|diorama|structure)"
   },
   "summary": {
-    "models": 254,
-    "passed": 254,
+    "models": 274,
+    "passed": 274,
     "failed": 0,
-    "total_triangles": 67405,
+    "total_triangles": 75041,
     "models_dir": "assets/models"
   },
   "models": [
@@ -110,29 +110,29 @@
     {
       "name": "apple_tree",
       "file": "assets/models/apple_tree.glb",
-      "category": "Nature",
-      "triangles": 212,
+      "category": "Models V6",
+      "triangles": 240,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 11,
-      "primitives": 11,
-      "materials": 5,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
       "min": [
-        -0.8921,
+        -0.9367,
         0.0,
-        -0.5498
+        -0.7077
       ],
       "max": [
-        0.8921,
-        2.451,
-        0.5498
+        0.9367,
+        2.601,
+        0.7077
       ],
-      "height": 2.451,
+      "height": 2.601,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.7842,
-      "footprint_z": 1.0996,
+      "footprint_x": 1.8733,
+      "footprint_z": 1.4153,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -201,28 +201,28 @@
       "name": "arrow",
       "file": "assets/models/arrow.glb",
       "category": "Weapon",
-      "triangles": 172,
+      "triangles": 146,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 1,
-      "primitives": 4,
-      "materials": 4,
+      "primitives": 5,
+      "materials": 5,
       "min": [
-        -0.068,
+        -0.137,
         0.0,
-        -0.105
+        -0.1582
       ],
       "max": [
-        0.085,
-        0.88,
-        0.105
+        0.137,
+        1.07,
+        0.1582
       ],
-      "height": 0.88,
+      "height": 1.07,
       "base_y": 0.0,
-      "center_x": 0.0085,
+      "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.153,
-      "footprint_z": 0.21,
+      "footprint_x": 0.274,
+      "footprint_z": 0.3164,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -471,28 +471,28 @@
       "name": "bat",
       "file": "assets/models/bat.glb",
       "category": "Character",
-      "triangles": 196,
+      "triangles": 168,
       "triangle_limit": 500,
       "complex": false,
       "meshes": 1,
-      "primitives": 3,
-      "materials": 3,
+      "primitives": 6,
+      "materials": 6,
       "min": [
-        -0.47,
+        -0.829,
         0.0,
-        -0.2224
+        -0.4411
       ],
       "max": [
-        0.47,
-        1.16,
-        0.2224
+        0.829,
+        1.2,
+        0.4411
       ],
-      "height": 1.16,
+      "height": 1.2,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.94,
-      "footprint_z": 0.4448,
+      "footprint_x": 1.658,
+      "footprint_z": 0.8823,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1278,6 +1278,36 @@
       "pass": true
     },
     {
+      "name": "chapel",
+      "file": "assets/models/chapel.glb",
+      "category": "Models V6",
+      "triangles": 290,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 8,
+      "materials": 8,
+      "min": [
+        -1.142,
+        0.0,
+        -1.03
+      ],
+      "max": [
+        1.142,
+        3.18,
+        1.03
+      ],
+      "height": 3.18,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.2841,
+      "footprint_z": 2.06,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "chest",
       "file": "assets/models/chest.glb",
       "category": "Structure",
@@ -1430,29 +1460,29 @@
     {
       "name": "coral_brain",
       "file": "assets/models/coral_brain.glb",
-      "category": "Other",
-      "triangles": 484,
+      "category": "Models V6",
+      "triangles": 152,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 2,
-      "primitives": 3,
-      "materials": 2,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
       "min": [
-        -0.4497,
+        -0.4696,
         0.0,
-        -0.3713
+        -0.3751
       ],
       "max": [
-        0.4497,
-        0.658,
-        0.3713
+        0.4696,
+        0.6224,
+        0.3751
       ],
-      "height": 0.658,
+      "height": 0.6224,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.8994,
-      "footprint_z": 0.7427,
+      "footprint_x": 0.9391,
+      "footprint_z": 0.7503,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1521,28 +1551,28 @@
       "name": "crossbow",
       "file": "assets/models/crossbow.glb",
       "category": "Weapon",
-      "triangles": 158,
+      "triangles": 118,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 13,
-      "primitives": 13,
+      "meshes": 1,
+      "primitives": 6,
       "materials": 6,
       "min": [
-        -0.59,
+        -0.5371,
         0.0,
-        -0.4525
+        -0.4
       ],
       "max": [
-        0.59,
-        0.62,
-        0.4525
+        0.5371,
+        1.1699,
+        0.4
       ],
-      "height": 0.62,
+      "height": 1.1699,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.18,
-      "footprint_z": 0.905,
+      "footprint_x": 1.0741,
+      "footprint_z": 0.8,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -1663,6 +1693,36 @@
       "center_z": 0.0,
       "footprint_x": 1.477,
       "footprint_z": 1.0539,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "desert_obelisk_landmark",
+      "file": "assets/models/desert_obelisk_landmark.glb",
+      "category": "Models V6",
+      "triangles": 190,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 3,
+      "materials": 3,
+      "min": [
+        -0.9745,
+        0.0,
+        -0.75
+      ],
+      "max": [
+        0.9745,
+        3.104,
+        0.75
+      ],
+      "height": 3.104,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.9491,
+      "footprint_z": 1.5,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2480,29 +2540,59 @@
     {
       "name": "fire_elemental",
       "file": "assets/models/fire_elemental.glb",
-      "category": "Other",
-      "triangles": 260,
+      "category": "Models V6",
+      "triangles": 288,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 17,
-      "primitives": 17,
+      "meshes": 1,
+      "primitives": 3,
       "materials": 3,
       "min": [
-        -0.6931,
+        -0.8631,
         0.0,
-        -0.372
+        -0.349
       ],
       "max": [
-        0.6931,
-        1.96,
-        0.372
+        0.8631,
+        2.36,
+        0.349
       ],
-      "height": 1.96,
+      "height": 2.36,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.3862,
-      "footprint_z": 0.744,
+      "footprint_x": 1.7262,
+      "footprint_z": 0.698,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "fisher_hut",
+      "file": "assets/models/fisher_hut.glb",
+      "category": "Building",
+      "triangles": 328,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 7,
+      "materials": 7,
+      "min": [
+        -1.3,
+        0.0,
+        -1.15
+      ],
+      "max": [
+        1.3,
+        2.5886,
+        1.15
+      ],
+      "height": 2.5886,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.6,
+      "footprint_z": 2.3,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2688,6 +2778,36 @@
       "pass": true
     },
     {
+      "name": "gatehouse",
+      "file": "assets/models/gatehouse.glb",
+      "category": "Building",
+      "triangles": 344,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 7,
+      "materials": 7,
+      "min": [
+        -1.62,
+        0.0,
+        -1.055
+      ],
+      "max": [
+        1.62,
+        3.12,
+        1.055
+      ],
+      "height": 3.12,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 3.24,
+      "footprint_z": 2.11,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "goblin",
       "file": "assets/models/goblin.glb",
       "category": "Character",
@@ -2748,6 +2868,36 @@
       "pass": true
     },
     {
+      "name": "granary",
+      "file": "assets/models/granary.glb",
+      "category": "Models V6",
+      "triangles": 304,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -1.3189,
+        0.0,
+        -1.0069
+      ],
+      "max": [
+        1.3189,
+        2.4941,
+        1.0069
+      ],
+      "height": 2.4941,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.6379,
+      "footprint_z": 2.0138,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "grass_tuft",
       "file": "assets/models/grass_tuft.glb",
       "category": "Nature",
@@ -2803,6 +2953,36 @@
       "center_z": 0.025,
       "footprint_x": 0.8715,
       "footprint_z": 0.55,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "guard_post_interior",
+      "file": "assets/models/guard_post_interior.glb",
+      "category": "Building",
+      "triangles": 664,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 14,
+      "materials": 14,
+      "min": [
+        -2.35,
+        0.0,
+        -2.35
+      ],
+      "max": [
+        2.35,
+        2.5,
+        2.35
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 4.7,
+      "footprint_z": 4.7,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -2870,29 +3050,29 @@
     {
       "name": "hay_bale",
       "file": "assets/models/hay_bale.glb",
-      "category": "Other",
-      "triangles": 192,
+      "category": "Models V6",
+      "triangles": 112,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 2,
-      "primitives": 4,
+      "meshes": 1,
+      "primitives": 3,
       "materials": 3,
       "min": [
-        -0.48,
+        -0.5313,
         0.0,
-        -0.4058
+        -0.44
       ],
       "max": [
-        0.48,
-        0.71,
-        0.4058
+        0.5313,
+        0.7824,
+        0.44
       ],
-      "height": 0.71,
+      "height": 0.7824,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.96,
-      "footprint_z": 0.8116,
+      "footprint_x": 1.0626,
+      "footprint_z": 0.88,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -3948,6 +4128,36 @@
       "pass": true
     },
     {
+      "name": "library_interior",
+      "file": "assets/models/library_interior.glb",
+      "category": "Building",
+      "triangles": 1216,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 15,
+      "materials": 15,
+      "min": [
+        -2.35,
+        0.0,
+        -2.35
+      ],
+      "max": [
+        2.35,
+        2.5,
+        2.35
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 4.7,
+      "footprint_z": 4.7,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "life_ring",
       "file": "assets/models/life_ring.glb",
       "category": "Other",
@@ -4218,6 +4428,36 @@
       "pass": true
     },
     {
+      "name": "market_stall_interior",
+      "file": "assets/models/market_stall_interior.glb",
+      "category": "Building",
+      "triangles": 820,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 11,
+      "materials": 11,
+      "min": [
+        -2.35,
+        0.0,
+        -2.35
+      ],
+      "max": [
+        2.35,
+        2.5,
+        2.35
+      ],
+      "height": 2.5,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 4.7,
+      "footprint_z": 4.7,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "market_umbrella",
       "file": "assets/models/market_umbrella.glb",
       "category": "Building",
@@ -4303,6 +4543,36 @@
       "center_z": 0.0,
       "footprint_x": 0.8465,
       "footprint_z": 0.6803,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_alchemist",
+      "file": "assets/models/npc_alchemist.glb",
+      "category": "Models V6",
+      "triangles": 432,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 8,
+      "materials": 8,
+      "min": [
+        -0.5463,
+        0.0,
+        -0.285
+      ],
+      "max": [
+        0.5463,
+        2.14,
+        0.285
+      ],
+      "height": 2.14,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.0926,
+      "footprint_z": 0.57,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4423,6 +4693,66 @@
       "center_z": 0.0,
       "footprint_x": 1.1673,
       "footprint_z": 0.44,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_cartographer",
+      "file": "assets/models/npc_cartographer.glb",
+      "category": "Models V6",
+      "triangles": 368,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 8,
+      "materials": 8,
+      "min": [
+        -0.5773,
+        0.0,
+        -0.346
+      ],
+      "max": [
+        0.5773,
+        1.96,
+        0.346
+      ],
+      "height": 1.96,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1546,
+      "footprint_z": 0.6919,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_chef",
+      "file": "assets/models/npc_chef.glb",
+      "category": "Models V6",
+      "triangles": 384,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 9,
+      "materials": 9,
+      "min": [
+        -0.5776,
+        0.0,
+        -0.2876
+      ],
+      "max": [
+        0.5776,
+        2.08,
+        0.2876
+      ],
+      "height": 2.08,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1552,
+      "footprint_z": 0.5753,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4668,6 +4998,36 @@
       "pass": true
     },
     {
+      "name": "npc_herbalist",
+      "file": "assets/models/npc_herbalist.glb",
+      "category": "Models V6",
+      "triangles": 416,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 9,
+      "materials": 9,
+      "min": [
+        -0.5992,
+        0.0,
+        -0.255
+      ],
+      "max": [
+        0.5992,
+        1.98,
+        0.255
+      ],
+      "height": 1.98,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.1984,
+      "footprint_z": 0.51,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "npc_hunter",
       "file": "assets/models/npc_hunter.glb",
       "category": "Other",
@@ -4753,6 +5113,36 @@
       "center_z": 0.0,
       "footprint_x": 1.1271,
       "footprint_z": 0.7116,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_jeweler",
+      "file": "assets/models/npc_jeweler.glb",
+      "category": "Models V6",
+      "triangles": 384,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 7,
+      "materials": 7,
+      "min": [
+        -0.56,
+        0.0,
+        -0.26
+      ],
+      "max": [
+        0.56,
+        1.79,
+        0.26
+      ],
+      "height": 1.79,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.12,
+      "footprint_z": 0.52,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -4848,6 +5238,36 @@
       "pass": true
     },
     {
+      "name": "npc_physician",
+      "file": "assets/models/npc_physician.glb",
+      "category": "Models V6",
+      "triangles": 412,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 9,
+      "materials": 9,
+      "min": [
+        -0.5296,
+        0.0,
+        -0.24
+      ],
+      "max": [
+        0.5296,
+        1.79,
+        0.24
+      ],
+      "height": 1.79,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.0593,
+      "footprint_z": 0.48,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "npc_priest",
       "file": "assets/models/npc_priest.glb",
       "category": "Other",
@@ -4903,6 +5323,36 @@
       "center_z": 0.0,
       "footprint_x": 1.1855,
       "footprint_z": 0.6282,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "npc_shepherd",
+      "file": "assets/models/npc_shepherd.glb",
+      "category": "Models V6",
+      "triangles": 376,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 7,
+      "materials": 7,
+      "min": [
+        -0.7,
+        0.0,
+        -0.28
+      ],
+      "max": [
+        0.7,
+        2.2,
+        0.28
+      ],
+      "height": 2.2,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.4,
+      "footprint_z": 0.56,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -5028,6 +5478,36 @@
       "pass": true
     },
     {
+      "name": "observatory",
+      "file": "assets/models/observatory.glb",
+      "category": "Models V6",
+      "triangles": 244,
+      "triangle_limit": 500,
+      "complex": false,
+      "meshes": 1,
+      "primitives": 8,
+      "materials": 8,
+      "min": [
+        -0.8,
+        0.0,
+        -0.8949
+      ],
+      "max": [
+        0.8,
+        2.6249,
+        0.8949
+      ],
+      "height": 2.6249,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.6,
+      "footprint_z": 1.7897,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "obsidian_spire",
       "file": "assets/models/obsidian_spire.glb",
       "category": "Other",
@@ -5083,6 +5563,36 @@
       "center_z": -0.0716,
       "footprint_x": 1.39,
       "footprint_z": 1.4632,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "ocean_lighthouse_landmark",
+      "file": "assets/models/ocean_lighthouse_landmark.glb",
+      "category": "Building",
+      "triangles": 298,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 7,
+      "materials": 7,
+      "min": [
+        -1.0018,
+        0.0,
+        -0.7741
+      ],
+      "max": [
+        1.0018,
+        3.615,
+        0.7741
+      ],
+      "height": 3.615,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 2.0035,
+      "footprint_z": 1.5482,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -6440,29 +6950,29 @@
     {
       "name": "stone_elemental",
       "file": "assets/models/stone_elemental.glb",
-      "category": "Other",
-      "triangles": 320,
+      "category": "Models V6",
+      "triangles": 256,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 16,
-      "primitives": 16,
-      "materials": 3,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
       "min": [
-        -0.7501,
+        -0.6052,
         0.0,
-        -0.4901
+        -0.3398
       ],
       "max": [
-        0.7501,
-        1.778,
-        0.4901
+        0.6052,
+        2.47,
+        0.3398
       ],
-      "height": 1.778,
+      "height": 2.47,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 1.5001,
-      "footprint_z": 0.9803,
+      "footprint_x": 1.2104,
+      "footprint_z": 0.6796,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -6643,6 +7153,36 @@
       "center_z": 0.0,
       "footprint_x": 0.836,
       "footprint_z": 0.6949,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "swamp_shrine_landmark",
+      "file": "assets/models/swamp_shrine_landmark.glb",
+      "category": "Building",
+      "triangles": 248,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 8,
+      "materials": 8,
+      "min": [
+        -0.85,
+        0.0,
+        -0.76
+      ],
+      "max": [
+        0.85,
+        2.46,
+        0.76
+      ],
+      "height": 2.46,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.7,
+      "footprint_z": 1.52,
       "bounds_complete": true,
       "violations": [],
       "pass": true
@@ -7038,6 +7578,36 @@
       "pass": true
     },
     {
+      "name": "tundra_totem_landmark",
+      "file": "assets/models/tundra_totem_landmark.glb",
+      "category": "Models V6",
+      "triangles": 208,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 5,
+      "materials": 5,
+      "min": [
+        -0.7,
+        0.0,
+        -0.65
+      ],
+      "max": [
+        0.7,
+        2.45,
+        0.65
+      ],
+      "height": 2.45,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.4,
+      "footprint_z": 1.3,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
       "name": "turret",
       "file": "assets/models/turret.glb",
       "category": "Structure",
@@ -7160,29 +7730,59 @@
     {
       "name": "volcanic_bomb",
       "file": "assets/models/volcanic_bomb.glb",
-      "category": "Other",
-      "triangles": 198,
+      "category": "Models V6",
+      "triangles": 188,
       "triangle_limit": 500,
       "complex": false,
-      "meshes": 2,
-      "primitives": 4,
+      "meshes": 1,
+      "primitives": 3,
       "materials": 3,
       "min": [
-        -0.4359,
+        -0.4402,
         0.0,
-        -0.3893
+        -0.4043
       ],
       "max": [
-        0.4359,
-        0.7715,
-        0.3893
+        0.4402,
+        0.88,
+        0.4043
       ],
-      "height": 0.7715,
+      "height": 0.88,
       "base_y": 0.0,
       "center_x": 0.0,
       "center_z": 0.0,
-      "footprint_x": 0.8717,
-      "footprint_z": 0.7786,
+      "footprint_x": 0.8803,
+      "footprint_z": 0.8086,
+      "bounds_complete": true,
+      "violations": [],
+      "pass": true
+    },
+    {
+      "name": "volcanic_forge_landmark",
+      "file": "assets/models/volcanic_forge_landmark.glb",
+      "category": "Building",
+      "triangles": 234,
+      "triangle_limit": 1500,
+      "complex": true,
+      "meshes": 1,
+      "primitives": 4,
+      "materials": 4,
+      "min": [
+        -0.92,
+        0.0,
+        -0.6856
+      ],
+      "max": [
+        0.92,
+        1.96,
+        0.6856
+      ],
+      "height": 1.96,
+      "base_y": 0.0,
+      "center_x": 0.0,
+      "center_z": 0.0,
+      "footprint_x": 1.84,
+      "footprint_z": 1.3712,
       "bounds_complete": true,
       "violations": [],
       "pass": true
