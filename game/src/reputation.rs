@@ -81,12 +81,7 @@ impl Reputation {
     }
 
     pub fn tier(&self, village: (i32, i32)) -> ReputationTier {
-        match self.standing(village) {
-            s if s <= -30 => ReputationTier::Hostile,
-            s if s < 15 => ReputationTier::Neutral,
-            s if s < 60 => ReputationTier::Friendly,
-            _ => ReputationTier::Allied,
-        }
+        tier_for_standing(self.standing(village))
     }
 
     /// Guard greeting for a village, ready to drop into a toast.
@@ -145,6 +140,17 @@ impl Reputation {
         } else {
             None
         }
+    }
+}
+
+/// Standing → tier mapping, shared with quest reward scaling so the two
+/// systems cannot disagree about what "Friendly" means.
+pub fn tier_for_standing(standing: i32) -> ReputationTier {
+    match standing {
+        s if s <= -30 => ReputationTier::Hostile,
+        s if s < 15 => ReputationTier::Neutral,
+        s if s < 60 => ReputationTier::Friendly,
+        _ => ReputationTier::Allied,
     }
 }
 

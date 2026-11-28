@@ -294,7 +294,27 @@ pub fn craft_armor(kind: u8) -> bool {
     })
 }
 
-/// HUD summary of equipped armour slots and their defence / insulation.
+/// Repair an equipped armour piece at an anvil (iron/gold). Same slot ids as
+/// `craft_armor` (0=Leather Cap … 5=Crown Ring).
+#[wasm_bindgen]
+pub fn repair_armor(kind: u8) -> bool {
+    APP.with(|cell| match cell.borrow_mut().as_mut() {
+        Some(app) => app.repair_armor_piece(kind),
+        None => false,
+    })
+}
+
+/// Enchanting Table summary: weapon, stars, exact gem cost, bonus and the
+/// last success/failure message. Polled by the HUD while near the table.
+#[wasm_bindgen]
+pub fn enchant_status() -> String {
+    APP.with(|cell| match *cell.borrow() {
+        Some(ref app) => app.enchant_status(),
+        None => String::from("no app"),
+    })
+}
+
+/// HUD summary of equipped armour slots, condition and defence / insulation.
 #[wasm_bindgen]
 pub fn armor_status() -> String {
     APP.with(|cell| match *cell.borrow() {

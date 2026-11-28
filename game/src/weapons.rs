@@ -1,5 +1,22 @@
 use serde::{Deserialize, Serialize};
 
+/// Highest enchant level an Enchanting Table can grant. Kept here (not in the
+/// client) so the HUD cost preview and the actual purchase cannot drift.
+pub const MAX_ENCHANT: u8 = 5;
+/// Gem cost of the *next* level. Linear, so the table can show it exactly.
+pub fn enchant_cost(current_level: u8) -> u32 {
+    1 + current_level.min(MAX_ENCHANT) as u32
+}
+/// Damage bonus for level `level` as a multiplier (1.0 = unenchanted).
+/// Integer basis points keep the UI text and combat math identical.
+pub fn enchant_multiplier(level: u8) -> f32 {
+    1.0 + 0.15 * level.min(MAX_ENCHANT) as f32
+}
+/// Whole percent shown in HUD tooltips.
+pub fn enchant_percent(level: u8) -> u32 {
+    level.min(MAX_ENCHANT) as u32 * 15
+}
+
 /// Weapons the player can find in chests or as enemy drops. They change the
 /// feel of combat: damage, reach, swing cadence, and whether the attack is a
 /// ranged volley. Fists are the always-available fallback.
@@ -258,6 +275,20 @@ impl WeaponKind {
 mod tests {
     use super::*;
     use crate::enemy::EnemyKind;
+
+    #[test]
+    fn enchant_cost_and_bonus_are_bounded_and_monotonic() {
+        assert_eq!(enchant_cost(0), 1);
+        assert_eq!(enchant_cost(4), 5);
+        assert_eq!(enchant_cost(5), 6, "preview clamps but stays finite");
+        assert_eq!(enchant_cost(255), 6);
+        for lv in 0..MAX_ENCHANT {
+            assert!(enchant_cost(lv) < enchant_cost(lv + 1));
+            assert!((enchant_multiplier(lv) - 1.0 - 0.15 * lv as f32).abs() < 1e-6);
+        }
+        assert_eq!(enchant_percent(3), 45);
+        assert_eq!(enchant_multiplier(255), enchant_multiplier(MAX_ENCHANT));
+    }
 
     #[test]
     fn dps_order_matches_design() {

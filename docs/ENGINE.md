@@ -47,7 +47,8 @@ and for headless tests (`cargo test -p game`).
 | `reputation.rs` | Per-village clamped standing from quests/trade/defence kills; drives merchant price factors and guard dialogue. |
 | `building.rs`, `poi.rs`, `dungeon.rs` | Buildable catalogue and placement validation, villages/towns/ruins, multi-floor building interiors and dungeon rooms. |
 | `daynight.rs` | `DAY_LENGTH`, `START_TIME`, `NIGHTFALL`, `daylight(t)`, clock formatting, temperature and the every-fourth-night "Shattered Night" schedule. |
-| `resources.rs`, `poi.rs`, `world.rs` | Harvest nodes (trees, ore, crystals, …) and water sources for thirst. Weather is client-side cosmetic (`web/src/renderer.rs`, `weather` 0..4) over the shared day/night clock. |
+| `resources.rs`, `poi.rs`, `world.rs` | Harvest nodes (trees, ore, crystals, …) and water sources for thirst. |
+| `weather.rs` | Deterministic fire interactions: rain/storm wetness per campfire tile and a seeded lightning cooldown; shelter (roofs) blocks both. Renderer owns the structures and applies the returned tile events. |
 | `sim.rs` | `Simulation::step(dt)`: the authoritative tick. Owns players, enemies, arrows, structures, events and interiors; also the bincode wire protocol (v5), snapshots/deltas and shared-room events used by the server. |
 | `render.rs`, `iso.rs`, `elements/` | *Pure data* rendering helpers: iso projection (64×32 diamonds), `Sprite`/`SpriteStyle`, `visible_tiles`, and `build_tile_mesh` which writes the 6-float-per-vertex quad stream. No GPU calls live here. |
 
@@ -63,8 +64,24 @@ defence kills; it scales merchant buy/sell prices and guard greetings. Turrets
 use the shared `combat::turret_target` helper — nearest living hostile in range
 with line of sight, fixed damage, no ammo state. Beds heal HP gradually while
 the player lingers nearby; sleeping skips to dawn and records the exact bed tile
-as respawn. All new state fields are `#[serde(default)]`, so existing saves keep
-loading without a version bump.
+as respawn.
+
+Third mechanics wave: armour pieces carry integer durability — hits wear every
+equipped slot, condition scales its damage/insulation rating (broken gear still
+gives 35% of it), and the U panel shows `slot:piece %` plus an anvil repair
+button; `Equipment::durability` uses a serde fallback of "full" so old saves do
+not load broken gear. The Enchanting Table reads its level/star display, exact
+gem cost (`1 + level`, cap 5) and last success message from shared
+`game::weapons` helpers and `enchant_status()`. Every Crown Fragment guardian
+has its own phase-2 HP threshold plus speed/cooldown/damage multipliers and a
+one-shot `EnrageBurst` telegraph; `EnemySnapshot` carries the flag/flash with
+`#[serde(default)]` so older peers still decode it. Rain extinguishes uncovered
+campfires after ~12s (storms ~1.6x faster), storms can start a fire in the open
+on a seeded tick, and shelter (a roof over the fire or player) suppresses both.
+NPC fetch-quest XP and item counts scale by player level and village standing
+with integer, clamped `QuestReward` values — no new save field and no RNG. All
+other new state fields are `#[serde(default)]`, so existing saves keep loading
+without a version bump.
 
 `game::Simulation` is the single source of truth. Single-player runs it inside
 the WASM app; co-op runs a second copy in the native server, which sends

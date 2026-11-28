@@ -70,6 +70,7 @@
   </div>
   <div id="vignette" class="hidden"></div>
   <div id="anvil-prompt" class="hidden">⚒ Anvil nearby — press <b>M</b> to forge weapons · <b>O</b> near merchants to sell for gold</div>
+  <div id="enchant-hud" class="hidden" aria-live="polite">★ Enchanting Table</div>
   <div id="water-prompt" class="hidden">💧 Water nearby — press <b>T</b> to drink</div>
   <div id="meal-prompt" class="hidden">🍲 Campfire — press <b>0</b> to cook 2 raw food into a cooked meal</div>
 
@@ -278,7 +279,9 @@
     </div>
     <p class="eq-status" id="eq-status"></p>
     <div id="eq-slots"></div>
-    <p class="eq-note">Craft at an anvil. Armour stacks; cold/heat insulation helps at night and in the tundra.</p>
+    <h3>REPAIR <small>iron / gold</small></h3>
+    <div id="eq-repair"></div>
+    <p class="eq-note">Craft and repair at an anvil. Pieces wear on every hit; worn gear protects less. Cold/heat insulation helps at night and in the tundra.</p>
   </div>
 
   <div id="buildhint" class="hidden"></div>
@@ -301,7 +304,7 @@
     // Dev telemetry is opt-in (?debug): the shipped HUD stays player-facing.
     if (location.search.includes('debug')) document.body.classList.add('show-debug');
     window.addEventListener('resize', __setFormFactor);
-    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot, debug_enter_interior, set_render3d, render3d_enabled, render3d_status, craft_armor, armor_status, cook_meal, fish } from './wasm_game.js?v=20260901';
+    import init, { step, get_stats, reforge, serialize_save, deserialize_save, new_game, new_game_with_seed, resize, set_render_cap, set_adaptive_res, set_force_gpu, app_ready, get_ui_data, set_mouse, set_build_mode, select_build, place_selected, craft, get_minimap, current_biome, set_analog,     download_save_zip, upload_save_zip, get_coop_tags, get_town_status, get_frame_dump, do_attack, get_codex, zoom_step, equip_weapon_slot, debug_enter_interior, set_render3d, render3d_enabled, render3d_status, craft_armor, repair_armor, armor_status, enchant_status, cook_meal, fish } from './wasm_game.js?v=20260901';
 
     const coopTagsEl = document.getElementById('coop-tags');
     const townTransitionEl = document.getElementById('town-transition');
@@ -1039,6 +1042,15 @@
             const atAltar = stats.altar === 1 && stats.frag >= 5 && stats.ending < 0 && stats.nearaltar === 1;
             el('altar-prompt').style.display = atAltar ? 'block' : 'none';
             el('anvil-prompt').style.display = (stats.nearAnvil === 1 && stats.alive === 1) ? 'block' : 'none';
+            // Enchanting Table: level / stars, exact gem cost and the result of
+            // the last attempt come straight from the Rust status string.
+            const enchEl = el('enchant-hud');
+            if (stats.nearEnch === 1 && stats.alive === 1) {
+              enchEl.style.display = 'block';
+              try { enchEl.textContent = enchant_status(); } catch (_) {}
+            } else {
+              enchEl.style.display = 'none';
+            }
             const waterEl = el('water-prompt');
             if (stats.nearWater === 1 && stats.alive === 1) {
               waterEl.style.display = 'block';
@@ -1278,6 +1290,7 @@
             ['Wood Shield', 'Wood x5, Iron x1'], ['Crown Ring', 'Gem x4, Gold x5'],
           ];
           const eqSlots = el('eq-slots');
+          const eqRepair = el('eq-repair');
           ARMOR.forEach(([name, cost], i) => {
             const b = document.createElement('button');
             b.className = 'eq-btn';
@@ -1286,7 +1299,31 @@
             eqSlots.appendChild(b);
           });
           const refreshArmor = () => {
-            try { el('eq-status').textContent = armor_status(); } catch (_) {}
+            let status = '';
+            try {
+              status = armor_status();
+              el('eq-status').textContent = status;
+            } catch (_) { return; }
+            // Status: "Helmet:Iron Helm 92%, ...|def 16%|ins 2%". Offer a
+            // repair button only for equipped pieces that are actually worn.
+            eqRepair.replaceChildren();
+            for (const part of status.split('|')[0].split(',')) {
+              const m = part.trim().match(/^(Helmet|Armor|Shield|Accessory):(.+?) (\d+)%$/);
+              if (!m || Number(m[3]) >= 100) continue;
+              const idx = ARMOR.findIndex(([name]) => name === m[2]);
+              if (idx < 0) continue;
+              const b = document.createElement('button');
+              b.className = 'eq-btn';
+              b.innerHTML = `<span>Repair ${m[2]}</span><small>${m[3]}% · iron/gold</small>`;
+              b.onclick = () => { if (repair_armor(idx)) playSfx('craft'); refreshArmor(); };
+              eqRepair.appendChild(b);
+            }
+            if (!eqRepair.children.length) {
+              const p = document.createElement('p');
+              p.className = 'eq-note';
+              p.textContent = 'All equipped pieces are at full condition.';
+              eqRepair.appendChild(p);
+            }
           };
           const toggleEquipment = () => {
             eqOpen = !eqOpen;
